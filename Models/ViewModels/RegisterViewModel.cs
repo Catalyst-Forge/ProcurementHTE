@@ -9,6 +9,7 @@ namespace project_25_07.Models.ViewModels {
 
     [Required(ErrorMessage = "Username wajib diisi")]
     [StringLength(100, MinimumLength = 3, ErrorMessage = "Username minimal 3 karakter dan maksimal 100 karakter")]
+    [DisplayName("Username")]
     public string UserName { get; set; } = null!;
 
     [Required(ErrorMessage = "Password wajib diisi")]
@@ -18,6 +19,7 @@ namespace project_25_07.Models.ViewModels {
 
     [DataType(DataType.Password)]
     [Compare("Password", ErrorMessage = "Password dan konfirmasi password tidak cocok")]
+    [DisplayName("Confirmation Password")]
     public string ConfirmPassword { get; set; } = null!;
 
     [Required(ErrorMessage = "Nama depan wajib diisi")]
