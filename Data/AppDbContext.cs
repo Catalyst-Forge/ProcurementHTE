@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using project_25_07.Models;
 
 namespace project_25_07.Data {
-  public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<string>(options) {
+  public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User, Role, string>(options) {
     protected override void OnModelCreating(ModelBuilder builder) {
       base.OnModelCreating(builder);
     }
