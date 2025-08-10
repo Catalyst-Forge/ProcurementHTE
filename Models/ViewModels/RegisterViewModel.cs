@@ -9,7 +9,7 @@ namespace project_25_07.Models.ViewModels {
 
     [Required(ErrorMessage = "Username wajib diisi")]
     [StringLength(100, MinimumLength = 3, ErrorMessage = "Username minimal 3 karakter dan maksimal 100 karakter")]
-    public string Username { get; set; } = null!;
+    public string UserName { get; set; } = null!;
 
     [Required(ErrorMessage = "Password wajib diisi")]
     [StringLength(100, MinimumLength = 8, ErrorMessage = "Password minimal 8 karakter")]
@@ -22,10 +22,10 @@ namespace project_25_07.Models.ViewModels {
 
     [Required(ErrorMessage = "Nama depan wajib diisi")]
     [DisplayName("Firstname")]
-    public string Firstname { get; set; } = null!;
+    public string FirstName { get; set; } = null!;
 
     [DisplayName("Lastname")]
-    public string Lastname { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
 
     [DisplayName("Select Role")]
     public string SelectedRole { get; set; } = "User";

@@ -34,10 +34,10 @@ namespace project_25_07.Controllers {
 
       if (ModelState.IsValid) {
         var user = new User {
-          Username = model.Username,
+          UserName = model.UserName,
           Email = model.Email,
-          Firstname = model.Firstname,
-          Lastname = model.Lastname,
+          FirstName = model.FirstName,
+          LastName = model.LastName,
           EmailConfirmed = true,
         };
 
@@ -81,7 +81,7 @@ namespace project_25_07.Controllers {
 
         if (user != null && user.IsActive) {
           var result = await _signInManager.PasswordSignInAsync(
-            user.Username,
+            user.UserName,
             model.Password,
             isPersistent: true,
             lockoutOnFailure: true
