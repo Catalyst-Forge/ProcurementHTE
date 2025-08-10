@@ -7,7 +7,6 @@ namespace project_25_07.Models {
   public class User : IdentityUser {
     [Required(ErrorMessage = "Username wajib diisi")]
     [StringLength(30, MinimumLength = 3, ErrorMessage = "Username harus antara 3-30 karakter")]
-    [DisplayName("Username")]
     public override string? UserName { get; set; } = null!;
 
     [Required(ErrorMessage = "Nama depan wajib diisi")]
@@ -27,7 +26,5 @@ namespace project_25_07.Models {
 
     [NotMapped]
     public string Fullname => $"{FirstName} {LastName}".Trim();
-
-    public virtual ICollection<IdentityUserRole<string>> UserRoles { get; set; } = [];
   }
 }
