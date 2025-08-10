@@ -24,7 +24,6 @@ namespace project_25_07.Models {
 
     public DateTime? LastLoginAt { get; set; }
 
-    [NotMapped]
-    public string Fullname => $"{FirstName} {LastName}".Trim();
+    public string? FullName { get; private set; }
   }
 }
