@@ -7,7 +7,5 @@ namespace project_25_07.Models {
     public string Description { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-    public virtual ICollection<IdentityUserRole<string>> UserRoles { get; set; } = [];
   }
 }
