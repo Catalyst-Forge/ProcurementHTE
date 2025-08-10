@@ -64,7 +64,7 @@ namespace project_25_07.Controllers {
      * GET: Login
      */
     public IActionResult Login(string? returnUrl = null) {
-      ViewData["ReturlUrl"] = returnUrl;
+      ViewData["ReturnUrl"] = returnUrl;
       return View();
     }
 
