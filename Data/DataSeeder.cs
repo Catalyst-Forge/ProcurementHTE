@@ -7,7 +7,7 @@ namespace project_25_07.Data {
       var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
       var roleManager = serviceProvider.GetRequiredService<RoleManager<Role>>();
 
-      string[] roles = ["Admin", "Manager", "AP-PO", "AP-INv"];
+      string[] roles = ["Admin", "Manager", "AP-PO", "AP-Inv"];
 
       foreach (var role in roles) {
         if (!await roleManager.RoleExistsAsync(role)) {
