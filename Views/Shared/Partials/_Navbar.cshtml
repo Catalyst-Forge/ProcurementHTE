@@ -1,0 +1,36 @@
+﻿<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white shadow-sm mb-3">
+  <div class="container-fluid">
+    <h1 class="h5 mb-0">@ViewData["Title"]</h1>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
+      <ul class="navbar-nav gap-2">
+        @if (User.Identity?.IsAuthenticated == true) {
+          <li class="nav-item">
+            <a class="nav-link icon-link icon-link-hover text-dark fs-4" asp-area="" asp-controller="Home" asp-action="Index"><i class="bi bi-bell"></i></a>
+          </li>
+          
+          <li class="nav-item dropdown">
+            <button type="button" class="btn btn-sm fs-4 dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" data-bs-display="static" area-expanded="false"><i class="bi bi-person-circle"></i></button>
+
+            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-lg-start shadow" aria-labelledby="dropdownUser">
+              <li><a href="" class="dropdown-item">Profile</a></li>
+              <li><a href="" class="dropdown-item">Settings</a></li>
+              <li><hr class="dropdown-divider"></hr></li>
+              <li>
+                <form asp-action="Logout" asp-controller="Auth" method="post" class="">
+                  <button type="submit" class="dropdown-item">Sign Out</button>
+                </form>
+              </li>
+            </ul>
+          </li>
+        } else {
+          <li class="nav-item"><a asp-controller="Auth" asp-action="Login" class="nav-link">Login</a></li>
+        }
+      </ul>
+    </div>
+  </div>
+</nav>
