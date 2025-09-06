@@ -51,6 +51,7 @@ a {
 
   .nav-link.active {
     color: var(--bs-nav-pills-link-active-color) !important;
+    background-color: var(--bs-nav-pills-link-active-bg);
   }
 }
 
