@@ -15,11 +15,13 @@ namespace project_25_07.Controllers
 
         public IActionResult Index()
         {
+            ViewBag.ActivePage = "Index Home";
             return View();
         }
 
         public IActionResult Privacy()
         {
+            ViewBag.ActivePage = "Privacy";
             return View();
         }
 
