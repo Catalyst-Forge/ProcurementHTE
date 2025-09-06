@@ -1,3 +1,7 @@
+:root {
+  --bs-primary: #00ccff;
+}
+
 html {
   font-size: 14px;
 }
@@ -8,7 +12,11 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -19,4 +27,35 @@ html {
 
 body {
   margin-bottom: 60px;
+}
+
+a {
+  color: #00bfff;
+}
+
+.nav {
+  gap: 0.25rem;
+  
+  .nav-link {
+    transition: 200ms linear;
+
+    &:hover:not(.active) {
+      /* box-shadow: inset 0 0 0.25rem rgba(0, 191, 255, 0.5); */
+      background-color: rgba(0, 191, 255, 0.25);
+    }
+  }
+}
+
+.nav-pills {
+  --bs-nav-pills-link-active-color: #fff !important;
+  --bs-nav-pills-link-active-bg: var(--bs-primary);
+
+  .nav-link.active {
+    color: var(--bs-nav-pills-link-active-color) !important;
+  }
+}
+
+.icon-link-hover {
+  --bs-icon-link-transform: translate3d(0, -0.125rem, 0);
+  --bs-icon-link-hover-color: var(--bs-primary);
 }
