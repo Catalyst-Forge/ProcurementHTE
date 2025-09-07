@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace project_25_07.Models {
-  public class WoCategories {
+  public class WoTypes {
     [Key]
-    public int WoCategoryId { get; set; }
+    public int WoTypeId { get; set; }
 
     [Required]
     [MaxLength(100)]
-    public string CategoryName { get; set; } = null!;
+    public string TypeName { get; set; } = null!;
 
     public virtual ICollection<WorkOrder> WorkOrders { get; set; }
   }
