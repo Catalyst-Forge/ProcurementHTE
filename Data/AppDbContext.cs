@@ -5,7 +5,7 @@ using project_25_07.Models;
 namespace project_25_07.Data {
   public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User, Role, string>(options) {
     public DbSet<WorkOrder> WorkOrders { get; set; }
-    public DbSet<WoCategories> WoCategories { get; set; }
+    public DbSet<WoTypes> WoTypes { get; set; }
     public DbSet<WoDetails> WoDetails { get; set; }
     public DbSet<Status> Statuses { get; set; }
     public DbSet<Tender> Tenders { get; set; }
