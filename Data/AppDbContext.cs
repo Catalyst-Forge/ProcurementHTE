@@ -4,6 +4,14 @@ using project_25_07.Models;
 
 namespace project_25_07.Data {
   public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User, Role, string>(options) {
+    public DbSet<WorkOrder> WorkOrders { get; set; }
+    public DbSet<WoCategories> WoCategories { get; set; }
+    public DbSet<WoDetails> WoDetails { get; set; }
+    public DbSet<Status> Statuses { get; set; }
+    public DbSet<Tender> Tenders { get; set; }
+    public DbSet<Vendor> Vendors { get; set; }
+    public DbSet<ReasonRejected> ReasonRejecteds { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder) {
       base.OnModelCreating(builder);
 
