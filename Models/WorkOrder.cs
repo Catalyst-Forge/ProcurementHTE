@@ -18,12 +18,12 @@ namespace project_25_07.Models {
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     // Foreign Keys
-    public int WoCategoryId { get; set; }
+    public int WoTypeId { get; set; }
     public int StatusId { get; set; }
     public int? TenderId { get; set; }
 
-    [ForeignKey("WoCategoryId")]
-    public virtual WoCategories WoCategory { get; set; }
+    [ForeignKey("WoTypeId")]
+    public virtual WoTypes WoType { get; set; }
 
     [ForeignKey("StatusId")]
     public virtual Status Status { get; set; }

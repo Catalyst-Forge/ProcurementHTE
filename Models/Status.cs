@@ -7,7 +7,7 @@ namespace project_25_07.Models {
 
     [Required]
     [MaxLength(100)]
-    public string Name { get; set; }
+    public string StatusName { get; set; }
 
     public virtual ICollection<WorkOrder> WorkOrders { get; set; }
   }
