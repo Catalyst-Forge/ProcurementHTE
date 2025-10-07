@@ -1,0 +1,74 @@
+﻿@model IEnumerable<project_25_07.Models.WorkOrder>
+
+@{
+    ViewData["Title"] = "Work Orders Data";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Work Orders</h1>
+
+    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+</header>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.WoName)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.Description)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.Note)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.WoType)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.Status)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.Tender)
+                </th>
+                <th class="mw-100 text-nowrap">Action</th>
+            </tr>
+        </thead>
+        
+        <tbody class="table-group-divider">
+            @foreach (var item in Model) {
+            <tr>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.WoName)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.Description)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.Note)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.WoType.TypeName)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.Status.StatusName)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.Tender.TenderName)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    <a asp-action="Edit" asp-route-id="@item.WorkOrderId">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.WorkOrderId">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.WorkOrderId">Delete</a>
+                </td>
+            </tr>
+            }
+            @if (!Model.Any()) {
+            <tr>
+                <td colspan="8" class="text-center">No work order data found.</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>
