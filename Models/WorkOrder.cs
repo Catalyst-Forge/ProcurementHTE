@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace project_25_07.Models {
   public class WorkOrder {
@@ -8,8 +10,10 @@ namespace project_25_07.Models {
 
     [Required]
     [MaxLength(255)]
+    [DisplayName("Work Order Name")]
     public string WoName { get; set; }
 
+    [DisplayName("Description")]
     public string? Description { get; set; }
 
     [MaxLength(1000)]
@@ -18,19 +22,29 @@ namespace project_25_07.Models {
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     // Foreign Keys
+    [Required]
+    [DisplayName("Work Order Type")]
     public int WoTypeId { get; set; }
+    
+    [Required]
+    [DisplayName("Status")]
     public int StatusId { get; set; }
+    
+    [DisplayName("Tender")]
     public int? TenderId { get; set; }
 
     [ForeignKey("WoTypeId")]
-    public virtual WoTypes WoType { get; set; }
+    [JsonIgnore]
+    public WoTypes? WoType { get; set; }
 
     [ForeignKey("StatusId")]
-    public virtual Status Status { get; set; }
+    [JsonIgnore]
+    public Status? Status { get; set; }
 
     [ForeignKey("TenderId")]
-    public virtual Tender? Tender { get; set; }
+    [JsonIgnore]
+    public Tender? Tender { get; set; }
 
-    public virtual ICollection<WoDetails> ItemDetails { get; set; }
+    public ICollection<WoDetails>? ItemDetails { get; set; }
   }
 }
