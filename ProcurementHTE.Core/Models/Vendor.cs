@@ -5,12 +5,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ProcurementHTE.Core.Models {
   public class Vendor {
     [Key]
-    public string VendorId { get; set; }
+    public string VendorId { get; set; } = Guid.NewGuid().ToString();
 
     [Required]
     [MaxLength(255)]
     [DisplayName("Vendor Name")]
-    public string VendorName { get; set; }
+    public string VendorName { get; set; } = null!;
 
     [Required]
     [Column(TypeName = "decimal(18,2)")]
@@ -18,7 +18,7 @@ namespace ProcurementHTE.Core.Models {
     public decimal Price { get; set; }
 
     [DisplayName("Documents")]
-    public string Documents { get; set; }
+    public string Documents { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 

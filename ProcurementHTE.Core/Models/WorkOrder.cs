@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace ProcurementHTE.Core.Models {
   public class WorkOrder {
     [Key]
-    public string WorkOrderId { get; set; } = null!;
+    public string WorkOrderId { get; set; } = Guid.NewGuid().ToString();
 
     [Required]
     [MaxLength(255)]
