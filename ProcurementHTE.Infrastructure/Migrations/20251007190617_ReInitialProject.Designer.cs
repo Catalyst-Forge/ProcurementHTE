@@ -10,7 +10,7 @@ using ProcurementHTE.Infrastructure.Data;
 
 #nullable disable
 
-namespace project_25_07.Infrastructure.Migrations
+namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20251007190617_ReInitialProject")]
