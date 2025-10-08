@@ -1,0 +1,59 @@
+﻿@using ProcurementHTE.Core.Models
+@model IEnumerable<Tender>
+
+@{
+    ViewData["Title"] = "Tenders Data";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Tenders</h1>
+
+    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+</header>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.TenderName)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.Price)
+                </th>
+                <th class="mw-100 text-nowrap">
+                    @Html.DisplayNameFor(model => model.Information)
+                </th>
+                <th class="mw-100 text-nowrap">Action</th>
+            </tr>
+        </thead>
+
+        <tbody class="table-group-divider">
+            @foreach (var item in Model) {
+                <tr>
+                    <td class="mw-100 text-nowrap">
+                        @Html.DisplayFor(modelItem => item.TenderName)
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        @Html.DisplayFor(modelItem => item.Price)
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        @Html.DisplayFor(modelItem => item.Information)
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.TenderId">Edit</a> |
+                        <a asp-action="Details" asp-route-id="@item.TenderId">Details</a> |
+                        <a asp-action="Delete" asp-route-id="@item.TenderId">Delete</a>
+                    </td>
+                </tr>
+            }
+            
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="4" class="text-center">No data available</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
