@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.ViewModels;
+using System.Security.Claims;
 
 namespace ProcurementHTE.Web.Controllers {
   public class AuthController(
@@ -73,7 +76,7 @@ namespace ProcurementHTE.Web.Controllers {
      */
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null) {
+    public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null!) {
       ViewData["ReturnUrl"] = returnUrl;
 
       if (ModelState.IsValid) {
@@ -88,7 +91,25 @@ namespace ProcurementHTE.Web.Controllers {
           );
 
           if (result.Succeeded) {
+            user.LastLoginAt = DateTime.Now;
+            await _userManager.UpdateAsync(user);
             _logger.LogInformation("User {model.Email} logged in", model.Email);
+
+            var claims = new List<Claim> {
+              new Claim(ClaimTypes.Name, user.FullName),
+              new Claim(ClaimTypes.Email, user.Email),
+              new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, "Login");
+            var authProperties = new AuthenticationProperties {
+              IsPersistent = true
+            };
+
+            await HttpContext.SignInAsync(
+              CookieAuthenticationDefaults.AuthenticationScheme, 
+              new ClaimsPrincipal(claimsIdentity), 
+              authProperties);
 
             return RedirectToLocal(returnUrl);
           }
