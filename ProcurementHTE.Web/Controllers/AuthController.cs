@@ -107,9 +107,23 @@ namespace ProcurementHTE.Web.Controllers {
             };
 
             await HttpContext.SignInAsync(
-              CookieAuthenticationDefaults.AuthenticationScheme, 
+              IdentityConstants.ApplicationScheme, 
               new ClaimsPrincipal(claimsIdentity), 
               authProperties);
+
+            var existingClaims = await _userManager.GetClaimsAsync(user);
+
+            if (!existingClaims.Any(c => c.Type == ClaimTypes.Name)) {
+              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Name, user.FullName));
+            }
+
+            if (!existingClaims.Any(c => c.Type == ClaimTypes.Email)) {
+              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, user.Email));
+            }
+
+            if (!existingClaims.Any(c => c.Type == ClaimTypes.NameIdentifier)) {
+              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+            }
 
             return RedirectToLocal(returnUrl);
           }
