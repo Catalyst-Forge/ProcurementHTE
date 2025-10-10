@@ -11,6 +11,10 @@ a {
   color: #0077cc;
 }
 
+.gx-8 {
+  --bs-gutter-x: 8rem;
+}
+
 .btn-primary {
   color: #fff;
   background-color: #1b6ec2;

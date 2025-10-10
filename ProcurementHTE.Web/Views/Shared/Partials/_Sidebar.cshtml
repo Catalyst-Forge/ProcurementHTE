@@ -1,67 +1,84 @@
-<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 border-end min-vh-100 h-100">
-  <a asp-controller="Home" asp-action="Index" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">Project_25_07</a>
+<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 border-end vh-100 sticky-top">
+  <a asp-controller="Home" asp-action="Index" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">ProcurementHTE</a>
 
   <small class="text-muted opacity-75 ms-3 mb-2">Menu</small>
 
-  <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100" id="pills-tab" role="tablist" aria-orientation="vertical">
+  <ul class="nav flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100">
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="" data-page="Dashboard">
+      <a class="nav-link link-secondary" asp-controller="Dashboard" asp-action="Index" data-page="Dashboard">
         <i class="bi bi-grid"></i> <span class="ms-1 d-none d-sm-inline">Dashboard</span>
-        </a>
+      </a>
     </li>
-    
+
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" data-page="Index Home">
+      <a class="nav-link link-secondary" asp-controller="Home" asp-action="Index" data-page="Index Home">
         <i class="bi bi-house-door"></i> <span class="ms-1 d-none d-sm-inline">Home</span>
       </a>
     </li>
 
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="WorkOrders" asp-action="Index" data-page="Index Work Orders">
-        <i class="bi bi-list-check"></i> <span class="ms-1 d-none d-sm-inline">Work Orders</span>
+      <a class="nav-link link-secondary d-flex justify-content-between align-items-center menu"
+         data-bs-toggle="collapse"
+         href="#procurementSubmenu"
+         role="button"
+         aria-expanded="false"
+         aria-controls="procurementSubmenu">
+        <div>
+          <i class="bi bi-briefcase"></i>
+          <span class="ms-1 d-none d-sm-inline">Procurements</span>
+        </div>
+        <i class="bi bi-chevron-down small"></i>
       </a>
+
+      <div class="collapse submenu" id="procurementSubmenu">
+        <ul class="list-unstyled fw-normal pb-1 small ps-4">
+          <li>
+            <a class="nav-link link-secondary" asp-controller="WorkOrders" asp-action="Index" data-page="Index Work Orders">
+              Work Orders
+            </a>
+          </li>
+          <li>
+            <a class="nav-link link-secondary" asp-controller="Tenders" asp-action="Index" data-page="Tenders">
+              Tenders
+            </a>
+          </li>
+          <li>
+            <a class="nav-link link-secondary" asp-controller="Vendors" asp-action="Index" data-page="Vendors">
+              Vendors
+            </a>
+          </li>
+        </ul>
+      </div>
     </li>
 
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="Tenders" asp-action="Index" data-page="Tenders">
-        <i class="bi bi-briefcase"></i> <span class="ms-1 d-none d-sm-inline">Tenders</span>
-      </a>
-    </li>
-
-    <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="Vendors" asp-action="Index" data-page="Vendors">
-        <i class="bi bi-file-earmark-person"></i> <span class="ms-1 d-none d-sm-inline">Vendors</span>
-      </a>
-    </li>
-    
-    <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="" data-page="Monitor">
+      <a class="nav-link link-secondary" data-page="Monitor">
         <i class="bi bi-activity"></i> <span class="ms-1 d-none d-sm-inline">Monitoring</span>
       </a>
     </li>
 
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="" data-page="Analytics">
+      <a class="nav-link link-secondary" data-page="Analytics">
         <i class="bi bi-graph-up"></i> <span class="ms-1 d-none d-sm-inline">Analytics</span>
       </a>
     </li>
 
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="" data-page="Documents">
+      <a class="nav-link link-secondary" data-page="Documents">
         <i class="bi bi-file-earmark"></i> <span class="ms-1 d-none d-sm-inline">Documents</span>
       </a>
     </li>
 
-    <li class="mt-auto w-100"><hr class="text-dark-50"></li>
+    <li class="mt-auto w-100"><hr class="link-secondary-50"></li>
 
     <li class="nav-item w-100">
-      <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="" data-page="Settings">
+      <a class="nav-link link-secondary" data-page="Settings">
         <i class="bi bi-gear"></i> <span class="ms-1 d-none d-sm-inline">Settings</span>
       </a>
     </li>
 
     <li class="nav-item w-100 pb-4">
-      <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy" data-page="Privacy">
+      <a class="nav-link link-secondary" asp-controller="Home" asp-action="Privacy" data-page="Privacy">
         <i class="bi bi-shield-check"></i> <span class="ms-1 d-none d-sm-inline">Privacy</span>
       </a>
     </li>

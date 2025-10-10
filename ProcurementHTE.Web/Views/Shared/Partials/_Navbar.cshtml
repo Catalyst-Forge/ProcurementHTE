@@ -1,6 +1,5 @@
 ﻿<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white shadow-sm mb-3">
   <div class="container-fluid">
-    <h1 class="h5 mb-0">@ViewData["Title"]</h1>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
             aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -9,9 +8,8 @@
     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
       <ul class="navbar-nav gap-2">
         @if (User.Identity?.IsAuthenticated == true) {
-          <li class="nav-item">
-            <a class="nav-link icon-link icon-link-hover text-dark fs-4" asp-area="" asp-controller="Home" asp-action="Index"><i class="bi bi-bell"></i></a>
-          </li>
+          var fullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+          var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
           
           <li class="nav-item dropdown">
             <button type="button" class="btn btn-sm fs-4 dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" data-bs-display="static" area-expanded="false"><i class="bi bi-person-circle"></i></button>
@@ -27,6 +25,11 @@
               </li>
             </ul>
           </li>
+
+          <div class="d-flex flex-column ms-2">
+            <span>@fullName</span>
+            <small class="text-muted">@email</small>
+          </div>
         } else {
           <li class="nav-item"><a asp-controller="Auth" asp-action="Login" class="nav-link">Login</a></li>
         }

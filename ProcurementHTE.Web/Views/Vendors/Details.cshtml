@@ -7,43 +7,234 @@
 
 <h1>Details</h1>
 
-<div>
+<div class="d-flex justify-content-between">
     <h4>Vendor</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.VendorName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.VendorName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Price)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Price)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Documents)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Documents)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CreatedAt)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.User)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.User.Id)
-        </dd>
-    </dl>
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model?.VendorId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+        <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.VendorId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-    <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+<hr />
+
+<div class="d-grid gap-4" style="grid-template-columns: 2fr 1fr">
+    <div>
+        @* Vendor information card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Informasi Vendor</h5>
+
+                <dl class="row">
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.VendorName)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.VendorName)
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Price)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.Price)
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Documents)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.Documents)
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.CreatedAt)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.CreatedAt)
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.User)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.User.Id)
+                    </dd>
+                </dl>
+            </div>
+        </div>
+        
+        @* Work request card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Permintaan Pekerjaan</h5>
+
+                <dl class="row">
+                    <dt class="col-sm-3">WO. No.</dt>
+                    <dd class="col-sm-9">1063/WO-DS/DSI1310/2025</dd>
+                    <dt class="col-sm-3">Tanggal</dt>
+                    <dd class="col-sm-9">01 September 2025</dd>
+                    <dt class="col-sm-3">Dari</dt>
+                    <dd class="col-sm-9">Unconventional & Non Rig Services Manager</dd>
+                    <dt class="col-sm-3">Kepada</dt>
+                    <dd class="col-sm-9">Moving And Mobilization Manager</dd>
+                    <dt class="col-sm-3">WBS</dt>
+                    <dd class="col-sm-9">[kosong]</dd>
+                    <dt class="col-sm-3">GL Account</dt>
+                    <dd class="col-sm-9">5005000130</dd>
+                    <dt class="col-sm-3">Tanggal Diperlukan</dt>
+                    <dd class="col-sm-9">05 Agustus 2025</dd>
+                </dl>
+            </div>
+        </div>
+    
+        @* Item details card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Rincian Barang</h5>
+
+                <div class="table-responsive">
+                    <table class="table table-hover border">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="mw-100 text-nowrap border-end">
+                                    No
+                                </th>
+                                <th class="mw-100 text-nowrap border-end">
+                                    Nama Barang
+                                </th>
+                                <th class="mw-100 text-nowrap border-end">
+                                    Jumlah
+                                </th>
+                                <th class="mw-100 text-nowrap">
+                                    Satuan
+                                </th>
+                                <th class="mw-100 text-nowrap">
+                                    Catatan
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>barang</td>
+                                <td>Rp 10.000</td>
+                                <td>10</td>
+                                <td>catatan</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @* Notes card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Note/Catatan</h5>
+                <p class="bg-warning-subtle textwarning-emphasis p-3 lh-base border-start border-warning-subtle rounded-3 border-5">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptate perspiciatis, recusandae deserunt explicabo minima eos! Earum maxime commodi nemo reprehenderit.</p>
+            </div>
+        </div>
+
+        @* Cost estimate card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Perkiraan Biaya (Rp)</h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover border">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="mw-100 text-nowrap border-end">
+                                    Upah
+                                </th>
+                                <th class="mw-100 text-nowrap border-end">
+                                    Material
+                                </th>
+                                <th class="mw-100 text-nowrap border-end">
+                                    Sewa Alat
+                                </th>
+                                <th class="mw-100 text-nowrap">
+                                    Jumlah
+                                </th>
+                                <th class="mw-100 text-nowrap">
+                                    Drill Services
+                                </th>
+                                <th class="mw-100 text-nowrap">
+                                    Kontrak
+                                </th>
+                                <th class="mw-100 text-nowrap">
+                                    Biaya
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>Rp 1.000</td>
+                                <td>kerikil</td>
+                                <td>Crane</td>
+                                <td>5</td>
+                                <td>apapun</td>
+                                <td>1 tahun</td>
+                                <td>Rp 1.000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        @* Item card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Uraian Pekerjaan</h5>
+                <h6 class="card-subtitle">Description</h6>
+
+                <dl class="row">
+                    <dt class="col-sm-3">Dari</dt>
+                    <dd class="col-sm-9">tempat</dd>
+                </dl>
+                <hr />
+                
+                <dl class="row">
+                    <dt class="col-sm-3">Ke</dt>
+                    <dd class="col-sm-9">tempat</dd>
+                </dl>
+            </div>
+        </div>
+
+        @* Contact person card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Contact Person</h5>
+
+                <dl class="text-bg-light p-3 rounded-3 mb-2">
+                    <dt class="fw-semibold mb-2">Lokasi</dt>
+                    <dd>Seto W (Rig Supt) - 08**********</dd>
+                </dl>
+
+                <dl class="contact-card">
+                    <dt class="fw-semibold mb-2">Workshop</dt>
+                    <dd>Zainal Arifin - 08**********</dd>
+                </dl>
+            </div>
+        </div>
+
+        @* Approvals card *@
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">Persetujuan</h5>
+
+                <dl class="text-bg-light p-3 rounded-3 mb-2">
+                    <dt class="fw-semibold mb-2">Coring Coordinator</dt>
+                    <dd>Tito Ambardi J</dd>
+                </dl>
+
+                <dl class="text-bg-light p-3 rounded-3 mb-2">
+                    <dt class="fw-semibold mb-2">Pjs. Subsurface Services Mgr</dt>
+                    <dd>I Made T. M.</dd>
+                    <span>tandatangan</span>
+                </dl>
+            </div>
+        </div>
+    </div>
 </div>
+
