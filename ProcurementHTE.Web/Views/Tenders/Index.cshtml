@@ -12,23 +12,46 @@
 </header>
 
 <div class="table-responsive">
-    <table class="table table-bordered">
-        <thead>
+    <div class="border bottom-button-0 d-flex p-2">
+        <div class="d-flex gap-2">
+            <button type="button" class="btn">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+
+            <select name="datalistOptions" class="form-select">
+                <option value="">1</option>
+            </select>
+
+            <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
+
+            <datalist id="datalistOptions">
+                <option value="San Francisco"></option>
+                <option value="New York"></option>
+                <option value="Seattle"></option>
+                <option value="Los Angeles"></option>
+                <option value="Chicago"></option>
+            </datalist>
+        </div>
+        <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+    </div>
+
+    <table class="table table-hover border">
+        <thead class="table-light">
             <tr>
-                <th class="mw-100 text-nowrap">
+                <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.TenderName)
                 </th>
-                <th class="mw-100 text-nowrap">
+                <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.Price)
                 </th>
-                <th class="mw-100 text-nowrap">
+                <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.Information)
                 </th>
                 <th class="mw-100 text-nowrap">Action</th>
             </tr>
         </thead>
 
-        <tbody class="table-group-divider">
+        <tbody>
             @foreach (var item in Model) {
                 <tr>
                     <td class="mw-100 text-nowrap">
@@ -41,9 +64,18 @@
                         @Html.DisplayFor(modelItem => item.Information)
                     </td>
                     <td class="mw-100 text-nowrap">
-                        <a asp-action="Edit" asp-route-id="@item.TenderId">Edit</a> |
-                        <a asp-action="Details" asp-route-id="@item.TenderId">Details</a> |
-                        <a asp-action="Delete" asp-route-id="@item.TenderId">Delete</a>
+                        <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.TenderId">
+                            <span class="visually-hidden">Edit</span>
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.TenderId">
+                            <span class="visually-hidden">Detail</span>
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+                        <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.TenderId">
+                            <span class="visually-hidden">Delete</span>
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
                     </td>
                 </tr>
             }
@@ -55,5 +87,28 @@
                 </tr>
             }
         </tbody>
+
+        <tfoot class="table-group-divider border-secondary-subtle">
+            <tr>
+                <td colspan="10">
+                    <div class="hstack justify-content-between">
+                        <span>Showing 1-10 of n entries</span>
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination mb-0 gap-1">
+                                <li class="page-item">
+                                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+                                </li>
+                                <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
+                                <li class="page-item">
+                                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
     </table>
 </div>
