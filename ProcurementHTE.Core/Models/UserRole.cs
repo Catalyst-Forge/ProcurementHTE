@@ -1,19 +1,23 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ProcurementHTE.Core.Models {
-  public class UserRole {
-    [Key]
-    public int Id { get; set; }
+namespace ProcurementHTE.Core.Models
+{
+    public class UserRole
+    {
+        [Key]
+        public int Id { get; set; }
 
-    [ForeignKey("User")]
-    public int UserId { get; set; }
-    public virtual User User { get; set; }
+        public DateTime AssignedAt { get; set; } = DateTime.Now;
 
-    [ForeignKey("Role")]
-    public int RoleId { get; set; }
-    public virtual Role Role { get; set; }
+        public string UserId { get; set; }
 
-    public DateTime AssignedAt { get; set; } = DateTime.Now;
-  }
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; } = default!;
+
+        public string RoleId { get; set; }
+
+        [ForeignKey("RoleId")]
+        public virtual Role Role { get; set; } = default!;
+    }
 }
