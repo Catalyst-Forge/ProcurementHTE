@@ -41,15 +41,6 @@
                 <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.VendorName)
                 </th>
-                <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.Price)
-                </th>
-                <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.Documents)
-                </th>
-                <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.User)
-                </th>
                 <th class="mw-100 text-nowrap">Action</th>
             </tr>
         </thead>
@@ -59,15 +50,6 @@
                 <tr>
                     <td class="mw-100 text-nowrap">
                         @Html.DisplayFor(modelItem => item.VendorName)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.Price)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.Documents)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.User.Id)
                     </td>
                     <td class="mw-100 text-nowrap">
                         <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.VendorId">
