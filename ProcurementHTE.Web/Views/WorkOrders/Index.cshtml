@@ -8,7 +8,7 @@
 <header class="d-flex justify-content-between align-items-center mb-3">
     <h1>Work Orders</h1>
 
-    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+    <a asp-action="SelectType" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
 <div class="table-responsive">
@@ -39,7 +39,7 @@
         <thead class="table-light">
             <tr>
                 <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.WoName)
+                    @Html.DisplayNameFor(model => model.WoNum)
                 </th>
                 <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.Description)
@@ -48,13 +48,10 @@
                     @Html.DisplayNameFor(model => model.Note)
                 </th>
                 <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.WoType)
-                </th>
-                <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.Status)
                 </th>
                 <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.Tender)
+                    @Html.DisplayNameFor(model => model.WoType)
                 </th>
                 <th class="mw-100 text-nowrap">Action</th>
             </tr>
@@ -64,7 +61,7 @@
             @foreach (var item in Model) {
             <tr>
                 <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.WoName)
+                    @Html.DisplayFor(modelItem => item.WoNum)
                 </td>
                 <td class="mw-100 text-nowrap">
                     @Html.DisplayFor(modelItem => item.Description)
@@ -73,13 +70,10 @@
                     @Html.DisplayFor(modelItem => item.Note)
                 </td>
                 <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.WoType.TypeName)
+                    @(item.Status?.StatusName ?? "-")
                 </td>
                 <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.Status.StatusName)
-                </td>
-                <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.Tender.TenderName)
+                    @(item.WoType?.TypeName ?? "-")
                 </td>
                 <td class="mw-100 text-nowrap">
                     <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
@@ -97,18 +91,18 @@
                 </td>
             </tr>
             }
-            @if (!Model.Any()) {
+            @if (!Model.Any() || Model == null) {
             <tr>
                 <td colspan="8" class="text-center">No work order data found.</td>
             </tr>
             }
-        </tbody>
+    </tbody>
 
         <tfoot class="table-group-divider border-secondary-subtle">
             <tr>
                 <td colspan="10">
                     <div class="hstack justify-content-between">
-                        <span>Showing 1-10 of n entries</span>
+                        <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
                         <nav aria-label="Page navigation example">
                             <ul class="pagination mb-0 gap-1">
                                 <li class="page-item">
