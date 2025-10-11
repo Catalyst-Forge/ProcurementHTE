@@ -5,23 +5,30 @@ using System.Text.Json.Serialization;
 
 namespace ProcurementHTE.Core.Models
 {
+    public enum ProcurementType
+    {
+        Barang = 1,
+        Jasa = 2,
+    }
+
     public class WorkOrder
     {
         [Key]
         public string WorkOrderId { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        public string WoNum { get; set; } = null!;
+        //[Required]
+        public string? WoNum { get; set; }
 
         [DisplayName("Description")]
         public string? Description { get; set; }
 
+        [DisplayName("Note")]
         [MaxLength(1000)]
         public string? Note { get; set; }
 
-        public string? ProcurementType { get; set; }
+        public ProcurementType ProcurementType { get; set; }
 
-        public string WoLetter { get; set; } = null!;
+        public string? WoLetter { get; set; }
 
         public DateTime? DateLetter { get; set; }
 
@@ -33,11 +40,11 @@ namespace ProcurementHTE.Core.Models
 
         public string? WBS { get; set; }
 
-        public string GlAccount { get; set; } = null!;
+        public string? GlAccount { get; set; }
 
-        public DateTime DateRequired { get; set; }
+        public DateTime? DateRequired { get; set; }
 
-        public string XS1 { get; set; } = null!;
+        public string? XS1 { get; set; }
 
         public string? XS2 { get; set; }
 
@@ -45,34 +52,36 @@ namespace ProcurementHTE.Core.Models
 
         public string? XS4 { get; set; }
 
-        public string FileWorkOrder { get; set; } = null!;
+        public string? FileWorkOrder { get; set; }
 
-        public string Requester { get; set; } = null!;
+        public string? Requester { get; set; }
 
-        public string Approved { get; set; } = null!;
+        public string? Approved { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Foreign Keys
-        public int WoTypeId { get; set; }
+        public int? WoTypeId { get; set; }
 
-        public int StatusId { get; set; } = 1;
+        public int? StatusId { get; set; }
 
         public string? VendorId { get; set; }
 
         public string? UserId { get; set; }
 
         [ForeignKey("WoTypeId")]
+        [DisplayName("Type")]
         [JsonIgnore]
-        public WoTypes WoType { get; set; } = default!;
+        public WoTypes? WoType { get; set; }
 
         [ForeignKey("StatusId")]
+        [DisplayName("Status")]
         [JsonIgnore]
-        public Status Status { get; set; } = default!;
+        public Status? Status { get; set; }
 
         [ForeignKey("VendorId")]
         [JsonIgnore]
-        public Vendor Vendor { get; set; } = default!;
+        public Vendor? Vendor { get; set; }
 
         [ForeignKey("UserId")]
         [JsonIgnore]
@@ -82,6 +91,7 @@ namespace ProcurementHTE.Core.Models
 
         public ICollection<WoDetail>? WoDetails { get; set; } = new List<WoDetail>();
 
-        public ICollection<VendorWorkOrder> VendorWorkOrders { get; set; } = new List<VendorWorkOrder>();
+        public ICollection<VendorWorkOrder> VendorWorkOrders { get; set; } =
+            new List<VendorWorkOrder>();
     }
 }
