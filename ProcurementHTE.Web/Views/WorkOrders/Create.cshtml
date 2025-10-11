@@ -3,15 +3,65 @@
 
 @{
     ViewData["Title"] = "Create Work Order";
+    var createFormUrl = Url.Action("CreateForm", "WorkOrders");
 }
+<div class="container" id="wo-new" data-create-form-url="@createFormUrl">
 
 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom">
   <h1>Create Work Order</h1>
 
   <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+  <p class="text-info">Pilih tipe WO di bawah, lalu form akan tampmil tanpa pindah halaman</p>
+</div>
+<div class="row g-3" id="wo-type-grid">
+    <!-- Card StandBy -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm selectable" data-type="StandBy">
+            <div class="card-body">
+                <h5 class="card-title mb-2">StandBy</h5>
+                <p class="card-text small text-secondary">WO untuk standby crew/alat dalam periode waktu tertentu.</p>
+                <button class="btn btn-primary w-100 choose-type" data-type="StandBy">Pilih</button>
+            </div>
+        </div>
+    </div>
+    <!-- Card Moving & Mobilization -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm selectable" data-type="MovingMobilization">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Moving & Mobilization</h5>
+                <p class="card-text small text-secondary">Perpindahan aset/personel dari lokasi A ke B.</p>
+                <button class="btn btn-primary w-100 choose-type" data-type="MovingMobilization">Pilih</button>
+            </div>
+        </div>
+    </div>
+    <!-- Card SPOT Angkutan -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm selectable" data-type="SpotAngkutan">
+            <div class="card-body">
+                <h5 class="card-title mb-2">SPOT Angkutan</h5>
+                <p class="card-text small text-secondary">Order spot untuk kebutuhan pengangkutan cepat.</p>
+                <button class="btn btn-primary w-100 choose-type" data-type="SpotAngkutan">Pilih</button>
+            </div>
+        </div>
+    </div>
+    <!-- Card Other -->
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm selectable" data-type="Other">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Other</h5>
+                <p class="card-text small text-secondary">Tipe lain di luar kategori di atas.</p>
+                <button class="btn btn-outline-primary w-100 choose-type" data-type="Other">Pilih</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<form asp-action="Create">
+<hr class="my-4" />
+
+<!-- Host tempat partial form dirender -->
+<div id="wo-form-host"></div>
+</div>
+@* <form asp-action="Create">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-group mb-2">
         <label asp-for="WoName" class="form-label"></label>
@@ -43,9 +93,9 @@
     <div class="form-group mb-2">
         <button type="submit" class="btn btn-primary">Submit</button>
     </div>
-</form>
+</form> *@
 
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/wo.create.js"></script>
 }
