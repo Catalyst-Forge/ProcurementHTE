@@ -39,6 +39,9 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<Tender>().Property(t => t.TenderId).ValueGeneratedOnAdd();
             builder.Entity<Vendor>().Property(v => v.VendorId).ValueGeneratedOnAdd();
 
+            // Enum to string
+            builder.Entity<WorkOrder>().Property(p => p.ProcurementType).HasConversion<string>();
+
             // Relations
             builder
                 .Entity<WorkOrder>()
