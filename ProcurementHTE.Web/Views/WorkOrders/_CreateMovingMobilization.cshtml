@@ -1,0 +1,24 @@
+@model ProcurementHTE.Core.Models.WorkOrder
+<form id="wo-form" method="post" action="@Url.Action("Create","WorkOrders")" data-type="MovingMobilization" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="WoTypeId" />
+    <partial name="_CreateBaseFields" model="Model" />
+
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-md-6">
+            <label asp-for="FromLocation" class="form-label">Dari</label>
+            <input asp-for="FromLocation" class="form-control" />
+            <span asp-validation-for="FromLocation" class="text-danger small"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Destination" class="form-label">Ke</label>
+            <input asp-for="Destination" class="form-control" />
+            <span asp-validation-for="Destination" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-success">Simpan WO Moving</button>
+        <button type="button" class="btn btn-secondary" id="btnBackToType">Kembali</button>
+    </div>
+</form>

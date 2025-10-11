@@ -1,0 +1,19 @@
+@model ProcurementHTE.Core.Models.WorkOrder
+<form id="wo-form" method="post" action="@Url.Action("Create","WorkOrders")" data-type="SpotAngkutan">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="WoTypeId" />
+    <partial name="_CreateBaseFields" model="Model" />
+
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-md-4">
+            <label asp-for="XS2" class="form-label">Jumlah SPOT</label>
+            <input asp-for="XS2" type="number" class="form-control" />
+            <span asp-validation-for="XS2" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-success">Simpan WO SPOT</button>
+        <button type="button" class="btn btn-secondary" id="btnBackToType">Kembali</button>
+    </div>
+</form>

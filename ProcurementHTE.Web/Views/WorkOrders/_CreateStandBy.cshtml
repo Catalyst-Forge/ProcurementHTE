@@ -1,0 +1,19 @@
+@model ProcurementHTE.Core.Models.WorkOrder
+<form id="wo-form" method="post" action="@Url.Action("Create","WorkOrders")" data-type="StandBy">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="WoTypeId" />
+    <partial name="_CreateBaseFields" model="Model" />
+
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-md-4">
+            <label asp-for="XS3" class="form-label">Jam StandBy</label>
+            <input asp-for="XS3" type="string" class="form-control" />
+            <span asp-validation-for="XS3" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-success">Simpan WO StandBy</button>
+        <button type="button" class="btn btn-secondary" id="btnBackToType">Kembali</button>
+    </div>
+</form>
