@@ -1,4 +1,4 @@
-@model ProcurementHTE.Core.Models.WorkOrder
+@model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 @{
     ViewData["Title"] = "Buat Work Order";
     var partialName = ViewBag.CreatePartial as string ?? "_CreateOther";
@@ -9,46 +9,89 @@
 <p class="text-muted mb-4">Tipe: <span class="fw-semibold">@woTypeName</span></p>
 
 <div class="card shadow-sm">
-  <div class="card-body">
-    <form asp-action="Create" method="post" enctype="multipart/form-data">
-      @Html.AntiForgeryToken()
-      @* Hidden supaya WoTypeId tetap terbawa *@
-      <input type="hidden" asp-for="WoTypeId" />
-      
-      @* Dropdown status & lain-lain (pakai ViewData dari controller) *@
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label asp-for="StatusId" class="form-label"></label>
-          <select asp-for="StatusId" class="form-select" asp-items="@(ViewData["StatusId"] as SelectList)">
-            <option value="">-- pilih status --</option>
-          </select>
-          <span asp-validation-for="StatusId" class="text-danger"></span>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Procurement Type</label>
-          <select asp-for="ProcurementType" class="form-select">
-            @{
-              var enums = (Array)ViewData["EnumProcurementTypes"];
-              foreach (var e in enums)
-              {
-                <option value="@((int)e)">@e.ToString()</option>
-              }
-            }
-          </select>
-        </div>
-      </div>
+    <div class="card-body">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-      @* Form spesifik per tipe (reuse partial lama) *@
-      @await Html.PartialAsync(partialName, Model)
+            <input type="hidden" asp-for="WorkOrder.WoTypeId" />
 
-      <div class="d-flex gap-2 mt-4">
-        <a asp-action="SelectType" class="btn btn-outline-secondary">Kembali</a>
-        <button type="submit" class="btn btn-primary">Simpan</button>
-      </div>
-    </form>
-  </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="WorkOrder.StatusId" class="form-label"></label>
+                    <select asp-for="WorkOrder.StatusId" class="form-select" asp-items="@(ViewData["StatusId"] as SelectList)">
+                        <option value="">-- pilih status --</option>
+                    </select>
+                    <span asp-validation-for="WorkOrder.StatusId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Procurement Type</label>
+                    <select asp-for="WorkOrder.ProcurementType" class="form-select" asp-items="Html.GetEnumSelectList<ProcurementHTE.Core.Models.ProcurementType>()">
+                    </select>
+                </div>
+            </div>
+
+            @await Html.PartialAsync(partialName, Model)
+        </form>
+    </div>
 </div>
 
-@section Scripts{
-  <partial name="_ValidationScriptsPartial" />
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          const container = document.getElementById('details-container');
+          const btnAdd = document.getElementById('btn-add-detail');
+
+          if (!container || !btnAdd) return;
+
+          function newKey() {
+            return Math.random().toString(36).slice(2, 10);
+          }
+
+          // Skeleton Row input
+          function rowMarkup(key) {
+            return `
+              <div class="col-12 detail-row position-relative">
+                <input type="hidden" name="Details.Index" value="${key}" />
+                <div class="row g-3 align-items-end">
+                  <div class="col-md-6">
+                    <label class="form-label">Item Name</label>
+                    <input class="form-control" name="Details[${key}].ItemName" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Qty</label>
+                    <input class="form-control" type="number" min="1" name="Details[${key}].Quantity" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Unit</label>
+                    <input class="form-control" name="Details[${key}].Unit" />
+                  </div>
+                  <div class="col-md-1 d-grid">
+                    <button type="button" class="btn btn-outline-danger js-remove-detail">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>`;
+          }
+
+          // Tambah row
+          btnAdd.addEventListener('click', function () {
+            const key = newKey();
+            container.insertAdjacentHTML('beforeend', rowMarkup(key));
+            if (window.jQuery && $.validator && $.validator.unobtrusive) {
+              $.validator.unobtrusive.parse(container);
+            }
+          });
+
+          // Hapus row (delegasi)
+          document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-remove-detail');
+            if (!btn) return;
+            const row = btn.closest('.detail-row');
+            if (row) row.remove();
+          });
+        });
+    </script>
 }
