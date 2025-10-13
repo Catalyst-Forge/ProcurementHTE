@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProcurementHTE.Infrastructure.Data;
 
 #nullable disable
 
-namespace project_25_07.Infrastructure.Migrations
+namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251012234220_UpdateOther")]
+    partial class UpdateOther
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -521,21 +524,29 @@ namespace project_25_07.Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WoDetailId"));
 
                     b.Property<string>("ItemName")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<int?>("Quantity")
+                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WoNum")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("WorkOrderId")
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("WoDetailId");
 
                     b.HasIndex("WoNum");
+
+                    b.HasIndex("WorkOrderId");
 
                     b.ToTable("WoDetails");
                 });
@@ -756,8 +767,7 @@ namespace project_25_07.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WoNum")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("WoTypeId")
                         .HasColumnType("int");
@@ -779,20 +789,13 @@ namespace project_25_07.Infrastructure.Migrations
 
                     b.HasKey("WorkOrderId");
 
-                    b.HasAlternateKey("WoNum")
-                        .HasName("AK_WorkOrders_WoNum");
-
                     b.HasIndex("StatusId");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("VendorId");
 
                     b.HasIndex("WoTypeId");
-
-                    b.HasIndex("UserId", "CreatedAt")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("IX_WorkOrders_UserId_CreatedAt_Covering");
-
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("UserId", "CreatedAt"), new[] { "WoNum", "Description", "StatusId" });
 
                     b.ToTable("WorkOrders");
                 });
@@ -925,10 +928,14 @@ namespace project_25_07.Infrastructure.Migrations
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoDetail", b =>
                 {
                     b.HasOne("ProcurementHTE.Core.Models.WorkOrder", "WorkOrder")
-                        .WithMany("WoDetails")
+                        .WithMany()
                         .HasForeignKey("WoNum")
-                        .HasPrincipalKey("WoNum")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ProcurementHTE.Core.Models.WorkOrder", null)
+                        .WithMany("WoDetails")
+                        .HasForeignKey("WorkOrderId");
 
                     b.Navigation("WorkOrder");
                 });
