@@ -3,12 +3,13 @@
 
 @{
     ViewData["Title"] = "Work Order Details";
+    var no = 1;
 }
 
-<h1>Details</h1>
+<h1 class="h2">Details</h1>
 
-<div class="d-flex justify-content-between">
-    <h4>Work Order</h4>
+<div class="hstack justify-content-between">
+    <h2 class="h5">Work Order</h2>
     <div>
         <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
         <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
@@ -18,74 +19,34 @@
 
 <div class="d-grid gap-4" style="grid-template-columns: 2fr 1fr">
     <div>
-        @* Work order information card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Information Work Order</h5>
-
-                <dl class="row">
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.Description)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.Description)
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.Note)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.Note)
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.CreatedAt)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.CreatedAt)
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.WoType)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.WoType.TypeName)
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.Status)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.Status.StatusName)
-                    </dd>
-                </dl>
-            </div>
-        </div>
-
         @* Work request card *@
-        <div class="card mb-2">
+        <div class="card shadow-sm mb-2">
             <div class="card-body">
-                <h5 class="card-title">Permintaan Pekerjaan</h5>
-                
+                <h3 class="card-title h4">Permintaan Pekerjaan</h3>
+
                 <dl class="row">
-                    <dt class="col-sm-3">WO. No.</dt>
-                    <dd class="col-sm-9">1063/WO-DS/DSI1310/2025</dd>
-                    <dt class="col-sm-3">Tanggal</dt>
-                    <dd class="col-sm-9">01 September 2025</dd>
-                    <dt class="col-sm-3">Dari</dt>
-                    <dd class="col-sm-9">Unconventional & Non Rig Services Manager</dd>
-                    <dt class="col-sm-3">Kepada</dt>
-                    <dd class="col-sm-9">Moving And Mobilization Manager</dd>
-                    <dt class="col-sm-3">WBS</dt>
-                    <dd class="col-sm-9">[kosong]</dd>
-                    <dt class="col-sm-3">GL Account</dt>
-                    <dd class="col-sm-9">5005000130</dd>
-                    <dt class="col-sm-3">Tanggal Diperlukan</dt>
-                    <dd class="col-sm-9">05 Agustus 2025</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WoNum)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.WoNum)</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateLetter)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.DateLetter)</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FromLocation)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.FromLocation)</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Destination)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Destination)</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WBS)</dt>
+                    <dd class="col-sm-9">@(Model?.WBS ?? "-")</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.GlAccount)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.GlAccount)</dd>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateRequired)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.DateRequired)</dd>
                 </dl>
             </div>
         </div>
-    
+
         @* Item details card *@
-        <div class="card mb-2">
+        <div class="card shadow-sm mb-2">
             <div class="card-body">
-                <h5 class="card-title">Rincian Barang</h5>
+                <h3 class="card-title h4">Item Details</h3>
 
                 <div class="table-responsive">
                     <table class="table table-hover border">
@@ -95,143 +56,141 @@
                                     No
                                 </th>
                                 <th class="mw-100 text-nowrap border-end">
-                                    Nama Barang
+                                    WO Num.
                                 </th>
                                 <th class="mw-100 text-nowrap border-end">
-                                    Jumlah
+                                    Item Name
                                 </th>
                                 <th class="mw-100 text-nowrap">
-                                    Satuan
+                                    Qty
                                 </th>
                                 <th class="mw-100 text-nowrap">
-                                    Catatan
+                                    Unit
                                 </th>
                             </tr>
                         </thead>
-
                         <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>barang</td>
-                                <td>Rp 10.000</td>
-                                <td>10</td>
-                                <td>catatan</td>
-                            </tr>
+                            @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
+                                foreach (var detail in Model.WoDetails) {
+                                    <tr>
+                                        <td>@no</td>
+                                        <td>@detail.WoNum</td>
+                                        <td>@detail.ItemName</td>
+                                        <td>@detail.Quantity</td>
+                                        <td>@detail.Unit</td>
+                                    </tr>
+                                    no++;
+                                }
+                            } else {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Belum ada rincian barang</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        @* Item card *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-body">
+                <h3 class="card-title h4">Uraian Pekerjaan</h3>
+
+                <dl class="row">
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Description)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.Description)
+                    </dd>
+                </dl>
+                <hr />
+
+                <dl class="row">
+                    <dt class="col-sm-3">From</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.XS1)</dd>
+                </dl>
+
+                <dl class="row">
+                    <dt class="col-sm-3">To</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.XS2)</dd>
+                </dl>
             </div>
         </div>
 
         @* Notes card *@
-        <div class="card mb-2">
+        <div class="card shadow-sm mb-2">
             <div class="card-body">
-                <h5 class="card-title">Note/Catatan</h5>
-                <p class="bg-warning-subtle textwarning-emphasis p-3 lh-base border-start border-warning-subtle rounded-3 border-5">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptate perspiciatis, recusandae deserunt explicabo minima eos! Earum maxime commodi nemo reprehenderit.</p>
-            </div>
-        </div>
-
-        @* Cost estimate card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Perkiraan Biaya (Rp)</h5>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover border">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Upah
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Material
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Sewa Alat
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Jumlah
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Drill Services
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Kontrak
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Biaya
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr>
-                                <td>Rp 1.000</td>
-                                <td>kerikil</td>
-                                <td>Crane</td>
-                                <td>5</td>
-                                <td>apapun</td>
-                                <td>1 tahun</td>
-                                <td>Rp 1.000</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h3 class="card-title h4">@Html.DisplayNameFor(model => model.Note)</h3>
+                <p class="bg-warning-subtle textwarning-emphasis p-3 lh-base border-start border-warning-subtle rounded-3 border-5">@Html.DisplayFor(model => model.Note)</p>
             </div>
         </div>
     </div>
 
     <div>
-        @* Item card *@
-        <div class="card mb-2">
+        @* Work order information card *@
+        <div class="card shadow-sm mb-2">
             <div class="card-body">
-                <h5 class="card-title">Uraian Pekerjaan</h5>
-                <h6 class="card-subtitle">Description</h6>
+                <h3 class="card-title h4">Information Work Order</h3>
 
                 <dl class="row">
-                    <dt class="col-sm-3">Dari</dt>
-                    <dd class="col-sm-9">tempat</dd>
-                </dl>
-                <hr />
-                
-                <dl class="row">
-                    <dt class="col-sm-3">Ke</dt>
-                    <dd class="col-sm-9">tempat</dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.WoType)
+                    </dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-info">
+                            @Html.DisplayFor(model => model.WoType.TypeName)
+                        </span>
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Status)
+                    </dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-secondary">
+                            @Html.DisplayFor(model => model.Status.StatusName)
+                        </span>
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.CreatedAt)
+                    </dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.CreatedAt)
+                    </dd>
                 </dl>
             </div>
         </div>
 
         @* Contact person card *@
-        <div class="card mb-2">
+        <div class="card shadow-sm mb-2">
             <div class="card-body">
-                <h5 class="card-title">Contact Person</h5>
+                <h3 class="card-title h4">Contact Person</h3>
 
                 <dl class="text-bg-light p-3 rounded-3 mb-2">
                     <dt class="fw-semibold mb-2">Lokasi</dt>
-                    <dd>Seto W (Rig Supt) - 08**********</dd>
+                    <dd>@Html.DisplayFor(model => model.XS3)</dd>
                 </dl>
 
-                <dl class="contact-card">
+                <dl class="text-bg-light p-3 rounded-3 mb-2">
                     <dt class="fw-semibold mb-2">Workshop</dt>
-                    <dd>Zainal Arifin - 08**********</dd>
+                    <dd>@Html.DisplayFor(model => model.XS4)</dd>
                 </dl>
             </div>
         </div>
 
         @* Approvals card *@
-        <div class="card mb-2">
+        <div class="card shadow-sm mb-2">
             <div class="card-body">
-                <h5 class="card-title">Persetujuan</h5>
+                <h3 class="card-title h4">Persetujuan</h3>
 
                 <dl class="text-bg-light p-3 rounded-3 mb-2">
                     <dt class="fw-semibold mb-2">Coring Coordinator</dt>
-                    <dd>Tito Ambardi J</dd>
+                    <dd>@Html.DisplayFor(model => model.Requester)</dd>
                 </dl>
 
                 <dl class="text-bg-light p-3 rounded-3 mb-2">
                     <dt class="fw-semibold mb-2">Pjs. Subsurface Services Mgr</dt>
-                    <dd>I Made T. M.</dd>
-                    <span>tandatangan</span>
+                    <dd>@Html.DisplayFor(model => model.Approved)</dd>
                 </dl>
             </div>
         </div>

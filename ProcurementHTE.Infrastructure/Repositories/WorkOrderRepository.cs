@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.DTOs;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Utils;
 using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories
@@ -14,6 +16,20 @@ namespace ProcurementHTE.Infrastructure.Repositories
             _context = context;
         }
 
+        private async Task<string?> GetLastWoNumAsync(string prefix)
+        {
+            return await _context
+                .WorkOrders.Where(w => w.WoNum!.StartsWith(prefix))
+                .OrderByDescending(w => w.WoNum)
+                .Select(w => w.WoNum)
+                .FirstOrDefaultAsync();
+        }
+
+        private static bool IsUniqueWoNumViolation(DbUpdateException ex) =>
+            ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx
+            && sqlEx.Number == 2627
+            && (sqlEx.Message?.Contains("AK_WorkOrders_WoNum") ?? false);
+
         public async Task<IEnumerable<WorkOrder>> GetAllAsync()
         {
             return await _context
@@ -21,18 +37,69 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
                 .Include(wo => wo.Vendor)
+                .Include(wo => wo.WoDetails)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
         public async Task<WorkOrder?> GetByIdAsync(string id)
         {
-            return await _context
+            var wo = await _context
                 .WorkOrders.Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
                 .Include(wo => wo.Vendor)
                 .FirstOrDefaultAsync(t => t.WorkOrderId == id);
+
+            if (wo == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(wo.WoNum))
+            {
+                var details = await _context
+                    .WoDetails.Where(d => d.WoNum == wo.WoNum)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                wo.WoDetails = details;
+            }
+
+            return wo;
+        }
+
+        public async Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(
+            string userId,
+            int limit = 10,
+            CancellationToken ct = default
+        )
+        {
+            return await _context
+                .WorkOrders.Where(w => w.UserId == userId)
+                .OrderByDescending(w => w.CreatedAt)
+                .Include(w => w.Status)
+                .AsNoTracking()
+                .Take(limit)
+                .ToListAsync(ct);
+        }
+
+        public async Task<Status?> GetStatusByNameAsync(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return null;
+            }
+
+            var normalized = name.Trim().ToLower();
+            return await _context
+                .Statuses.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.StatusName.ToLower() == normalized);
+        }
+
+        public async Task<int> CountAsync(CancellationToken ct)
+        {
+            return await _context.WorkOrders.CountAsync(ct);
         }
 
         public async Task<List<WoTypes>> GetWoTypesAsync()
@@ -56,6 +123,60 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task StoreWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details)
+        {
+            const string prefix = "WO";
+            const int maxRetry = 5;
+
+            details = (details ?? new())
+                .Where(d =>
+                    !string.IsNullOrWhiteSpace(d.ItemName)
+                    && !string.IsNullOrWhiteSpace(d.Unit)
+                    && d.Quantity > 0
+                )
+                .ToList();
+
+            for (var attempt = 1; attempt <= maxRetry; attempt++)
+            {
+                using var transactionDb = await _context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    var lastId = await GetLastWoNumAsync(prefix);
+                    wo.WoNum = SequenceNumberGenerator.NumId(prefix, lastId);
+
+                    foreach (var detail in details)
+                    {
+                        detail.WoNum = wo.WoNum;
+                    }
+
+                    await _context.WorkOrders.AddAsync(wo);
+
+                    if (details != null && details.Count > 0)
+                    {
+                        await _context.WoDetails.AddRangeAsync(details);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transactionDb.CommitAsync();
+                    return;
+                }
+                catch (DbUpdateException ex) when (IsUniqueWoNumViolation(ex))
+                {
+                    await transactionDb.RollbackAsync();
+                    if (attempt == maxRetry)
+                    {
+                        throw;
+                    }
+                }
+                catch
+                {
+                    await transactionDb.RollbackAsync();
+                    throw;
+                }
+            }
+        }
+
         public async Task UpdateWorkOrderAsync(WorkOrder wo)
         {
             //_context.Entry(wo).State = EntityState.Modified;
@@ -68,7 +189,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             try
             {
-                _context.WorkOrders.Update(wo);
+                //_context.WorkOrders.Update(wo);
+                _context.Entry(wo).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException ex)

@@ -13,29 +13,180 @@
 </div>
 
 <form asp-action="Edit">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
     <input type="hidden" asp-for="WorkOrderId" />
-    <div class="form-group mb-2">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control" cols="3"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-2">
-        <label asp-for="Note" class="form-label"></label>
-        <textarea asp-for="Note" class="form-control" cols="3"></textarea>
-        <span asp-validation-for="Note" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-2">
-        <label asp-for="WoTypeId" class="form-label"></label>
-        <select asp-for="WoTypeId" class="form-control" asp-items="ViewBag.WoTypeId"></select>
-        <span asp-validation-for="WoTypeId" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-2">
-        <label asp-for="StatusId" class="form-label"></label>
+    <input type="hidden" asp-for="ProcurementType">
+    <input type="hidden" asp-for="WoTypeId">
+    <input type="hidden" asp-for="UserId">
+
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend>header</legend>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="WoNum" class="form-label"></label>
+                        <input type="text" asp-for="WoNum" class="form-control" />
+                        <span asp-validation-for="WoNum" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="WoLetter" class="form-label"></label>
+                        <input type="text" asp-for="WoLetter" class="form-control" />
+                        <span asp-validation-for="WoLetter" class="text-danger"></span>
+                    </div>
+                </div>
+                    
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="WorkOrderLetter" class="form-label"></label>
+                        <input type="text" asp-for="WorkOrderLetter" class="form-control" />
+                        <span asp-validation-for="WorkOrderLetter" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="DateLetter" class="form-label"></label>
+                        <input type="date" asp-for="DateLetter" class="form-control" />
+                        <span asp-validation-for="DateLetter" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="DateRequired" class="form-label"></label>
+                        <input type="date" asp-for="DateRequired" class="form-control" />
+                        <span asp-validation-for="DateRequired" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="FromLocation" class="form-label"></label>
+                        <input type="text" asp-for="FromLocation" class="form-control" />
+                        <span asp-validation-for="FromLocation" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="Destination" class="form-label"></label>
+                        <input type="text" asp-for="Destination" class="form-control" />
+                        <span asp-validation-for="Destination" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="WBS" class="form-label"></label>
+                        <input type="text" asp-for="WBS" class="form-control" />
+                        <span asp-validation-for="WBS" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="GlAccount" class="form-label"></label>
+                        <input type="text" asp-for="GlAccount" class="form-control" />
+                        <span asp-validation-for="GlAccount" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend>Body/Detail</legend>
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" cols="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="XS1" class="form-label"></label>
+                        <input type="text" asp-for="XS1" class="form-control" />
+                        <span asp-validation-for="XS1" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="XS2" class="form-label"></label>
+                        <input type="text" asp-for="XS2" class="form-control" />
+                        <span asp-validation-for="XS2" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+
+            @* Rincian *@
+
+
+            <div class="form-group mb-3">
+                <label asp-for="Note" class="form-label"></label>
+                <textarea asp-for="Note" class="form-control" cols="3"></textarea>
+                <span asp-validation-for="Note" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="XS3" class="form-label"></label>
+                        <input type="text" asp-for="XS3" class="form-control" />
+                        <span asp-validation-for="XS3" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="form-group mb-3">
+                        <label asp-for="XS4" class="form-label"></label>
+                        <input type="text" asp-for="XS4" class="form-control" />
+                        <span asp-validation-for="XS4" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend>Signatures</legend>
+            <div class="row">
+                <div class="form-group mb-3 col">
+                    <label asp-for="Requester" class="form-label"></label>
+                    <input type="text" asp-for="Requester" class="form-control" />
+                    <span asp-validation-for="Requester" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3 col">
+                    <label asp-for="Approved" class="form-label"></label>
+                    <input type="text" asp-for="Approved" class="form-control" />
+                    <span asp-validation-for="Approved" class="text-danger"></span>
+                </div>
+            </div>  
+        </fieldset>
+    </section>
+
+    <div class="form-group mb-3">
+        <label asp-for="Status" class="form-label"></label>
         <select asp-for="StatusId" class="form-control" asp-items="ViewBag.StatusId"></select>
         <span asp-validation-for="StatusId" class="text-danger"></span>
     </div>
-    <div class="form-group mb-2">
+
+    <div class="form-group mb-3">
         <button type="submit" class="btn btn-primary">Save</button>
     </div>
 </form>
