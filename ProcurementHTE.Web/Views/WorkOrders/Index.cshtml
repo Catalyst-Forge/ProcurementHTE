@@ -11,30 +11,30 @@
     <a asp-action="SelectType" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
-<div class="table-responsive">
-    <div class="border border-bottom-0 d-flex p-2">
-        <div class="d-flex gap-2">
-            <button type="button" class="btn">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+<div class="border border-bottom-0 d-flex p-2">
+    <div class="d-flex gap-2">
+        <button type="button" class="btn">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
 
-            <select name="datalistOptions" class="form-select">
-                <option value="">1</option>
-            </select>
+        <select name="datalistOptions" class="form-select">
+            <option value="">1</option>
+        </select>
 
-            <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
+        <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
 
-            <datalist id="datalistOptions">
-                <option value="San Francisco"></option>
-                <option value="New York"></option>
-                <option value="Seattle"></option>
-                <option value="Los Angeles"></option>
-                <option value="Chicago"></option>
-            </datalist>
-        </div>
-        <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+        <datalist id="datalistOptions">
+            <option value="San Francisco"></option>
+            <option value="New York"></option>
+            <option value="Seattle"></option>
+            <option value="Los Angeles"></option>
+            <option value="Chicago"></option>
+        </datalist>
     </div>
+    <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+</div>
     
+<div class="table-responsive">
     <table class="table table-hover border">
         <thead class="table-light">
             <tr>
@@ -42,16 +42,16 @@
                     @Html.DisplayNameFor(model => model.WoNum)
                 </th>
                 <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.Description)
-                </th>
-                <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.Note)
-                </th>
-                <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.Status)
                 </th>
                 <th class="mw-100 text-nowrap border-end">
                     @Html.DisplayNameFor(model => model.WoType)
+                </th>
+                <th class="mw-100 text-nowrap border-end">
+                    @Html.DisplayNameFor(model => model.ProcurementType)
+                </th>
+                <th class="mw-100 text-nowrap border-end">
+                    @Html.DisplayNameFor(model => model.DateLetter)
                 </th>
                 <th class="mw-100 text-nowrap">Action</th>
             </tr>
@@ -64,16 +64,16 @@
                     @Html.DisplayFor(modelItem => item.WoNum)
                 </td>
                 <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.Description)
-                </td>
-                <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.Note)
-                </td>
-                <td class="mw-100 text-nowrap">
                     @(item.Status?.StatusName ?? "-")
                 </td>
                 <td class="mw-100 text-nowrap">
                     @(item.WoType?.TypeName ?? "-")
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.ProcurementType)
+                </td>
+                <td class="mw-100 text-nowrap">
+                    @Html.DisplayFor(modelItem => item.DateLetter)
                 </td>
                 <td class="mw-100 text-nowrap">
                     <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
@@ -96,29 +96,23 @@
                 <td colspan="8" class="text-center">No work order data found.</td>
             </tr>
             }
-    </tbody>
-
-        <tfoot class="table-group-divider border-secondary-subtle">
-            <tr>
-                <td colspan="10">
-                    <div class="hstack justify-content-between">
-                        <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination mb-0 gap-1">
-                                <li class="page-item">
-                                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
-                                </li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
-                                <li class="page-item">
-                                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </td>
-            </tr>
-        </tfoot>
+        </tbody>
     </table>
+</div>
+
+<div class="hstack justify-content-between border p-2">
+    <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination mb-0 gap-1">
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+            </li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+            </li>
+        </ul>
+    </nav>
 </div>
