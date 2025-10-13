@@ -17,6 +17,7 @@ namespace ProcurementHTE.Core.Models
         public string WorkOrderId { get; set; } = Guid.NewGuid().ToString();
 
         //[Required]
+        [DisplayName("WO No.")]
         public string? WoNum { get; set; }
 
         [DisplayName("Description")]
@@ -26,22 +27,30 @@ namespace ProcurementHTE.Core.Models
         [MaxLength(1000)]
         public string? Note { get; set; }
 
+        [DisplayName("Procurement Type")]
         public ProcurementType ProcurementType { get; set; }
 
         public string? WoLetter { get; set; }
 
+        [DisplayName("Date Letter")]
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime? DateLetter { get; set; }
 
+        [DisplayName("From")]
         public string? FromLocation { get; set; }
 
+        [DisplayName("To")]
         public string? Destination { get; set; }
 
         public string? WorkOrderLetter { get; set; }
 
         public string? WBS { get; set; }
 
+        [DisplayName("GL Account")]
         public string? GlAccount { get; set; }
 
+        [DisplayName("Date Required")]
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime? DateRequired { get; set; }
 
         public string? XS1 { get; set; }
@@ -58,6 +67,8 @@ namespace ProcurementHTE.Core.Models
 
         public string? Approved { get; set; }
 
+        [DisplayName("Created At")]
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Foreign Keys
@@ -85,7 +96,7 @@ namespace ProcurementHTE.Core.Models
 
         [ForeignKey("UserId")]
         [JsonIgnore]
-        public User User { get; set; } = default!;
+        public User? User { get; set; }
 
         public ICollection<WoDocuments>? WoDocuments { get; set; } = new List<WoDocuments>();
 
