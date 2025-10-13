@@ -22,9 +22,28 @@ namespace ProcurementHTE.Core.Services
             return await _woRepository.GetByIdAsync(id);
         }
 
+        public async Task<IReadOnlyList<WorkOrder>> GetMyRecentWorkOrderAsync(
+            string userId,
+            int limit = 10,
+            CancellationToken ct = default
+        )
+        {
+            return await _woRepository.GetRecentByUserAsync(userId, limit, ct);
+        }
+
+        public async Task<int> CountAllWoAsync(CancellationToken ct)
+        {
+            return await _woRepository.CountAsync(ct);
+        }
+
         public async Task<WoTypes?> GetWoTypeByIdAsync(int id)
         {
             return await _woRepository.GetWoTypeByIdAsync(id);
+        }
+
+        public async Task<Status?> GetStatusByNameAsync(string name)
+        {
+            return await _woRepository.GetStatusByNameAsync(name);
         }
 
         public async Task<(
@@ -63,6 +82,42 @@ namespace ProcurementHTE.Core.Services
 
             wo.CreatedAt = DateTime.Now;
             await _woRepository.StoreWorkOrderAsync(wo);
+        }
+
+        public async Task AddWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details)
+        {
+            if (wo == null)
+            {
+                throw new ArgumentNullException(nameof(wo), "Work order tidak boleh null");
+            }
+
+            if (wo.WoTypeId is null)
+            {
+                throw new ArgumentException("Tipe Work order harus dipilih", nameof(wo.WoTypeId));
+            }
+
+            var woType = await _woRepository.GetWoTypeByIdAsync(wo.WoTypeId.Value);
+            if (woType is null)
+            {
+                throw new KeyNotFoundException($"WoType dengan Id {wo.WoTypeId} tidak ditemukan");
+            }
+
+            if (wo.StatusId == 0)
+            {
+                throw new ArgumentException("Status harus dipilih", nameof(wo.StatusId));
+            }
+
+            wo.CreatedAt = DateTime.Now;
+
+            details = (details ?? new())
+                .Where(d =>
+                    !string.IsNullOrWhiteSpace(d.ItemName)
+                    && !string.IsNullOrWhiteSpace(d.Unit)
+                    && d.Quantity > 0
+                )
+                .ToList();
+
+            await _woRepository.StoreWorkOrderWithDetailsAsync(wo, details);
         }
 
         public async Task EditWorkOrderAsync(WorkOrder wo, string id)
