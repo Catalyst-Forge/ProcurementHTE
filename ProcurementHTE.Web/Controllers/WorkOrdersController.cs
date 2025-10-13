@@ -1,19 +1,23 @@
-﻿using System.Security.Claims;
+﻿using System.ComponentModel.Design;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers
 {
     public class WorkOrdersController : Controller
     {
         private readonly IWorkOrderService _woService;
+        private readonly ILogger<WorkOrder> _logger;
 
-        public WorkOrdersController(IWorkOrderService woService)
+        public WorkOrdersController(IWorkOrderService woService, ILogger<WorkOrder> logger)
         {
             _woService = woService;
+            _logger = logger;
         }
 
         // GET: WorkOrders
@@ -74,9 +78,12 @@ namespace ProcurementHTE.Web.Controllers
             ViewData["EnumProcurementTypes"] = Enum.GetValues(typeof(ProcurementType));
             ViewBag.SelectedWoTypeName = woType.TypeName;
 
-            var model = new WorkOrder { WoTypeId = woTypeId };
+            var createWoVM = new WorkOrderCreateViewModel
+            {
+                WorkOrder = new WorkOrder { WoTypeId = woTypeId },
+            };
             ViewBag.CreatePartial = ResolveCreatePartialByName(woType.TypeName);
-            return View("CreateByType", model);
+            return View("CreateByType", createWoVM);
         }
 
         // POST: WorkOrders/Create
@@ -84,29 +91,65 @@ namespace ProcurementHTE.Web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([FromForm] WorkOrder workOrder)
+        public async Task<IActionResult> Create(
+            [FromForm] WorkOrderCreateViewModel woViewModel,
+            string submitAction
+        )
         {
-            ModelState.Remove(nameof(WorkOrder.User));
-            workOrder.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            ModelState.Remove(nameof(User));
+            woViewModel ??= new WorkOrderCreateViewModel();
+            woViewModel.WorkOrder.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!string.IsNullOrWhiteSpace(submitAction))
+            {
+                var status = await _woService.GetStatusByNameAsync(submitAction);
+                if (status == null)
+                {
+                    ModelState.AddModelError(
+                        "",
+                        $"Status '{submitAction}' tidak ditemukan. Pastikan entries di table Statuses ada."
+                    );
+                }
+                else
+                {
+                    woViewModel.WorkOrder.StatusId = status.StatusId;
+                }
+            }
+            else
+            {
+                ModelState.AddModelError("", "Aksi submit tidak dikenali");
+            }
 
             if (!ModelState.IsValid)
             {
-                await PopulateDropdownsAsync(workOrder.StatusId, workOrder.WoTypeId);
+                await PopulateDropdownsAsync(
+                    woViewModel.WorkOrder.StatusId,
+                    woViewModel.WorkOrder.WoTypeId
+                );
                 ViewData["EnumProcurementTypes"] = Enum.GetValues(typeof(ProcurementType));
 
                 var woTypeName = (
-                    await _woService.GetWoTypeByIdAsync(workOrder.WoTypeId ?? 0)
+                    await _woService.GetWoTypeByIdAsync(woViewModel.WorkOrder.WoTypeId ?? 0)
                 )?.TypeName;
                 ViewBag.CreatePartial = ResolveCreatePartialByName(woTypeName);
                 ViewBag.SelectedWoTypeName = woTypeName ?? "Other";
 
-                return View("CreateByType", workOrder);
+                return View("CreateByType", woViewModel);
             }
 
             try
             {
-                await _woService.AddWorkOrderAsync(workOrder);
-                TempData["SuccessMessage"] = "Work Order berhasil ditambahkan";
+                //await _woService.AddWorkOrderAsync(workOrder);
+                await _woService.AddWorkOrderWithDetailsAsync(
+                    woViewModel.WorkOrder,
+                    woViewModel.Details
+                );
+                TempData["SuccessMessage"] = submitAction.Equals(
+                    "Draft",
+                    StringComparison.OrdinalIgnoreCase
+                )
+                    ? "Work Order berhasil disimpan sebagai draft"
+                    : "Work Order berhasil dibuat";
                 return RedirectToAction(nameof(Index));
             }
             catch (ArgumentException ex)
@@ -115,19 +158,23 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Gagal menyimpan Work Order");
                 ModelState.AddModelError(
                     "",
                     "Terjadi kesalahan saat menyimpan data: " + ex.Message
                 );
             }
-            await PopulateDropdownsAsync(workOrder.StatusId, workOrder.WoTypeId);
+            await PopulateDropdownsAsync(
+                woViewModel.WorkOrder.StatusId,
+                woViewModel.WorkOrder.WoTypeId
+            );
 
             var fallbackName = (
-                await _woService.GetWoTypeByIdAsync(workOrder.WoTypeId ?? 0)
+                await _woService.GetWoTypeByIdAsync(woViewModel.WorkOrder.WoTypeId ?? 0)
             )?.TypeName;
             ViewBag.CreatePartial = ResolveCreatePartialByName(fallbackName);
             ViewBag.SelectedWoTypeName = fallbackName ?? "Other";
-            return View("CreateByType", workOrder);
+            return View("CreateByType", woViewModel);
         }
 
         // GET: WorkOrders/Edit/5
@@ -158,11 +205,10 @@ namespace ProcurementHTE.Web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            string id,
-            [Bind("WorkOrderId,WoName,Description,Note,CreatedAt,StatusId")] WorkOrder workOrder
-        )
+        public async Task<IActionResult> Edit(WorkOrder workOrder, string id)
         {
+            ModelState.Remove(nameof(WorkOrder.User));
+
             if (id != workOrder.WorkOrderId)
             {
                 return NotFound();
@@ -170,6 +216,7 @@ namespace ProcurementHTE.Web.Controllers
 
             try
             {
+                _logger.LogInformation("kesalahan");
                 if (ModelState.IsValid)
                 {
                     await _woService.EditWorkOrderAsync(workOrder, id);
@@ -270,10 +317,19 @@ namespace ProcurementHTE.Web.Controllers
             var key = (typeName ?? "Other").Trim().ToLowerInvariant();
             return key switch
             {
-                "standby" or "stand by" => "_CreateStandBy",
-                "movingmobilization" or "moving mobilization" or "moving_mobilization" =>
-                    "_CreateMovingMobilization",
-                "spotangkutan" or "spot angkutan" => "_CreateSpotAngkutan",
+                "standby" or "stand by" or "stand_by" => "_CreateStandBy",
+                "movingmobilization"
+                or "moving mobilization"
+                or "moving_mobilization"
+                or "moving & mobilization"
+                or "moving and mobilization"
+                or "moving dan mobilization" => "_CreateMovingMobilization",
+                "spotangkutan"
+                or "spot angkutan"
+                or "spot_angkutan"
+                or "spot & angkutan"
+                or "spot and angkutan"
+                or "spot dan angkutan" => "_CreateSpotAngkutan",
                 _ => "_CreateOther",
             };
         }
