@@ -21,6 +21,8 @@ builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<IWoTypeService, WoTypesService>();
 builder.Services.AddScoped<IWoTypeRepository, WoTypesRepository>();
+builder.Services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
+builder.Services.AddScoped<IDocumentTypeService, DocumentTypeService>();
 
 
 var app = builder.Build();
