@@ -34,6 +34,27 @@ namespace ProcurementHTE.Infrastructure.Data
             // Composite Keys
             builder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
 
+            builder
+                .Entity<WorkOrder>()
+                .HasAlternateKey(w => w.WoNum)
+                .HasName("AK_WorkOrders_WoNum");
+
+            builder.Entity<WorkOrder>(eb =>
+            {
+                eb.HasIndex(w => new { w.UserId, w.CreatedAt })
+                    .HasDatabaseName("IX_WorkOrders_UserId_CreatedAt")
+                    .IsDescending(false, true);
+
+                eb.HasIndex(w => new { w.UserId, w.CreatedAt })
+                    .HasDatabaseName("IX_WorkOrders_UserId_CreatedAt_Covering")
+                    .IncludeProperties(w => new
+                    {
+                        w.WoNum,
+                        w.Description,
+                        w.StatusId,
+                    });
+            });
+
             // Generate Id
             builder.Entity<WorkOrder>().Property(wo => wo.WorkOrderId).ValueGeneratedOnAdd();
             builder.Entity<Tender>().Property(t => t.TenderId).ValueGeneratedOnAdd();
@@ -64,8 +85,9 @@ namespace ProcurementHTE.Infrastructure.Data
             builder
                 .Entity<WoDetail>()
                 .HasOne(d => d.WorkOrder)
-                .WithMany()
+                .WithMany(w => w.WoDetails)
                 .HasForeignKey(d => d.WoNum)
+                .HasPrincipalKey(w => w.WoNum)
                 .OnDelete(DeleteBehavior.NoAction);
             builder
                 .Entity<VendorWorkOrder>()
