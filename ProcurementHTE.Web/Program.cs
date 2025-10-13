@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
@@ -18,6 +19,9 @@ builder.Services.AddScoped<IVendorRepository, VendorRepository>();
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ITenderService, TenderService>();
+builder.Services.AddScoped<IWoTypeService, WoTypesService>();
+builder.Services.AddScoped<IWoTypeRepository, WoTypesRepository>();
+
 
 var app = builder.Build();
 
@@ -44,8 +48,24 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Seed data
-using (var scope = app.Services.CreateScope()) {
-  await DataSeeder.SeedAsync(scope.ServiceProvider);
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        // 1️⃣ Jalankan migrasi otomatis jika belum ada tabel
+        var context = services.GetRequiredService<AppDbContext>();
+        await context.Database.MigrateAsync();
+
+        // 2️⃣ Baru jalankan seeding
+        await DataSeeder.SeedAsync(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Terjadi kesalahan saat migrasi atau seeding database.");
+    }
 }
 
 app.Run();
