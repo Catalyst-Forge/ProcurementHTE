@@ -52,7 +52,8 @@
         </thead>
 
         <tbody>
-            @foreach (var item in Model) {
+            @foreach (var item in Model)
+            {
                 <tr>
                     <td class="mw-100 text-nowrap">
                         @Html.DisplayFor(modelItem => item.TenderName)
@@ -79,7 +80,7 @@
                     </td>
                 </tr>
             }
-            
+
             @if (!Model.Any())
             {
                 <tr>
@@ -96,13 +97,13 @@
                         <nav aria-label="Page navigation example">
                             <ul class="pagination mb-0 gap-1">
                                 <li class="page-item">
-                                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+                                    <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
                                 </li>
                                 <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
                                 <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
                                 <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
                                 <li class="page-item">
-                                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+                                    <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
                                 </li>
                             </ul>
                         </nav>

@@ -1,0 +1,148 @@
+﻿@using ProcurementHTE.Core.Models
+@model IEnumerable<WoTypes>
+@{
+    ViewData["Title"] = "Workorder Type Data";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Workorder Types</h1>
+    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+</header>
+
+<div>
+    <div class="table-responsive">
+        <div class="border bottom-button-0 d-flex p-2">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <select name="datalistOptions" class="form-select">
+                    <option value="">1</option>
+                </select>
+                <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
+                <datalist id="datalistOptions">
+                    <option value="San Francisco"></option>
+                    <option value="New York"></option>
+                    <option value="Seattle"></option>
+                    <option value="Los Angeles"></option>
+                    <option value="Chicago"></option>
+                </datalist>
+            </div>
+            <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+        </div>
+
+        <table class="table table-hover border">
+            <thead class="table-light">
+                <tr>
+                    <th class="mw-100 text-nowrap border-end">
+                        @Html.DisplayNameFor(model => model.TypeName)
+                    </th>
+                    <th class="mw-100 text-nowrap border-end">
+                        @Html.DisplayNameFor(model => model.Description)
+                    </th>
+                    <th class="mw-100 text-nowrap">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="mw-100 text-nowrap">
+                            @Html.DisplayFor(modelItem => item.TypeName)
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            @Html.DisplayFor(modelItem => item.Description)
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
+                               asp-action="Edit" asp-route-id="@item.WoTypeId">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+
+                            <form asp-action="DeleteConfirmed"
+                                  asp-route-id="@item.WoTypeId"
+                                  method="post"
+                                  class="d-inline delete-form"
+                                  data-name="@item.TypeName">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-link link-danger link-opacity-50-hover p-0 border-0 bg-transparent">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        </td>
+
+                    </tr>
+                }
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center">No data available</td>
+                    </tr>
+                }
+            </tbody>
+
+            <tfoot class="table-group-divider border-secondary-subtle">
+                <tr>
+                    <td colspan="10">
+                        <div class="hstack justify-content-between">
+                            <span>Showing 1-10 of n entries</span>
+                            <nav aria-label="Page navigation example">
+                                <ul class="pagination mb-0 gap-1">
+                                    <li class="page-item">
+                                        <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+                                    </li>
+                                    <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
+                                    <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
+                                    <li class="page-item">
+                                        <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("submit", async function (e) {
+            const form = e.target.closest(".delete-form");
+            if (!form) return;
+
+            e.preventDefault();
+
+            const name = form.dataset.name || "data ini";
+            const result = await Swal.fire({
+                icon: "warning",
+                title: "Hapus data ini?",
+                html: `Anda akan menghapus <strong>${name}</strong>.<br> Tindakan ini tidak dapat dibatalkan.`,
+                showCancelButton: true,
+                confirmButtonText: "Ya, hapus",
+                cancelButtonText: "Batal",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+                reverseButtons: true
+            });
+
+            if (result.isConfirmed) form.submit();
+        });
+
+        // Tampilkan notifikasi TempData setelah redirect
+        document.addEventListener("DOMContentLoaded", () => {
+            const success = '@TempData["SuccessMessage"]';
+            const error = '@TempData["ErrorMessage"]';
+
+            if (success)
+                Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2500, showConfirmButton: false });
+
+            if (error)
+                Swal.fire({ icon: "error", title: "Gagal", text: error });
+        });
+    </script>
+}

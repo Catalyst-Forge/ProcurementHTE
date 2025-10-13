@@ -1,0 +1,51 @@
+﻿@{
+    var success = TempData["SuccessMessage"] as string;
+    var error = TempData["ErrorMessage"] as string;
+}
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- data carrier biar aman dari encoding -->
+<div id="swal-tempdata"
+     data-success="@success"
+     data-error="@error">
+</div>
+
+<script>
+    (function () {
+      const el = document.getElementById('swal-tempdata');
+      if (!el) return;
+
+      const success = el.dataset.success;
+      const error   = el.dataset.error;
+
+      // Toast config reusable
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'bottom-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.onmouseenter = Swal.stopTimer;
+          toast.onmouseleave = Swal.resumeTimer;
+        }
+      });
+
+      if (success && success.length) {
+        Toast.fire({ icon: 'success', title: success });
+      }
+
+      if (error && error.length) {
+        // untuk error, tampilkan modal penuh agar terbaca jelas
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops…',
+          html: `<div style="text-align:left;">${error}</div>`,
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#0d6efd'
+        });
+      }
+    })();
+</script>
