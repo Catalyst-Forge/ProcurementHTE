@@ -13,7 +13,7 @@
 </head>
 
 <body class="mb-0 min-vh-100" data-active-page="@ViewBag.ActivePage">
-    <div class="row g-0">
+    <div class="row g-0 flex-nowrap overflow-y-hidden">
         <div class="col-auto col-md-3 col-xl-2">
             <partial name="Partials/_Sidebar" />
         </div>
@@ -23,7 +23,7 @@
                 <partial name="Partials/_Navbar" />
             </header>
 
-            <div class="container-fluid gx-8">
+            <div class="container-fluid gx-8 mb-5">
                 <main role="main" class="pb-3">
                     @RenderBody()
                 </main>
