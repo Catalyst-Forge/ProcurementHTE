@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using ProcurementHTE.Infrastructure.Authorization.Requirements;
+using ProcurementHTE.Core.Authorization.Requirements;
 
-namespace ProcurementHTE.Infrastructure.Authorization.Handlers {
+namespace ProcurementHTE.Core.Authorization.Handlers {
   public class MinimumRoleHandler: AuthorizationHandler<MinimumRoleRequirement> {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumRoleRequirement requirement) {
       if (context.User.IsInRole(requirement.Role) || context.User.IsInRole("Admin")) {
