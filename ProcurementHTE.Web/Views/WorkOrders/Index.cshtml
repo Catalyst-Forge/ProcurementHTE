@@ -64,45 +64,44 @@
         </thead>
 
         <tbody>
-            @foreach (var item in Model) {
-                <tr>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.WoNum)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @(item.Status?.StatusName ?? "-")
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @(item.WoType?.TypeName ?? "-")
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.ProcurementType)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.DateLetter)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
-                            <span class="visually-hidden">Edit</span>
-                            <i class="bi bi-pencil-fill"></i>
-                        </a>
-
-                        <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.WorkOrderId">
-                            <span class="visually-hidden">Detail</span>
-                            <i class="bi bi-eye-fill"></i>
-                        </a>
-
-                        <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.WorkOrderId">
-                            <span class="visually-hidden">Delete</span>
-                            <i class="bi bi-trash-fill"></i>
-                        </a>
-                    </td>
-                </tr>
-            }
             @if (!Model.Any() || Model == null) {
                 <tr>
                     <td colspan="8" class="text-center">No work order data found.</td>
                 </tr>
+            } else {
+                foreach (var item in Model) {
+                    <tr>
+                        <td class="mw-100 text-nowrap">
+                            @Html.DisplayFor(modelItem => item.WoNum)
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            @(item.Status?.StatusName ?? "-")
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            @(item.WoType?.TypeName ?? "-")
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            @Html.DisplayFor(modelItem => item.ProcurementType)
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            @Html.DisplayFor(modelItem => item.DateLetter)
+                        </td>
+                        <td class="mw-100 text-nowrap">
+                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
+                                <span class="visually-hidden">Edit</span>
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.WorkOrderId">
+                                <span class="visually-hidden">Detail</span>
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+                            <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.WorkOrderId">
+                                <span class="visually-hidden">Delete</span>
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
