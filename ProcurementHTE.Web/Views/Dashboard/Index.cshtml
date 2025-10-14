@@ -44,10 +44,10 @@
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Work Orders</div>
-                        <div class="fs-4 fw-bold">@ViewBag.TotalWo</div>
+                        <div class="text-muted small">Revenue</div>
+                        <div class="fs-4 fw-bold">Rp </div>
                         <div class="text-success small">
-                            <i class="bi bi-arrow-up"></i> bulan ini
+                            <i class="bi bi-arrow-up"></i> 8% dari bulan lalu
                         </div>
                     </div>
                 </div>
@@ -65,11 +65,9 @@
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Total Orders</div>
-                        <div class="fs-4 fw-bold">""</div>
-                        <div class="text-danger small">
-                            <i class="bi bi-arrow-down"></i> 3% dari bulan lalu
-                        </div>
+                        <div class="text-muted small">Total Work Orders</div>
+                        <div class="fs-4 fw-bold">@ViewBag.TotalWo</div>
+                        <div class="text-secondary small">bulan ini</div>
                     </div>
                 </div>
             </div>
@@ -134,7 +132,7 @@
                 <h5 class="mb-0">Recent Work Orders</h5>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive p-2">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
@@ -142,7 +140,7 @@
                                 <th class="mw-100 text-nowrap border-end">@Html.DisplayNameFor(model => model.Description)</th>
                                 <th class="mw-100 text-nowrap border-end">@Html.DisplayNameFor(model => model.ProcurementType)</th>
                                 <th class="mw-100 text-nowrap border-end">@Html.DisplayNameFor(model => model.StatusName)</th>
-                                <th class="mw-100 text-nowrap border-end">@Html.DisplayNameFor(model => model.CreatedAt.ToShortDateString())</th>
+                                <th class="mw-100 text-nowrap border-end">@Html.DisplayNameFor(model => model.CreatedAt)</th>
                             </tr>
                         </thead>
 
@@ -152,21 +150,21 @@
                                     <td colspan="5" class="text-center">No Work Order data found</td>
                                 </tr>
                             } else {
-                                @foreach (var order in Model) {
+                                foreach (var order in Model) {
                                     <tr>
-                                        <td><span class="badge bg-secondary">@order.WoNum</span></td>
-                                        <td>@order.Description</td>
-                                        <td>@order.ProcurementType</td>
+                                        <td>@Html.DisplayFor(modelItem => order.WoNum)</td>
+                                        <td>@(order.Description ?? "-")</td>
+                                        <td>@Html.DisplayFor(modelItem => order.ProcurementType)</td>
                                         <td>
                                             @if (order.StatusName == "Created") {
-                                                <span class="badge bg-success">@order.StatusName</span>
+                                                <span class="badge text-bg-success">@Html.DisplayFor(modelItem => order.StatusName)</span>
                                             } else if (order.StatusName == "Draft") {
-                                                <span class="badge bg-warning">@order.StatusName</span>
+                                                <span class="badge text-bg-secondary">@Html.DisplayFor(modelItem => order.StatusName)</span>
                                             } else {
-                                                <span class="badge bg-danger">@order.StatusName</span>
+                                                <span class="badge text-bg-danger">@Html.DisplayFor(modelItem => order.StatusName)</span>
                                             }
                                         </td>
-                                        <td>@order.CreatedAt</td>
+                                        <td>@order.CreatedAt.ToString("d MMM yyyy")</td>
                                     </tr>
                                 }
                             }
