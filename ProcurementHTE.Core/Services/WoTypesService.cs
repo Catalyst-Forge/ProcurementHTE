@@ -1,10 +1,5 @@
 ﻿using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProcurementHTE.Core.Services
 {

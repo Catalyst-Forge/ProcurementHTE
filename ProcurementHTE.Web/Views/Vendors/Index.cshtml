@@ -1,103 +1,150 @@
-﻿@using Microsoft.AspNetCore.Authorization
-@using ProcurementHTE.Core.Models
-@using ProcurementHTE.Core.Authorization
+﻿@using ProcurementHTE.Core.Models
 @model IEnumerable<Vendor>
-@inject IAuthorizationService AuthZ
+
 @{
-    ViewData["Title"] = "Vendors Data";
-    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Create);
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Delete);
-    bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
+    ViewData["Title"] = "Vendors";
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch
+    {
+        "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "inactive" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "suspended" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };
+    string MaskNpwp(string npwp)
+    {
+        if (string.IsNullOrWhiteSpace(npwp)) return "-";
+        var d = new string(npwp.Where(char.IsDigit).ToArray());
+        return d.Length <= 4 ? "****" : $"**** **** **** {d[^4..]}";
+    }
 }
 
-<header class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Vendors</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Vendors</h1>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Create New</a>
+</div>
 
-    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
-</header>
+<!-- Toolbar -->
+<div class="border rounded-3 p-2 d-flex gap-2 mb-2">
+    <button type="button" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
 
-<div class="table-responsive">
-    <div class="border border-bottom-0 d-flex p-2">
-        <div class="d-flex gap-2">
-            <button type="button" class="btn">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+    <select class="form-select w-auto">
+        <option>10</option>
+        <option selected>25</option>
+        <option>50</option>
+    </select>
 
-            <select name="datalistOptions" class="form-select">
-                <option value="">1</option>
-            </select>
-
-            <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
-
-            <datalist id="datalistOptions">
-                <option value="San Francisco"></option>
-                <option value="New York"></option>
-                <option value="Seattle"></option>
-                <option value="Los Angeles"></option>
-                <option value="Chicago"></option>
-            </datalist>
-        </div>
-        <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+    <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="search" class="form-control" placeholder="Search vendor, code, city...">
     </div>
-    
-    <table class="table table-hover border">
+
+    <div class="ms-auto">
+        <button class="btn btn-outline-dark"><i class="bi bi-funnel me-1"></i>Filter</button>
+    </div>
+</div>
+
+<!-- Tabel -->
+<div class="table-responsive">
+    <table class="table align-middle table-hover">
         <thead class="table-light">
             <tr>
-                <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.VendorName)
-                </th>
-                <th class="mw-100 text-nowrap">Action</th>
+                <th>Vendor</th>
+                <th class="d-none d-md-table-cell">Location</th>
+                <th class="d-none d-lg-table-cell">Contact</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
             </tr>
         </thead>
-
         <tbody>
-            @foreach (var item in Model) {
+            @foreach (var v in Model)
+            {
                 <tr>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.VendorName)
+                    <!-- Vendor -->
+                    <td>
+                        <div class="fw-semibold">
+                            @v.VendorName
+                            <span class="text-body-secondary"> · </span>
+                            <a asp-action="Details" asp-route-id="@v.VendorId" class="link-primary text-decoration-none">@v.VendorCode</a>
+                        </div>
+                        <div class="small text-body-secondary">
+                            <a href="mailto:@v.Email" class="text-decoration-none">@v.Email</a>
+                            <span class="mx-1">•</span>
+                            NPWP @MaskNpwp(v.NPWP)
+                        </div>
                     </td>
-                    <td class="mw-100 text-nowrap">
-                        <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.VendorId">
-                            <span class="visually-hidden">Edit</span>
+
+                    <!-- Location -->
+                    <td class="d-none d-md-table-cell">
+                        <span>@v.City, @v.Province</span>
+                    </td>
+
+                    <!-- Contact -->
+                    <td class="d-none d-lg-table-cell">
+                        <span>@v.ContactPerson</span>
+                        @if (!string.IsNullOrWhiteSpace(v.PhoneNumber))
+                        {
+                            <span class="mx-1">•</span>
+                            <a href="tel:@v.PhoneNumber" class="text-decoration-none">@v.PhoneNumber</a>
+                        }
+                    </td>
+
+                    <!-- Status -->
+                    <td>
+                        <span class="badge rounded-pill px-2 py-1 @BadgeClass(v.Status)">@v.Status</span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-sm btn-outline-warning me-1"
+                           asp-action="Edit" asp-route-id="@v.VendorId" title="Edit">
                             <i class="bi bi-pencil-fill"></i>
                         </a>
-                        <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.VendorId">
-                            <span class="visually-hidden">Detail</span>
+
+                        <a class="btn btn-sm btn-outline-info me-1"
+                           asp-action="Details" asp-route-id="@v.VendorId" title="Details">
                             <i class="bi bi-eye-fill"></i>
                         </a>
-                        <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.VendorId">
-                            <span class="visually-hidden">Delete</span>
-                            <i class="bi bi-trash-fill"></i>
-                        </a>
+
+                        <!-- Delete pakai POST + SweetAlert -->
+                        <form asp-action="DeleteConfirmed"
+                              asp-route-id="@v.VendorId"
+                              method="post"
+                              class="d-inline delete-form"
+                              data-name="@v.VendorName">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+
                     </td>
+
                 </tr>
             }
-            
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="5" class="text-center">No data available</td>
+                    <td colspan="5" class="text-center py-5">
+                        <div class="text-muted">No vendors yet</div>
+                        <a asp-action="Create" class="btn btn-primary btn-sm mt-2">
+                            <i class="bi bi-plus-circle me-1"></i>Add Vendor
+                        </a>
+                    </td>
                 </tr>
             }
         </tbody>
-
-        <tfoot class="table-group-divider border-secondary-subtle">
+        <tfoot class="table-light">
             <tr>
-                <td colspan="10">
-                    <div class="hstack justify-content-between">
-                        <span>Showing 1-10 of n entries</span>
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination mb-0 gap-1">
-                                <li class="page-item">
-                                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
-                                </li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
-                                <li class="page-item">
-                                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
-                                </li>
+                <td colspan="5">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-body-secondary">Showing 1–25 of n entries</small>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a></li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a></li>
                             </ul>
                         </nav>
                     </div>
@@ -106,3 +153,37 @@
         </tfoot>
     </table>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("submit", async function (e) {
+          const form = e.target.closest(".delete-form");
+          if (!form) return;
+
+          e.preventDefault();
+
+          const name = form.dataset.name || "vendor ini";
+          const result = await Swal.fire({
+            icon: "warning",
+            title: "Hapus vendor?",
+            html: `Anda akan menghapus <strong>${name}</strong>.<br/>Tindakan ini tidak dapat dibatalkan.`,
+            showCancelButton: true,
+            confirmButtonText: "Ya, hapus",
+            cancelButtonText: "Batal",
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6c757d",
+            reverseButtons: true,
+            focusCancel: true
+          });
+
+          if (result.isConfirmed) form.submit();
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+          const success = '@(TempData["SuccessMessage"] ?? "")';
+          const error = '@(TempData["ErrorMessage"] ?? "")';
+          if (success) Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2200, showConfirmButton: false });
+          if (error) Swal.fire({ icon: "error", title: "Gagal", text: error });
+        });
+    </script>
+}

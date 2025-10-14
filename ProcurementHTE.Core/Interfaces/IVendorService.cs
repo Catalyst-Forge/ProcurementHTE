@@ -6,6 +6,6 @@ namespace ProcurementHTE.Core.Interfaces {
     Task<Vendor?> GetVendorByIdAsync(string id);
     Task AddVendorAsync(Vendor vendor);
     Task EditVendorAsync(Vendor vendor, string id);
-    Task DeleteVendorAsync(Vendor vendor, string id);
+    Task DeleteVendorAsync(Vendor vendor);
   }
 }
