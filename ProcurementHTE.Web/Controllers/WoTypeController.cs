@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
@@ -6,6 +7,7 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers
 {
+    [Authorize]
     public class WoTypeController : Controller
     {
         private readonly IWoTypeService _woTypeService;
@@ -34,7 +36,8 @@ namespace ProcurementHTE.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("TypeName,Description")] WoTypes woType)
         {
-            if (!ModelState.IsValid) return View(woType);
+            if (!ModelState.IsValid)
+                return View(woType);
 
             try
             {
@@ -63,10 +66,15 @@ namespace ProcurementHTE.Web.Controllers
         // POST: WoType/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int WoTypeId, [Bind("WoTypeId,TypeName,Description")] WoTypes woType)
+        public async Task<IActionResult> Edit(
+            int WoTypeId,
+            [Bind("WoTypeId,TypeName,Description")] WoTypes woType
+        )
         {
-            if (WoTypeId != woType.WoTypeId) return NotFound();
-            if (!ModelState.IsValid) return View(woType);
+            if (WoTypeId != woType.WoTypeId)
+                return NotFound();
+            if (!ModelState.IsValid)
+                return View(woType);
 
             try
             {
@@ -115,7 +123,5 @@ namespace ProcurementHTE.Web.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
-
     }
 }

@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers
 {
+    [Authorize]
     public class DocumentTypeController : Controller
     {
         private readonly IDocumentTypeService _documentTypeService;
+
         public DocumentTypeController(IDocumentTypeService documentTypeService)
         {
             _documentTypeService = documentTypeService;
@@ -30,9 +33,12 @@ namespace ProcurementHTE.Web.Controllers
         // POST: DocumentType/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Description")] DocumentType documentType)
+        public async Task<IActionResult> Create(
+            [Bind("Name,Description")] DocumentType documentType
+        )
         {
-            if (!ModelState.IsValid) return View(documentType);
+            if (!ModelState.IsValid)
+                return View(documentType);
             try
             {
                 await _documentTypeService.AddDocumentTypeAsync(documentType);
@@ -45,6 +51,7 @@ namespace ProcurementHTE.Web.Controllers
                 return View(documentType);
             }
         }
+
         // GET: DocumentType/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
@@ -55,16 +62,21 @@ namespace ProcurementHTE.Web.Controllers
             var documentType = await _documentTypeService.GetDocumentTypeByIdAsync(id);
             return View(documentType);
         }
+
         // POST: DocumentType/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description")] DocumentType documentType)
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("Id,Name,Description")] DocumentType documentType
+        )
         {
             if (id != documentType.Id)
             {
                 return NotFound();
             }
-            if (!ModelState.IsValid) return View(documentType);
+            if (!ModelState.IsValid)
+                return View(documentType);
             try
             {
                 await _documentTypeService.EditDocumentTypeAsync(documentType, id);
@@ -77,6 +89,7 @@ namespace ProcurementHTE.Web.Controllers
                 return View(documentType);
             }
         }
+
         // GET: DocumentType/Delete/5
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -97,7 +110,8 @@ namespace ProcurementHTE.Web.Controllers
                 var inner = ex.InnerException?.Message ?? ex.Message;
                 TempData["ErrorMessage"] = $"DBUpdateException: {inner}";
                 Console.WriteLine("[DEBUG] SQL ERROR: " + inner);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Gagal menghapus data: " + ex.Message;
                 Console.WriteLine("[DEBUG] ERROR: " + ex.Message);

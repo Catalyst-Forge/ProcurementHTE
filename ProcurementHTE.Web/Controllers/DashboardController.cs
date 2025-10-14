@@ -1,9 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace ProcurementHTE.Web.Controllers {
-  public class DashboardController : Controller {
-    public IActionResult Index() {
-      return View();
+namespace ProcurementHTE.Web.Controllers
+{
+    [Authorize]
+    public class DashboardController : Controller
+    {
+        public IActionResult Index()
+        {
+            return View();
+        }
     }
-  }
 }
