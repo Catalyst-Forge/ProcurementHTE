@@ -1,8 +1,12 @@
-﻿@using ProcurementHTE.Core.Models
+﻿@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Authorization
+@using ProcurementHTE.Core.Models
 @model Vendor
-
+@inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Vendor Details";
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Delete);
 }
 
 <h1>Details</h1>

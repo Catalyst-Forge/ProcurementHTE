@@ -1,8 +1,14 @@
-﻿@using ProcurementHTE.Core.Models
+﻿@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Models
+@using ProcurementHTE.Core.Authorization
 @model IEnumerable<WorkOrder>
-
+@inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Work Orders Data";
+    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.WO.Create);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
@@ -33,7 +39,7 @@
     </div>
     <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
 </div>
-    
+
 <div class="table-responsive">
     <table class="table table-hover border">
         <thead class="table-light">
@@ -56,45 +62,47 @@
                 <th class="mw-100 text-nowrap">Action</th>
             </tr>
         </thead>
-        
+
         <tbody>
             @foreach (var item in Model) {
-            <tr>
-                <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.WoNum)
-                </td>
-                <td class="mw-100 text-nowrap">
-                    @(item.Status?.StatusName ?? "-")
-                </td>
-                <td class="mw-100 text-nowrap">
-                    @(item.WoType?.TypeName ?? "-")
-                </td>
-                <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.ProcurementType)
-                </td>
-                <td class="mw-100 text-nowrap">
-                    @Html.DisplayFor(modelItem => item.DateLetter)
-                </td>
-                <td class="mw-100 text-nowrap">
-                    <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
-                        <span class="visually-hidden">Edit</span>
-                        <i class="bi bi-pencil-fill"></i>
-                    </a>
-                    <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.WorkOrderId">
-                        <span class="visually-hidden">Detail</span>
-                        <i class="bi bi-eye-fill"></i>
-                    </a>
-                    <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.WorkOrderId">
-                        <span class="visually-hidden">Delete</span>
-                        <i class="bi bi-trash-fill"></i>
-                    </a>
-                </td>
-            </tr>
+                <tr>
+                    <td class="mw-100 text-nowrap">
+                        @Html.DisplayFor(modelItem => item.WoNum)
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        @(item.Status?.StatusName ?? "-")
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        @(item.WoType?.TypeName ?? "-")
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        @Html.DisplayFor(modelItem => item.ProcurementType)
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        @Html.DisplayFor(modelItem => item.DateLetter)
+                    </td>
+                    <td class="mw-100 text-nowrap">
+                        <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
+                            <span class="visually-hidden">Edit</span>
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+
+                        <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.WorkOrderId">
+                            <span class="visually-hidden">Detail</span>
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+
+                        <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.WorkOrderId">
+                            <span class="visually-hidden">Delete</span>
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
+                    </td>
+                </tr>
             }
             @if (!Model.Any() || Model == null) {
-            <tr>
-                <td colspan="8" class="text-center">No work order data found.</td>
-            </tr>
+                <tr>
+                    <td colspan="8" class="text-center">No work order data found.</td>
+                </tr>
             }
         </tbody>
     </table>

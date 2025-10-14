@@ -1,9 +1,13 @@
-﻿@using ProcurementHTE.Core.Models
+﻿@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Models
+@using ProcurementHTE.Core.Authorization
+@inject IAuthorizationService AuthZ
 @model WorkOrder
-
 @{
     ViewData["Title"] = "Work Order Details";
     var no = 1;
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
 }
 
 <h1 class="h2">Details</h1>
