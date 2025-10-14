@@ -13,7 +13,7 @@
 </head>
 
 <body class="mb-0 min-vh-100" data-active-page="@ViewBag.ActivePage">
-    <div class="row g-0 flex-nowrap overflow-y-hidden">
+    <div class="row g-0 flex-nowrap">
         <div class="col-auto col-md-3 col-xl-2">
             <partial name="Partials/_Sidebar" />
         </div>
@@ -37,12 +37,10 @@
         </div>
     </div>
 
+    @await Html.PartialAsync("_SweetAlerts")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @* SweetAlert global: mesti sebelum section Scripts biar bisa dipakai halaman *@
-    @await Html.PartialAsync("_SweetAlerts")
 
     @* Render section Scripts HANYA SEKALI di akhir body *@
     @await RenderSectionAsync("Scripts", required: false)
