@@ -1,5 +1,4 @@
-﻿using ProcurementHTE.Core.DTOs;
-using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Interfaces
 {
