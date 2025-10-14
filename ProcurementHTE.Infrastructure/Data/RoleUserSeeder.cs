@@ -1,12 +1,18 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Authorization;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
     public static class RoleUserSeeder
     {
-        public static async Task SeedAsync(UserManager<User> userManager, RoleManager<Role> roleManager, AppDbContext db)
+        public static async Task SeedAsync(
+            UserManager<User> userManager,
+            RoleManager<Role> roleManager,
+            AppDbContext db
+        )
         {
             await SeedRolesAsync(roleManager);
             await SeedUsersAsync(userManager);
@@ -30,16 +36,106 @@ namespace ProcurementHTE.Infrastructure.Data
             foreach (var roleName in roles)
             {
                 // Hindari duplikasi karena beda casing
-                if (await roleManager.RoleExistsAsync(roleName)) continue;
+                if (await roleManager.RoleExistsAsync(roleName))
+                    continue;
 
                 var role = new Role
                 {
                     Name = roleName,
                     NormalizedName = roleName.ToUpperInvariant(),
-                    Description = $"{roleName} system role"
+                    Description = $"{roleName} system role",
                 };
                 await roleManager.CreateAsync(role);
             }
+
+            async Task AddPermissions(string roleName, params string[] permissions)
+            {
+                var role = await roleManager.FindByNameAsync(roleName);
+                var existing = await roleManager.GetClaimsAsync(role!);
+                foreach (var permission in permissions.Distinct())
+                {
+                    if (!existing.Any(c => c.Type == "permission" && c.Value == permission))
+                    {
+                        await roleManager.AddClaimAsync(role!, new Claim("permission", permission));
+                    }
+                }
+            }
+
+            await AddPermissions(
+                "Admin",
+                Permissions.WO.Read,
+                Permissions.WO.Create,
+                Permissions.WO.Edit,
+                Permissions.WO.Delete,
+                Permissions.Vendor.Read,
+                Permissions.Vendor.Create,
+                Permissions.Vendor.Edit,
+                Permissions.Vendor.Delete,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "Vice President",
+                Permissions.WO.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "Assistant Manager HTE",
+                Permissions.WO.Read,
+                Permissions.WO.Create,
+                Permissions.WO.Edit,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload
+            );
+
+            await AddPermissions(
+                "Manager Transport & Logistic",
+                Permissions.WO.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "HTE",
+                Permissions.WO.Read,
+                Permissions.WO.Create,
+                Permissions.WO.Edit,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload
+            );
+
+            await AddPermissions(
+                "Analyst HTE & LTS",
+                Permissions.WO.Read,
+                Permissions.WO.Edit,
+                Permissions.Vendor.Read,
+                Permissions.Vendor.Edit,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                "HSE",
+                Permissions.WO.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                "Supply Chain Management",
+                Permissions.WO.Read,
+                Permissions.WO.Edit,
+                Permissions.Vendor.Read,
+                Permissions.Vendor.Create,
+                Permissions.Vendor.Edit,
+                Permissions.Doc.Read
+            );
         }
 
         private static async Task SeedUsersAsync(UserManager<User> userManager)
@@ -50,10 +146,15 @@ namespace ProcurementHTE.Infrastructure.Data
                 ("managerTL", "manager@example.com", "Manager123!", "Manager Transport & Logistic"),
                 ("AHte", "AHte@example.com", "AHte123!", "Analyst HTE & LTS"),
                 ("hte", "hte@example.com", "Hte1234!", "HTE"),
-                ("assistantmanagerhte", "assistantmanagerhte@example.com", "AssistantManager123!", "Assistant Manager HTE"),
+                (
+                    "assistantmanagerhte",
+                    "assistantmanagerhte@example.com",
+                    "AssistantManager123!",
+                    "Assistant Manager HTE"
+                ),
                 ("vicepresident", "vp@example.com", "VicePresident123!", "Vice President"),
                 ("hse", "hse@example.com", "Hse1234!", "HSE"),
-                ("scm", "scm@example.com", "Scm1234!", "Supply Chain Management")
+                ("scm", "scm@example.com", "Scm1234!", "Supply Chain Management"),
             };
 
             foreach (var u in users)
@@ -70,12 +171,14 @@ namespace ProcurementHTE.Infrastructure.Data
                         EmailConfirmed = true,
                         FirstName = u.Username,
                         LastName = "Seeder",
-                        IsActive = true
+                        IsActive = true,
                     };
 
                     var createResult = await userManager.CreateAsync(user, u.Password);
                     if (!createResult.Succeeded)
-                        throw new Exception($"Gagal membuat user {u.Email}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                        throw new Exception(
+                            $"Gagal membuat user {u.Email}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}"
+                        );
                 }
 
                 // Tambah role hanya jika belum ada
@@ -83,7 +186,9 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     var addRoleResult = await userManager.AddToRoleAsync(user, u.Role);
                     if (!addRoleResult.Succeeded)
-                        throw new Exception($"Gagal add role {u.Role} ke user {u.Email}: {string.Join(", ", addRoleResult.Errors.Select(e => e.Description))}");
+                        throw new Exception(
+                            $"Gagal add role {u.Role} ke user {u.Email}: {string.Join(", ", addRoleResult.Errors.Select(e => e.Description))}"
+                        );
                 }
             }
         }
@@ -107,10 +212,14 @@ namespace ProcurementHTE.Infrastructure.Data
         }
 
         // Helper publik (opsional) kalau mau dipakai di seeder lain:
-        public static async Task<string> GetRoleIdAsync(RoleManager<Role> roleManager, string roleName)
+        public static async Task<string> GetRoleIdAsync(
+            RoleManager<Role> roleManager,
+            string roleName
+        )
         {
             var role = await roleManager.FindByNameAsync(roleName);
-            if (role == null) throw new Exception($"Role '{roleName}' belum ada.");
+            if (role == null)
+                throw new Exception($"Role '{roleName}' belum ada.");
             return role.Id;
         }
     }
