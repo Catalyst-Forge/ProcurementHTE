@@ -63,6 +63,9 @@ namespace ProcurementHTE.Infrastructure.Data
             // Enum to string
             builder.Entity<WorkOrder>().Property(p => p.ProcurementType).HasConversion<string>();
 
+            // Unique
+            builder.Entity<Vendor>().HasIndex(v => v.VendorCode).IsUnique();
+
             // Relations
             builder
                 .Entity<WorkOrder>()
