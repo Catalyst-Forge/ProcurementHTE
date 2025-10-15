@@ -20,7 +20,7 @@ namespace ProcurementHTE.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var documentTypes = await _documentTypeService.GetAllDocumentTypesAsync();
-            ViewBag.ActivePage = "DocumentType";
+            ViewBag.ActivePage = "Index Document Types";
             return View(documentTypes);
         }
 

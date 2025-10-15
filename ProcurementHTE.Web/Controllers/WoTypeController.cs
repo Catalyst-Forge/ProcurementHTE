@@ -21,7 +21,7 @@ namespace ProcurementHTE.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var woTypes = await _woTypeService.GetAllWoTypessAsync();
-            ViewBag.ActivePage = "WoType";
+            ViewBag.ActivePage = "Index Work Order Types";
             return View(woTypes);
         }
 
