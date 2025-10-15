@@ -1,24 +1,27 @@
-﻿@using ProcurementHTE.Core.Models
+﻿@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Models
+@using ProcurementHTE.Core.Authorization
+@inject IAuthorizationService AuthZ
 @model Vendor
-
 @{
     ViewData["Title"] = "Vendor Details";
-    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch
-    {
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
         "inactive" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "suspended" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
         _ => "bg-light text-body border"
     };
-    string MaskNpwp(string npwp)
-    {
-        if (string.IsNullOrWhiteSpace(npwp)) return "-";
+    string MaskNpwp(string npwp) {
+        if (string.IsNullOrWhiteSpace(npwp))
+            return "-";
         var d = new string(npwp.Where(char.IsDigit).ToArray());
         return d.Length <= 4 ? "****" : $"**** **** **** {d[^4..]}";
     }
 }
 
-<div class="d-flex justify-content-between align-items-start mb-3">
+<header class="d-flex justify-content-between align-items-start mb-3">
     <div>
         <h1 class="h3 mb-1">@Model.VendorName</h1>
         <div class="d-flex align-items-center gap-2">
@@ -27,95 +30,93 @@
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.VendorId" class="btn btn-outline-warning"><i class="bi bi-pencil-fill me-1"></i>Edit</a>
-        <a asp-action="Delete" asp-route-id="@Model.VendorId" class="btn btn-outline-danger"><i class="bi bi-trash-fill me-1"></i>Delete</a>
-        <a asp-action="Index" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-1"></i>Back</a>
+        <a asp-action="Edit" asp-route-id="@Model.VendorId" class="btn btn-warning" role="button"><i class="bi bi-pencil-fill"></i> Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model.VendorId" class="btn btn-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+        <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow mb-0 mb-0-left-circle"></i> Back to List</a>
     </div>
-</div>
+</header>
+<hr />
 
-<div class="row g-3">
-    <!-- Company Info -->
-    <div class="col-12 col-lg-6">
-        <div class="card h-100">
-            <div class="card-header fw-semibold">Company Info</div>
+<div class="d-grid gap-4" style="grid-template-columns: 2fr 1fr">
+    <div>
+        @* Company Info *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Company Info</h2>
+            </div>
+
             <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-5 col-sm-4">Vendor Name</dt>
-                    <dd class="col-7 col-sm-8">@Model.VendorName</dd>
-                    <dt class="col-5 col-sm-4">Vendor Code</dt>
-                    <dd class="col-7 col-sm-8">@Model.VendorCode</dd>
-                    <dt class="col-5 col-sm-4">NPWP</dt>
-                    <dd class="col-7 col-sm-8">@MaskNpwp(Model.NPWP)</dd>
-                    <dt class="col-5 col-sm-4">Created</dt>
-                    <dd class="col-7 col-sm-8">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+                <dl class="row mb-0 mb-0">
+                    <dt class="col-5 col-sm-3">Vendor Name</dt>
+                    <dd class="col-7 col-sm-9">@Model.VendorName</dd>
+                    <dt class="col-5 col-sm-3">Vendor Code</dt>
+                    <dd class="col-7 col-sm-9">@Model.VendorCode</dd>
+                    <dt class="col-5 col-sm-3">NPWP</dt>
+                    <dd class="col-7 col-sm-9">@MaskNpwp(Model.NPWP)</dd>
+                    <dt class="col-5 col-sm-3">Created</dt>
+                    <dd class="col-7 col-sm-9">@Model.CreatedAt.ToString("d MMM yyyy")</dd>
                 </dl>
+            </div>
+        </div>
+
+        @* Notes *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Notes</h2>
+            </div>
+
+            <div class="card-body">
+                <p class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info-subtle rounded-3 border-5">@(Model.Comment ?? "No note")</p>
             </div>
         </div>
     </div>
 
-    <!-- Address -->
-    <div class="col-12 col-lg-6">
-        <div class="card h-100">
-            <div class="card-header fw-semibold">Address</div>
+    <div>
+        @* Address *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Address</h2>
+            </div>
+
             <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-5 col-sm-4">Address</dt>
-                    <dd class="col-7 col-sm-8">@Model.Address</dd>
-                    <dt class="col-5 col-sm-4">City</dt>
-                    <dd class="col-7 col-sm-8">@Model.City</dd>
-                    <dt class="col-5 col-sm-4">Province</dt>
-                    <dd class="col-7 col-sm-8">@Model.Province</dd>
-                    <dt class="col-5 col-sm-4">Postal Code</dt>
-                    <dd class="col-7 col-sm-8">@Model.PostalCode</dd>
+                <dl class="row mb-0 mb-0">
+                    <dt class="col-5 col-sm-3">Address</dt>
+                    <dd class="col-7 col-sm-9">@Model.Address</dd>
+                    <dt class="col-5 col-sm-3">City</dt>
+                    <dd class="col-7 col-sm-9">@Model.City</dd>
+                    <dt class="col-5 col-sm-3">Province</dt>
+                    <dd class="col-7 col-sm-9">@Model.Province</dd>
+                    <dt class="col-5 col-sm-3">Postal Code</dt>
+                    <dd class="col-7 col-sm-9">@Model.PostalCode</dd>
                 </dl>
             </div>
         </div>
-    </div>
 
-    <!-- Contacts -->
-    <div class="col-12 col-lg-6">
-        <div class="card h-100">
-            <div class="card-header fw-semibold">Contacts</div>
+        @* Contacts *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Contacts</h2>
+            </div>
+
             <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-5 col-sm-4">Email</dt>
-                    <dd class="col-7 col-sm-8"><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></dd>
+                <dl class="row mb-0 mb-0">
+                    <dt class="col-5 col-sm-3">Email</dt>
+                    <dd class="col-7 col-sm-9"><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></dd>
 
-                    <dt class="col-5 col-sm-4">Phone</dt>
-                    <dd class="col-7 col-sm-8">
-                        @if (!string.IsNullOrWhiteSpace(Model.PhoneNumber))
-                        {
+                    <dt class="col-5 col-sm-3">Phone</dt>
+                    <dd class="col-7 col-sm-9">
+                        @if (!string.IsNullOrWhiteSpace(Model.PhoneNumber)) {
                             <a href="tel:@Model.PhoneNumber" class="text-decoration-none">@Model.PhoneNumber</a>
-                        }
-                        else
-                        {
-
+                        } else {
                             <span class="text-body-secondary">-</span>
                         }
                     </dd>
 
-                    <dt class="col-5 col-sm-4">Contact Person</dt>
-                    <dd class="col-7 col-sm-8">@Model.ContactPerson</dd>
-                    <dt class="col-5 col-sm-4">Position</dt>
-                    <dd class="col-7 col-sm-8">@Model.ContactPosition</dd>
+                    <dt class="col-5 col-sm-3">Contact Person</dt>
+                    <dd class="col-7 col-sm-9">@Model.ContactPerson</dd>
+                    <dt class="col-5 col-sm-3">Position</dt>
+                    <dd class="col-7 col-sm-9">@Model.ContactPosition</dd>
                 </dl>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notes -->
-    <div class="col-12 col-lg-6">
-        <div class="card h-100">
-            <div class="card-header fw-semibold">Notes</div>
-            <div class="card-body">
-                @if (!string.IsNullOrWhiteSpace(Model.Comment))
-                {
-                    <p class="mb-0">@Model.Comment</p>
-                }
-                else
-                {
-                    <p class="text-body-secondary mb-0">No notes.</p>
-                }
             </div>
         </div>
     </div>
