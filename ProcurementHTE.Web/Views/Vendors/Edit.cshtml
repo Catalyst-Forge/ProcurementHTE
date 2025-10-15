@@ -6,76 +6,74 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-    <h1 class="h3 mb-0">Edit Vendor</h1>
-    <a asp-action="Index" class="btn btn-secondary">
-        <i class="bi bi-arrow-left-circle"></i> Back to List
+    <h1 class="h3">Edit Vendor</h1>
+    <a asp-action="Index" class="btn btn-secondary" role="button">
+        <i class="bi bi-arrow-left-circle"></i> Back to list
     </a>
 </div>
 
 <form asp-action="Edit" method="post" asp-antiforgery="true" novalidate>
     <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
     <input type="hidden" asp-for="VendorId" />
-    <!-- Kalau action Edit-mu masih bind VendorCode, hidden ini memastikan nilainya tidak hilang -->
     <input type="hidden" asp-for="VendorCode" />
 
-    <!-- Vendor Info -->
-    <div class="card mb-3">
-        <div class="card-header fw-semibold">Vendor Info</div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Vendor Info</legend>
+            <hr />
+            <div class="row">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Vendor Code</label>
                     <input class="form-control-plaintext" value="@Model.VendorCode" readonly />
                     <div class="form-text">Auto-generated • not editable</div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-4 mb-3">
                     <label asp-for="VendorName" class="form-label"></label>
                     <input asp-for="VendorName" class="form-control" />
                     <span asp-validation-for="VendorName" class="text-danger small"></span>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4 mb-3">
                     <label asp-for="NPWP" class="form-label"></label>
                     <input asp-for="NPWP" class="form-control" maxlength="255" placeholder="99.999.999.9-999.999" />
                     <span asp-validation-for="NPWP" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
-    </div>
+        </fieldset>
+    </section>
 
-    <!-- Address -->
-    <div class="card mb-3">
-        <div class="card-header fw-semibold">Address</div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-12">
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Address</legend>
+            <hr />
+            <div class="row">
+                <div class="col-12 mb-3">
                     <label asp-for="Address" class="form-label"></label>
                     <input asp-for="Address" class="form-control" maxlength="200" />
                     <span asp-validation-for="Address" class="text-danger small"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 mb-3">
                     <label asp-for="City" class="form-label"></label>
                     <input asp-for="City" class="form-control" />
                     <span asp-validation-for="City" class="text-danger small"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 mb-3">
                     <label asp-for="Province" class="form-label"></label>
                     <input asp-for="Province" class="form-control" />
                     <span asp-validation-for="Province" class="text-danger small"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 mb-3">
                     <label asp-for="PostalCode" class="form-label"></label>
                     <input asp-for="PostalCode" class="form-control" inputmode="numeric" pattern="\d*" />
                     <span asp-validation-for="PostalCode" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
-    </div>
+        </fieldset>
+    </section>
 
-    <!-- Contact -->
-    <div class="card mb-3">
-        <div class="card-header fw-semibold">Contact</div>
-        <div class="card-body">
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Contact</legend>
+            <hr />
             <div class="row g-3">
                 <div class="col-md-6">
                     <label asp-for="Email" class="form-label"></label>
@@ -98,36 +96,33 @@
                     <span asp-validation-for="ContactPosition" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
-    </div>
+        </fieldset>
+    </section>
 
-    <!-- Status & Notes -->
-    <div class="card mb-3">
-        <div class="card-header fw-semibold">Status & Notes</div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
+    <section class="card mb-3">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Status & Notes</legend>
+            <hr />
+            <div class="row">
+                <div class="col-md-4 mb-3">
                     <label asp-for="Status" class="form-label"></label>
-                    <!-- Prefer asp-items; pastikan controller Edit GET mengisi ViewBag.Statuses -->
                     <select asp-for="Status" class="form-select" asp-items="ViewBag.Statuses">
                         <option value="">-- Select Status --</option>
                     </select>
                     <span asp-validation-for="Status" class="text-danger small"></span>
                 </div>
-                <div class="col-md-8">
+
+                <div class="col-md-8 mb-3">
                     <label asp-for="Comment" class="form-label"></label>
                     <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Optional notes..."></textarea>
                     <span asp-validation-for="Comment" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
-    </div>
+        </fieldset>
+    </section>
 
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check2-circle"></i> Save
-        </button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save</button>
     </div>
 </form>
 

@@ -6,31 +6,38 @@
 }
 
 
-<div class="d-flex justify-content-between align-items-center mb-3 border-bottom">
-  <h1>Edit Workorder Type</h1>
-
-  <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+<div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+    <h1 class="h3 mb-0">Edit Work Order Type</h1>
+    <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to list</a>
 </div>
 
 <form asp-action="Edit">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input type="hidden" asp-for="WoTypeId" />
-    <div class="form-group mb-2">
-        <label asp-for="TypeName" class="form-label"></label>
-        <input type="text" asp-for="TypeName" class="form-control" />
-        <span asp-validation-for="TypeName" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-2">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control" cols="3"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-2">
-        <button type="submit" class="btn btn-primary">Save</button>
+
+    <section class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="TypeName" class="form-label"></label>
+                <input type="text" asp-for="TypeName" class="form-control" />
+                <span asp-validation-for="TypeName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" cols="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+        </div>
+    </section>
+
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save</button>
     </div>
 </form>
 
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
