@@ -25,7 +25,7 @@ namespace ProcurementHTE.Core.Services
             await _documentTypeRepository.CreateDocumentTypeAsync(documentType);
         }
 
-        public async Task EditDocumentTypeAsync(Models.DocumentType documentType, int id)
+        public async Task EditDocumentTypeAsync(Models.DocumentType documentType, string id)
         {
             if (documentType == null)
             {
@@ -50,7 +50,7 @@ namespace ProcurementHTE.Core.Services
             await _documentTypeRepository.DropDocumentTypeAsync(documentType);
         }
 
-        public Task<DocumentType?> GetDocumentTypeByIdAsync(int id)
+        public Task<DocumentType?> GetDocumentTypeByIdAsync(string id)
         {
             return _documentTypeRepository.GetByIdAsync(id);
         }
