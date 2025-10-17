@@ -6,7 +6,7 @@ namespace ProcurementHTE.Core.Models
     public class WoTypeDocuments
     {
         [Key]
-        public int Id { get; set; }
+        public string WoTypeDocumentId { get; set; } = Guid.NewGuid().ToString();
 
         public bool IsMandatory { get; set; } = true;
 
@@ -21,16 +21,15 @@ namespace ProcurementHTE.Core.Models
         public string? Note { get; set; }
 
         // Foreign Keys
-        public int WoTypeId { get; set; }
+        public string WoTypeId { get; set; } = null!;
+        public string DocumentTypeId { get; set; } = null!;
 
         [ForeignKey("WoTypeId")]
         public WoTypes WoType { get; set; } = default!;
 
-        public int DocumentTypeId { get; set; }
-
         [ForeignKey("DocumentTypeId")]
         public DocumentType DocumentType { get; set; } = default!;
 
-        public ICollection<DocumentApprovals> DocumentApprovals { get; set; } = new List<DocumentApprovals>();
+        public ICollection<DocumentApprovals> DocumentApprovals { get; set; } = [];
     }
 }

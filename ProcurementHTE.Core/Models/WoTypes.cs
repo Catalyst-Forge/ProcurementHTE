@@ -5,7 +5,7 @@ namespace ProcurementHTE.Core.Models
     public class WoTypes
     {
         [Key]
-        public int WoTypeId { get; set; }
+        public string WoTypeId { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
         [MaxLength(100)]
@@ -13,8 +13,7 @@ namespace ProcurementHTE.Core.Models
 
         public string? Description { get; set; }
 
-        public ICollection<WorkOrder> WorkOrders { get; set; } = new List<WorkOrder>();
-
-        public ICollection<WoTypeDocuments> WoTypeDocuments { get; set; } = new List<WoTypeDocuments>();
+        public ICollection<WorkOrder> WorkOrders { get; set; } = [];
+        public ICollection<WoTypeDocuments> WoTypeDocuments { get; set; } = [];
     }
 }
