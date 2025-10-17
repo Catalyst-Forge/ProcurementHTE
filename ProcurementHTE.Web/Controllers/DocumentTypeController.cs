@@ -53,25 +53,23 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: DocumentType/Edit/5
-        public async Task<IActionResult> Edit(int id)
-        {
-            if (id == 0)
-            {
-                return NotFound();
+        public async Task<IActionResult> Edit(string id) {
+            if (id != null) {
+                var documentType = await _documentTypeService.GetDocumentTypeByIdAsync(id);
+                return View(documentType);
             }
-            var documentType = await _documentTypeService.GetDocumentTypeByIdAsync(id);
-            return View(documentType);
+            return NotFound();
         }
 
         // POST: DocumentType/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int id,
+            string id,
             [Bind("Id,Name,Description")] DocumentType documentType
         )
         {
-            if (id != documentType.Id)
+            if (id != documentType.DocumentTypeId)
             {
                 return NotFound();
             }
@@ -91,7 +89,7 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: DocumentType/Delete/5
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
             try
             {
