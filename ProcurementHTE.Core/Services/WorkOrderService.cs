@@ -36,7 +36,7 @@ namespace ProcurementHTE.Core.Services
             return await _woRepository.CountAsync(ct);
         }
 
-        public async Task<WoTypes?> GetWoTypeByIdAsync(int id)
+        public async Task<WoTypes?> GetWoTypeByIdAsync(string id)
         {
             return await _woRepository.GetWoTypeByIdAsync(id);
         }
@@ -44,6 +44,10 @@ namespace ProcurementHTE.Core.Services
         public async Task<Status?> GetStatusByNameAsync(string name)
         {
             return await _woRepository.GetStatusByNameAsync(name);
+        }
+
+        public async Task<WorkOrder?> GetWithOffersAsync(string id) {
+            return await _woRepository.GetWithOffersAsync(id);
         }
 
         public async Task<(
@@ -69,7 +73,7 @@ namespace ProcurementHTE.Core.Services
                 throw new ArgumentException("Tipe Work Order harus dipilih", nameof(wo.WoTypeId));
             }
 
-            var woType = await _woRepository.GetWoTypeByIdAsync(wo.WoTypeId.Value);
+            var woType = await _woRepository.GetWoTypeByIdAsync(wo.WoTypeId);
             if (woType is null)
             {
                 throw new KeyNotFoundException($"WoType dengan Id {wo.WoTypeId} tidak ditemukan");
@@ -96,7 +100,7 @@ namespace ProcurementHTE.Core.Services
                 throw new ArgumentException("Tipe Work order harus dipilih", nameof(wo.WoTypeId));
             }
 
-            var woType = await _woRepository.GetWoTypeByIdAsync(wo.WoTypeId.Value);
+            var woType = await _woRepository.GetWoTypeByIdAsync(wo.WoTypeId);
             if (woType is null)
             {
                 throw new KeyNotFoundException($"WoType dengan Id {wo.WoTypeId} tidak ditemukan");
@@ -143,11 +147,7 @@ namespace ProcurementHTE.Core.Services
 
         public async Task DeleteWorkOrderAsync(WorkOrder wo)
         {
-            if (wo == null)
-            {
-                throw new ArgumentException(nameof(wo));
-            }
-
+            ArgumentNullException.ThrowIfNull(wo);
             await _woRepository.DropWorkOrderAsync(wo);
         }
     }
