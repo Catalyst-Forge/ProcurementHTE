@@ -59,9 +59,9 @@ namespace ProcurementHTE.Core.Models
         [MaxLength(200)]
         public string? Comment { get; set; }
 
-        [Required]
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public ICollection<VendorWorkOrder> VendorWorkOrders { get; set; } = new List<VendorWorkOrder>();
+        public ICollection<VendorOffer> VendorOffers { get; set; } = [];
     }
 }
