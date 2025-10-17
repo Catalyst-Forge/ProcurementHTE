@@ -64,13 +64,13 @@
                         </td>
                         <td class="text-center">
                             <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
-                               asp-action="Edit" asp-route-id="@item.Id" role="button">
+                               asp-action="Edit" asp-route-id="@item.DocumentTypeId" role="button">
                                 <span class="visually-hidden">Edit</span>
                                 <i class="bi bi-pencil-fill"></i>
                             </a>
 
                             <form asp-action="DeleteConfirmed"
-                                  asp-route-id="@item.Id"
+                                  asp-route-id="@item.DocumentTypeId"
                                   method="post"
                                   class="d-inline delete-form"
                                   data-name="@item.Name">
