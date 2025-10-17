@@ -5,19 +5,23 @@ using ProcurementHTE.Core.Authorization.Resources;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Core.Authorization.Handlers {
+namespace ProcurementHTE.Core.Authorization.Handlers
+{
     public sealed class CanApproveWoDocumentHandler
-        : AuthorizationHandler<CanApproveWoDocumentRequirement, ApproveDocContext> {
-        private readonly IWoDocumentsRepository _docRepository;
-        private readonly IWoDocumentApprovalsRepository _woDocApprovalRepository;
-        private readonly IWoTypeDocumentsRepository _configRepository;
+        : AuthorizationHandler<CanApproveWoDocumentRequirement, ApproveDocContext>
+    {
+        private readonly IWoDocumentRepository _docRepository;
+        private readonly IWoDocumentApprovalRepository _woDocApprovalRepository;
+        private readonly IWoTypeDocumentRepository _configRepository;
         private readonly RoleManager<Role> _roleManager;
 
         public CanApproveWoDocumentHandler(
-            IWoDocumentsRepository docRepository,
-            IWoDocumentApprovalsRepository woDocApprovalRepository,
-            IWoTypeDocumentsRepository configRepository,
-            RoleManager<Role> roleManager) {
+            IWoDocumentRepository docRepository,
+            IWoDocumentApprovalRepository woDocApprovalRepository,
+            IWoTypeDocumentRepository configRepository,
+            RoleManager<Role> roleManager
+        )
+        {
             _docRepository = docRepository;
             _woDocApprovalRepository = woDocApprovalRepository;
             _configRepository = configRepository;
@@ -27,19 +31,23 @@ namespace ProcurementHTE.Core.Authorization.Handlers {
         protected override async Task HandleRequirementAsync(
             AuthorizationHandlerContext context,
             CanApproveWoDocumentRequirement requirement,
-            ApproveDocContext resource) {
-            if (context.User.IsInRole("Admin")) {
+            ApproveDocContext resource
+        )
+        {
+            if (context.User.IsInRole("Admin"))
+            {
                 context.Succeed(requirement);
                 return;
             }
 
             var doc = await _docRepository.GetByIdWithWorkOrderAsync(resource.WoDocumentId);
-            if (doc is null || doc.WorkOrder is null || doc.WorkOrder.WoTypeId is null) {
+            if (doc is null || doc.WorkOrder is null || doc.WorkOrder.WoTypeId is null)
+            {
                 return;
             }
 
-            var config = await _configRepository.GetForWoTypeAndDocTypeAsync(
-                doc.WorkOrder.WoTypeId.Value,
+            var config = await _configRepository.FindByWoTypeAndDocTypeAsync(
+                doc.WorkOrder.WoTypeId,
                 doc.DocumentTypeId
             );
             if (config is null)
@@ -52,7 +60,7 @@ namespace ProcurementHTE.Core.Authorization.Handlers {
             if (configured.Count == 0)
                 return;
 
-            var approved = (await _woDocApprovalRepository.GetApprovedAsync(doc.Id))
+            var approved = (await _woDocApprovalRepository.GetApprovedByWoDocumentIdAsync(doc.WoDocumentId))
                 .Select(r => r.RoleId)
                 .ToHashSet();
 
