@@ -21,11 +21,11 @@
 <header class="d-flex justify-content-between align-items-center">
     <h1 class="h2">Details</h1>
 
-    <div class="btn-group" role="group" aria-label="Button Action">
-        <a asp-action="CreatePnL" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create PnL</a>
-        <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-        <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-danger" role="button"><i class="bi bi-trash"></i> Delete</a>
-        <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow mb-0-left-circle"></i> Back to List</a>
+    <div class="d-flex gap-2" role="group" aria-label="Button Action">
+        <a asp-action="CreatePnL" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create PnL</a>
+        <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i> Delete</a>
+        <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
     </div>
 </header>
 
@@ -86,9 +86,6 @@
                                             No
                                         </th>
                                         <th class="mw-100 text-nowrap border-end">
-                                            WO Num.
-                                        </th>
-                                        <th class="mw-100 text-nowrap border-end">
                                             Item Name
                                         </th>
                                         <th class="mw-100 text-nowrap">
@@ -104,7 +101,6 @@
                                         foreach (var detail in Model.WoDetails) {
                                             <tr>
                                                 <td>@no</td>
-                                                <td>@detail.WorkOrder.WoNum</td>
                                                 <td>@detail.ItemName</td>
                                                 <td>@detail.Quantity</td>
                                                 <td>@detail.Unit</td>
@@ -253,8 +249,8 @@
             <div class="d-grid gap-4 mt-3" style="grid-template-columns: 2fr 1fr">
                 <div>
                     <!-- Tagihan PDSI -->
-                    <div class="card border-success-subtle shadow-sm mb-2">
-                        <div class="card-header bg-success-subtle fw-semibold">
+                    <div class="card shadow-sm mb-2">
+                        <div class="card-header fw-semibold">
                             <h2 class="card-title mb-0 h4">Tagihan PDSI</h2>
                         </div>
 
@@ -281,7 +277,7 @@
 
                     <!-- Penawaran Mitra -->
                     <div class="card shadow-sm mb-2">
-                        <div class="card-header bg-primary-subtle fw-semibold">
+                        <div class="card-header fw-semibold">
                             <h2 class="card-title mb-0 h4">Penawaran Mitra</h2>
                         </div>
 
@@ -325,8 +321,8 @@
 
                 <div>
                     <!-- Informasi P&L -->
-                    <div class="card border-success-subtle shadow-sm mb-2">
-                        <div class="card-header bg-success-subtle">
+                    <div class="card shadow-sm mb-2">
+                        <div class="card-header">
                             <h2 class="card-title mb-0 h4">Information P&amp;L</h2>
                         </div>
 

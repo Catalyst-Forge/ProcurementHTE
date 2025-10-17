@@ -20,7 +20,7 @@
 
 <header class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Work Orders</h1>
-    <a asp-action="SelectType" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+    <a asp-action="SelectType" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
 <div class="border rounded-3 d-flex gap-2 p-2 mb-2">
@@ -115,4 +115,21 @@
             }
         </tbody>
     </table>
+</div>
+
+<div class="hstack justify-content-between border rounded-3 my-2 p-2">
+    <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination mb-0 gap-1">
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+            </li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+            </li>
+        </ul>
+    </nav>
 </div>
