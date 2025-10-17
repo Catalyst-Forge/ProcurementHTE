@@ -159,6 +159,15 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
             services.AddScoped<IAuthorizationRequirement, CanApproveWoDocumentRequirement>();
             services.AddScoped<IAuthorizationHandler, CanApproveWoDocumentHandler>();
+            services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
+            services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
+            services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
+            services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
+            services.AddScoped<IWoDocumentService, WoDocumentService>();
+            services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
+            services.AddScoped<IWoTypeDocumentService, WoTypeDocumentService>();
+            services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
+            services.AddScoped<IWoDocumentApprovalService, WoDocumentApprovalService>();
 
             return services;
         }
