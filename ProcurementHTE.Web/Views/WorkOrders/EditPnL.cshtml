@@ -1,0 +1,317 @@
+﻿@using System.Globalization
+@model ProcurementHTE.Web.Models.ViewModels.EditProfitLossViewModel
+@{
+    ViewData["Title"] = "Edit Profit & Loss";
+    var idr = new CultureInfo("id-ID");
+}
+
+<form asp-action="EditPnL" asp-controller="WorkOrders" method="post" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ProfitLossId" />
+
+    <header class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1">Edit Profit &amp; Loss</h1>
+            <span class="text-muted small">
+                WO: <strong>@Model.WoNum</strong> &middot; Vendor Terpilih: <strong>@(Model.VendorName ?? "-")</strong>
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="PnLDetails" asp-route-id="@Model.ProfitLossId" class="btn btn-outline-secondary" role="button">
+                <i class="bi bi-eye"></i> Lihat
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary" role="button">
+                <i class="bi bi-arrow-left"></i> Kembali
+            </a>
+        </div>
+    </header>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+    <div class="row g-3">
+        <!-- Tagihan PDSI -->
+        <div class="col-12">
+            <div class="card border-success-subtle shadow-sm">
+                <div class="card-header bg-success-subtle"><h2 class="h6 mb-0 fw-semibold">Tagihan PDSI</h2></div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-start">
+                        <div class="col-md-4">
+                            <label asp-for="Revenue" class="form-label">Revenue</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input asp-for="Revenue" class="form-control calc-recalc" inputmode="numeric" />
+                            </div>
+                            <span asp-validation-for="Revenue" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="CostOperator" class="form-label">Cost Operator</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input asp-for="CostOperator" class="form-control calc-recalc" inputmode="numeric" />
+                            </div>
+                            <span asp-validation-for="CostOperator" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Profit (otomatis)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input id="Profit" name="Profit" class="form-control" value="@(Model.Profit?.ToString("N0", idr))" readonly />
+                            </div>
+                            <small><span class="text-muted small">= Revenue - Best Offer - Cost Operator</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penawaran Mitra -->
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary-subtle d-flex justify-content-between align-items-center">
+                    <h2 class="h6 mb-0 fw-semibold">Penawaran Mitra</h2>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="overrideBestSwitch">
+                        <label class="form-check-label" for="overrideBestSwitch">Pilih best offer manual</label>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-bordered">
+                            <thead class="table-light">
+                                <tr class="text-center">
+                                    <th style="width:60px;">#</th>
+                                    <th>Harga Penawaran</th>
+                                    <th style="width:120px;">Best?</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    <td class="text-center">1</td>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input asp-for="Penawaran1Price" class="form-control offer calc-recalc" inputmode="numeric" />
+                                        </div>
+                                        <span asp-validation-for="Penawaran1Price" class="text-danger small"></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <input class="form-check-input best-radio" type="radio" name="bestManual" value="1" disabled>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="text-center">2</td>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input asp-for="Penawaran2Price" class="form-control offer calc-recalc" inputmode="numeric" />
+                                        </div>
+                                        <span asp-validation-for="Penawaran2Price" class="text-danger small"></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <input class="form-check-input best-radio" type="radio" name="bestManual" value="2" disabled>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="text-center">3</td>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input asp-for="Penawaran3Price" class="form-control offer calc-recalc" inputmode="numeric" />
+                                        </div>
+                                        <span asp-validation-for="Penawaran3Price" class="text-danger small"></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <input class="form-check-input best-radio" type="radio" name="bestManual" value="3" disabled>
+                                    </td>
+                                </tr>
+
+                                <tr class="table-success">
+                                    <td class="text-center fw-semibold">Best</td>
+                                    <td colspan="2">
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input asp-for="BestOfferPrice" class="form-control" id="BestOfferPrice" readonly />
+                                        </div>
+                                        <small><span class="text-muted small">Otomatis harga terendah (atau sesuai pilihan manual jika diaktifkan).</span></small>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <input type="hidden" name="SelectedBestIndex" id="SelectedBestIndex" value="" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Ringkasan / Estimate -->
+        <div class="col-12">
+            <div class="card border-success-subtle shadow-sm">
+                <div class="card-header bg-success-subtle"><h2 class="h6 mb-0 fw-semibold">Profit &amp; Loss Estimate</h2></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Profit % (otomatis)</label>
+                            <div class="input-group">
+                                <input id="ProfitPercentage" name="ProfitPercentage" class="form-control" value="@(Model.ProfitPercentage?.ToString("0.0", idr))" readonly />
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small><span class="text-muted small">= Profit / Revenue × 100</span></small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="AdjustmentRate" class="form-label">Adjustment Rate</label>
+                            <div class="input-group">
+                                <input asp-for="AdjustmentRate" class="form-control calc-recalc" inputmode="numeric" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <span asp-validation-for="AdjustmentRate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Adjusted Profit (otomatis)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input id="AdjustedProfit" name="AdjustedProfit" class="form-control" value="@(Model.AdjustedProfit?.ToString("N0", idr))" readonly />
+                            </div>
+                            <small><span class="text-muted small">= Profit × (1 + Adjustment%)</span></small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Potential New Profit (otomatis)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input id="PotentialNewProfit" class="form-control" value="@(Model.AdjustedProfit?.ToString("N0", idr))" readonly />
+                            </div>
+                            <small><span class="text-muted small">Sama dengan Adjusted Profit.</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions (duplikat bawah untuk scroll jauh) -->
+        <div class="col-12 d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary" role="button">Batal</a>
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check2-circle"></i> Simpan Perubahan
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // ========= Helpers =========
+        const toNumber = (v) => {
+            if (v == null) return 0;
+            if (typeof v === "number") return v;
+            return Number(String(v)
+                .replaceAll(".", "")
+                .replaceAll(",", ".")
+                .replace(/[^\d.-]/g, "")) || 0;
+        };
+        const fmtMoney = (n) => {
+            try { return (n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }); }
+            catch { return n; }
+        };
+
+        // ========= Elements =========
+        const idRevenue  = "@Html.IdFor(m => m.Revenue)";
+        const idCost     = "@Html.IdFor(m => m.CostOperator)";
+        const idAdj      = "@Html.IdFor(m => m.AdjustmentRate)";
+        const elRevenue  = document.getElementById(idRevenue);
+        const elCost     = document.getElementById(idCost);
+        const elAdj      = document.getElementById(idAdj);
+
+        const elOffer1   = document.getElementById("@Html.IdFor(m => m.Penawaran1Price)");
+        const elOffer2   = document.getElementById("@Html.IdFor(m => m.Penawaran2Price)");
+        const elOffer3   = document.getElementById("@Html.IdFor(m => m.Penawaran3Price)");
+
+        const elBest     = document.getElementById("@Html.IdFor(m => m.BestOfferPrice)");
+        const elProfit   = document.getElementById("Profit");
+        const elProfitPct= document.getElementById("ProfitPercentage");
+        const elAdjProfit= document.getElementById("AdjustedProfit");
+        const elPotential= document.getElementById("PotentialNewProfit");
+
+        const overrideSwitch = document.getElementById("overrideBestSwitch");
+        const radios = Array.from(document.querySelectorAll(".best-radio"));
+        const selectedBestIndexHidden = document.getElementById("SelectedBestIndex");
+
+        // ========= Logic =========
+        function offers() {
+            return [
+                { idx: 1, val: toNumber(elOffer1?.value) },
+                { idx: 2, val: toNumber(elOffer2?.value) },
+                { idx: 3, val: toNumber(elOffer3?.value) },
+            ].filter(x => x.val > 0);
+        }
+
+        function autoBest() {
+            const xs = offers();
+            if (!xs.length) return { idx: 0, val: 0 };
+            let min = xs[0];
+            for (const x of xs) if (x.val < min.val) min = x;
+            return min;
+        }
+
+        function currentBest() {
+            if (overrideSwitch?.checked) {
+                const r = radios.find(x => x.checked);
+                if (r) {
+                    const idx = Number(r.value);
+                    const val = idx === 1 ? toNumber(elOffer1?.value)
+                              : idx === 2 ? toNumber(elOffer2?.value)
+                              : toNumber(elOffer3?.value);
+                    return { idx, val };
+                }
+            }
+            return autoBest();
+        }
+
+        function recalc() {
+            const revenue = toNumber(elRevenue?.value);
+            const cost    = toNumber(elCost?.value);
+            const adjRate = toNumber(elAdj?.value) / 100;
+
+            const best = currentBest();
+            elBest.value = fmtMoney(best.val);
+            selectedBestIndexHidden.value = best.idx || "";
+
+            const profit = revenue - best.val - cost;
+            const pct = revenue > 0 ? (profit / revenue) * 100 : 0;
+            const adjProfit = profit * (1 + adjRate);
+
+            elProfit.value    = fmtMoney(profit);
+            elProfitPct.value = pct.toFixed(1);
+            elAdjProfit.value = fmtMoney(adjProfit);
+            elPotential.value = fmtMoney(adjProfit);
+        }
+
+        // ========= Wiring =========
+        [elRevenue, elCost, elAdj, elOffer1, elOffer2, elOffer3].forEach(el => {
+            el?.addEventListener("input", recalc);
+            el?.addEventListener("change", recalc);
+        });
+
+        overrideSwitch?.addEventListener("change", () => {
+            const enable = overrideSwitch.checked;
+            radios.forEach(r => r.disabled = !enable);
+            if (!enable) radios.forEach(r => r.checked = false);
+            recalc();
+        });
+        radios.forEach(r => {
+            r.addEventListener("change", recalc);
+        });
+
+        // Init
+        recalc();
+    </script>
+}
