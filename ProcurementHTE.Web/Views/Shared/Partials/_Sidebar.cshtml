@@ -32,11 +32,11 @@
               Work Orders
             </a>
           </li>
-          <li>
+          @* <li>
             <a class="nav-link link-secondary rounded-1" asp-controller="Tenders" asp-action="Index" data-page="Tenders">
               Tenders
             </a>
-          </li>
+          </li> *@
           <li>
             <a class="nav-link link-secondary rounded-1" asp-controller="Vendors" asp-action="Index" data-page="Vendors">
               Vendors
@@ -95,23 +95,23 @@
           <li>
             <a class="nav-link link-secondary rounded-1 d-flex align-items-center"
               data-bs-toggle="collapse"
-              href="#masterDataSubmenu"
+              href="#rulesAndMappingSubmenu"
               role="button"
               aria-expanded="false"
-              aria-controls="masterDataSubmenu">
+              aria-controls="rulesAndMappingSubmenu">
               <span>Rules & Mapping</span>
               <i class="bi bi-chevron-down small ms-auto"></i>
             </a>
 
-            <div class="collapse submenu" id="masterDataSubmenu">
+            <div class="collapse submenu" id="rulesAndMappingSubmenu">
               <ul class="list-unstyled fw-normal pb-1 ps-4 small">
                 <li>
-                  <a class="nav-link link-secondary rounded-1" asp-controller="WoType" asp-action="Index" data-page="Index Work Order Types">
+                  <a class="nav-link link-secondary rounded-1" asp-controller="DocumentApprovals" asp-action="Index" data-page="Index Document Approvals">
                     Document Approvals
                   </a>
                 </li>
                 <li>
-                  <a class="nav-link link-secondary rounded-1" asp-controller="DocumentType" asp-action="Index" data-page="Index Document Types">
+                  <a class="nav-link link-secondary rounded-1" asp-controller="WoTypeDocument" asp-action="Index" data-page="Index Wo Type Documents">
                     WO Type-Document Mapping
                   </a>
                 </li>
