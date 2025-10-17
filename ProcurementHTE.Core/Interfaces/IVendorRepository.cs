@@ -6,8 +6,9 @@ namespace ProcurementHTE.Core.Interfaces
     {
         Task<List<Vendor>> GetAllAsync();
         Task<Vendor?> GetByIdAsync(string id);
-        Task<int> CountAsync();
         Task<string?> GetLastCodeAsync(string prefix);
+        Task<IEnumerable<Vendor>> GetAllWithOffersAsync();
+        Task<int> CountAsync();
         Task StoreVendorAsync(Vendor vendor);
         Task UpdateVendorAsync(Vendor vendor);
         Task DropVendorAsync(Vendor vendor);
