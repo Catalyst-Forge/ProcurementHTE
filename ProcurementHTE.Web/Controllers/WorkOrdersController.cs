@@ -100,7 +100,7 @@ namespace ProcurementHTE.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SelectType(int woTypeId)
+        public IActionResult SelectType(string woTypeId)
         {
             return RedirectToAction(nameof(CreateByType), new { woTypeId });
         }
