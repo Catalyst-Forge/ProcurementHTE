@@ -26,8 +26,7 @@ namespace ProcurementHTE.Web.Extensions
 
             // Identity
             services
-                .AddIdentity<User, Role>(options =>
-                {
+                .AddIdentity<User, Role>(options => {
                     // Password Settings
                     options.Password.RequireDigit = true;
                     options.Password.RequireLowercase = true;
@@ -48,9 +47,9 @@ namespace ProcurementHTE.Web.Extensions
                     options.SignIn.RequireConfirmedPhoneNumber = false;
                     options.SignIn.RequireConfirmedAccount = false;
                 })
-                .AddRoles<Role>()
                 .AddEntityFrameworkStores<AppDbContext>()
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddClaimsPrincipalFactory<CustomUserClaimsPrrincipalFactory>();
 
             // Authorization Policies
             services
@@ -67,47 +66,47 @@ namespace ProcurementHTE.Web.Extensions
                 )
                 .AddPolicy(
                     Permissions.WO.Read,
-                    p => p.RequireClaim("permission", Permissions.WO.Read)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Read))
                 )
                 .AddPolicy(
                     Permissions.WO.Create,
-                    p => p.RequireClaim("permission", Permissions.WO.Create)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Create))
                 )
                 .AddPolicy(
                     Permissions.WO.Edit,
-                    p => p.RequireClaim("permission", Permissions.WO.Edit)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Edit))
                 )
                 .AddPolicy(
                     Permissions.WO.Delete,
-                    p => p.RequireClaim("permission", Permissions.WO.Delete)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Delete))
                 )
                 .AddPolicy(
                     Permissions.Vendor.Read,
-                    p => p.RequireClaim("permission", Permissions.Vendor.Read)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Read))
                 )
                 .AddPolicy(
                     Permissions.Vendor.Create,
-                    p => p.RequireClaim("permission", Permissions.Vendor.Create)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Create))
                 )
                 .AddPolicy(
                     Permissions.Vendor.Edit,
-                    p => p.RequireClaim("permission", Permissions.Vendor.Edit)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Edit))
                 )
                 .AddPolicy(
                     Permissions.Vendor.Delete,
-                    p => p.RequireClaim("permission", Permissions.Vendor.Delete)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Delete))
                 )
                 .AddPolicy(
                     Permissions.Doc.Read,
-                    p => p.RequireClaim("permission", Permissions.Doc.Read)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Read))
                 )
                 .AddPolicy(
                     Permissions.Doc.Upload,
-                    p => p.RequireClaim("permission", Permissions.Doc.Upload)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Upload))
                 )
                 .AddPolicy(
                     Permissions.Doc.Approve,
-                    p => p.RequireClaim("permission", Permissions.Doc.Approve)
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Approve))
                 )
                 .AddPolicy(
                     "AtLeast.Manager",
@@ -142,11 +141,15 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IVendorService, VendorService>();
             services.AddScoped<ITenderRepository, TenderRepository>();
             services.AddScoped<ITenderService, TenderService>();
-            services.AddScoped<IWoTypeService, WoTypesService>();
             services.AddScoped<IWoTypeRepository, WoTypesRepository>();
+            services.AddScoped<IWoTypeService, WoTypesService>();
             services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
             services.AddScoped<IDocumentTypeService, DocumentTypeService>();
             services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
+            services.AddScoped<IAuthorizationRequirement, PermissionRequirement>();
+            services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            services.AddScoped<IAuthorizationRequirement, CanApproveWoDocumentRequirement>();
+            services.AddScoped<IAuthorizationHandler, CanApproveWoDocumentHandler>();
 
             return services;
         }
