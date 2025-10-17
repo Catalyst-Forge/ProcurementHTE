@@ -8,6 +8,7 @@
     var no = 1;
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    var pnl = ViewBag.PnlViewModel as ProcurementHTE.Web.Models.ViewModels.EditProfitLossViewModel;
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
@@ -21,7 +22,7 @@
     <h1 class="h2">Details</h1>
 
     <div class="btn-group" role="group" aria-label="Button Action">
-        <a asp-action="" asp-route-id="@Model?.WorkOrderId" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create PnL</a>
+        <a asp-action="CreatePnL" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create PnL</a>
         <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
         <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-danger" role="button"><i class="bi bi-trash"></i> Delete</a>
         <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow mb-0-left-circle"></i> Back to List</a>
@@ -55,7 +56,7 @@
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WoNum)</dt>
                             <dd class="col-sm-9">@Html.DisplayFor(model => model.WoNum)</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateLetter)</dt>
-                            <dd class="col-sm-9">@Html.DisplayFor(model => model.DateLetter)</dd>
+                            <dd class="col-sm-9">@Model.DateLetter.ToTanggalIndonesia()</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FromLocation)</dt>
                             <dd class="col-sm-9">@Html.DisplayFor(model => model.FromLocation)</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Destination)</dt>
@@ -65,7 +66,7 @@
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.GlAccount)</dt>
                             <dd class="col-sm-9">@Html.DisplayFor(model => model.GlAccount)</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateRequired)</dt>
-                            <dd class="col-sm-9">@Html.DisplayFor(model => model.DateRequired)</dd>
+                            <dd class="col-sm-9">@Model.DateRequired.ToTanggalIndonesia()</dd>
                         </dl>
                     </div>
                 </div>
@@ -103,7 +104,7 @@
                                         foreach (var detail in Model.WoDetails) {
                                             <tr>
                                                 <td>@no</td>
-                                                <td>@detail.WoNum</td>
+                                                <td>@detail.WorkOrder.WoNum</td>
                                                 <td>@detail.ItemName</td>
                                                 <td>@detail.Quantity</td>
                                                 <td>@detail.Unit</td>
@@ -191,7 +192,7 @@
                                 @Html.DisplayNameFor(model => model.CreatedAt)
                             </dt>
                             <dd class="col-sm-9">
-                                @Html.DisplayFor(model => model.CreatedAt)
+                                @Model.CreatedAt.ToTanggalIndonesia()
                             </dd>
                         </dl>
                     </div>
@@ -239,8 +240,134 @@
     </div>
 
     <div class="tab-pane" id="pnl-tab-pane" role="tabpanel" aria-labelledby="pnl-tab" tabindex="0">
-        <h1>test</h1>
+        @if (pnl == null) {
+            <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Belum ada data Profit &amp; Loss untuk WO ini.
+            </div>
+
+            <a asp-action="CreatePnL" asp-route-workOrderId="@Model.WorkOrderId" class="btn btn-success">
+                <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
+            </a>
+        } else {
+            <div class="d-grid gap-4 mt-3" style="grid-template-columns: 2fr 1fr">
+                <div>
+                    <!-- Tagihan PDSI -->
+                    <div class="card border-success-subtle shadow-sm mb-2">
+                        <div class="card-header bg-success-subtle fw-semibold">
+                            <h2 class="card-title mb-0 h4">Tagihan PDSI</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-label">Revenue</div>
+                                    <div class="fs-5 fw-semibold">@pnl.Revenue.ToIDR()</div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-label">Cost Operator</div>
+                                    <div class="fs-5 fw-semibold">@pnl.CostOperator.ToIDR()</div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-label">Profit</div>
+                                    <div class="fs-5 fw-semibold text-success">@pnl.Profit.ToIDR()</div>
+                                    <div class="small text-muted">= Revenue − Best Offer − Cost Operator</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Penawaran Mitra -->
+                    <div class="card shadow-sm mb-2">
+                        <div class="card-header bg-primary-subtle fw-semibold">
+                            <h2 class="card-title mb-0 h4">Penawaran Mitra</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle">
+                                    <thead class="table-light">
+                                        <tr class="text-center">
+                                            <th style="width:80px;">#</th>
+                                            <th>Harga Penawaran</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody class="text-center">
+                                        <tr>
+                                            <td>1</td>
+                                            <td>@pnl.Penawaran1Price.ToIDR()</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td>@pnl.Penawaran2Price.ToIDR()</td>
+                                        </tr>
+                                        <tr>
+                                            <td>3</td>
+                                            <td>@pnl.Penawaran3Price.ToIDR()</td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <td class="fw-semibold">Best</td>
+                                            <td class="fw-bold">@pnl.BestOfferPrice.ToIDR()</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="small text-muted">
+                                Best offer dipilih otomatis sebagai harga terendah (atau sesuai pilihan saat input).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Informasi P&L -->
+                    <div class="card border-success-subtle shadow-sm mb-2">
+                        <div class="card-header bg-success-subtle">
+                            <h2 class="card-title mb-0 h4">Information P&amp;L</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Vendor Terpilih</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge text-bg-success">@pnl.VendorName</span>
+                                </dd>
+
+                                <dt class="col-sm-5">WO Number</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge text-bg-secondary">@pnl.WoNum</span>
+                                </dd>
+
+                                <dt class="col-sm-5">Profit %</dt>
+                                <dd class="col-sm-7">@pnl.ProfitPercentage.ToPersen()</dd>
+
+                                <dt class="col-sm-5">Adjustment Rate</dt>
+                                <dd class="col-sm-7">@pnl.AdjustmentRate.ToPersen()</dd>
+
+                                <dt class="col-sm-5">Adjusted Profit</dt>
+                                <dd class="col-sm-7">@pnl.AdjustedProfit.ToIDR()</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Aksi -->
+                    <div class="d-grid gap-2">
+                        <a asp-action="EditPnL" asp-route-id="@pnl.ProfitLossId" class="btn btn-warning">
+                            <i class="bi bi-pencil-square"></i> Edit P&amp;L
+                        </a>
+                        <a asp-action="PnLDetails" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> Lihat P&amp;L Penuh
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
+
 </div>
 
 @section Scripts {
