@@ -111,7 +111,10 @@ namespace ProcurementHTE.Web.Extensions
                 )
                 .AddPolicy(
                     "AtLeast.Manager",
-                    p => p.AddRequirements(new MinimumRoleRequirement("Manager Transport & Logistic"))
+                    p =>
+                        p.AddRequirements(
+                            new MinimumRoleRequirement("Manager Transport & Logistic")
+                        )
                 );
 
             // Configure Cookie Authentication
@@ -146,6 +149,10 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IWoTypeRepository, WoTypesRepository>();
             services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
             services.AddScoped<IDocumentTypeService, DocumentTypeService>();
+            services.AddScoped<IProfitLossRepository, ProfitLossRepository>();
+            services.AddScoped<IProfitLossService, ProfitLossService>();
+            services.AddScoped<IVendorOfferRepository, VendorOfferRepository>();
+            services.AddScoped<IVendorOfferService, VendorOfferService>();
             services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
 
             return services;
