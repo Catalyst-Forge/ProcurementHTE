@@ -1,0 +1,87 @@
+﻿@using ProcurementHTE.Web.Models.ViewModels
+@model List<ProfitLossViewModel>
+
+@{
+    ViewData["Title"] = "Profit & Loss Management";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">📊 Profit & Loss Management</h1>
+                <a href="@Url.Action("Index", "WorkOrder")" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Buat P&L Baru
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Any()) {
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light border-0 py-3">
+                        <h5 class="card-title mb-0">Daftar Profit & Loss</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="px-4 py-3">No WO</th>
+                                        <th class="px-4 py-3">Vendor</th>
+                                        <th class="px-4 py-3 text-end">Revenue</th>
+                                        <th class="px-4 py-3 text-end">Cost Operator</th>
+                                        <th class="px-4 py-3 text-end">Profit</th>
+                                        <th class="px-4 py-3 text-end">%</th>
+                                        <th class="px-4 py-3 text-end">Best Offer</th>
+                                        <th class="px-4 py-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model) {
+                                        <tr>
+                                            <td class="px-4 py-3 fw-bold">@item.WoNum</td>
+                                            <td class="px-4 py-3">@item.VendorName</td>
+                                            <td class="px-4 py-3 text-end">
+                                                <span class="badge bg-info">Rp @item.Revenue</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-end">Rp @item.CostOperator</td>
+                                            <td class="px-4 py-3 text-end">
+                                                <span class="badge @(item.Profit > 0 ? "bg-success" : "bg-danger")">
+                                                    Rp @item.Profit
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-end">
+                                                <span class="badge @(item.ProfitPercentage > 30 ? "bg-success" : item.ProfitPercentage > 15 ? "bg-warning" : "bg-danger")">
+                                                    @item.ProfitPercentage%
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-end">Rp @item.BestOfferPrice</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <a href="@Url.Action("Edit", new { id = item.ProfitLossId })"
+                                                   class="btn btn-sm btn-outline-warning" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="@Url.Action("Delete", new { id = item.ProfitLossId })"
+                                                   class="btn btn-sm btn-outline-danger" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    } else {
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle"></i> Belum ada data Profit & Loss.
+            <a href="@Url.Action("Index", "WorkOrder")" class="alert-link">Buat P&L baru</a>
+        </div>
+    }
+</div>
