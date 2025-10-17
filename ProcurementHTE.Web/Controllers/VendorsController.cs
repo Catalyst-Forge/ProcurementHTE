@@ -38,85 +38,146 @@ namespace ProcurementHTE.Web.Controllers
         // GET: Vendors/Create
         public IActionResult Create()
         {
-            //ViewData["UserId"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewBag.Statuses = new SelectList(new[] { "Active", "Inactive", "Suspended" });
             return View();
         }
 
         // POST: Vendors/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("VendorId,VendorName,Price,Documents,CreatedAt,UserId")] Vendor vendor
+          [Bind("VendorName,NPWP,Address,City,Province,PostalCode,Email,PhoneNumber,ContactPerson,ContactPosition,Status,Comment")]
+  Vendor vendor
+        )
+        {
+            ModelState.Remove(nameof(Vendor.VendorCode)); // server akan isi kode
+
+            if (!ModelState.IsValid)
+            {
+                // <-- PENTING: isi lagi kalau validasi gagal
+                ViewBag.Statuses = new SelectList(new[] { "Active", "Inactive", "Suspended" });
+                return View(vendor);
+            }
+
+            await _vendorService.AddVendorAsync(vendor);
+            TempData["SuccessMessage"] = "Vendor berhasil ditambahkan.";
+            return RedirectToAction(nameof(Index));
+        }
+
+
+
+        // Helper untuk isi dropdown status
+        private void BindStatuses(string? selected = null)
+        {
+            ViewBag.Statuses = new SelectList(
+                new[] { "Active", "Inactive", "Suspended" }, selected
+            );
+        }
+
+        // GET: Vendors/Edit/5
+        public async Task<IActionResult> Edit(string? id)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(id))
+                    return NotFound();
+
+                var vendor = await _vendorService.GetVendorByIdAsync(id);
+                if (vendor == null)
+                    return NotFound();
+
+                BindStatuses(vendor.Status);
+                return View(vendor);
+            }
+            catch (Exception ex)
+            {
+                // Tampilkan pesan ramah + kembali ke list
+                TempData["ErrorMessage"] = "Gagal membuka halaman edit vendor: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: Vendors/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(
+            string id,
+            [Bind("VendorId,VendorCode,VendorName,NPWP,Address,City,Province,PostalCode,Email,PhoneNumber,ContactPerson,ContactPosition,Status,Comment")]
+    Vendor vendor
         )
         {
             try
             {
-                await _vendorService.AddVendorAsync(vendor);
+                if (id != vendor.VendorId)
+                    return NotFound();
+
+                // Validasi model standar
+                if (!ModelState.IsValid)
+                {
+                    BindStatuses(vendor.Status);
+                    return View(vendor);
+                }
+
+                await _vendorService.EditVendorAsync(vendor, id);
+
+                TempData["SuccessMessage"] = "Vendor berhasil diupdate.";
                 return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (KeyNotFoundException ex)
             {
-                return View();
+                // Data tidak ditemukan saat update
+                ModelState.AddModelError(string.Empty, ex.Message);
+                BindStatuses(vendor.Status);
+                return View(vendor);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Konflik concurrency (baris sudah berubah/dihapus)
+                ModelState.AddModelError(string.Empty,
+                    "Data vendor berubah saat Anda mengedit. Silakan muat ulang halaman dan coba lagi.");
+                BindStatuses(vendor.Status);
+                return View(vendor);
+            }
+            catch (DbUpdateException ex)
+            {
+                // Error DB (unique constraint, dsb.)
+                ModelState.AddModelError(string.Empty,
+                    "Gagal menyimpan perubahan ke database. " + ex.GetBaseException().Message);
+                BindStatuses(vendor.Status);
+                return View(vendor);
+            }
+            catch (Exception ex)
+            {
+                // Fallback umum
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan tak terduga: " + ex.Message);
+                BindStatuses(vendor.Status);
+                return View(vendor);
             }
         }
 
-        // GET: Vendors/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            return View();
-        }
-
-        // POST: Vendors/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            [Bind("VendorId,VendorName,Price,Documents,CreatedAt,UserId")] Vendor vendor
-        )
-        {
-            //
-            return View();
-        }
-
-        // GET: Vendors/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            //if (id == null) {
-            //  return NotFound();
-            //}
-
-            //var vendor = await _context.Vendors
-            //  .Include(v => v.User)
-            //  .FirstOrDefaultAsync(m => m.VendorId == id);
-            //if (vendor == null) {
-            //  return NotFound();
-            //}
-
-            //return View(vendor);
-            return View();
-        }
 
         // POST: Vendors/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            //var vendor = await _context.Vendors.FindAsync(id);
+            try
+            {
+                var vendor = await _vendorService.GetVendorByIdAsync(id);
+                if (vendor == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+                await _vendorService.DeleteVendorAsync(vendor);
 
-            //if (vendor != null) {
-            //  _context.Vendors.Remove(vendor);
-            //}
-
-            //await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Vendor berhasil dihapus.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Gagal menghapus data: " + ex.Message;
+            }
             return RedirectToAction(nameof(Index));
         }
-
-        //private bool VendorExists(int id) {
-        //  return _context.Vendors.Any(e => e.VendorId == id);
-        //}
     }
 }
+

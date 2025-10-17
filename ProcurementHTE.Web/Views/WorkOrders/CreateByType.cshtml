@@ -8,33 +8,26 @@
 <h2 class="mb-1">@ViewData["Title"]</h2>
 <p class="text-muted mb-4">Tipe: <span class="fw-semibold">@woTypeName</span></p>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <form asp-action="Create" method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    <input type="hidden" asp-for="WorkOrder.WoTypeId" />
 
-            <input type="hidden" asp-for="WorkOrder.WoTypeId" />
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label asp-for="WorkOrder.StatusId" class="form-label"></label>
-                    <select asp-for="WorkOrder.StatusId" class="form-select" asp-items="@(ViewData["StatusId"] as SelectList)">
-                        <option value="">-- pilih status --</option>
-                    </select>
-                    <span asp-validation-for="WorkOrder.StatusId" class="text-danger"></span>
-                </div>
+    <section class="card shadow-sm mb-3">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Work Order Type</legend>
+            <hr />
+            <div class="row">
                 <div class="col-md-6">
                     <label class="form-label">Procurement Type</label>
                     <select asp-for="WorkOrder.ProcurementType" class="form-select" asp-items="Html.GetEnumSelectList<ProcurementHTE.Core.Models.ProcurementType>()">
                     </select>
                 </div>
             </div>
-
-            @await Html.PartialAsync(partialName, Model)
-        </form>
-    </div>
-</div>
+        </fieldset>
+    </section>
+    @await Html.PartialAsync(partialName, Model)
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

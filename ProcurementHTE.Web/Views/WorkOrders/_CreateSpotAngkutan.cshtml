@@ -1,18 +1,23 @@
 @model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 
-<div class="row g-3 mt-1">
-    <div class="col-12 col-md-4">
-        <label asp-for="WorkOrder.XS2" class="form-label">Jumlah SPOT</label>
-        <input asp-for="WorkOrder.XS2" type="number" class="form-control" />
-        <span asp-validation-for="WorkOrder.XS2" class="text-danger small"></span>
-    </div>
-</div>
+<section class="card shadow-sm mb-3">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Destination</legend>
+        <hr />
+        <div class="row">
+            <div class="col-12 col-md-4">
+                <label asp-for="WorkOrder.XS2" class="form-label">Jumlah SPOT</label>
+                <input asp-for="WorkOrder.XS2" type="number" class="form-control" />
+                <span asp-validation-for="WorkOrder.XS2" class="text-danger small"></span>
+            </div>
+        </div>
+    </fieldset>
+</section>
 
-<div class="mt-4 d-flex gap-2">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal">Simpan WO SPOT</button>
-    <a class="btn btn-secondary" asp-action="SelectType" role="button">Kembali</a>
+<div class="mb-3">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO SPOT</button>
+    <a class="btn btn-secondary" asp-action="SelectType" role="button"><i class="bi bi-arrow-left-circle"></i> Back</a>
 </div>
-
 
 @* Modal *@
 <div class="modal fade" id="createWoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createWoModalLabel" aria-hidden="true">
@@ -27,7 +32,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary" name="submitAction" value="Draft">Save</button>
+                <button type="submit" class="btn btn-primary" name="submitAction" value="Draft">Save/Draft</button>
                 <button type="submit" class="btn btn-success" name="submitAction" value="Created">Create</button>
             </div>
         </div>

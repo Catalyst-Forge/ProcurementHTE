@@ -4,105 +4,177 @@
 @model IEnumerable<Vendor>
 @inject IAuthorizationService AuthZ
 @{
-    ViewData["Title"] = "Vendors Data";
-    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Create);
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Delete);
+    ViewData["Title"] = "Vendors";
+    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.WO.Create);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
     bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "inactive" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "suspended" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };
+    string MaskNpwp(string npwp) {
+        if (string.IsNullOrWhiteSpace(npwp))
+            return "-";
+        var d = new string(npwp.Where(char.IsDigit).ToArray());
+        return d.Length <= 4 ? "****" : $"**** **** **** {d[^4..]}";
+    }
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Vendors</h1>
-
-    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+    <h1 class="h3 mb-0">Vendors</h1>
+    <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
-<div class="table-responsive">
-    <div class="border border-bottom-0 d-flex p-2">
-        <div class="d-flex gap-2">
-            <button type="button" class="btn">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+<div class="border rounded-3 p-2 d-flex gap-2 mb-2">
+    <button type="button" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
 
-            <select name="datalistOptions" class="form-select">
-                <option value="">1</option>
-            </select>
+    <select class="form-select w-auto">
+        <option>10</option>
+        <option selected>25</option>
+        <option>50</option>
+    </select>
 
-            <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
-
-            <datalist id="datalistOptions">
-                <option value="San Francisco"></option>
-                <option value="New York"></option>
-                <option value="Seattle"></option>
-                <option value="Los Angeles"></option>
-                <option value="Chicago"></option>
-            </datalist>
-        </div>
-        <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+    <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="search" class="form-control" placeholder="Search vendor, code, city...">
     </div>
-    
-    <table class="table table-hover border">
+
+    <div class="ms-auto">
+        <button class="btn btn-outline-secondary"><i class="bi bi-funnel me-1"></i>Filter</button>
+    </div>
+</div>
+
+<div class="table-responsive border rounded-3">
+    <table class="table align-middle table-hover">
         <thead class="table-light">
             <tr>
-                <th class="mw-100 text-nowrap border-end">
-                    @Html.DisplayNameFor(model => model.VendorName)
-                </th>
-                <th class="mw-100 text-nowrap">Action</th>
+                <th class="border-end">Vendor</th>
+                <th class="d-none d-md-table-cell border-end">Location</th>
+                <th class="d-none d-lg-table-cell border-end">Contact</th>
+                <th class="border-end">Status</th>
+                <th class="text-center">Action</th>
             </tr>
         </thead>
 
         <tbody>
-            @foreach (var item in Model) {
+            @if (!Model.Any() || Model == null) {
                 <tr>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.VendorName)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.VendorId">
-                            <span class="visually-hidden">Edit</span>
-                            <i class="bi bi-pencil-fill"></i>
-                        </a>
-                        <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.VendorId">
-                            <span class="visually-hidden">Detail</span>
-                            <i class="bi bi-eye-fill"></i>
-                        </a>
-                        <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.VendorId">
-                            <span class="visually-hidden">Delete</span>
-                            <i class="bi bi-trash-fill"></i>
-                        </a>
-                    </td>
+                    <td colspan="5" class="text-center text-muted">No vendors yet</td>
                 </tr>
-            }
-            
-            @if (!Model.Any())
-            {
-                <tr>
-                    <td colspan="5" class="text-center">No data available</td>
-                </tr>
+            } else {
+                foreach (var v in Model) {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">
+                                @v.VendorName
+                                <span class="text-body-secondary"> · </span>
+                                <a asp-action="Details" asp-route-id="@v.VendorId" class="link-primary text-decoration-none">@v.VendorCode</a>
+                            </div>
+
+                            <div class="small text-body-secondary">
+                                <a href="mailto:@v.Email" class="text-decoration-none">@v.Email</a>
+                                <span class="mx-1">•</span>
+                                NPWP @MaskNpwp(v.NPWP)
+                            </div>
+                        </td>
+
+                        <td class="d-none d-md-table-cell">
+                            <span>@v.City, @v.Province</span>
+                        </td>
+
+                        <td class="d-none d-lg-table-cell">
+                            <span>@v.ContactPerson</span>
+                            @if (!string.IsNullOrWhiteSpace(v.PhoneNumber)) {
+                                <span class="mx-1">•</span>
+                                <a href="tel:@v.PhoneNumber" class="text-decoration-none">@v.PhoneNumber</a>
+                            }
+                        </td>
+
+                        <td>
+                            <span class="badge rounded-pill px-2 py-1 @BadgeClass(v.Status)">@v.Status</span>
+                        </td>
+
+                        <td class="text-center text-nowrap">
+                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
+                               asp-action="Edit" asp-route-id="@v.VendorId" title="Edit" role="button">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+
+                            <a class="link-info link-opacity-50-hover text-decoration-none me-2"
+                               asp-action="Details" asp-route-id="@v.VendorId" title="Details" role="button">
+                                <span class="visually-hidden">Edit</span>
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+
+                            <form asp-action="DeleteConfirmed"
+                                  asp-route-id="@v.VendorId"
+                                  method="post"
+                                  class="d-inline delete-form"
+                                  data-name="@v.VendorName">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn link-danger link-opacity-50-hover text-decoration-none me-2 mb-1 p-0" title="Delete">
+                                    <span class="visually-hidden">Delete</span>
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
-
-        <tfoot class="table-group-divider border-secondary-subtle">
-            <tr>
-                <td colspan="10">
-                    <div class="hstack justify-content-between">
-                        <span>Showing 1-10 of n entries</span>
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination mb-0 gap-1">
-                                <li class="page-item">
-                                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
-                                </li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
-                                <li class="page-item">
-                                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </td>
-            </tr>
-        </tfoot>
     </table>
 </div>
+
+<div class="hstack justify-content-between border rounded-3 my-2 p-2">
+    <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination mb-0 gap-1">
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+            </li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("submit", async function (e) {
+          const form = e.target.closest(".delete-form");
+          if (!form) return;
+
+          e.preventDefault();
+
+          const name = form.dataset.name || "vendor ini";
+          const result = await Swal.fire({
+            icon: "warning",
+            title: "Hapus vendor?",
+            html: `Anda akan menghapus <strong>${name}</strong>.<br/>Tindakan ini tidak dapat dibatalkan.`,
+            showCancelButton: true,
+            confirmButtonText: "Ya, hapus",
+            cancelButtonText: "Batal",
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6c757d",
+            reverseButtons: true,
+            focusCancel: true
+          });
+
+          if (result.isConfirmed) form.submit();
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+          const success = '@(TempData["SuccessMessage"] ?? "")';
+          const error = '@(TempData["ErrorMessage"] ?? "")';
+          if (success) Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2200, showConfirmButton: false });
+          if (error) Swal.fire({ icon: "error", title: "Gagal", text: error });
+        });
+    </script>
+}

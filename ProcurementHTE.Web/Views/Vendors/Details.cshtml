@@ -1,226 +1,123 @@
 ﻿@using Microsoft.AspNetCore.Authorization
-@using ProcurementHTE.Core.Authorization
 @using ProcurementHTE.Core.Models
-@model Vendor
+@using ProcurementHTE.Core.Authorization
 @inject IAuthorizationService AuthZ
+@model Vendor
 @{
     ViewData["Title"] = "Vendor Details";
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Vendor.Delete);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "inactive" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "suspended" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };
+    string MaskNpwp(string npwp) {
+        if (string.IsNullOrWhiteSpace(npwp))
+            return "-";
+        var d = new string(npwp.Where(char.IsDigit).ToArray());
+        return d.Length <= 4 ? "****" : $"**** **** **** {d[^4..]}";
+    }
 }
 
-<h1>Details</h1>
-
-<div class="d-flex justify-content-between">
-    <h4>Vendor</h4>
+<header class="d-flex justify-content-between align-items-start mb-3">
     <div>
-        <a asp-action="Edit" asp-route-id="@Model?.VendorId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-        <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+        <h1 class="h3 mb-1">@Model.VendorName</h1>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-primary fw-semibold">@Model.VendorCode</span>
+            <span class="badge rounded-pill px-2 py-1 @BadgeClass(Model.Status)">@Model.Status</span>
+        </div>
     </div>
-</div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.VendorId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-fill"></i> Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model.VendorId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+        <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to list</a>
+    </div>
+</header>
 <hr />
 
 <div class="d-grid gap-4" style="grid-template-columns: 2fr 1fr">
     <div>
-        @* Vendor information card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Informasi Vendor</h5>
+        @* Company Info *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Company Info</h2>
+            </div>
 
-                <dl class="row">
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.VendorName)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.VendorName)
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.CreatedAt)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.CreatedAt)
-                    </dd>
+            <div class="card-body">
+                <dl class="row mb-0 mb-0">
+                    <dt class="col-5 col-sm-3">Vendor Name</dt>
+                    <dd class="col-7 col-sm-9">@Model.VendorName</dd>
+                    <dt class="col-5 col-sm-3">Vendor Code</dt>
+                    <dd class="col-7 col-sm-9">@Model.VendorCode</dd>
+                    <dt class="col-5 col-sm-3">NPWP</dt>
+                    <dd class="col-7 col-sm-9">@MaskNpwp(Model.NPWP)</dd>
+                    <dt class="col-5 col-sm-3">Created</dt>
+                    <dd class="col-7 col-sm-9">@Model.CreatedAt.ToString("d MMM yyyy")</dd>
                 </dl>
             </div>
         </div>
-        
-        @* Work request card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Permintaan Pekerjaan</h5>
 
-                <dl class="row">
-                    <dt class="col-sm-3">WO. No.</dt>
-                    <dd class="col-sm-9">1063/WO-DS/DSI1310/2025</dd>
-                    <dt class="col-sm-3">Tanggal</dt>
-                    <dd class="col-sm-9">01 September 2025</dd>
-                    <dt class="col-sm-3">Dari</dt>
-                    <dd class="col-sm-9">Unconventional & Non Rig Services Manager</dd>
-                    <dt class="col-sm-3">Kepada</dt>
-                    <dd class="col-sm-9">Moving And Mobilization Manager</dd>
-                    <dt class="col-sm-3">WBS</dt>
-                    <dd class="col-sm-9">[kosong]</dd>
-                    <dt class="col-sm-3">GL Account</dt>
-                    <dd class="col-sm-9">5005000130</dd>
-                    <dt class="col-sm-3">Tanggal Diperlukan</dt>
-                    <dd class="col-sm-9">05 Agustus 2025</dd>
-                </dl>
+        @* Notes *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Notes</h2>
             </div>
-        </div>
-    
-        @* Item details card *@
-        <div class="card mb-2">
+
             <div class="card-body">
-                <h5 class="card-title">Rincian Barang</h5>
-
-                <div class="table-responsive">
-                    <table class="table table-hover border">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="mw-100 text-nowrap border-end">
-                                    No
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Nama Barang
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Jumlah
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Satuan
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Catatan
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>barang</td>
-                                <td>Rp 10.000</td>
-                                <td>10</td>
-                                <td>catatan</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        @* Notes card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Note/Catatan</h5>
-                <p class="bg-warning-subtle textwarning-emphasis p-3 lh-base border-start border-warning-subtle rounded-3 border-5">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptate perspiciatis, recusandae deserunt explicabo minima eos! Earum maxime commodi nemo reprehenderit.</p>
-            </div>
-        </div>
-
-        @* Cost estimate card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Perkiraan Biaya (Rp)</h5>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover border">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Upah
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Material
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Sewa Alat
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Jumlah
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Drill Services
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Kontrak
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Biaya
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr>
-                                <td>Rp 1.000</td>
-                                <td>kerikil</td>
-                                <td>Crane</td>
-                                <td>5</td>
-                                <td>apapun</td>
-                                <td>1 tahun</td>
-                                <td>Rp 1.000</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <p class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info-subtle rounded-3 border-5">@(Model.Comment ?? "No note")</p>
             </div>
         </div>
     </div>
 
     <div>
-        @* Item card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Uraian Pekerjaan</h5>
-                <h6 class="card-subtitle">Description</h6>
+        @* Address *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Address</h2>
+            </div>
 
-                <dl class="row">
-                    <dt class="col-sm-3">Dari</dt>
-                    <dd class="col-sm-9">tempat</dd>
-                </dl>
-                <hr />
-                
-                <dl class="row">
-                    <dt class="col-sm-3">Ke</dt>
-                    <dd class="col-sm-9">tempat</dd>
+            <div class="card-body">
+                <dl class="row mb-0 mb-0">
+                    <dt class="col-5 col-sm-3">Address</dt>
+                    <dd class="col-7 col-sm-9">@Model.Address</dd>
+                    <dt class="col-5 col-sm-3">City</dt>
+                    <dd class="col-7 col-sm-9">@Model.City</dd>
+                    <dt class="col-5 col-sm-3">Province</dt>
+                    <dd class="col-7 col-sm-9">@Model.Province</dd>
+                    <dt class="col-5 col-sm-3">Postal Code</dt>
+                    <dd class="col-7 col-sm-9">@Model.PostalCode</dd>
                 </dl>
             </div>
         </div>
 
-        @* Contact person card *@
-        <div class="card mb-2">
-            <div class="card-body">
-                <h5 class="card-title">Contact Person</h5>
-
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Lokasi</dt>
-                    <dd>Seto W (Rig Supt) - 08**********</dd>
-                </dl>
-
-                <dl class="contact-card">
-                    <dt class="fw-semibold mb-2">Workshop</dt>
-                    <dd>Zainal Arifin - 08**********</dd>
-                </dl>
+        @* Contacts *@
+        <div class="card shadow-sm mb-2">
+            <div class="card-header fw-semibold">
+                <h2 class="card-title mb-0 h4">Contacts</h2>
             </div>
-        </div>
 
-        @* Approvals card *@
-        <div class="card mb-2">
             <div class="card-body">
-                <h5 class="card-title">Persetujuan</h5>
+                <dl class="row mb-0 mb-0">
+                    <dt class="col-5 col-sm-3">Email</dt>
+                    <dd class="col-7 col-sm-9"><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></dd>
 
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Coring Coordinator</dt>
-                    <dd>Tito Ambardi J</dd>
-                </dl>
+                    <dt class="col-5 col-sm-3">Phone</dt>
+                    <dd class="col-7 col-sm-9">
+                        @if (!string.IsNullOrWhiteSpace(Model.PhoneNumber)) {
+                            <a href="tel:@Model.PhoneNumber" class="text-decoration-none">@Model.PhoneNumber</a>
+                        } else {
+                            <span class="text-body-secondary">-</span>
+                        }
+                    </dd>
 
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Pjs. Subsurface Services Mgr</dt>
-                    <dd>I Made T. M.</dd>
-                    <span>tandatangan</span>
+                    <dt class="col-5 col-sm-3">Contact Person</dt>
+                    <dd class="col-7 col-sm-9">@Model.ContactPerson</dd>
+                    <dt class="col-5 col-sm-3">Position</dt>
+                    <dd class="col-7 col-sm-9">@Model.ContactPosition</dd>
                 </dl>
             </div>
         </div>
     </div>
 </div>
-

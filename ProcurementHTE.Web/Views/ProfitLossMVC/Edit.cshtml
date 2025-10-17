@@ -1,0 +1,189 @@
+﻿@using ProcurementHTE.Web.Models.ViewModels
+@model EditProfitLossViewModel
+
+@{
+    ViewData["Title"] = "Edit Profit & Loss";
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pencil-square"></i> Edit Profit & Loss - @Model.WoNum
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="@Url.Action("EditPost", new { id = Model.ProfitLossId })"
+                          id="editForm" class="needs-validation" novalidate>
+
+                        <!-- Tagihan Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="mb-3 text-primary border-bottom pb-2">
+                                    💰 Tagihan (PDSI)
+                                </h5>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Revenue</label>
+                                    <input type="text" class="form-control" value="Rp @Model.Revenue" disabled>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Cost Operator</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input type="number" name="CostOperator" class="form-control text-end"
+                                               value="@Model.CostOperator" step="0.01" required
+                                               id="costOperator" onchange="calculateProfit()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Profit</label>
+                                    <input type="text" class="form-control bg-light" id="profit"
+                                           value="Rp @Model.Profit" disabled>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Profit %</label>
+                                    <input type="text" class="form-control bg-light" id="profitPercentage"
+                                           value="@Model.ProfitPercentage%" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Penawaran Mitra Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="mb-3 text-info border-bottom pb-2">
+                                    🏢 Penawaran Mitra
+                                </h5>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Harga Awal</label>
+                                    <input type="text" class="form-control"
+                                           value="Rp @Model.Penawaran1Price" disabled>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Harga Nego #1</label>
+                                    <input type="text" class="form-control"
+                                           value="@(Model.Penawaran2Price > 0 ? $"Rp {Model.Penawaran2Price:N0}" : "No Quote")" disabled>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Harga Nego #2</label>
+                                    <input type="text" class="form-control"
+                                           value="@(Model.Penawaran3Price > 0 ? $"Rp {Model.Penawaran3Price:N0}" : "No Quote")" disabled>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Best Offer</label>
+                                    <input type="text" class="form-control bg-success bg-opacity-10 text-success fw-bold"
+                                           value="Rp @Model.BestOfferPrice" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Adjustment Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="mb-3 text-danger border-bottom pb-2">
+                                    ⚙️ Adjustment & Hasil Akhir
+                                </h5>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Adjustment Rate</label>
+                                    <div class="input-group">
+                                        <input type="number" name="AdjustmentRate" class="form-control text-end"
+                                               value="@(Model.AdjustmentRate * 100)" step="0.01" min="0" max="100"
+                                               id="adjustmentRate" onchange="calculateProfit()">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Adjusted Profit</label>
+                                    <input type="text" class="form-control bg-light" id="adjustedProfit"
+                                           value="Rp @Model.AdjustedProfit" disabled>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">Potential New Profit</label>
+                                    <input type="text" class="form-control bg-light" id="potentialProfit" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Kembali
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg" onclick="confirmUpdate()">
+                                <i class="bi bi-save"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const revenue = @Model.Revenue;
+        const bestOffer = @Model.BestOfferPrice;
+        const costOperatorInitial = @Model.CostOperator;
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(value);
+        }
+
+        function calculateProfit() {
+            const costOperator = parseFloat(document.getElementById('costOperator').value) || 0;
+            const adjustmentRate = parseFloat(document.getElementById('adjustmentRate').value) / 100 || 0;
+
+            const profit = revenue - costOperator;
+            const profitPercentage = revenue > 0 ? (profit / revenue) * 100 : 0;
+            const adjustedProfit = profit * (1 - adjustmentRate);
+            const potentialProfit = profit - (bestOffer - costOperator);
+
+            document.getElementById('profit').value = formatCurrency(profit);
+            document.getElementById('profitPercentage').value = profitPercentage.toFixed(2) + '%';
+            document.getElementById('adjustedProfit').value = formatCurrency(adjustedProfit);
+            document.getElementById('potentialProfit').value = formatCurrency(potentialProfit);
+        }
+
+        function confirmUpdate() {
+            if (!confirm('Apakah Anda yakin ingin menyimpan perubahan ini?')) {
+                event.preventDefault();
+            }
+        }
+
+        // Initialize calculation on page load
+        document.addEventListener('DOMContentLoaded', calculateProfit);
+    </script>
+}

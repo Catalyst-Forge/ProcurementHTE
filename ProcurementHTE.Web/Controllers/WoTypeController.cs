@@ -21,7 +21,7 @@ namespace ProcurementHTE.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var woTypes = await _woTypeService.GetAllWoTypessAsync();
-            ViewBag.ActivePage = "WoType";
+            ViewBag.ActivePage = "Index Work Order Types";
             return View(woTypes);
         }
 
@@ -53,9 +53,9 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: WoType/Edit/5
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(string id)
         {
-            if (id == 0)
+            if (id == null)
             {
                 return NotFound();
             }
@@ -67,7 +67,7 @@ namespace ProcurementHTE.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int WoTypeId,
+            string WoTypeId,
             [Bind("WoTypeId,TypeName,Description")] WoTypes woType
         )
         {
@@ -92,7 +92,7 @@ namespace ProcurementHTE.Web.Controllers
         // POST: WoType/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
             try
             {

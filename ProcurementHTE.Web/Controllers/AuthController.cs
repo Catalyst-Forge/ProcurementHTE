@@ -48,8 +48,6 @@ namespace ProcurementHTE.Web.Controllers {
 
         if (result.Succeeded) {
           await _userManager.AddToRoleAsync(user, model.SelectedRole);
-          string message = $"User {user.Email} created with role {model.SelectedRole}";
-          _logger.LogInformation(message);
           await _signInManager.SignInAsync(user, isPersistent: false);
 
           return RedirectToAction("Index", "Home");
@@ -84,7 +82,7 @@ namespace ProcurementHTE.Web.Controllers {
 
         if (user != null && user.IsActive) {
           var result = await _signInManager.PasswordSignInAsync(
-            user.UserName,
+            user.UserName!,
             model.Password,
             isPersistent: true,
             lockoutOnFailure: true
@@ -96,9 +94,9 @@ namespace ProcurementHTE.Web.Controllers {
             _logger.LogInformation("User {model.Email} logged in", model.Email);
 
             var claims = new List<Claim> {
-              new Claim(ClaimTypes.Name, user.FullName),
-              new Claim(ClaimTypes.Email, user.Email),
-              new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+              new(ClaimTypes.Name, user.FullName!),
+              new(ClaimTypes.Email, user.Email!),
+              new(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, "Login");
@@ -114,11 +112,11 @@ namespace ProcurementHTE.Web.Controllers {
             var existingClaims = await _userManager.GetClaimsAsync(user);
 
             if (!existingClaims.Any(c => c.Type == ClaimTypes.Name)) {
-              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Name, user.FullName));
+              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Name, user.FullName!));
             }
 
             if (!existingClaims.Any(c => c.Type == ClaimTypes.Email)) {
-              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, user.Email));
+              await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, user.Email!));
             }
 
             if (!existingClaims.Any(c => c.Type == ClaimTypes.NameIdentifier)) {
@@ -146,7 +144,7 @@ namespace ProcurementHTE.Web.Controllers {
      */
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> logout() {
+    public async Task<IActionResult> Logout() {
       await _signInManager.SignOutAsync();
       _logger.LogInformation("User logged out");
 

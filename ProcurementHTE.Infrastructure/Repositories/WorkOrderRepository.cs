@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.DTOs;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Utils;
@@ -56,10 +55,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 return null;
             }
 
-            if (!string.IsNullOrWhiteSpace(wo.WoNum))
+            if (!string.IsNullOrWhiteSpace(wo.WorkOrderId))
             {
                 var details = await _context
-                    .WoDetails.Where(d => d.WoNum == wo.WoNum)
+                    .WoDetails.Where(d => d.WorkOrderId == wo.WorkOrderId)
                     .AsNoTracking()
                     .ToListAsync();
 
@@ -71,8 +70,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(
             string userId,
-            int limit = 10,
-            CancellationToken ct = default
+            int limit,
+            CancellationToken ct
         )
         {
             return await _context
@@ -97,17 +96,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.StatusName.ToLower() == normalized);
         }
 
-        public async Task<int> CountAsync(CancellationToken ct)
-        {
-            return await _context.WorkOrders.CountAsync(ct);
-        }
-
         public async Task<List<WoTypes>> GetWoTypesAsync()
         {
             return await _context.WoTypes.OrderBy(wt => wt.TypeName).ToListAsync();
         }
 
-        public async Task<WoTypes?> GetWoTypeByIdAsync(int id)
+        public async Task<WoTypes?> GetWoTypeByIdAsync(string id)
         {
             return await _context.WoTypes.FirstOrDefaultAsync(x => x.WoTypeId == id);
         }
@@ -115,6 +109,24 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<List<Status>> GetStatusesAsync()
         {
             return await _context.Statuses.OrderBy(s => s.StatusName).ToListAsync();
+        }
+
+        public async Task<WorkOrder?> GetWithOffersAsync(string id)
+        {
+            return await _context.WorkOrders.FirstOrDefaultAsync(x => x.WorkOrderId == id);
+        }
+
+        public async Task<WorkOrder?> GetWithSelectedOfferAsync(string id)
+        {
+            return await _context
+                .WorkOrders.Include(x => x.VendorOffers)
+                .ThenInclude(x => x!.Vendor)
+                .FirstOrDefaultAsync(x => x.WorkOrderId == id);
+        }
+
+        public async Task<int> CountAsync(CancellationToken ct)
+        {
+            return await _context.WorkOrders.CountAsync(ct);
         }
 
         public async Task StoreWorkOrderAsync(WorkOrder wo)
@@ -147,7 +159,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
                     foreach (var detail in details)
                     {
-                        detail.WoNum = wo.WoNum;
+                        detail.WorkOrderId = wo.WorkOrderId;
                     }
 
                     await _context.WorkOrders.AddAsync(wo);
@@ -179,14 +191,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task UpdateWorkOrderAsync(WorkOrder wo)
         {
-            //_context.Entry(wo).State = EntityState.Modified;
-            //await _context.SaveChangesAsync();
-
-            if (wo == null)
-            {
-                throw new ArgumentNullException(nameof(wo));
-            }
-
             try
             {
                 //_context.WorkOrders.Update(wo);
@@ -199,11 +203,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     w.WorkOrderId == wo.WorkOrderId
                 );
                 if (!exists)
-                {
                     throw new KeyNotFoundException(
                         $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
                     );
-                }
+
                 throw new InvalidOperationException(
                     "Data telah diubah oleh user lain. Silakan refresh dan coba lagi",
                     ex

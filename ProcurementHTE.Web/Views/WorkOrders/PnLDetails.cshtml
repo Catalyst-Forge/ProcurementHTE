@@ -1,0 +1,164 @@
+﻿@using System.Globalization
+@model ProcurementHTE.Web.Models.ViewModels.EditProfitLossViewModel
+@{
+    ViewData["Title"] = "Profit & Loss";
+    var idr = new CultureInfo("id-ID");
+    string IDR(decimal? v) => v.HasValue ? $"Rp {v.Value.ToString("N0", idr)}" : "-";
+    string PCT(decimal? v) => v.HasValue ? v.Value.ToString("0.0", idr) + " %" : "-";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Profit &amp; Loss</h1>
+        <span class="text-muted small">
+            WO: <strong>@Model.WoNum</strong> &middot;
+            Vendor Terpilih: <strong>@Model.VendorName</strong>
+        </span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Details" asp-route-id="@Model.WorkOrderId" class="btn btn-outline-secondary" role="button">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+        @* <a class="btn btn-outline-primary" href="javascript:window.print()" role="button">
+            <i class="bi bi-printer"></i> Print
+        </a> *@
+    </div>
+</header>
+
+<div class="row g-3">
+    <!-- TAGIHAN PDSI -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header"><h2 class="h6 mb-0 fw-semibold">Tagihan PDSI</h2></div>
+
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-label">Revenue</div>
+                        <div class="fs-5 fw-semibold">@IDR(Model.Revenue)</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-label">Cost Operator</div>
+                        <div class="fs-5 fw-semibold">@IDR(Model.CostOperator)</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-label">Profit</div>
+                        <div class="fs-5 fw-semibold text-success">@IDR(Model.Profit)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PENAWARAN MITRA -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header"><h2 class="h6 mb-0 fw-semibold">Penawaran Mitra</h2></div>
+
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr class="text-center">
+                                <th style="width:60px;">#</th>
+                                <th>Vendor</th>
+                                <th>Harga Penawaran</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="text-center">
+                            <tr>
+                                <td>1</td>
+                                <td>@Model.VendorName</td>
+                                <td>@IDR(Model.Penawaran1Price)</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>@Model.VendorName</td>
+                                <td>@IDR(Model.Penawaran2Price)</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>@Model.VendorName</td>
+                                <td>@IDR(Model.Penawaran3Price)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold" colspan="2">Best Offer</td>
+                                <td class="fw-bold">@IDR(Model.BestOfferPrice)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="small text-muted">
+                    * Best offer dipilih otomatis sebagai harga terendah (atau sesuai pilihan user saat input).
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RINGKASAN P&L -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header"><h2 class="h6 mb-0 fw-semibold">Profit &amp; Loss Estimate</h2></div>
+
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="form-label">Profit %</div>
+                        <div class="fs-5 fw-semibold">@PCT(Model.ProfitPercentage)</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-label">Adjustment Rate</div>
+                        <div class="fs-5 fw-semibold">@Model.AdjustmentRate %</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-label">Adjusted Profit</div>
+                        <div class="fs-5 fw-semibold">@IDR(Model.AdjustedProfit)</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-label">Potential New Profit</div>
+                        <div class="fs-5 fw-semibold">@IDR(Model.AdjustedProfit)</div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-label">Vendor Terpilih</div>
+                        <span class="badge text-bg-success">@Model.VendorName</span>
+                    </div>
+
+                    <div class="col-md-6 text-md-end">
+                        <div class="form-label">WO Number</div>
+                        <span class="badge text-bg-secondary">@Model.WoNum</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* @section Styles {
+    <style>
+        @media print {
+            header .btn, a.btn
+
+        {
+            display: none !important;
+        }
+
+        .card {
+            box-shadow: none !important;
+        }
+
+        }
+    </style>
+} *@

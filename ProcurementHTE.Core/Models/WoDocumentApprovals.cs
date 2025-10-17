@@ -6,31 +6,29 @@ namespace ProcurementHTE.Core.Models
     public class WoDocumentApprovals
     {
         [Key]
-        public int Id { get; set; }
+        public string WoDocumentApprovalId { get; set; } = Guid.NewGuid().ToString();
 
         public string Status { get; set; } = null!;
 
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime? ApprovedAt { get; set; }
 
         public string? Note { get; set; }
 
         // Foreign Keys
-        public string WoNum { get; set; } = null!;
-
-        [ForeignKey("WoNum")]
-        public WoDocuments WorkOrder { get; set; } = default!;
-
+        public string WorkOrderId { get; set; } = null!;
         public string WoDocumentId { get; set; } = null!;
+        public string RoleId { get; set; } = null!;
+        public string ApproverId { get; set; } = null!;
+
+        [ForeignKey("WorkOrderId")]
+        public WoDocuments WorkOrder { get; set; } = default!;
 
         [ForeignKey("WoDocumentId")]
         public WoDocuments WoDocument { get; set; } = default!;
 
-        public string RoleId { get; set; } = null!;
-
         [ForeignKey("RoleId")]
         public Role Role { get; set; } = default!;
-
-        public string ApproverId { get; set; } = null!;
 
         [ForeignKey("ApproverId")]
         public User Approver { get; set; } = default!;

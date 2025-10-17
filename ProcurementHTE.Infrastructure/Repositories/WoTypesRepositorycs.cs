@@ -29,7 +29,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await _context.WoTypes.ToListAsync();
         }
 
-        public async Task<WoTypes?> GetByIdAsync(int id)
+        public async Task<WoTypes?> GetByIdAsync(string id)
         {
             return await _context.WoTypes.FirstOrDefaultAsync(w => w.WoTypeId == id);
         }

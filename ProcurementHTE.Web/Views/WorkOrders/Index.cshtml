@@ -9,26 +9,32 @@
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
     bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Work Orders</h1>
-
-    <a asp-action="SelectType" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+    <h1 class="h3 mb-0">Work Orders</h1>
+    <a asp-action="SelectType" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
-<div class="border border-bottom-0 d-flex p-2">
-    <div class="d-flex gap-2">
-        <button type="button" class="btn">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
+<div class="border rounded-3 d-flex gap-2 p-2 mb-2">
+    <button type="button" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
 
-        <select name="datalistOptions" class="form-select">
-            <option value="">1</option>
-        </select>
+    <select name="filterOptions" class="form-select w-auto">
+        <option value="">1</option>
+        <option value="">5</option>
+        <option value="">10</option>
+        <option value="">25</option>
+    </select>
 
-        <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
-
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
         <datalist id="datalistOptions">
             <option value="San Francisco"></option>
             <option value="New York"></option>
@@ -36,79 +42,82 @@
             <option value="Los Angeles"></option>
             <option value="Chicago"></option>
         </datalist>
+        <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
     </div>
-    <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
+
+    <button type="button" class="btn btn-outline-secondary ms-auto"><i class="bi bi-funnel me-1"></i> Filter</button>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover border">
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover">
         <thead class="table-light">
             <tr>
-                <th class="mw-100 text-nowrap border-end">
+                <th class="border-end">
                     @Html.DisplayNameFor(model => model.WoNum)
                 </th>
-                <th class="mw-100 text-nowrap border-end">
+                <th class="border-end">
                     @Html.DisplayNameFor(model => model.Status)
                 </th>
-                <th class="mw-100 text-nowrap border-end">
+                <th class="border-end">
                     @Html.DisplayNameFor(model => model.WoType)
                 </th>
-                <th class="mw-100 text-nowrap border-end">
+                <th class="border-end">
                     @Html.DisplayNameFor(model => model.ProcurementType)
                 </th>
-                <th class="mw-100 text-nowrap border-end">
+                <th class="border-end">
                     @Html.DisplayNameFor(model => model.DateLetter)
                 </th>
-                <th class="mw-100 text-nowrap">Action</th>
+                <th class="text-center">Action</th>
             </tr>
         </thead>
 
         <tbody>
-            @foreach (var item in Model) {
-                <tr>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.WoNum)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @(item.Status?.StatusName ?? "-")
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @(item.WoType?.TypeName ?? "-")
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.ProcurementType)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        @Html.DisplayFor(modelItem => item.DateLetter)
-                    </td>
-                    <td class="mw-100 text-nowrap">
-                        <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId">
-                            <span class="visually-hidden">Edit</span>
-                            <i class="bi bi-pencil-fill"></i>
-                        </a>
-
-                        <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.WorkOrderId">
-                            <span class="visually-hidden">Detail</span>
-                            <i class="bi bi-eye-fill"></i>
-                        </a>
-
-                        <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.WorkOrderId">
-                            <span class="visually-hidden">Delete</span>
-                            <i class="bi bi-trash-fill"></i>
-                        </a>
-                    </td>
-                </tr>
-            }
             @if (!Model.Any() || Model == null) {
                 <tr>
-                    <td colspan="8" class="text-center">No work order data found.</td>
+                    <td colspan="8" class="text-center text-muted">No work order data found</td>
                 </tr>
+            } else {
+                foreach (var item in Model) {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.WoNum)
+                        </td>
+                        <td>
+                            <span class="badge @BadgeClass(item.Status?.StatusName ?? "")">
+                                @(item.Status?.StatusName ?? "-")
+                            </span>
+                        </td>
+                        <td>
+                            @(item.WoType?.TypeName ?? "-")
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ProcurementType)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DateLetter)
+                        </td>
+                        <td class="text-center">
+                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.WorkOrderId" role="button">
+                                <span class="visually-hidden">Edit</span>
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.WorkOrderId" role="button">
+                                <span class="visually-hidden">Detail</span>
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+                            <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.WorkOrderId" role="button">
+                                <span class="visually-hidden">Delete</span>
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
 </div>
 
-<div class="hstack justify-content-between border p-2">
+<div class="hstack justify-content-between border rounded-3 my-2 p-2">
     <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
     <nav aria-label="Page navigation example">
         <ul class="pagination mb-0 gap-1">

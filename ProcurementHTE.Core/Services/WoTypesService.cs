@@ -1,10 +1,5 @@
 ﻿using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProcurementHTE.Core.Services
 {
@@ -33,7 +28,7 @@ namespace ProcurementHTE.Core.Services
             await _woTypeRepository.CreateWoTypeAsync(woTypes);
         }
 
-        public async Task EditWoTypesAsync(WoTypes woTypes, int woTypeId)
+        public async Task EditWoTypesAsync(WoTypes woTypes, string woTypeId)
         {
             if (woTypes == null)
             {
@@ -69,7 +64,7 @@ namespace ProcurementHTE.Core.Services
 
         }
 
-        public async Task<WoTypes?> GetWoTypesByIdAsync(int WoTypeId)
+        public async Task<WoTypes?> GetWoTypesByIdAsync(string WoTypeId)
         {
             return await _woTypeRepository.GetByIdAsync(WoTypeId);
         }

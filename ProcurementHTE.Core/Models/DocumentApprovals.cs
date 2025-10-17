@@ -6,7 +6,7 @@ namespace ProcurementHTE.Core.Models
     public class DocumentApprovals
     {
         [Key]
-        public int Id { get; set; }
+        public string DocumentApprovalId { get; set; } = Guid.NewGuid().ToString();
 
         public int Level { get; set; }
 
@@ -14,11 +14,10 @@ namespace ProcurementHTE.Core.Models
 
         // Foreign Keys
         public string RoleId { get; set; } = null!;
+        public string WoTypeDocumentId { get; set; } = null!;
 
         [ForeignKey("RoleId")]
         public Role Role { get; set; } = default!;
-
-        public int WoTypeDocumentId { get; set; }
 
         [ForeignKey("WoTypeDocumentId")]
         public WoTypeDocuments WoTypeDocument { get; set; } = default!;

@@ -8,195 +8,370 @@
     var no = 1;
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    var pnl = ViewBag.PnlViewModel as ProcurementHTE.Web.Models.ViewModels.EditProfitLossViewModel;
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };
 }
 
-<h1 class="h2">Details</h1>
+<header class="d-flex justify-content-between align-items-center">
+    <h1 class="h2">Details</h1>
 
-<div class="hstack justify-content-between">
-    <h2 class="h5">Work Order</h2>
-    <div>
-        <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-        <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+    <div class="d-flex gap-2" role="group" aria-label="Button Action">
+        <a asp-action="CreatePnL" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create PnL</a>
+        <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i> Delete</a>
+        <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
     </div>
-</div>
-<hr />
+</header>
 
-<div class="d-grid gap-4" style="grid-template-columns: 2fr 1fr">
-    <div>
-        @* Work request card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">Permintaan Pekerjaan</h3>
+@* Navigation tabs *@
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="wo-tab" data-bs-toggle="tab" data-bs-target="#wo-tab-pane" type="button" role="tab" aria-controls="wo-tab-pane" aria-selected="true">Work order information</button>
+    </li>
 
-                <dl class="row">
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WoNum)</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.WoNum)</dd>
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateLetter)</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.DateLetter)</dd>
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FromLocation)</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.FromLocation)</dd>
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Destination)</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Destination)</dd>
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WBS)</dt>
-                    <dd class="col-sm-9">@(Model?.WBS ?? "-")</dd>
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.GlAccount)</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.GlAccount)</dd>
-                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateRequired)</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.DateRequired)</dd>
-                </dl>
-            </div>
-        </div>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="pnl-tab" data-bs-toggle="tab" data-bs-target="#pnl-tab-pane" type="button" role="tab" aria-controls="pnl-tab-pane" aria-selected="false">Profit and Loss</button>
+    </li>
+</ul>
 
-        @* Item details card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">Item Details</h3>
+@* Content body *@
+<div class="tab-content" id="myTabContent">
+    <div class="tab-pane show active" id="wo-tab-pane" role="tabpanel" aria-labelledby="wo-tab" tabindex="0">
+        <div class="d-grid gap-4 mt-2" style="grid-template-columns: 2fr 1fr">
+            <div>
+                @* Work request card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header fw-semibold">
+                        <h2 class="card-title mb-0 h4">Job Request</h2>
+                    </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover border">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="mw-100 text-nowrap border-end">
-                                    No
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    WO Num.
-                                </th>
-                                <th class="mw-100 text-nowrap border-end">
-                                    Item Name
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Qty
-                                </th>
-                                <th class="mw-100 text-nowrap">
-                                    Unit
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
-                                foreach (var detail in Model.WoDetails) {
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WoNum)</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.WoNum)</dd>
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateLetter)</dt>
+                            <dd class="col-sm-9">@Model.DateLetter.ToTanggalIndonesia()</dd>
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FromLocation)</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.FromLocation)</dd>
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Destination)</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.Destination)</dd>
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WBS)</dt>
+                            <dd class="col-sm-9">@(Model?.WBS ?? "-")</dd>
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.GlAccount)</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.GlAccount)</dd>
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateRequired)</dt>
+                            <dd class="col-sm-9">@Model.DateRequired.ToTanggalIndonesia()</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @* Item details card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header fw-semibold">
+                        <h2 class="card-title mb-0 h4">Item Details</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover border">
+                                <thead class="table-light">
                                     <tr>
-                                        <td>@no</td>
-                                        <td>@detail.WoNum</td>
-                                        <td>@detail.ItemName</td>
-                                        <td>@detail.Quantity</td>
-                                        <td>@detail.Unit</td>
+                                        <th class="mw-100 text-nowrap border-end">
+                                            No
+                                        </th>
+                                        <th class="mw-100 text-nowrap border-end">
+                                            Item Name
+                                        </th>
+                                        <th class="mw-100 text-nowrap">
+                                            Qty
+                                        </th>
+                                        <th class="mw-100 text-nowrap">
+                                            Unit
+                                        </th>
                                     </tr>
-                                    no++;
-                                }
-                            } else {
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Belum ada rincian barang</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
+                                        foreach (var detail in Model.WoDetails) {
+                                            <tr>
+                                                <td>@no</td>
+                                                <td>@detail.ItemName</td>
+                                                <td>@detail.Quantity</td>
+                                                <td>@detail.Unit</td>
+                                            </tr>
+                                            no++;
+                                        }
+                                    } else {
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Belum ada rincian barang</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                @* Item card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header">
+                        <h2 class="card-title mb-0 h4">Job Description</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">
+                                @Html.DisplayNameFor(model => model.Description)
+                            </dt>
+                            <dd class="col-sm-9">
+                                @Html.DisplayFor(model => model.Description)
+                            </dd>
+                        </dl>
+                        <hr />
+
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">From</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.XS1)</dd>
+                        </dl>
+
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">To</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.XS2)</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @* Notes card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header">
+                        <h2 class="card-title mb-0 h4">@Html.DisplayNameFor(model => model.Note)</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <p class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info-subtle rounded-3 border-5">@Html.DisplayFor(model => model.Note)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                @* Work order information card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header">
+                        <h2 class="card-title mb-0 h4">Information Work Order</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">
+                                @Html.DisplayNameFor(model => model.WoType)
+                            </dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-info">
+                                    @Html.DisplayFor(model => model.WoType!.TypeName)
+                                </span>
+                            </dd>
+                            <dt class="col-sm-3">
+                                @Html.DisplayNameFor(model => model.Status)
+                            </dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-secondary">
+                                    @Html.DisplayFor(model => model.Status!.StatusName)
+                                </span>
+                            </dd>
+                            <dt class="col-sm-3">
+                                @Html.DisplayNameFor(model => model.CreatedAt)
+                            </dt>
+                            <dd class="col-sm-9">
+                                @Model.CreatedAt.ToTanggalIndonesia()
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @* Contact person card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header">
+                        <h2 class="card-title mb-0 h4">Contact Person</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <dl class="text-bg-light p-3 rounded-3 mb-2">
+                            <dt class="fw-semibold mb-2">Lokasi</dt>
+                            <dd>@Html.DisplayFor(model => model.XS3)</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-3 mb-2">
+                            <dt class="fw-semibold mb-2">Workshop</dt>
+                            <dd>@Html.DisplayFor(model => model.XS4)</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @* Approvals card *@
+                <div class="card shadow-sm mb-2">
+                    <div class="card-header">
+                        <h2 class="card-title mb-0 h4">Approvals</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <dl class="text-bg-light p-3 rounded-3 mb-2">
+                            <dt class="fw-semibold mb-2">Coring Coordinator</dt>
+                            <dd>@Html.DisplayFor(model => model.Requester)</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-3 mb-2">
+                            <dt class="fw-semibold mb-2">Pjs. Subsurface Services Mgr</dt>
+                            <dd>@Html.DisplayFor(model => model.Approved)</dd>
+                        </dl>
+                    </div>
                 </div>
             </div>
         </div>
-
-        @* Item card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">Uraian Pekerjaan</h3>
-
-                <dl class="row">
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.Description)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.Description)
-                    </dd>
-                </dl>
-                <hr />
-
-                <dl class="row">
-                    <dt class="col-sm-3">From</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.XS1)</dd>
-                </dl>
-
-                <dl class="row">
-                    <dt class="col-sm-3">To</dt>
-                    <dd class="col-sm-9">@Html.DisplayFor(model => model.XS2)</dd>
-                </dl>
-            </div>
-        </div>
-
-        @* Notes card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">@Html.DisplayNameFor(model => model.Note)</h3>
-                <p class="bg-warning-subtle textwarning-emphasis p-3 lh-base border-start border-warning-subtle rounded-3 border-5">@Html.DisplayFor(model => model.Note)</p>
-            </div>
-        </div>
     </div>
 
-    <div>
-        @* Work order information card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">Information Work Order</h3>
-
-                <dl class="row">
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.WoType)
-                    </dt>
-                    <dd class="col-sm-9">
-                        <span class="badge bg-info">
-                            @Html.DisplayFor(model => model.WoType.TypeName)
-                        </span>
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.Status)
-                    </dt>
-                    <dd class="col-sm-9">
-                        <span class="badge bg-secondary">
-                            @Html.DisplayFor(model => model.Status.StatusName)
-                        </span>
-                    </dd>
-                    <dt class="col-sm-3">
-                        @Html.DisplayNameFor(model => model.CreatedAt)
-                    </dt>
-                    <dd class="col-sm-9">
-                        @Html.DisplayFor(model => model.CreatedAt)
-                    </dd>
-                </dl>
+    <div class="tab-pane" id="pnl-tab-pane" role="tabpanel" aria-labelledby="pnl-tab" tabindex="0">
+        @if (pnl == null) {
+            <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Belum ada data Profit &amp; Loss untuk WO ini.
             </div>
-        </div>
 
-        @* Contact person card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">Contact Person</h3>
+            <a asp-action="CreatePnL" asp-route-workOrderId="@Model.WorkOrderId" class="btn btn-success">
+                <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
+            </a>
+        } else {
+            <div class="d-grid gap-4 mt-3" style="grid-template-columns: 2fr 1fr">
+                <div>
+                    <!-- Tagihan PDSI -->
+                    <div class="card shadow-sm mb-2">
+                        <div class="card-header fw-semibold">
+                            <h2 class="card-title mb-0 h4">Tagihan PDSI</h2>
+                        </div>
 
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Lokasi</dt>
-                    <dd>@Html.DisplayFor(model => model.XS3)</dd>
-                </dl>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-label">Revenue</div>
+                                    <div class="fs-5 fw-semibold">@pnl.Revenue.ToIDR()</div>
+                                </div>
 
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Workshop</dt>
-                    <dd>@Html.DisplayFor(model => model.XS4)</dd>
-                </dl>
+                                <div class="col-md-4">
+                                    <div class="form-label">Cost Operator</div>
+                                    <div class="fs-5 fw-semibold">@pnl.CostOperator.ToIDR()</div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-label">Profit</div>
+                                    <div class="fs-5 fw-semibold text-success">@pnl.Profit.ToIDR()</div>
+                                    <div class="small text-muted">= Revenue − Best Offer − Cost Operator</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Penawaran Mitra -->
+                    <div class="card shadow-sm mb-2">
+                        <div class="card-header fw-semibold">
+                            <h2 class="card-title mb-0 h4">Penawaran Mitra</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle">
+                                    <thead class="table-light">
+                                        <tr class="text-center">
+                                            <th style="width:80px;">#</th>
+                                            <th>Harga Penawaran</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody class="text-center">
+                                        <tr>
+                                            <td>1</td>
+                                            <td>@pnl.Penawaran1Price.ToIDR()</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td>@pnl.Penawaran2Price.ToIDR()</td>
+                                        </tr>
+                                        <tr>
+                                            <td>3</td>
+                                            <td>@pnl.Penawaran3Price.ToIDR()</td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <td class="fw-semibold">Best</td>
+                                            <td class="fw-bold">@pnl.BestOfferPrice.ToIDR()</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="small text-muted">
+                                Best offer dipilih otomatis sebagai harga terendah (atau sesuai pilihan saat input).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Informasi P&L -->
+                    <div class="card shadow-sm mb-2">
+                        <div class="card-header">
+                            <h2 class="card-title mb-0 h4">Information P&amp;L</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Vendor Terpilih</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge text-bg-success">@pnl.VendorName</span>
+                                </dd>
+
+                                <dt class="col-sm-5">WO Number</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge text-bg-secondary">@pnl.WoNum</span>
+                                </dd>
+
+                                <dt class="col-sm-5">Profit %</dt>
+                                <dd class="col-sm-7">@pnl.ProfitPercentage.ToPersen()</dd>
+
+                                <dt class="col-sm-5">Adjustment Rate</dt>
+                                <dd class="col-sm-7">@pnl.AdjustmentRate.ToPersen()</dd>
+
+                                <dt class="col-sm-5">Adjusted Profit</dt>
+                                <dd class="col-sm-7">@pnl.AdjustedProfit.ToIDR()</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Aksi -->
+                    <div class="d-grid gap-2">
+                        <a asp-action="EditPnL" asp-route-id="@pnl.ProfitLossId" class="btn btn-warning">
+                            <i class="bi bi-pencil-square"></i> Edit P&amp;L
+                        </a>
+                        <a asp-action="PnLDetails" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> Lihat P&amp;L Penuh
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        @* Approvals card *@
-        <div class="card shadow-sm mb-2">
-            <div class="card-body">
-                <h3 class="card-title h4">Persetujuan</h3>
-
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Coring Coordinator</dt>
-                    <dd>@Html.DisplayFor(model => model.Requester)</dd>
-                </dl>
-
-                <dl class="text-bg-light p-3 rounded-3 mb-2">
-                    <dt class="fw-semibold mb-2">Pjs. Subsurface Services Mgr</dt>
-                    <dd>@Html.DisplayFor(model => model.Approved)</dd>
-                </dl>
-            </div>
-        </div>
+        }
     </div>
+
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var triggerEl = document.querySelector('#wo-tab')
+            var tab = new bootstrap.Tab(triggerEl)
+            tab.show() // force tab aktif saat load
+        });
+    </script>
+}

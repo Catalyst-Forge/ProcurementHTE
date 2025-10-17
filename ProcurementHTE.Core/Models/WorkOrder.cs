@@ -16,7 +16,7 @@ namespace ProcurementHTE.Core.Models
         [Key]
         public string WorkOrderId { get; set; } = Guid.NewGuid().ToString();
 
-        //[Required]
+        [Required]
         [DisplayName("WO No.")]
         public string? WoNum { get; set; }
 
@@ -72,12 +72,9 @@ namespace ProcurementHTE.Core.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Foreign Keys
-        public int? WoTypeId { get; set; }
-
+        public string? WoTypeId { get; set; }
         public int? StatusId { get; set; }
-
         public string? VendorId { get; set; }
-
         public string? UserId { get; set; }
 
         [ForeignKey("WoTypeId")]
@@ -98,11 +95,8 @@ namespace ProcurementHTE.Core.Models
         [JsonIgnore]
         public User? User { get; set; }
 
-        public ICollection<WoDocuments>? WoDocuments { get; set; } = new List<WoDocuments>();
-
-        public ICollection<WoDetail>? WoDetails { get; set; } = new List<WoDetail>();
-
-        public ICollection<VendorWorkOrder> VendorWorkOrders { get; set; } =
-            new List<VendorWorkOrder>();
+        public ICollection<WoDocuments>? WoDocuments { get; set; } = [];
+        public ICollection<WoDetail>? WoDetails { get; set; } = [];
+        public ICollection<VendorOffer> VendorOffers { get; set; } = [];
     }
 }

@@ -33,6 +33,10 @@ a {
   color: #00bfff;
 }
 
+.btn-outline-secondary {
+  --bs-btn-border-color: var(--bs-border-color);
+}
+
 .nav {
   gap: 0.75rem;
 

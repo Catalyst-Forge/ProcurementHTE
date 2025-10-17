@@ -3,10 +3,8 @@
   const navLinks = document.querySelectorAll(".nav-link");
   const currentPath = window.location.pathname.toLowerCase();
 
-  navLinks.forEach(link => {
-    link.classList.remove("active");
-
-    // Skip parent menu
+  navLinks.forEach((link) => {
+    // Skip parent menu with toggle
     if (link.hasAttribute("data-bs-toggle")) return;
 
     const page = link.getAttribute("data-page");
@@ -15,44 +13,49 @@
     // Check if active
     const isActive =
       (activePage && page === activePage) ||
-      (href && (
-        currentPath === href ||
-        (href !== "/" && currentPath.startsWith(href)) ||
-        (href === "/" && (currentPath === "/" || currentPath === "/home"))
-      ));
+      (href &&
+        href !== "#" &&
+        (currentPath === href ||
+          (href !== "/" && currentPath.startsWith(href)) ||
+          (href === "/" && (currentPath === "/" || currentPath === "/home"))));
 
     if (isActive) {
       link.classList.add("active");
 
-      // Open parent collapse if nested
-      const collapse = link.closest(".collapse");
-      if (collapse) {
-        bootstrap.Collapse.getOrCreateInstance(collapse, { toggle: false }).show();
+      // Open all parent collapses recursively
+      let currentElement = link;
+      while (currentElement) {
+        const parentCollapse = currentElement.closest(".collapse");
 
-        const parentToggle = document.querySelector(`[href="#${collapse.id}"]`);
-        const chevron = parentToggle?.querySelector(".bi-chevron-down");
-        if (chevron) chevron.classList.add("rotate");
+        if (parentCollapse) {
+          // Show the collapse
+          const collapse = bootstrap.Collapse.getOrCreateInstance(parentCollapse, { toggle: false });
+          collapse.show();
+
+          // Rotate the chevron of the toggle button
+          const toggleButton = document.querySelector(`[href="#${parentCollapse.id}"]`);
+          const chevron = toggleButton?.querySelector(".bi-chevron-down");
+          if (chevron) {
+            chevron.classList.add("rotate");
+          }
+
+          // Move up to find next parent
+          currentElement = parentCollapse.parentElement;
+        } else {
+          break;
+        }
       }
     }
   });
 
-  // Handle chevron rotation on parent toggle
-  document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(toggle => {
+  // Handle chevron rotation on click
+  document.querySelectorAll('[data-bs-toggle="collapse"]').forEach((toggle) => {
     const chevron = toggle.querySelector(".bi-chevron-down");
     if (!chevron) return;
 
     const targetId = toggle.getAttribute("href");
     const target = document.querySelector(targetId);
 
-    // Set initial state berdasarkan collapse state
-    if (target?.classList.contains("show")) {
-      chevron.classList.add("rotate");
-    }
-
-    // Toggle on click
-    toggle.addEventListener("click", () => chevron.classList.toggle("rotate"));
-
-    // Sync dengan event collapse (untuk memastikan sync sempurna)
     if (target) {
       target.addEventListener("shown.bs.collapse", () => chevron.classList.add("rotate"));
       target.addEventListener("hidden.bs.collapse", () => chevron.classList.remove("rotate"));

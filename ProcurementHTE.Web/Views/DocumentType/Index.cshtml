@@ -5,68 +5,78 @@
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Documents Types</h1>
-    <a asp-action="Create" class="btn btn-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+    <h1 class="h3 mb-0">Documents Types</h1>
+    <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
-<div>
-    <div class="table-responsive">
-        <div class="border bottom-button-0 d-flex p-2">
-            <div class="d-flex gap-2">
-                <button type="button" class="btn">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-                <select name="datalistOptions" class="form-select">
-                    <option value="">1</option>
-                </select>
-                <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
-                <datalist id="datalistOptions">
-                    <option value="San Francisco"></option>
-                    <option value="New York"></option>
-                    <option value="Seattle"></option>
-                    <option value="Los Angeles"></option>
-                    <option value="Chicago"></option>
-                </datalist>
-            </div>
-            <button type="button" class="btn btn-outline-dark ms-auto">Filter</button>
-        </div>
+<div class="border rounded-3 d-flex gap-2 p-2 mb-2">
+    <button type="button" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
 
-        <table class="table table-hover border">
-            <thead class="table-light">
+    <select name="filterOptions" class="form-select w-auto">
+        <option value="">1</option>
+        <option value="">5</option>
+        <option value="">10</option>
+        <option value="">25</option>
+    </select>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <datalist id="datalistOptions">
+            <option value="San Francisco"></option>
+            <option value="New York"></option>
+            <option value="Seattle"></option>
+            <option value="Los Angeles"></option>
+            <option value="Chicago"></option>
+        </datalist>
+        <input class="form-control" type="search" list="datalistOptions" id="exampleDataList" placeholder="Type to search...">
+    </div>
+
+    <button type="button" class="btn btn-outline-secondary ms-auto"><i class="bi bi-funnel me-1"></i> Filter</button>
+</div>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th class="border-end">
+                    @Html.DisplayNameFor(model => model.Name)
+                </th>
+                <th class="border-end">
+                    @Html.DisplayNameFor(model => model.Description)
+                </th>
+                <th class="text-center">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (!Model.Any() || Model == null) {
                 <tr>
-                    <th class="mw-100 text-nowrap border-end">
-                        @Html.DisplayNameFor(model => model.Name)
-                    </th>
-                    <th class="mw-100 text-nowrap border-end">
-                        @Html.DisplayNameFor(model => model.Description)
-                    </th>
-                    <th class="mw-100 text-nowrap">Action</th>
+                    <td colspan="4" class="text-center">No data available</td>
                 </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var item in Model)
-                {
+            } else {
+                foreach (var item in Model) {
                     <tr>
-                        <td class="mw-100 text-nowrap">
+                        <td>
                             @Html.DisplayFor(modelItem => item.Name)
                         </td>
-                        <td class="mw-100 text-nowrap">
+                        <td>
                             @Html.DisplayFor(modelItem => item.Description)
                         </td>
-                        <td class="mw-100 text-nowrap">
+                        <td class="text-center">
                             <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
-                               asp-action="Edit" asp-route-id="@item.Id">
+                               asp-action="Edit" asp-route-id="@item.DocumentTypeId" role="button">
+                                <span class="visually-hidden">Edit</span>
                                 <i class="bi bi-pencil-fill"></i>
                             </a>
 
                             <form asp-action="DeleteConfirmed"
-                                  asp-route-id="@item.Id"
+                                  asp-route-id="@item.DocumentTypeId"
                                   method="post"
                                   class="d-inline delete-form"
                                   data-name="@item.Name">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-link link-danger link-opacity-50-hover p-0 border-0 bg-transparent">
+                                    <span class="visually-hidden">Delete</span>
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
                             </form>
@@ -74,39 +84,26 @@
 
                     </tr>
                 }
+            }
+        </tbody>
+    </table>
+</div>
 
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="4" class="text-center">No data available</td>
-                    </tr>
-                }
-            </tbody>
-
-            <tfoot class="table-group-divider border-secondary-subtle">
-                <tr>
-                    <td colspan="10">
-                        <div class="hstack justify-content-between">
-                            <span>Showing 1-10 of n entries</span>
-                            <nav aria-label="Page navigation example">
-                                <ul class="pagination mb-0 gap-1">
-                                    <li class="page-item">
-                                        <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
-                                    </li>
-                                    <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
-                                    <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
-                                    <li class="page-item">
-                                        <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+<div class="hstack justify-content-between border rounded-3 my-2 p-2">
+    <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination mb-0 gap-1">
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
+            </li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
+            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
+            </li>
+        </ul>
+    </nav>
 </div>
 
 @section Scripts {

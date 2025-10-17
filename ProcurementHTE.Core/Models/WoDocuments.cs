@@ -6,7 +6,7 @@ namespace ProcurementHTE.Core.Models
     public class WoDocuments
     {
         [Key]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string WoDocumentId { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
         public string FileName { get; set; } = null!;
@@ -22,19 +22,19 @@ namespace ProcurementHTE.Core.Models
         public string Description { get; set; } = null!;
 
         [Required]
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Foreign Keys
-        public string WoNum { get; set; } = null!;
+        public string WorkOrderId { get; set; } = null!;
+        public string DocumentTypeId { get; set; } = null!;
 
-        [ForeignKey("WoNum")]
+        [ForeignKey("WorkOrderId")]
         public WorkOrder WorkOrder { get; set; } = default!;
-
-        public int DocumentTypeId { get; set; }
 
         [ForeignKey("DocumentTypeId")]
         public DocumentType DocumentType { get; set; } = default!;
 
-        public ICollection<WoDocumentApprovals> WoDocumentApprovals { get; set; } = new List<WoDocumentApprovals>();
+        public ICollection<WoDocumentApprovals> WoDocumentApprovals { get; set; } = [];
     }
 }

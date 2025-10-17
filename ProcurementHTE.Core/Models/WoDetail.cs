@@ -1,14 +1,13 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ProcurementHTE.Core.Models
 {
     public class WoDetail
     {
         [Key]
-        public int WoDetailId { get; set; }
+        public string WoDetailId { get; set; } = Guid.NewGuid().ToString();
 
         [MaxLength(255)]
         public string? ItemName { get; set; }
@@ -20,9 +19,9 @@ namespace ProcurementHTE.Core.Models
         public string? Unit { get; set; }
 
         // Foreign Keys
-        public string? WoNum { get; set; }
+        public string WorkOrderId { get; set; } = null!;
 
-        [ForeignKey("WoNum")]
-        public virtual WorkOrder? WorkOrder { get; set; }
+        [ForeignKey("WorkOrderId")]
+        public virtual WorkOrder WorkOrder { get; set; } = default!;
     }
 }
