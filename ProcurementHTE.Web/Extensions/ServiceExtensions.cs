@@ -49,7 +49,7 @@ namespace ProcurementHTE.Web.Extensions
                 })
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders()
-                .AddClaimsPrincipalFactory<CustomUserClaimsPrrincipalFactory>();
+                .AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>();
 
             // Authorization Policies
             services
@@ -114,7 +114,8 @@ namespace ProcurementHTE.Web.Extensions
                         p.AddRequirements(
                             new MinimumRoleRequirement("Manager Transport & Logistic")
                         )
-                );
+                )
+                .AddPolicy(Permissions.Doc.Approve, p => p.AddRequirements(new CanApproveWoDocumentRequirement()));
 
             // Configure Cookie Authentication
             services.ConfigureApplicationCookie(options =>
@@ -152,6 +153,7 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IProfitLossService, ProfitLossService>();
             services.AddScoped<IVendorOfferRepository, VendorOfferRepository>();
             services.AddScoped<IVendorOfferService, VendorOfferService>();
+            services.AddScoped<IAuthorizationRequirement, MinimumRoleRequirement>();
             services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
             services.AddScoped<IAuthorizationRequirement, PermissionRequirement>();
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
