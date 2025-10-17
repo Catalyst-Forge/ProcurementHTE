@@ -24,8 +24,14 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: WorkOrders
+        [Authorize(Policy = Permissions.WO.Read)]
         public async Task<IActionResult> Index()
         {
+            var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            var hasClaim = User.HasClaim("permission", Permissions.WO.Read);
+
+            _logger.LogInformation("", $"User punya claim {hasClaim}");
+            
             var workOrders = await _woService.GetAllWorkOrderWithDetailsAsync();
             ViewBag.TotalWo = workOrders.Count();
             ViewBag.ActivePage = "Index Work Orders";
