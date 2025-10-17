@@ -98,33 +98,6 @@
 
 <!-- Charts & Tables Row -->
 <div class="row g-3 mb-4">
-    <!-- Sales Chart -->
-    <div class="col-xl-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Sales Overview</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="salesChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Traffic Sources -->
-    <div class="col-xl-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Traffic Sources</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="trafficChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Activities & Orders -->
-<div class="row g-3 mb-4">
     <!-- Recent Orders -->
     <div class="col-xl-8">
         <div class="card border-0 shadow-sm">
@@ -153,7 +126,7 @@
                                 foreach (var order in Model) {
                                     <tr>
                                         <td>@Html.DisplayFor(modelItem => order.WoNum)</td>
-                                        <td>@(order.Description ?? "-")</td>
+                                        <td class="w-50">@(order.Description ?? "-")</td>
                                         <td>@Html.DisplayFor(modelItem => order.ProcurementType)</td>
                                         <td>
                                             @if (order.StatusName == "Created") {
@@ -174,6 +147,33 @@
             </div>
             <div class="card-footer bg-white border-0 py-3">
                 <a asp-controller="WorkOrders" asp-action="Index" class="btn btn-outline-primary btn-sm">View All Work Orders</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Traffic Sources -->
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">Traffic Sources</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities & Orders -->
+<div class="row g-3 mb-4">
+    <!-- Sales Chart -->
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">Sales Overview</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="80"></canvas>
             </div>
         </div>
     </div>
