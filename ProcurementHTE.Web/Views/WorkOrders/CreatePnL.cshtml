@@ -32,8 +32,8 @@
     <div class="row g-3">
         <!-- ================= TAGIHAN / HEADER ================= -->
         <div class="col-12">
-            <div class="card border-success-subtle shadow-sm">
-                <div class="card-header bg-success-subtle"><h2 class="h6 mb-0 fw-semibold">Tagihan PDSI</h2></div>
+            <div class="card shadow-sm">
+                <div class="card-header"><h2 class="h6 mb-0 fw-semibold">Tagihan PDSI</h2></div>
 
                 <div class="card-body">
                     <div class="row g-3 align-items-start">
@@ -71,7 +71,7 @@
         <!-- ================= PENAWARAN MITRA ================= -->
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary-subtle d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0 fw-semibold">Penawaran Mitra</h2>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-row">
                         <i class="bi bi-plus-lg"></i> Tambah Baris
@@ -168,8 +168,8 @@
 
         <!-- ================= RINGKASAN / ESTIMATE ================= -->
         <div class="col-12">
-            <div class="card border-success-subtle shadow-sm">
-                <div class="card-header bg-success-subtle"><h2 class="h6 mb-0 fw-semibold">Profit &amp; Loss Estimate</h2></div>
+            <div class="card shadow-sm">
+                <div class="card-header"><h2 class="h6 mb-0 fw-semibold">Profit &amp; Loss Estimate</h2></div>
 
                 <div class="card-body">
                     <div class="row g-3">
@@ -215,9 +215,8 @@
         </div>
 
         <!-- ================= ACTIONS ================= -->
-        <div class="col-12 d-flex justify-content-end gap-2">
-            <a asp-action="Details" asp-route-id="@Model.WorkOrderId" class="btn btn-outline-secondary" role="button">Cancel</a>
-            <button type="submit" class="btn btn-success">
+        <div class="col-12 d-flex gap-2 mb-3">
+            <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check2-circle"></i> Simpan P&amp;L
             </button>
         </div>
