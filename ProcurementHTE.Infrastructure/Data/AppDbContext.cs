@@ -111,7 +111,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder
                 .Entity<WorkOrder>()
                 .HasMany(workOrder => workOrder.WoDocuments)
-                .WithOne()
+                .WithOne(woDocument => woDocument.WorkOrder)
                 .HasForeignKey(woDocument => woDocument.WorkOrderId)
                 .OnDelete(DeleteBehavior.NoAction); // Relation to WoDocument
             builder
