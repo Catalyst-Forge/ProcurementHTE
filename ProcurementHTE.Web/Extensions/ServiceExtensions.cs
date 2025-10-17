@@ -153,9 +153,7 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IProfitLossService, ProfitLossService>();
             services.AddScoped<IVendorOfferRepository, VendorOfferRepository>();
             services.AddScoped<IVendorOfferService, VendorOfferService>();
-            services.AddScoped<IAuthorizationRequirement, MinimumRoleRequirement>();
             services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
-            services.AddScoped<IAuthorizationRequirement, PermissionRequirement>();
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
             services.AddScoped<IAuthorizationRequirement, CanApproveWoDocumentRequirement>();
             services.AddScoped<IAuthorizationHandler, CanApproveWoDocumentHandler>();
