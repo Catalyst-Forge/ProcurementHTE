@@ -1,0 +1,59 @@
+﻿@{
+    var start = (Model.Page - 1) * Model.PageSize + 1;
+    if (Model.Total == 0) { start = 0; }
+    var end = Math.Min(Model.Page * Model.PageSize, Model.Total);
+    var options = new[] { 10, 25, 50, 100 };
+}
+
+<div class="hstack justify-content-between border rounded-3 my-2 p-2">
+    <div class="d-flex align-items-center gap-2">
+        <span class="small">
+            Showing <strong>@start</strong>-<strong>@end</strong> of <strong>@Model.Total</strong> entries
+        </span>
+
+        <form method="get" class="d-inline-flex align-items-center ms-2">
+            <label for="pageSize" class="me-1 small text-muted">Show</label>
+            <select id="pageSize" name="pageSize" class="form-select form-select-sm"
+                    onchange="this.form.page.value=1; this.form.submit();">
+                @foreach (var s in options) {
+                    <option value="@s" selected="@(Model.PageSize == s ? "selected" : null)">@s</option>
+                }
+            </select>
+            <span class="ms-1 small text-muted">entries</span>
+            <input type="hidden" name="page" value="@Model.Page" />
+        </form>
+    </div>
+
+    <nav aria-label="Pagination">
+        <ul class="pagination mb-0 gap-1">
+            <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                <a class="page-link border-0 rounded-circle bg-transparent"
+                   asp-action="Index"
+                   asp-route-page="@(Model.Page - 1)"
+                   asp-route-pageSize="@Model.PageSize"
+                   aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+
+            @for (var p = 1; p <= Model.TotalPages; p++) {
+                <li class="page-item @(Model.Page == p ? "active" : "")">
+                    <a class="page-link border-0 rounded-circle"
+                       asp-action="Index"
+                       asp-route-page="@p"
+                       asp-route-pageSize="@Model.PageSize">@p</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link border-0 rounded-circle bg-transparent"
+                   asp-action="Index"
+                   asp-route-page="@(Model.Page + 1)"
+                   asp-route-pageSize="@Model.PageSize"
+                   aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
