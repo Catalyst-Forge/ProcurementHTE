@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Infrastructure.Data;
@@ -43,6 +44,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .OrderByDescending(v => v.VendorCode) // aman karena D6 zero-padded
                 .Select(v => v.VendorCode)
                 .FirstOrDefaultAsync();
+        }
+
+        public Task<PagedResult<Vendor>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default) {
+            var query = _context.Vendors
+                .AsNoTracking();
+
+            return query.ToPagedResultAsync(
+                page, pageSize,
+                orderBy: q => q.OrderByDescending(v => v.CreatedAt),
+                ct: ct);
         }
 
         public async Task StoreVendorAsync(Vendor vendor)

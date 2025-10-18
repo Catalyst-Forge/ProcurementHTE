@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Azure;
+using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Infrastructure.Data;
@@ -24,9 +26,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<WoTypes>> GetAllAsync()
+        public Task<PagedResult<WoTypes>> GetAllAsync(int page, int pageSize, CancellationToken ct)
         {
-            return await _context.WoTypes.ToListAsync();
+            var query = _context.WoTypes.AsNoTracking();
+
+            return query.ToPagedResultAsync(page, pageSize, null, ct);
         }
 
         public async Task<WoTypes?> GetByIdAsync(string id)

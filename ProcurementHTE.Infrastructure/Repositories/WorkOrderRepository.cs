@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Utils;
@@ -29,16 +30,17 @@ namespace ProcurementHTE.Infrastructure.Repositories
             && sqlEx.Number == 2627
             && (sqlEx.Message?.Contains("AK_WorkOrders_WoNum") ?? false);
 
-        public async Task<IEnumerable<WorkOrder>> GetAllAsync()
+        public Task<PagedResult<WorkOrder>> GetAllAsync(int page, int pageSize, CancellationToken ct)
         {
-            return await _context
+            var query = _context
                 .WorkOrders.Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
                 .Include(wo => wo.Vendor)
                 .Include(wo => wo.WoDetails)
-                .AsNoTracking()
-                .ToListAsync();
+                .AsNoTracking();
+
+            return query.ToPagedResultAsync(page, pageSize, orderBy: q => q.OrderByDescending(w => w.CreatedAt), ct: ct);
         }
 
         public async Task<WorkOrder?> GetByIdAsync(string id)
