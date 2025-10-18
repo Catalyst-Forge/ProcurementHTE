@@ -1,7 +1,8 @@
 ﻿@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Common
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
-@model IEnumerable<WorkOrder>
+@model PagedResult<WorkOrder>
 @inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Work Orders Data";
@@ -53,31 +54,31 @@
         <thead class="table-light">
             <tr>
                 <th class="border-end">
-                    @Html.DisplayNameFor(model => model.WoNum)
+                    @Html.DisplayNameFor(model => model.Items[0].WoNum)
                 </th>
                 <th class="border-end">
-                    @Html.DisplayNameFor(model => model.Status)
+                    @Html.DisplayNameFor(model => model.Items[0].Status)
                 </th>
                 <th class="border-end">
-                    @Html.DisplayNameFor(model => model.WoType)
+                    @Html.DisplayNameFor(model => model.Items[0].WoType)
                 </th>
                 <th class="border-end">
-                    @Html.DisplayNameFor(model => model.ProcurementType)
+                    @Html.DisplayNameFor(model => model.Items[0].ProcurementType)
                 </th>
                 <th class="border-end">
-                    @Html.DisplayNameFor(model => model.DateLetter)
+                    @Html.DisplayNameFor(model => model.Items[0].DateLetter)
                 </th>
                 <th class="text-center">Action</th>
             </tr>
         </thead>
 
         <tbody>
-            @if (!Model.Any() || Model == null) {
+            @if (!Model.Items.Any() || Model == null) {
                 <tr>
                     <td colspan="8" class="text-center text-muted">No work order data found</td>
                 </tr>
             } else {
-                foreach (var item in Model) {
+                foreach (var item in Model.Items) {
                     <tr>
                         <td>
                             @Html.DisplayFor(modelItem => item.WoNum)
@@ -117,19 +118,4 @@
     </table>
 </div>
 
-<div class="hstack justify-content-between border rounded-3 my-2 p-2">
-    <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
-    <nav aria-label="Page navigation example">
-        <ul class="pagination mb-0 gap-1">
-            <li class="page-item">
-                <a class="page-link border-0 rounded-circle"><i class="bi bi-chevron-left"></i></a>
-            </li>
-            <li class="page-item"><a class="page-link border-0 rounded-circle active" href="#">1</a></li>
-            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">2</a></li>
-            <li class="page-item"><a class="page-link border-0 rounded-circle" href="#">3</a></li>
-            <li class="page-item">
-                <a class="page-link border-0 rounded-circle" href="#"><i class="bi bi-chevron-right"></i></a>
-            </li>
-        </ul>
-    </nav>
-</div>
+@await Html.PartialAsync("_Pager", Model)
