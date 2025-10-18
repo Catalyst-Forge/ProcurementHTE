@@ -1,4 +1,5 @@
-﻿using ProcurementHTE.Core.Interfaces;
+﻿using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services
@@ -12,9 +13,9 @@ namespace ProcurementHTE.Core.Services
             _woRepository = woRepository;
         }
 
-        public async Task<IEnumerable<WorkOrder>> GetAllWorkOrderWithDetailsAsync()
+        public Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(int page, int pageSize, CancellationToken ct)
         {
-            return await _woRepository.GetAllAsync();
+            return _woRepository.GetAllAsync(page, pageSize, ct);
         }
 
         public async Task<WorkOrder?> GetWorkOrderByIdAsync(string id)

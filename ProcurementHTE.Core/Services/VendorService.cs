@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Utils;
@@ -21,6 +22,8 @@ public class VendorService : IVendorService
         if (string.IsNullOrEmpty(id)) throw new ArgumentException("ID cannot be null or empty");
         return await _vendorRepository.GetByIdAsync(id);
     }
+    public Task<PagedResult<Vendor>> GetPagedAsync(int page, int pageSize, CancellationToken ct)
+        => _vendorRepository.GetPagedAsync(page, pageSize, ct);
 
     public async Task AddVendorAsync(Vendor vendor)
     {

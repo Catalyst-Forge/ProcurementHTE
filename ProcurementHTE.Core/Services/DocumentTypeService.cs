@@ -1,4 +1,5 @@
-﻿using ProcurementHTE.Core.Interfaces;
+﻿using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services
@@ -11,9 +12,9 @@ namespace ProcurementHTE.Core.Services
             _documentTypeRepository = documentTypeRepository;
         }
 
-        public async Task<IEnumerable<Models.DocumentType>> GetAllDocumentTypesAsync()
+        public Task<PagedResult<Models.DocumentType>> GetAllDocumentTypesAsync(int page, int pageSize, CancellationToken ct)
         {
-            return await _documentTypeRepository.GetAllAsync();
+            return _documentTypeRepository.GetAllAsync(page, pageSize, ct);
         }
 
         public async Task AddDocumentTypeAsync(Models.DocumentType documentType)

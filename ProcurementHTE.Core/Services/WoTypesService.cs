@@ -1,4 +1,5 @@
-﻿using ProcurementHTE.Core.Interfaces;
+﻿using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services
@@ -13,9 +14,9 @@ namespace ProcurementHTE.Core.Services
             _woTypeRepository = woTypeRepository;
         }
 
-        public async Task<IEnumerable<WoTypes>> GetAllWoTypessAsync()
+        public Task<PagedResult<WoTypes>> GetAllWoTypessAsync(int page, int pageSize, CancellationToken ct)
         {
-            return await _woTypeRepository.GetAllAsync();
+            return _woTypeRepository.GetAllAsync(page, pageSize, ct);
         }
 
         public async Task AddWoTypesAsync(WoTypes woTypes)
