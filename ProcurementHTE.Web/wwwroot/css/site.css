@@ -83,3 +83,21 @@ a {
   --bs-pagination-padding-y: 0.175rem;
   --bs-pagination-color: rgb(var(--bs-secondary-color-rgb));
 }
+
+@media (min-width: 576px) {
+  .auth-container {
+    width: 80%;
+  }
+}
+
+@media (min-width: 768px) {
+  .auth-container {
+    width: 60%;
+  }
+}
+
+@media (min-width: 992px) {
+  .auth-container {
+    width: 40%;
+  }
+}
