@@ -1,10 +1,11 @@
-﻿using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Interfaces
 {
     public interface IWoTypeRepository
     {
-        Task<IEnumerable<WoTypes>> GetAllAsync();
+        Task<PagedResult<WoTypes>> GetAllAsync(int page, int pageSize, CancellationToken ct);
         Task<WoTypes?> GetByIdAsync(string id);
         Task CreateWoTypeAsync(WoTypes woType);
         Task UpdateWoTypeAsync(WoTypes woType);

@@ -1,10 +1,11 @@
-﻿using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Interfaces
 {
     public interface IDocumentTypeService
     {
-        Task<IEnumerable<DocumentType>> GetAllDocumentTypesAsync();
+        Task<PagedResult<DocumentType>> GetAllDocumentTypesAsync(int page, int pageSize, CancellationToken ct);
         Task<DocumentType?> GetDocumentTypeByIdAsync(string id);
         Task AddDocumentTypeAsync(DocumentType documentType);
         Task EditDocumentTypeAsync(DocumentType documentType, string id);

@@ -1,11 +1,12 @@
-﻿using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Interfaces
 {
     public interface IWorkOrderRepository
     {
         // Get Data
-        Task<IEnumerable<WorkOrder>> GetAllAsync();
+        Task<PagedResult<WorkOrder>> GetAllAsync(int page, int pageSize, CancellationToken ct);
         Task<WorkOrder?> GetByIdAsync(string id);
         Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(
             string userId,
