@@ -17,9 +17,9 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: DocumentType
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
-            var documentTypes = await _documentTypeService.GetAllDocumentTypesAsync();
+            var documentTypes = await _documentTypeService.GetAllDocumentTypesAsync(page, pageSize, ct);
             ViewBag.ActivePage = "Index Document Types";
             return View(documentTypes);
         }

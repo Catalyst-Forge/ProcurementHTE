@@ -27,15 +27,18 @@ namespace ProcurementHTE.Web.Controllers
 
         // GET: WorkOrders
         [Authorize(Policy = Permissions.WO.Read)]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
             var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
             var hasClaim = User.HasClaim("permission", Permissions.WO.Read);
 
             _logger.LogInformation("", $"User punya claim {hasClaim}");
-            
-            var workOrders = await _woService.GetAllWorkOrderWithDetailsAsync();
-            ViewBag.TotalWo = workOrders.Count();
+
+            var allowed = new[] { 10, 25, 50, 100 };
+            if (!allowed.Contains(pageSize))
+                pageSize = 25;
+
+            var workOrders = await _woService.GetAllWorkOrderWithDetailsAsync(page, pageSize, ct);
             ViewBag.ActivePage = "Index Work Orders";
 
             return View(workOrders);

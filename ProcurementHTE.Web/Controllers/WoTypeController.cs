@@ -18,9 +18,10 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: WoType
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
-            var woTypes = await _woTypeService.GetAllWoTypessAsync();
+            var woTypes = await _woTypeService.GetAllWoTypessAsync(page, pageSize, ct);
+            ViewBag.WoTypeTotal = woTypes.Total;
             ViewBag.ActivePage = "Index Work Order Types";
             return View(woTypes);
         }

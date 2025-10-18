@@ -18,9 +18,9 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: Vendors
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
-            var vendors = await _vendorService.GetAllVendorsAsync();
+            var vendors = await _vendorService.GetPagedAsync(page, pageSize, ct);
             ViewBag.ActivePage = "Vendors";
             return View(vendors);
         }
