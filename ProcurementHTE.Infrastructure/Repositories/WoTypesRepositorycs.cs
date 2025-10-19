@@ -10,10 +10,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class WoTypesRepository : IWoTypeRepository
     {
         private readonly AppDbContext _context;
+
         public WoTypesRepository(AppDbContext context)
         {
             _context = context;
         }
+
         public async Task CreateWoTypeAsync(WoTypes woType)
         {
             await _context.AddAsync(woType);
@@ -26,9 +28,27 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public Task<PagedResult<WoTypes>> GetAllAsync(int page, int pageSize, CancellationToken ct)
+        public Task<PagedResult<WoTypes>> GetAllAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
             var query = _context.WoTypes.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
+            {
+                var s = search.Trim();
+                bool byTypeName = fields.Contains("TypeName");
+                bool byDesc = fields.Contains("Description");
+
+                query = query.Where(type =>
+                    (byTypeName && type.TypeName != null & type.TypeName!.Contains(s))
+                    || (byDesc && type.Description != null && type.Description.Contains(s))
+                );
+            }
 
             return query.ToPagedResultAsync(page, pageSize, null, ct);
         }

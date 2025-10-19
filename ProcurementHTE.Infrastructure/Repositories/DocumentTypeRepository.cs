@@ -15,9 +15,27 @@ namespace ProcurementHTE.Infrastructure.Repositories
             _context = context;
         }
 
-        public Task<PagedResult<DocumentType>> GetAllAsync(int page, int pageSize, CancellationToken ct)
+        public Task<PagedResult<DocumentType>> GetAllAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
             var query = _context.DocumentTypes.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
+            {
+                var s = search.Trim();
+                bool byName = fields.Contains("Name");
+                bool byDesc = fields.Contains("Description");
+
+                query = query.Where(d =>
+                    (byName && d.Name != null && d.Name.Contains(s))
+                    || (byDesc && d.Description != null && d.Description.Contains(s))
+                );
+            }
 
             return query.ToPagedResultAsync(page, pageSize, null, ct);
         }
@@ -26,6 +44,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return await _context.DocumentTypes.FirstOrDefaultAsync(d => d.DocumentTypeId == id);
         }
+
         public async Task CreateDocumentTypeAsync(DocumentType documentType)
         {
             await _context.AddAsync(documentType);

@@ -30,7 +30,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
             && sqlEx.Number == 2627
             && (sqlEx.Message?.Contains("AK_WorkOrders_WoNum") ?? false);
 
-        public Task<PagedResult<WorkOrder>> GetAllAsync(int page, int pageSize, CancellationToken ct)
+        public async Task<PagedResult<WorkOrder>> GetAllAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
             var query = _context
                 .WorkOrders.Include(wo => wo.Status)
@@ -40,7 +46,32 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(wo => wo.WoDetails)
                 .AsNoTracking();
 
-            return query.ToPagedResultAsync(page, pageSize, orderBy: q => q.OrderByDescending(w => w.CreatedAt), ct: ct);
+            if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
+            {
+                var s = search.Trim();
+                bool byWoNum = fields.Contains("WoNum");
+                bool byDesc = fields.Contains("Description");
+                bool byLetter = fields.Contains("WoLetter");
+                bool byWbs = fields.Contains("WBS");
+                bool byGlAccount = fields.Contains("GlAccount");
+                bool byStat = fields.Contains("Status");
+
+                query = query.Where(w =>
+                    (byWoNum && w.WoNum != null && w.WoNum.Contains(s))
+                    || (byDesc && w.Description != null && w.Description.Contains(s))
+                    || (byLetter && w.WoLetter != null && w.WoLetter.Contains(s))
+                    || (byWbs && w.WBS != null && w.WBS.Contains(s))
+                    || (byGlAccount && w.GlAccount != null && w.GlAccount.Contains(s))
+                    || (byStat && w.Status != null && w.Status.StatusName.Contains(s))
+                );
+            }
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(w => w.CreatedAt),
+                ct: ct
+            );
         }
 
         public async Task<WorkOrder?> GetByIdAsync(string id)

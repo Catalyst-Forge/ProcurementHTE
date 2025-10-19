@@ -46,14 +46,36 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public Task<PagedResult<Vendor>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default) {
-            var query = _context.Vendors
-                .AsNoTracking();
+        public Task<PagedResult<Vendor>> GetPagedAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct = default
+        )
+        {
+            var query = _context.Vendors.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
+            {
+                var s = search.Trim();
+                bool byVendorCode = fields.Contains("VendorCode");
+                bool byVendorName = fields.Contains("VendorName");
+                bool byContactPerson = fields.Contains("ContactPerson");
+
+                query = query.Where(v =>
+                    (byVendorCode && v.VendorCode != null && v.VendorCode.Contains(s))
+                    || (byVendorName && v.VendorName != null && v.VendorName.Contains(s))
+                    || (byContactPerson && v.ContactPerson != null && v.ContactPerson.Contains(s))
+                );
+            }
 
             return query.ToPagedResultAsync(
-                page, pageSize,
+                page,
+                pageSize,
                 orderBy: q => q.OrderByDescending(v => v.CreatedAt),
-                ct: ct);
+                ct: ct
+            );
         }
 
         public async Task StoreVendorAsync(Vendor vendor)
