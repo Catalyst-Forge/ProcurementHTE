@@ -6,7 +6,6 @@ namespace ProcurementHTE.Core.Services
 {
     public class WoTypesService : IWoTypeService
     {
-
         private readonly IWoTypeRepository _woTypeRepository;
 
         public WoTypesService(IWoTypeRepository woTypeRepository)
@@ -14,9 +13,15 @@ namespace ProcurementHTE.Core.Services
             _woTypeRepository = woTypeRepository;
         }
 
-        public Task<PagedResult<WoTypes>> GetAllWoTypessAsync(int page, int pageSize, CancellationToken ct)
+        public Task<PagedResult<WoTypes>> GetAllWoTypessAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
-            return _woTypeRepository.GetAllAsync(page, pageSize, ct);
+            return _woTypeRepository.GetAllAsync(page, pageSize, search, fields, ct);
         }
 
         public async Task AddWoTypesAsync(WoTypes woTypes)
@@ -58,11 +63,10 @@ namespace ProcurementHTE.Core.Services
             {
                 await _woTypeRepository.DropWoTypeAsync(woTypes);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine($"[DEBUG] {e}");
             }
-
         }
 
         public async Task<WoTypes?> GetWoTypesByIdAsync(string WoTypeId)

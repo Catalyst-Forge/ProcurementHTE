@@ -19,11 +19,18 @@ public class VendorService : IVendorService
 
     public async Task<Vendor?> GetVendorByIdAsync(string id)
     {
-        if (string.IsNullOrEmpty(id)) throw new ArgumentException("ID cannot be null or empty");
+        if (string.IsNullOrEmpty(id))
+            throw new ArgumentException("ID cannot be null or empty");
         return await _vendorRepository.GetByIdAsync(id);
     }
-    public Task<PagedResult<Vendor>> GetPagedAsync(int page, int pageSize, CancellationToken ct)
-        => _vendorRepository.GetPagedAsync(page, pageSize, ct);
+
+    public Task<PagedResult<Vendor>> GetPagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        ISet<string> fields,
+        CancellationToken ct
+    ) => _vendorRepository.GetPagedAsync(page, pageSize, search, fields, ct);
 
     public async Task AddVendorAsync(Vendor vendor)
     {
@@ -45,7 +52,8 @@ public class VendorService : IVendorService
         catch (DbUpdateException ex)
         {
             // fallback 1x retry kalau kena unique constraint (jika kamu tambahkan unique index)
-            if (!IsUniqueConstraint(ex)) throw;
+            if (!IsUniqueConstraint(ex))
+                throw;
             lastCode = await _vendorRepository.GetLastCodeAsync(VendorPrefix);
             vendor.VendorCode = SequenceNumberGenerator.NumId(VendorPrefix, lastCode);
             await _vendorRepository.StoreVendorAsync(vendor);
@@ -57,8 +65,9 @@ public class VendorService : IVendorService
         if (vendor == null || string.IsNullOrEmpty(id))
             throw new ArgumentException("Vendor or ID cannot be null");
 
-        var existingVendor = await _vendorRepository.GetByIdAsync(id)
-                             ?? throw new KeyNotFoundException($"Vendor with ID {id} not found");
+        var existingVendor =
+            await _vendorRepository.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException($"Vendor with ID {id} not found");
 
         // Biasanya VendorCode TIDAK diubah. Kalau memang mau, silakan pertahankan baris bawah ini.
         // existingVendor.VendorCode = vendor.VendorCode;
@@ -81,7 +90,8 @@ public class VendorService : IVendorService
 
     public async Task DeleteVendorAsync(Vendor vendor)
     {
-        if (vendor == null) throw new ArgumentException("Vendor or ID cannot be null");
+        if (vendor == null)
+            throw new ArgumentException("Vendor or ID cannot be null");
         await _vendorRepository.DropVendorAsync(vendor);
     }
 

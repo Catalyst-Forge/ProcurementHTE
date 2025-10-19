@@ -7,14 +7,21 @@ namespace ProcurementHTE.Core.Services
     public class DocumentTypeService : IDocumentTypeService
     {
         private readonly IDocumentTypeRepository _documentTypeRepository;
-        public DocumentTypeService(IDocumentTypeRepository documentTypeRepository) 
+
+        public DocumentTypeService(IDocumentTypeRepository documentTypeRepository)
         {
             _documentTypeRepository = documentTypeRepository;
         }
 
-        public Task<PagedResult<Models.DocumentType>> GetAllDocumentTypesAsync(int page, int pageSize, CancellationToken ct)
+        public Task<PagedResult<Models.DocumentType>> GetAllDocumentTypesAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
-            return _documentTypeRepository.GetAllAsync(page, pageSize, ct);
+            return _documentTypeRepository.GetAllAsync(page, pageSize, search, fields, ct);
         }
 
         public async Task AddDocumentTypeAsync(Models.DocumentType documentType)

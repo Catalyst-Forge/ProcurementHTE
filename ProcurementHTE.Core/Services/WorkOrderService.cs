@@ -13,9 +13,9 @@ namespace ProcurementHTE.Core.Services
             _woRepository = woRepository;
         }
 
-        public Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(int page, int pageSize, CancellationToken ct)
+        public Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(int page, int pageSize, string? search, ISet<string> fields, CancellationToken ct)
         {
-            return _woRepository.GetAllAsync(page, pageSize, ct);
+            return _woRepository.GetAllAsync(page, pageSize, search, fields, ct);
         }
 
         public async Task<WorkOrder?> GetWorkOrderByIdAsync(string id)
