@@ -9,11 +9,16 @@ namespace ProcurementHTE.Core.Interfaces
         Task<Vendor?> GetByIdAsync(string id);
         Task<string?> GetLastCodeAsync(string prefix);
         Task<IEnumerable<Vendor>> GetAllWithOffersAsync();
-        Task<PagedResult<Vendor>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default);
+        Task<PagedResult<Vendor>> GetPagedAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct = default
+        );
         Task<int> CountAsync();
         Task StoreVendorAsync(Vendor vendor);
         Task UpdateVendorAsync(Vendor vendor);
         Task DropVendorAsync(Vendor vendor);
     }
-
 }

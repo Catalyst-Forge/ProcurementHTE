@@ -6,7 +6,7 @@ namespace ProcurementHTE.Core.Interfaces
     public interface IWorkOrderService
     {
         // Get Data
-        Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(int page, int pageSize, CancellationToken ct);
+        Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(int page, int pageSize, string? search, ISet<string> fields, CancellationToken ct);
         Task<WorkOrder?> GetWorkOrderByIdAsync(string id);
         Task<IReadOnlyList<WorkOrder>> GetMyRecentWorkOrderAsync(
             string userId,

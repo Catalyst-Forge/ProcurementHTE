@@ -5,7 +5,13 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IDocumentTypeRepository
     {
-        Task<PagedResult<DocumentType>> GetAllAsync(int page, int pageSize, CancellationToken ct);
+        Task<PagedResult<DocumentType>> GetAllAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        );
         Task<DocumentType?> GetByIdAsync(string id);
         Task CreateDocumentTypeAsync(DocumentType documentType);
         Task UpdateDocumentTypeAsync(DocumentType documentType);
