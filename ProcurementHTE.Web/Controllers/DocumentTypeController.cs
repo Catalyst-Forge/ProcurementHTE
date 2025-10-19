@@ -17,10 +17,36 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: DocumentType
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
+        public async Task<IActionResult> Index(
+            int page = 1,
+            int pageSize = 10,
+            string? search = null,
+            string? fields = null,
+            CancellationToken ct = default
+        )
         {
-            var documentTypes = await _documentTypeService.GetAllDocumentTypesAsync(page, pageSize, ct);
-            ViewBag.ActivePage = "Index Document Types";
+            var allowed = new[] { 10, 25, 50, 100 };
+            if (!allowed.Contains(pageSize))
+                pageSize = 10;
+
+            var selectedFields = (fields ?? "Name, Description")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var documentTypes = await _documentTypeService.GetAllDocumentTypesAsync(
+                page,
+                pageSize,
+                search,
+                selectedFields,
+                ct
+            );
+            ViewBag.RouteData = new RouteValueDictionary
+            {
+                ["ActivePage"] = "Index Document Types",
+                ["search"] = search,
+                ["fields"] = string.Join(',', selectedFields),
+                ["pageSize"] = pageSize,
+            };
             return View(documentTypes);
         }
 
@@ -53,8 +79,10 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: DocumentType/Edit/5
-        public async Task<IActionResult> Edit(string id) {
-            if (id != null) {
+        public async Task<IActionResult> Edit(string id)
+        {
+            if (id != null)
+            {
                 var documentType = await _documentTypeService.GetDocumentTypeByIdAsync(id);
                 return View(documentType);
             }

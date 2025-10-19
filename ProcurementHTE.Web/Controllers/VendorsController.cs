@@ -18,10 +18,36 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: Vendors
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
+        public async Task<IActionResult> Index(
+            int page = 1,
+            int pageSize = 10,
+            string? search = null,
+            string? fields = null,
+            CancellationToken ct = default
+        )
         {
-            var vendors = await _vendorService.GetPagedAsync(page, pageSize, ct);
-            ViewBag.ActivePage = "Vendors";
+            var allowed = new[] { 10, 25, 50, 100 };
+            if (!allowed.Contains(pageSize))
+                pageSize = 25;
+
+            var selectedFields = (fields ?? "VendorCode, VendorName, ContactPerson")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var vendors = await _vendorService.GetPagedAsync(
+                page,
+                pageSize,
+                search,
+                selectedFields,
+                ct
+            );
+            ViewBag.RouteData = new RouteValueDictionary
+            {
+                ["ActivePage"] = "Vendors",
+                ["search"] = search,
+                ["fields"] = string.Join(',', selectedFields),
+                ["pageSize"] = pageSize,
+            };
             return View(vendors);
         }
 
@@ -46,8 +72,10 @@ namespace ProcurementHTE.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-          [Bind("VendorName,NPWP,Address,City,Province,PostalCode,Email,PhoneNumber,ContactPerson,ContactPosition,Status,Comment")]
-  Vendor vendor
+            [Bind(
+                "VendorName,NPWP,Address,City,Province,PostalCode,Email,PhoneNumber,ContactPerson,ContactPosition,Status,Comment"
+            )]
+                Vendor vendor
         )
         {
             ModelState.Remove(nameof(Vendor.VendorCode)); // server akan isi kode
@@ -64,13 +92,12 @@ namespace ProcurementHTE.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
-
         // Helper untuk isi dropdown status
         private void BindStatuses(string? selected = null)
         {
             ViewBag.Statuses = new SelectList(
-                new[] { "Active", "Inactive", "Suspended" }, selected
+                new[] { "Active", "Inactive", "Suspended" },
+                selected
             );
         }
 
@@ -102,8 +129,10 @@ namespace ProcurementHTE.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             string id,
-            [Bind("VendorId,VendorCode,VendorName,NPWP,Address,City,Province,PostalCode,Email,PhoneNumber,ContactPerson,ContactPosition,Status,Comment")]
-    Vendor vendor
+            [Bind(
+                "VendorId,VendorCode,VendorName,NPWP,Address,City,Province,PostalCode,Email,PhoneNumber,ContactPerson,ContactPosition,Status,Comment"
+            )]
+                Vendor vendor
         )
         {
             try
@@ -133,28 +162,34 @@ namespace ProcurementHTE.Web.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 // Konflik concurrency (baris sudah berubah/dihapus)
-                ModelState.AddModelError(string.Empty,
-                    "Data vendor berubah saat Anda mengedit. Silakan muat ulang halaman dan coba lagi.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Data vendor berubah saat Anda mengedit. Silakan muat ulang halaman dan coba lagi."
+                );
                 BindStatuses(vendor.Status);
                 return View(vendor);
             }
             catch (DbUpdateException ex)
             {
                 // Error DB (unique constraint, dsb.)
-                ModelState.AddModelError(string.Empty,
-                    "Gagal menyimpan perubahan ke database. " + ex.GetBaseException().Message);
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Gagal menyimpan perubahan ke database. " + ex.GetBaseException().Message
+                );
                 BindStatuses(vendor.Status);
                 return View(vendor);
             }
             catch (Exception ex)
             {
                 // Fallback umum
-                ModelState.AddModelError(string.Empty, "Terjadi kesalahan tak terduga: " + ex.Message);
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Terjadi kesalahan tak terduga: " + ex.Message
+                );
                 BindStatuses(vendor.Status);
                 return View(vendor);
             }
         }
-
 
         // POST: Vendors/Delete/5
         [HttpPost]
@@ -180,4 +215,3 @@ namespace ProcurementHTE.Web.Controllers
         }
     }
 }
-

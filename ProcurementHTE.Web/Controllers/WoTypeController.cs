@@ -18,11 +18,37 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: WoType
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
+        public async Task<IActionResult> Index(
+            int page = 1,
+            int pageSize = 10,
+            string? search = null,
+            string? fields = null,
+            CancellationToken ct = default
+        )
         {
-            var woTypes = await _woTypeService.GetAllWoTypessAsync(page, pageSize, ct);
-            ViewBag.WoTypeTotal = woTypes.Total;
-            ViewBag.ActivePage = "Index Work Order Types";
+            var allowed = new[] { 10, 25, 50, 100 };
+            if (!allowed.Contains(pageSize))
+                pageSize = 10;
+
+            var selectedFields = (fields ?? "TypeName, Description")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var woTypes = await _woTypeService.GetAllWoTypessAsync(
+                page,
+                pageSize,
+                search,
+                selectedFields,
+                ct
+            );
+            ViewBag.RouteData = new RouteValueDictionary
+            {
+                ["ActivePage"] = "Index Work Order Types",
+                ["search"] = search,
+                ["fields"] = string.Join(',', selectedFields),
+                ["pageSize"] = pageSize,
+            };
+
             return View(woTypes);
         }
 

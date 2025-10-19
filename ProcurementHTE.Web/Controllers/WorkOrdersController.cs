@@ -27,7 +27,13 @@ namespace ProcurementHTE.Web.Controllers
 
         // GET: WorkOrders
         [Authorize(Policy = Permissions.WO.Read)]
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, CancellationToken ct = default)
+        public async Task<IActionResult> Index(
+            int page = 1,
+            int pageSize = 10,
+            string? search = null,
+            string? fields = null,
+            CancellationToken ct = default
+        )
         {
             var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
             var hasClaim = User.HasClaim("permission", Permissions.WO.Read);
@@ -36,10 +42,26 @@ namespace ProcurementHTE.Web.Controllers
 
             var allowed = new[] { 10, 25, 50, 100 };
             if (!allowed.Contains(pageSize))
-                pageSize = 25;
+                pageSize = 10;
 
-            var workOrders = await _woService.GetAllWorkOrderWithDetailsAsync(page, pageSize, ct);
-            ViewBag.ActivePage = "Index Work Orders";
+            var selectedFields = (fields ?? "WoNum, Description")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var workOrders = await _woService.GetAllWorkOrderWithDetailsAsync(
+                page,
+                pageSize,
+                search,
+                selectedFields,
+                ct
+            );
+            ViewBag.RouteData = new RouteValueDictionary
+            {
+                ["ActivePage"] = "Index Work Orders",
+                ["search"] = search,
+                ["fields"] = string.Join(',', selectedFields),
+                ["pageSize"] = pageSize,
+            };
 
             return View(workOrders);
         }
