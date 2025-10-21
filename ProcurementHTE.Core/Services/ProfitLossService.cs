@@ -27,11 +27,17 @@ namespace ProcurementHTE.Core.Services
         }
 
         public async Task<ProfitLoss?> GetProfitLossByIdAsync(string id) {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("ID cannot be null or empty", nameof(id));
+
             return await _pnlRepository.GetByIdAsync(id);
         }
 
         public async Task<ProfitLoss?> GetProfitLossWithWorkOrderAsync(string woId)
         {
+            if (string.IsNullOrWhiteSpace(woId))
+                throw new ArgumentException("Work Order ID cannot be null or empty", nameof(woId));
+
             return await _pnlRepository.GetByWorkOrderAsync(woId);
         }
 
@@ -40,8 +46,17 @@ namespace ProcurementHTE.Core.Services
             CreateProfitLossInputDto pnlInput
         )
         {
+            if (pnlInput == null)
+                throw new ArgumentNullException(nameof(pnlInput));
+
+            if (vendorOffers == null)
+                throw new ArgumentNullException(nameof(vendorOffers));
+
             if (string.IsNullOrWhiteSpace(pnlInput.WorkOrderId))
-                throw new ArgumentException("Work Order wajib diisi");
+                throw new ArgumentException("Work Order ID is required", nameof(pnlInput.WorkOrderId));
+
+            if (pnlInput.Revenue <= 0)
+                throw new ArgumentException("Revenue must be greater than 0", nameof(pnlInput.Revenue));
 
             var validOffers = vendorOffers
                 .Where(vo => !string.IsNullOrWhiteSpace(vo.VendorId) && (vo.OfferPrice ?? 0) > 0)
@@ -68,18 +83,18 @@ namespace ProcurementHTE.Core.Services
 
                 await _voRepository.StoreVendorOfferAsync(offers);
 
-                // Menentukan best offer
+                // Determine best offer
                 VendorOffer bestOffer = offers
                     .OrderBy(offer => offer.OfferPrice ?? decimal.MaxValue)
                     .First();
 
                 if (!string.IsNullOrWhiteSpace(pnlInput.SelectedVendorId))
                 {
-                    var offer = offers.FirstOrDefault(offer =>
+                    var selectedOffer = offers.FirstOrDefault(offer =>
                         offer.VendorId == pnlInput.SelectedVendorId
                     );
-                    if (offer != null)
-                        bestOffer = offer;
+                    if (selectedOffer != null)
+                        bestOffer = selectedOffer;
                 }
 
                 decimal revenue = pnlInput.Revenue;
@@ -114,15 +129,22 @@ namespace ProcurementHTE.Core.Services
 
                 await _pnlRepository.StoreProfitLossAsync(pnl);
                 return pnl;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Gagal membuat Profit and Loss: {ex.Message}", ex);
+            } catch (Exception ex) when (ex is not ArgumentException && ex is not InvalidOperationException) {
+                throw new InvalidOperationException($"Failed to create Profit and Loss: {ex.Message}", ex);
             }
         }
 
         public async Task<ProfitLoss> UpdateProfitLossAsync(string id, UpdateProfitLossDto dto)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("ID cannot be null or empty", nameof(id));
+
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (dto.CostOperator < 0)
+                throw new ArgumentException("Cost operator cannot be negative", nameof(dto.CostOperator));
+
             var pnl = await _pnlRepository.GetByIdAsync(id);
             if (pnl == null)
                 throw new InvalidOperationException("Profit and Loss tidak ditemukan");
@@ -146,6 +168,12 @@ namespace ProcurementHTE.Core.Services
             string selectedVendorOfferId
         )
         {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Work Order ID cannot be null or empty", nameof(id));
+
+            if (string.IsNullOrWhiteSpace(selectedVendorOfferId))
+                throw new ArgumentException("Selected Vendor Offer ID cannot be null or empty", nameof(selectedVendorOfferId));
+
             var wo = await _woRepository.GetWithOffersAsync(id);
             if (wo != null)
             {
@@ -166,7 +194,9 @@ namespace ProcurementHTE.Core.Services
 
         public async Task DeleteProfitLossAsync(string id)
         {
-            ArgumentNullException.ThrowIfNull(id);
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("ID cannot be null or empty", nameof(id));
+
             await _pnlRepository.DropProfitLossAsync(id);
         }
 

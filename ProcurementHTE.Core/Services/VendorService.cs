@@ -9,18 +9,19 @@ public class VendorService : IVendorService
     private readonly IVendorRepository _vendorRepository;
     private const string VendorPrefix = "VND";
 
-    public VendorService(IVendorRepository vendorRepository)
-    {
+    public VendorService(IVendorRepository vendorRepository) =>
         _vendorRepository = vendorRepository;
-    }
 
-    public async Task<IEnumerable<Vendor>> GetAllVendorsAsync() =>
-        await _vendorRepository.GetAllAsync();
+    public async Task<IEnumerable<Vendor>> GetAllVendorsAsync()
+    {
+        return await _vendorRepository.GetAllAsync();
+    }
 
     public async Task<Vendor?> GetVendorByIdAsync(string id)
     {
         if (string.IsNullOrEmpty(id))
             throw new ArgumentException("ID cannot be null or empty");
+
         return await _vendorRepository.GetByIdAsync(id);
     }
 
@@ -30,30 +31,38 @@ public class VendorService : IVendorService
         string? search,
         ISet<string> fields,
         CancellationToken ct
-    ) => _vendorRepository.GetPagedAsync(page, pageSize, search, fields, ct);
+    )
+    {
+        return _vendorRepository.GetPagedAsync(page, pageSize, search, fields, ct);
+    }
 
     public async Task AddVendorAsync(Vendor vendor)
     {
-        if (string.IsNullOrWhiteSpace(vendor.VendorName))
-            throw new ArgumentException("Vendor name cannot be empty");
+        if (vendor == null)
+            throw new ArgumentNullException(nameof(vendor));
 
-        // Generate code dari last code di DB
+        if (string.IsNullOrWhiteSpace(vendor.VendorName))
+            throw new ArgumentException("Vendor name cannot be empty", nameof(vendor.VendorName));
+
+        if (vendor.VendorName.Length > 200)
+            throw new ArgumentException(
+                "Vendor name cannot exceed 200 characters",
+                nameof(vendor.VendorName)
+            );
+
         var lastCode = await _vendorRepository.GetLastCodeAsync(VendorPrefix);
         vendor.VendorCode = SequenceNumberGenerator.NumId(VendorPrefix, lastCode);
-
-        // CreatedAt sudah diset initializer; boleh ditegaskan lagi jika perlu
         vendor.CreatedAt = DateTime.Now;
 
-        // Simpan
         try
         {
             await _vendorRepository.StoreVendorAsync(vendor);
         }
         catch (DbUpdateException ex)
         {
-            // fallback 1x retry kalau kena unique constraint (jika kamu tambahkan unique index)
             if (!IsUniqueConstraint(ex))
                 throw;
+
             lastCode = await _vendorRepository.GetLastCodeAsync(VendorPrefix);
             vendor.VendorCode = SequenceNumberGenerator.NumId(VendorPrefix, lastCode);
             await _vendorRepository.StoreVendorAsync(vendor);
@@ -62,37 +71,59 @@ public class VendorService : IVendorService
 
     public async Task EditVendorAsync(Vendor vendor, string id)
     {
-        if (vendor == null || string.IsNullOrEmpty(id))
-            throw new ArgumentException("Vendor or ID cannot be null");
+        if (string.IsNullOrWhiteSpace(id))
+            throw new ArgumentException("ID cannot be null or empty", nameof(id));
 
-        var existingVendor =
-            await _vendorRepository.GetByIdAsync(id)
-            ?? throw new KeyNotFoundException($"Vendor with ID {id} not found");
+        if (vendor == null)
+            throw new ArgumentNullException(nameof(vendor));
 
-        // Biasanya VendorCode TIDAK diubah. Kalau memang mau, silakan pertahankan baris bawah ini.
-        // existingVendor.VendorCode = vendor.VendorCode;
+        if (string.IsNullOrWhiteSpace(vendor.VendorName))
+            throw new ArgumentException("Vendor name cannot be empty", nameof(vendor.VendorName));
 
-        existingVendor.VendorName = vendor.VendorName;
-        existingVendor.NPWP = vendor.NPWP;
-        existingVendor.Address = vendor.Address;
-        existingVendor.City = vendor.City;
-        existingVendor.Province = vendor.Province;
-        existingVendor.PostalCode = vendor.PostalCode;
-        existingVendor.Email = vendor.Email;
-        existingVendor.PhoneNumber = vendor.PhoneNumber;
-        existingVendor.ContactPerson = vendor.ContactPerson;
-        existingVendor.ContactPosition = vendor.ContactPosition;
-        existingVendor.Status = vendor.Status;
-        existingVendor.Comment = vendor.Comment;
+        if (vendor.VendorName.Length > 200)
+            throw new ArgumentException(
+                "Vendor name cannot exceed 200 characters",
+                nameof(vendor.VendorName)
+            );
 
-        await _vendorRepository.UpdateVendorAsync(existingVendor);
+        var existingVendor = await _vendorRepository.GetByIdAsync(id);
+        if (existingVendor != null)
+        {
+            existingVendor.VendorName = vendor.VendorName;
+            existingVendor.NPWP = vendor.NPWP;
+            existingVendor.Address = vendor.Address;
+            existingVendor.City = vendor.City;
+            existingVendor.Province = vendor.Province;
+            existingVendor.PostalCode = vendor.PostalCode;
+            existingVendor.Email = vendor.Email;
+            existingVendor.Comment = vendor.Comment;
+
+            try
+            {
+                await _vendorRepository.UpdateVendorAsync(existingVendor);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new KeyNotFoundException($"Vendor with ID {id} not found");
+            }
+        }
     }
 
     public async Task DeleteVendorAsync(Vendor vendor)
     {
         if (vendor == null)
             throw new ArgumentException("Vendor or ID cannot be null");
-        await _vendorRepository.DropVendorAsync(vendor);
+
+        try
+        {
+            await _vendorRepository.DropVendorAsync(vendor);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new KeyNotFoundException(
+                "Vendor not found during delete (possibly already removed)."
+            );
+        }
     }
 
     private static bool IsUniqueConstraint(DbUpdateException ex)
