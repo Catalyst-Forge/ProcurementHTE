@@ -20,7 +20,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .WoDocuments
                 .Where(woDoc => woDoc.WoDocumentId == woDocumentId)
                 .Include(woDoc => woDoc.WorkOrder)
-                .ThenInclude(wo => wo.Vendor)
                 .Include(woDoc => woDoc.DocumentType)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();

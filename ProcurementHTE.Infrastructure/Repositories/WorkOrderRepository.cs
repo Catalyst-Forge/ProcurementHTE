@@ -42,7 +42,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .WorkOrders.Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
-                .Include(wo => wo.Vendor)
                 .Include(wo => wo.WoDetails)
                 .AsNoTracking();
 
@@ -59,7 +58,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 query = query.Where(w =>
                     (byWoNum && w.WoNum != null && w.WoNum.Contains(s))
                     || (byDesc && w.Description != null && w.Description.Contains(s))
-                    || (byLetter && w.WoLetter != null && w.WoLetter.Contains(s))
+                    || (byLetter && w.WoNumLetter != null && w.WoNumLetter.Contains(s))
                     || (byWbs && w.WBS != null && w.WBS.Contains(s))
                     || (byGlAccount && w.GlAccount != null && w.GlAccount.Contains(s))
                     || (byStat && w.Status != null && w.Status.StatusName.Contains(s))
@@ -80,7 +79,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .WorkOrders.Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
-                .Include(wo => wo.Vendor)
                 .FirstOrDefaultAsync(t => t.WorkOrderId == id);
 
             if (wo == null)
