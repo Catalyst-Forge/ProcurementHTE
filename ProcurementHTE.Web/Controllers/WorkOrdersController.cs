@@ -35,11 +35,6 @@ namespace ProcurementHTE.Web.Controllers
             CancellationToken ct = default
         )
         {
-            var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
-            var hasClaim = User.HasClaim("permission", Permissions.WO.Read);
-
-            _logger.LogInformation("", $"User punya claim {hasClaim}");
-
             var allowed = new[] { 10, 25, 50, 100 };
             if (!allowed.Contains(pageSize))
                 pageSize = 10;
