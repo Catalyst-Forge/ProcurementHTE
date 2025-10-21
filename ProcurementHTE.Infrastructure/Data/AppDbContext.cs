@@ -120,12 +120,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 .WithOne(vendorOffer => vendorOffer.WorkOrder)
                 .HasForeignKey(vendorOffer => vendorOffer.WorkOrderId)
                 .OnDelete(DeleteBehavior.Cascade); // Relation to Vendor Offer
-            builder
-                .Entity<WorkOrder>()
-                .HasOne(workOrder => workOrder.Vendor)
-                .WithMany()
-                .HasForeignKey(workOrder => workOrder.VendorId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // ***** WO Detail *****
             builder
