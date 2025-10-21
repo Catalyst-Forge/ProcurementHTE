@@ -64,7 +64,6 @@ namespace ProcurementHTE.Web.Controllers
         // GET: Vendors/Create
         public IActionResult Create()
         {
-            ViewBag.Statuses = new SelectList(new[] { "Active", "Inactive", "Suspended" });
             return View();
         }
 
@@ -92,15 +91,6 @@ namespace ProcurementHTE.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Helper untuk isi dropdown status
-        private void BindStatuses(string? selected = null)
-        {
-            ViewBag.Statuses = new SelectList(
-                new[] { "Active", "Inactive", "Suspended" },
-                selected
-            );
-        }
-
         // GET: Vendors/Edit/5
         public async Task<IActionResult> Edit(string? id)
         {
@@ -113,7 +103,6 @@ namespace ProcurementHTE.Web.Controllers
                 if (vendor == null)
                     return NotFound();
 
-                BindStatuses(vendor.Status);
                 return View(vendor);
             }
             catch (Exception ex)
@@ -143,7 +132,6 @@ namespace ProcurementHTE.Web.Controllers
                 // Validasi model standar
                 if (!ModelState.IsValid)
                 {
-                    BindStatuses(vendor.Status);
                     return View(vendor);
                 }
 
@@ -156,7 +144,6 @@ namespace ProcurementHTE.Web.Controllers
             {
                 // Data tidak ditemukan saat update
                 ModelState.AddModelError(string.Empty, ex.Message);
-                BindStatuses(vendor.Status);
                 return View(vendor);
             }
             catch (DbUpdateConcurrencyException)
@@ -166,7 +153,6 @@ namespace ProcurementHTE.Web.Controllers
                     string.Empty,
                     "Data vendor berubah saat Anda mengedit. Silakan muat ulang halaman dan coba lagi."
                 );
-                BindStatuses(vendor.Status);
                 return View(vendor);
             }
             catch (DbUpdateException ex)
@@ -176,7 +162,6 @@ namespace ProcurementHTE.Web.Controllers
                     string.Empty,
                     "Gagal menyimpan perubahan ke database. " + ex.GetBaseException().Message
                 );
-                BindStatuses(vendor.Status);
                 return View(vendor);
             }
             catch (Exception ex)
@@ -186,7 +171,6 @@ namespace ProcurementHTE.Web.Controllers
                     string.Empty,
                     "Terjadi kesalahan tak terduga: " + ex.Message
                 );
-                BindStatuses(vendor.Status);
                 return View(vendor);
             }
         }
