@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
+using System.Reflection.Metadata;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
@@ -8,34 +9,34 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public static async Task SeedAsync(AppDbContext context, RoleManager<Role> roleManager)
         {
+            var woType = await context.WoTypes.FirstOrDefaultAsync(t => t.TypeName == "Moving & Mobilization");
             // Cek apakah tipe sudah ada
-            if (await context.WoTypes.AnyAsync(t => t.TypeName == "Moving & Mobilization"))
-                return;
-
-            // ---- 1️⃣ WoType
-            var woType = new WoTypes
-            {
-                TypeName = "Moving & Mobilization",
-                Description = "Konfigurasi dokumen untuk proses Moving & Mobilization"
-            };
-            await context.WoTypes.AddAsync(woType);
-            await context.SaveChangesAsync();
+            if (woType == null) {
+                // ---- 1️⃣ WoType
+                woType = new WoTypes
+                {
+                    TypeName = "Moving & Mobilization",
+                    Description = "Konfigurasi dokumen untuk proses Moving & Mobilization"
+                };
+                await context.WoTypes.AddAsync(woType);
+                await context.SaveChangesAsync();
+            }
 
             // ---- 2️⃣ DocumentType
             var documentTypes = new List<DocumentType>
             {
-                new DocumentType { Name = "Memorandum", Description = "Memorandum internal; approval Manager Transport & Logistic" },
-                new DocumentType { Name = "Permintaan Pekerjaan", Description = "Di luar role aplikasi; tidak butuh approver/generate" },
-                new DocumentType { Name = "Service Order", Description = "Approval Manager Transport & Logistic & digenerate oleh system" },
-                new DocumentType { Name = "Market Survey", Description = "Upload dari HTE; mempengaruhi progress WO" },
-                new DocumentType { Name = "Profit & Loss", Description = "Di-generate; approval Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic" },
-                new DocumentType { Name = "Surat Perintah Mulai Pekerjaan (SPMP)", Description = "Approval Manager Transport & Logistic" },
-                new DocumentType { Name = "Surat Penawaran Harga", Description = "Upload dari HTE; mempengaruhi progress WO" },
-                new DocumentType { Name = "Surat Negosiasi Harga", Description = "Upload dari HTE; mempengaruhi progress WO" },
-                new DocumentType { Name = "Rencana Kerja dan Syarat-Syarat (RKS)", Description = "Generate; approval Assistant Manager HTE dan Manager Transport & Logistic" },
-                new DocumentType { Name = "Risk Assessment (RA)", Description = "Jika pengadaan jasa; approval HSE, Assistant Manager HTE, Manager Transport & Logistic" },
-                new DocumentType { Name = "Owner Estimate (OE)", Description = "Generate; approval Assistant Manager HTE dan Manager Transport & Logistic" },
-                new DocumentType { Name = "Bill of Quantity (BOQ)", Description = "Di-generate oleh sistem" },
+                new() { Name = "Memorandum", Description = "Memorandum internal; approval Manager Transport & Logistic" },
+                new() { Name = "Permintaan Pekerjaan", Description = "Di luar role aplikasi; tidak butuh approver/generate" },
+                new() { Name = "Service Order", Description = "Approval Manager Transport & Logistic & digenerate oleh system" },
+                new() { Name = "Market Survey", Description = "Upload dari HTE; mempengaruhi progress WO" },
+                new() { Name = "Profit & Loss", Description = "Di-generate; approval Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic" },
+                new() { Name = "Surat Perintah Mulai Pekerjaan (SPMP)", Description = "Approval Manager Transport & Logistic" },
+                new() { Name = "Surat Penawaran Harga", Description = "Upload dari HTE; mempengaruhi progress WO" },
+                new() { Name = "Surat Negosiasi Harga", Description = "Upload dari HTE; mempengaruhi progress WO" },
+                new() { Name = "Rencana Kerja dan Syarat-Syarat (RKS)", Description = "Generate; approval Assistant Manager HTE dan Manager Transport & Logistic" },
+                new() { Name = "Risk Assessment (RA)", Description = "Jika pengadaan jasa; approval HSE, Assistant Manager HTE, Manager Transport & Logistic" },
+                new() { Name = "Owner Estimate (OE)", Description = "Generate; approval Assistant Manager HTE dan Manager Transport & Logistic" },
+                new() { Name = "Bill of Quantity (BOQ)", Description = "Di-generate oleh sistem" },
             };
             await context.DocumentTypes.AddRangeAsync(documentTypes);
             await context.SaveChangesAsync();
