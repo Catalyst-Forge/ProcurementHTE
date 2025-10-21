@@ -188,7 +188,13 @@
                                 @Html.DisplayNameFor(model => model.CreatedAt)
                             </dt>
                             <dd class="col-sm-9">
-                                @Model.CreatedAt.ToTanggalIndonesia()
+                                @Model?.CreatedAt.ToTanggalIndonesia()
+                            </dd>
+                            <dt class="col-sm-3">
+                                @Html.DisplayNameFor(model => model.User)
+                            </dt>
+                            <dd class="col-sm-9">
+                                @Html.DisplayFor(model => model.User!.FullName)
                             </dd>
                         </dl>
                     </div>
@@ -203,12 +209,12 @@
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-3 mb-2">
                             <dt class="fw-semibold mb-2">Lokasi</dt>
-                            <dd>@Html.DisplayFor(model => model.XS3)</dd>
+                            <dd>CP Lokasi @Model?.XS1 : <br /> @Html.DisplayFor(model => model.XS3)</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-3 mb-2">
                             <dt class="fw-semibold mb-2">Workshop</dt>
-                            <dd>@Html.DisplayFor(model => model.XS4)</dd>
+                            <dd>CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd>
                         </dl>
                     </div>
                 </div>
