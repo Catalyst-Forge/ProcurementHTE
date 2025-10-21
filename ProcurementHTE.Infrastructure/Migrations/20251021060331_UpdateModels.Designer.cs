@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProcurementHTE.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251021060331_UpdateModels")]
+    partial class UpdateModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,7 +157,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WoTypeDocumentId");
 
-                    b.ToTable("DocumentApprovals", (string)null);
+                    b.ToTable("DocumentApprovals");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.DocumentType", b =>
@@ -173,7 +176,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasKey("DocumentTypeId");
 
-                    b.ToTable("DocumentTypes", (string)null);
+                    b.ToTable("DocumentTypes");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLoss", b =>
@@ -238,7 +241,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WorkOrderId");
 
-                    b.ToTable("ProfitLosses", (string)null);
+                    b.ToTable("ProfitLosses");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Role", b =>
@@ -291,7 +294,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasKey("StatusId");
 
-                    b.ToTable("Statuses", (string)null);
+                    b.ToTable("Statuses");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Tender", b =>
@@ -316,7 +319,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasKey("TenderId");
 
-                    b.ToTable("Tenders", (string)null);
+                    b.ToTable("Tenders");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.User", b =>
@@ -430,7 +433,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRole", (string)null);
+                    b.ToTable("UserRole");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Vendor", b =>
@@ -484,7 +487,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasIndex("VendorCode")
                         .IsUnique();
 
-                    b.ToTable("Vendors", (string)null);
+                    b.ToTable("Vendors");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.VendorOffer", b =>
@@ -532,7 +535,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WorkOrderId");
 
-                    b.ToTable("VendorOffers", (string)null);
+                    b.ToTable("VendorOffers");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoDetail", b =>
@@ -559,7 +562,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WorkOrderId");
 
-                    b.ToTable("WoDetails", (string)null);
+                    b.ToTable("WoDetails");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoDocumentApprovals", b =>
@@ -604,7 +607,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WorkOrderId");
 
-                    b.ToTable("WoDocumentApprovals", (string)null);
+                    b.ToTable("WoDocumentApprovals");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoDocuments", b =>
@@ -647,7 +650,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WorkOrderId");
 
-                    b.ToTable("WoDocuments", (string)null);
+                    b.ToTable("WoDocuments");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoTypeDocuments", b =>
@@ -688,7 +691,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("WoTypeId");
 
-                    b.ToTable("WoTypesDocuments", (string)null);
+                    b.ToTable("WoTypesDocuments");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoTypes", b =>
@@ -707,7 +710,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasKey("WoTypeId");
 
-                    b.ToTable("WoTypes", (string)null);
+                    b.ToTable("WoTypes");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WorkOrder", b =>
@@ -803,7 +806,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("UserId", "CreatedAt"), new[] { "WoNum", "Description", "StatusId" });
 
-                    b.ToTable("WorkOrders", (string)null);
+                    b.ToTable("WorkOrders");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
