@@ -9,10 +9,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public WoDocumentRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public WoDocumentRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<WoDocuments?> GetByIdWithWorkOrderAsync(string woDocumentId)
         {

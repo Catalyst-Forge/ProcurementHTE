@@ -9,7 +9,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public VendorOfferRepository(AppDbContext context) => _context = context;
+        public VendorOfferRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<IEnumerable<VendorOffer>> GetAllVendorOffersAsync()
         {

@@ -10,39 +10,35 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public VendorRepository(AppDbContext context) => _context = context;
+        public VendorRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<int> CountAsync() =>
-            _context.Vendors == null ? 0 : await _context.Vendors.CountAsync();
-
-        public async Task DropVendorAsync(Vendor vendor)
+        public async Task<int> CountAsync()
         {
-            _context.Vendors.Remove(vendor);
-            await _context.SaveChangesAsync();
+            return _context.Vendors == null ? 0 : await _context.Vendors.CountAsync();
         }
 
-        public async Task<List<Vendor>> GetAllAsync() =>
-            _context.Vendors == null ? new List<Vendor>() : await _context.Vendors.ToListAsync();
+        public async Task<List<Vendor>> GetAllAsync()
+        {
+            return await _context.Vendors.AsNoTracking().ToListAsync();
+        }
 
         public async Task<IEnumerable<Vendor>> GetAllWithOffersAsync()
         {
-            return await _context.Vendors.Include(v => v.VendorOffers).ToListAsync();
+            return await _context.Vendors.Include(v => v.VendorOffers).AsNoTracking().ToListAsync();
         }
 
-        public Task<Vendor?> GetByIdAsync(string id) =>
-            _context.Vendors == null
-                ? Task.FromResult<Vendor?>(null)
-                : _context.Vendors.FirstOrDefaultAsync(v => v.VendorId == id);
-
-        public async Task<string?> GetLastCodeAsync(string prefix) // NEW
+        public Task<Vendor?> GetByIdAsync(string id)
         {
-            if (_context.Vendors == null)
-                return null;
+            return _context.Vendors.AsNoTracking().FirstOrDefaultAsync(v => v.VendorId == id);
+        }
+
+        public async Task<string?> GetLastCodeAsync(string prefix)
+        {
             return await _context
-                .Vendors.AsNoTracking()
-                .Where(v => v.VendorCode.StartsWith(prefix))
-                .OrderByDescending(v => v.VendorCode) // aman karena D6 zero-padded
+                .Vendors.Where(v => v.VendorCode.StartsWith(prefix))
+                .OrderByDescending(v => v.VendorCode)
                 .Select(v => v.VendorCode)
+                .AsNoTracking()
                 .FirstOrDefaultAsync();
         }
 
@@ -61,12 +57,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 var s = search.Trim();
                 bool byVendorCode = fields.Contains("VendorCode");
                 bool byVendorName = fields.Contains("VendorName");
-                bool byContactPerson = fields.Contains("ContactPerson");
 
                 query = query.Where(v =>
                     (byVendorCode && v.VendorCode != null && v.VendorCode.Contains(s))
                     || (byVendorName && v.VendorName != null && v.VendorName.Contains(s))
-                    || (byContactPerson && v.ContactPerson != null && v.ContactPerson.Contains(s))
                 );
             }
 
@@ -81,25 +75,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task StoreVendorAsync(Vendor vendor)
         {
             await _context.Vendors.AddAsync(vendor);
-            await _context.SaveChangesAsync(); // ⬅️ WAJIB supaya tersimpan
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateVendorAsync(Vendor vendor)
         {
-            if (_context.Vendors == null)
-                throw new ArgumentNullException(nameof(vendor));
-            try
-            {
-                _context.Entry(vendor).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                bool exists = _context.Vendors?.Any(e => e.VendorId == vendor.VendorId) ?? false;
-                if (!exists)
-                    throw new KeyNotFoundException("Vendor not found.");
-                throw new Exception("An error occurred while updating the vendor.");
-            }
+            _context.Entry(vendor).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DropVendorAsync(Vendor vendor)
+        {
+            _context.Vendors.Remove(vendor);
+            await _context.SaveChangesAsync();
         }
     }
 }

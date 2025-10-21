@@ -9,10 +9,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public WoDocumentApprovalRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public WoDocumentApprovalRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<IReadOnlyList<WoDocumentApprovals>> GetApprovedByWoDocumentIdAsync(string woDocumentId)
         {

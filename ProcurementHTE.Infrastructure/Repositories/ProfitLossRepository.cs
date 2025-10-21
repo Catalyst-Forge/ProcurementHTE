@@ -5,9 +5,11 @@ using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories
 {
-    public class ProfitLossRepository(AppDbContext context) : IProfitLossRepository
+    public class ProfitLossRepository : IProfitLossRepository
     {
-        private readonly AppDbContext _context = context;
+        private readonly AppDbContext _context;
+
+        public ProfitLossRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<IEnumerable<ProfitLoss>> GetAllAsync()
         {
@@ -24,6 +26,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ProfitLosses.Include(pnl => pnl.WorkOrder)
                 .Include(pnl => pnl.SelectedVendorOffer)
                 .ThenInclude(offer => offer.Vendor)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(pnl => pnl.ProfitLossId == id);
         }
 
@@ -43,9 +46,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
         )
         {
             return await _context
-                .ProfitLosses.Include(x => x.WorkOrder)
+                .ProfitLosses.Where(x => x.CreatedAt >= startDate && x.CreatedAt <= endDate)
+                .Include(x => x.WorkOrder)
                 .Include(x => x.SelectedVendorOffer)
-                .Where(x => x.CreatedAt >= startDate && x.CreatedAt <= endDate)
+                .AsNoTracking()
                 .ToListAsync();
         }
 
@@ -80,11 +84,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task DropProfitLossAsync(string id)
         {
             var pnl = await _context.ProfitLosses.FindAsync(id);
-            if (pnl != null)
-            {
-                _context.ProfitLosses.Remove(pnl);
-                await _context.SaveChangesAsync();
-            }
+            if (pnl == null)
+                throw new KeyNotFoundException($"Profit and Loss with ID '{id}' not found");
+
+            _context.ProfitLosses.Remove(pnl);
+            await _context.SaveChangesAsync();
         }
     }
 }
