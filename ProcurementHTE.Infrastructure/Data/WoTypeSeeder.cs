@@ -9,6 +9,9 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public static async Task SeedAsync(AppDbContext context, RoleManager<Role> roleManager)
         {
+            if (await context.WoTypes.AnyAsync())
+                return;
+
             // Check if there is any Typename is same
             var existingTypeNames = await context.WoTypes.Select(w => w.TypeName).ToListAsync();
 

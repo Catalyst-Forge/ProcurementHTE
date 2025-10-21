@@ -9,6 +9,9 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public static async Task SeedAsync(AppDbContext context, RoleManager<Role> roleManager)
         {
+            if (await context.DocumentTypes.AnyAsync())
+                return;
+
             var woType = await context.WoTypes.FirstOrDefaultAsync(t => t.TypeName == "Moving & Mobilization");
             // Cek apakah tipe sudah ada
             if (woType == null) {

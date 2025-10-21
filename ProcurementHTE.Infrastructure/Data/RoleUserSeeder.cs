@@ -14,6 +14,9 @@ namespace ProcurementHTE.Infrastructure.Data
             AppDbContext db
         )
         {
+            if (await roleManager.Roles.AnyAsync())
+                return;
+
             await SeedRolesAsync(roleManager);
             await SeedUsersAsync(userManager);
             await SeedStatusesAsync(db);
