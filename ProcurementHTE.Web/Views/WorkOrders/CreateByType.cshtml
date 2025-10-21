@@ -15,13 +15,41 @@
 
     <section class="card shadow-sm mb-3">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Work Order Type</legend>
+            <legend class="card-title fw-semibold">Work Order Information</legend>
             <hr />
             <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">Procurement Type</label>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.ProcurementType" class="form-label"></label>
                     <select asp-for="WorkOrder.ProcurementType" class="form-select" asp-items="Html.GetEnumSelectList<ProcurementHTE.Core.Models.ProcurementType>()">
                     </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.DateLetter" class="form-label"></label>
+                  <input type="date" class="form-control" asp-for="WorkOrder.DateLetter" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.FromLocation" class="form-label"></label>
+                  <input type="text" class="form-control" asp-for="WorkOrder.FromLocation" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.Destination" class="form-label"></label>
+                  <input type="text" class="form-control" asp-for="WorkOrder.Destination" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.WorkOrderLetter" class="form-label"></label>
+                  <input type="text" class="form-control" asp-for="WorkOrder.WorkOrderLetter" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.WBS" class="form-label"></label>
+                  <input type="text" class="form-control" asp-for="WorkOrder.WBS" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.GlAccount" class="form-label"></label>
+                  <input type="text" class="form-control" asp-for="WorkOrder.GlAccount" />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label asp-for="WorkOrder.DateRequired" class="form-label"></label>
+                  <input type="date" class="form-control" asp-for="WorkOrder.DateRequired" />
                 </div>
             </div>
         </fieldset>
@@ -60,7 +88,7 @@
                     <label class="form-label">Unit</label>
                     <input class="form-control" name="Details[${key}].Unit" />
                   </div>
-                  <div class="col-md-1 d-grid">
+                  <div class="col-md-1">
                     <button type="button" class="btn btn-outline-danger js-remove-detail">
                       <i class="bi bi-trash"></i>
                     </button>

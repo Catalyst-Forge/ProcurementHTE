@@ -10,14 +10,19 @@
         <legend class="card-title fw-semibold">Subject</legend>
         <hr />
         <div class="row">
+            <div class="col-12 mb-3">
+                <label asp-for="WorkOrder.Description" class="form-label"></label>
+                <textarea asp-for="WorkOrder.Description" class="form-control" maxlength="200" rows="3"></textarea>
+            </div>
+
             <div class="col-12 col-md-6">
-                <label asp-for="WorkOrder.FromLocation" class="form-label">Dari</label>
+                <label asp-for="WorkOrder.FromLocation" class="form-label"></label>
                 <input asp-for="WorkOrder.FromLocation" class="form-control" />
                 <span asp-validation-for="WorkOrder.FromLocation" class="text-danger small"></span>
             </div>
 
             <div class="col-12 col-md-6">
-                <label asp-for="WorkOrder.Destination" class="form-label">Ke</label>
+                <label asp-for="WorkOrder.Destination" class="form-label"></label>
                 <input asp-for="WorkOrder.Destination" class="form-control" />
                 <span asp-validation-for="WorkOrder.Destination" class="text-danger small"></span>
             </div>
@@ -27,15 +32,21 @@
 
 <section class="card shadow-sm mb-3">
     <fieldset class="card-body">
-        <legend class="card-title fw-semibold">Detail Items</legend>
+        <div class="d-flex">
+            <legend class="card-title fw-semibold">Detail Items</legend>
+                <button type="button" id="btn-add-detail" class="btn btn-outline-primary mb-2">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+        </div>
         <hr />
+
         <div class="row" id="details-container">
             @if (Model.Details != null && Model.Details.Count > 0) {
                 for (var i = 0; i < Model.Details.Count; i++) {
                     var key = i.ToString();
                     <div class="col-12 detail-row position-relative">
                         <input type="hidden" name="Details.Index" value="@key" />
-                        <div class="row">
+                        <div class="row mb-3 align-items-end">
                             <div class="col-md-6">
                                 <label class="form-label">Item Name</label>
                                 <input type="text" class="form-control"
@@ -52,10 +63,7 @@
                                 <input type="text" class="form-control"
                                        name="Details[@key].Unit" value="@(Model.Details[i].Unit)" />
                             </div>
-                            <div class="col-md-1 d-flex align-items-end gap-2">
-                                <button type="button" id="btn-add-detail" class="btn btn-outline-primary">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
+                            <div class="col-md-1">
                                 <button type="button" class="btn btn-outline-danger js-remove-detail">
                                     <i class="bi bi-trash"></i>
                                 </button>
