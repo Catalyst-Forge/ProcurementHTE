@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Authorization;
+using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
@@ -22,7 +22,7 @@ namespace ProcurementHTE.Infrastructure.Data
         private static async Task SeedRolesAsync(RoleManager<Role> roleManager)
         {
             string[] roles =
-            {
+            [
                 "Admin",
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
@@ -31,21 +31,17 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Vice President",
                 "HSE",
                 "Supply Chain Management",
-            };
+            ];
 
-            foreach (var roleName in roles)
-            {
-                // Hindari duplikasi karena beda casing
-                if (await roleManager.RoleExistsAsync(roleName))
-                    continue;
-
-                var role = new Role
-                {
-                    Name = roleName,
-                    NormalizedName = roleName.ToUpperInvariant(),
-                    Description = $"{roleName} system role",
-                };
-                await roleManager.CreateAsync(role);
+            foreach (var roleName in roles) {
+                if (!await roleManager.RoleExistsAsync(roleName)) {
+                    var role = new Role {
+                        Name = roleName,
+                        NormalizedName = roleName.ToUpperInvariant(),
+                        Description = $"{roleName} system role",
+                    };
+                    await roleManager.CreateAsync(role);
+                }
             }
 
             async Task AddPermissions(string roleName, params string[] permissions)
@@ -195,20 +191,23 @@ namespace ProcurementHTE.Infrastructure.Data
 
         private static async Task SeedStatusesAsync(AppDbContext db)
         {
-            if (await db.Statuses.AnyAsync()) return;
-
-            var statuses = new[]
+            if (!await db.Statuses.AnyAsync())
             {
-                new Status { StatusName = "Draft" },
-                new Status { StatusName = "Created" },
-                new Status { StatusName = "In Progress" },
-                new Status { StatusName = "Approved" },
-                new Status { StatusName = "Completed" },
-                new Status { StatusName = "Closed" },
-            };
+                var statuses = new[]
+                {
+                    new Status { StatusName = "Draft" },
+                    new Status { StatusName = "Created" },
+                    new Status { StatusName = "In Progress" },
+                    new Status { StatusName = "Uploaded" },
+                    new Status { StatusName = "Pending" },
+                    new Status { StatusName = "Approved" },
+                    new Status { StatusName = "Completed" },
+                    new Status { StatusName = "Closed" },
+                };
 
-            await db.Statuses.AddRangeAsync(statuses);
-            await db.SaveChangesAsync();
+                await db.Statuses.AddRangeAsync(statuses);
+                await db.SaveChangesAsync();
+            }
         }
 
         // Helper publik (opsional) kalau mau dipakai di seeder lain:
@@ -218,9 +217,11 @@ namespace ProcurementHTE.Infrastructure.Data
         )
         {
             var role = await roleManager.FindByNameAsync(roleName);
-            if (role == null)
-                throw new Exception($"Role '{roleName}' belum ada.");
-            return role.Id;
+            return role switch
+            {
+                null => throw new Exception($"Role '{roleName}' belum ada."),
+                _ => role.Id,
+            };
         }
     }
 }
