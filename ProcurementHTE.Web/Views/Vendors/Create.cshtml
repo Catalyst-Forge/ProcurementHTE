@@ -18,15 +18,20 @@
             <legend class="card-title fw-semibold">Vendor Info</legend>
             <hr />
             <div class="row">
-                <div class="col-md-8 mb-3">
+                <div class="col-md-4 mb-3">
                     <label asp-for="VendorName" class="form-label"></label>
                     <input asp-for="VendorName" class="form-control" />
                     <span asp-validation-for="VendorName" class="text-danger small"></span>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label asp-for="NPWP" class="form-label"></label>
                     <input asp-for="NPWP" class="form-control" maxlength="255" placeholder="99.999.999.9-999.999" />
                     <span asp-validation-for="NPWP" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" type="email" class="form-control" placeholder="vendor@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
                 </div>
             </div>
         </fieldset>
@@ -61,55 +66,15 @@
         </fieldset>
     </section>
 
-    <!-- Contact -->
-    <section class="card shadow-sm mb-3">
-        <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Contact</legend>
-            <hr />
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" type="email" class="form-control" placeholder="vendor@example.com" />
-                    <span asp-validation-for="Email" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="PhoneNumber" class="form-label"></label>
-                    <input asp-for="PhoneNumber" class="form-control" inputmode="tel" placeholder="+62..." />
-                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ContactPerson" class="form-label"></label>
-                    <input asp-for="ContactPerson" class="form-control" />
-                    <span asp-validation-for="ContactPerson" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ContactPosition" class="form-label"></label>
-                    <input asp-for="ContactPosition" class="form-control" />
-                    <span asp-validation-for="ContactPosition" class="text-danger small"></span>
-                </div>
-            </div>
-        </fieldset>
-    </section>
-
     <!-- Status & Notes -->
     <section class="card shadow-sm mb-3">
         <fieldset class="card-body">
             <legend class="card-title fw-semibold">Status & Notes</legend>
             <hr />
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label asp-for="Status" class="form-label"></label>
-                    <select asp-for="Status" class="form-select" asp-items="ViewBag.Statuses">
-                        <option value="">-- Select Status --</option>
-                    </select>
-                    <span asp-validation-for="Status" class="text-danger small"></span>
-
-                </div>
-                <div class="col-md-8 mb-3">
-                    <label asp-for="Comment" class="form-label"></label>
-                    <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Optional notes..."></textarea>
-                    <span asp-validation-for="Comment" class="text-danger small"></span>
-                </div>
+            <div class="mb-3">
+                <label asp-for="Comment" class="form-label"></label>
+                <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Optional notes..."></textarea>
+                <span asp-validation-for="Comment" class="text-danger small"></span>
             </div>
         </fieldset>
     </section>
