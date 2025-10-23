@@ -144,54 +144,57 @@ namespace ProcurementHTE.Infrastructure.Data
                 .OnDelete(DeleteBehavior.NoAction); // Relation to WorkOrder
 
             // ***** WO Document *****
-            builder
-                .Entity<WoDocuments>()
-                .HasOne(WoDocument => WoDocument.DocumentType)
-                .WithMany(documentType => documentType.WoDocuments)
-                .HasForeignKey(documentType => documentType.DocumentTypeId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to Document Type
+            builder.Entity<WoDocuments>(entity =>
+            {
+                // relasi ke DocumentType (sudah ada di kode lama kamu—aku rapikan property names)
+                entity.HasOne(d => d.DocumentType)
+                      .WithMany(t => t.WoDocuments)
+                      .HasForeignKey(d => d.DocumentTypeId)
+                      .OnDelete(DeleteBehavior.NoAction);
 
-            // ***** WO Type Document *****
-            builder
-                .Entity<WoTypeDocuments>()
-                .HasOne(woTypeDocument => woTypeDocument.WoType)
-                .WithMany(woType => woType.WoTypeDocuments)
-                .HasForeignKey(woTypeDocument => woTypeDocument.WoTypeId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to WO Type
-            builder
-                .Entity<WoTypeDocuments>()
-                .HasOne(woTypeDocument => woTypeDocument.DocumentType)
-                .WithMany(documentType => documentType.WoTypeDocuments)
-                .HasForeignKey(woTypeDocument => woTypeDocument.DocumentTypeId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to Document Type
+                // relasi ke WorkOrder (kamu sudah mengatur di WorkOrder.WithMany(WoDocuments))
+                // indeks & constraints untuk MinIO
+                entity.Property(d => d.FileName).HasMaxLength(300).IsRequired();
+                entity.Property(d => d.ObjectKey).HasMaxLength(600).IsRequired();
+                entity.Property(d => d.ContentType).HasMaxLength(150).IsRequired();
+                entity.Property(d => d.Status).HasMaxLength(16).HasDefaultValue("Uploaded");
+                entity.Property(d => d.Description).HasMaxLength(200).IsRequired(false);
 
-            // ***** Document Approval *****
-            builder
-                .Entity<DocumentApprovals>()
-                .HasOne(documentApproval => documentApproval.Role)
-                .WithMany()
-                .HasForeignKey(documentApproval => documentApproval.RoleId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to Role
+                // satu dokumen "status" per (WO, DocumentType) (misal menjaga 1 'Uploaded' aktif per type)
+                entity.HasIndex(d => new { d.WorkOrderId, d.DocumentTypeId, d.Status }).IsUnique();
+            });
 
             // ***** WO Document Approval *****
-            builder
-                .Entity<WoDocumentApprovals>()
-                .HasOne(woDocumentApproval => woDocumentApproval.Role)
-                .WithMany()
-                .HasForeignKey(woDocumentApproval => woDocumentApproval.RoleId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to Role
-            builder
-                .Entity<WoDocumentApprovals>()
-                .HasOne(woDocumentApproval => woDocumentApproval.WoDocument)
-                .WithMany(woDocument => woDocument.WoDocumentApprovals)
-                .HasForeignKey(woDocumentApproval => woDocumentApproval.WoDocumentId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to WO Document
-            builder
-                .Entity<WoDocumentApprovals>()
-                .HasOne(woDocumentApproval => woDocumentApproval.Approver)
-                .WithMany()
-                .HasForeignKey(woDocumentApproval => woDocumentApproval.ApproverId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to User
+            builder.Entity<WoDocumentApprovals>(entity =>
+            {
+                entity.Property(a => a.Status).HasMaxLength(16).HasDefaultValue("Pending");
+
+                // FK ke WorkOrders (INI WAJIB, sebelumnya belum ada di kode kamu)
+                entity.HasOne(a => a.WorkOrder)
+                      .WithMany(/* w => w.WoDocumentApprovals */) // boleh tanpa nav kalau tidak kamu tambahkan di WorkOrder
+                      .HasForeignKey(a => a.WorkOrderId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                // FK ke WoDocuments (perbaiki WithMany: gunakan koleksi Approvals di WoDocuments)
+                entity.HasOne(a => a.WoDocument)
+                      .WithMany(d => d.Approvals)
+                      .HasForeignKey(a => a.WoDocumentId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Role)
+                      .WithMany()
+                      .HasForeignKey(a => a.RoleId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(a => a.Approver)
+                      .WithMany()
+                      .HasForeignKey(a => a.ApproverId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                // 1 baris per dokumen per level
+                entity.HasIndex(a => new { a.WoDocumentId, a.Level }).IsUnique();
+            });
+
 
             // ***** Profit and Loss *****
             builder

@@ -1,0 +1,73 @@
+﻿@model ProcurementHTE.Web.Models.ViewModels.WorkOrderRequiredDocsVm
+@{
+    ViewData["Title"] = "Dokumen Work Order";
+}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0">Dokumen Work Order</h5>
+        <a class="btn btn-outline-secondary btn-sm" href="javascript:history.back()">Kembali</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Dokumen</th>           @* hanya Name dari DocumentType *@
+                    <th class="text-nowrap">Status</th>
+                    <th class="text-end text-nowrap">Aksi</th>   @* tombol berdasar WoTypeDocuments.IsUploadRequired *@
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var it in Model.Items.OrderBy(x => x.Sequence))
+                {
+                    <tr>
+                        <td class="fw-semibold">@it.DocumentTypeName</td>
+
+                        <td>
+                            @if (it.Uploaded)
+                            {
+                                <span class="badge text-bg-success">Uploaded</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">None</span>
+                            }
+                        </td>
+
+                        <td class="text-end">
+                            @if (it.Uploaded && !string.IsNullOrEmpty(it.WoDocumentId))
+                            {
+                                <a class="btn btn-sm btn-outline-success"
+                                   asp-controller="WorkOrderDocuments"
+                                   asp-action="Download"
+                                   asp-route-id="@it.WoDocumentId">
+                                    Download
+                                </a>
+                            }
+                            else if (it.IsUploadRequired)
+                            @* kondisi dari WoTypeDocuments *@
+                            {
+                                <form class="d-inline-flex gap-2"
+                                      asp-controller="WorkOrderDocuments"
+                                      asp-action="Upload"
+                                      method="post"
+                                      enctype="multipart/form-data">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="WorkOrderId" value="@Model.WorkOrderId" />
+                                    <input type="hidden" name="DocumentTypeId" value="@it.DocumentTypeId" />
+                                    <input class="form-control form-control-sm" type="file" name="File" required />
+                                    <button class="btn btn-sm btn-primary" type="submit">Upload</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

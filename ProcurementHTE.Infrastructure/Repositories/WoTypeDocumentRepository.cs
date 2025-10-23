@@ -26,5 +26,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<WoTypeDocuments?> GetByWoTypeAndDocumentTypeAsync(string woTypeId, string documentTypeId)
+        {
+            return await _context.WoTypesDocuments
+                .Include(x => x.WoType)
+                .Include(x => x.DocumentType)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.WoTypeId == woTypeId &&
+                    x.DocumentTypeId == documentTypeId);
+        }
     }
 }
