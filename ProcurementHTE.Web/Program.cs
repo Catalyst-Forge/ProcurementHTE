@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using ProcurementHTE.Core.Options;
 using ProcurementHTE.Infrastructure.Data;
+using ProcurementHTE.Infrastructure.Storage;
 using ProcurementHTE.Web.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +12,12 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddApplicationServices(builder.Configuration);
 
 var app = builder.Build();
+
+
+// Nanti Hapus ini setelah yakin konfigurasi Object Storage benar
+var s = app.Services.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
+app.Logger.LogInformation("ObjectStorage => Endpoint={Endpoint}, SSL={SSL}, Bucket={Bucket}, AccessKey={AK}, SecretKey={SecretKey}",
+    s.Endpoint, s.UseSSL, s.Bucket, s.AccessKey, s.SecretKey);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -6,9 +6,11 @@ using ProcurementHTE.Core.Authorization.Handlers;
 using ProcurementHTE.Core.Authorization.Requirements;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Options;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Repositories;
+using ProcurementHTE.Infrastructure.Storage;
 
 namespace ProcurementHTE.Web.Extensions
 {
@@ -19,30 +21,27 @@ namespace ProcurementHTE.Web.Extensions
             IConfiguration configuration
         )
         {
-            // Database
+            // ---------------- DB ----------------
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
             );
 
-            // Identity
+            // ------------- Identity -------------
             services
-                .AddIdentity<User, Role>(options => {
-                    // Password Settings
+                .AddIdentity<User, Role>(options =>
+                {
                     options.Password.RequireDigit = true;
                     options.Password.RequireLowercase = true;
                     options.Password.RequireNonAlphanumeric = false;
                     options.Password.RequireUppercase = true;
                     options.Password.RequiredLength = 8;
 
-                    // Lockout Settings
                     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                     options.Lockout.MaxFailedAccessAttempts = 5;
                     options.Lockout.AllowedForNewUsers = true;
 
-                    // User Settings
                     options.User.RequireUniqueEmail = true;
 
-                    // Sign In Settings
                     options.SignIn.RequireConfirmedEmail = false;
                     options.SignIn.RequireConfirmedPhoneNumber = false;
                     options.SignIn.RequireConfirmedAccount = false;
@@ -51,73 +50,28 @@ namespace ProcurementHTE.Web.Extensions
                 .AddDefaultTokenProviders()
                 .AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>();
 
-            // Authorization Policies
+            // ---------- Authorization Policies ----------
             services
                 .AddAuthorizationBuilder()
                 .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"))
                 .AddPolicy("ManagementAccess", policy => policy.RequireRole("Admin", "Manager"))
-                .AddPolicy(
-                    "OperationSite",
-                    policy => policy.RequireRole("Admin", "Manager", "AP-PO", "AP-Inv")
-                )
-                .AddPolicy(
-                    "MinimumManager",
-                    policy => policy.Requirements.Add(new MinimumRoleRequirement("Manager"))
-                )
-                .AddPolicy(
-                    Permissions.WO.Read,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Read))
-                )
-                .AddPolicy(
-                    Permissions.WO.Create,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Create))
-                )
-                .AddPolicy(
-                    Permissions.WO.Edit,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Edit))
-                )
-                .AddPolicy(
-                    Permissions.WO.Delete,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Delete))
-                )
-                .AddPolicy(
-                    Permissions.Vendor.Read,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Read))
-                )
-                .AddPolicy(
-                    Permissions.Vendor.Create,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Create))
-                )
-                .AddPolicy(
-                    Permissions.Vendor.Edit,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Edit))
-                )
-                .AddPolicy(
-                    Permissions.Vendor.Delete,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Delete))
-                )
-                .AddPolicy(
-                    Permissions.Doc.Read,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Read))
-                )
-                .AddPolicy(
-                    Permissions.Doc.Upload,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Upload))
-                )
-                .AddPolicy(
-                    Permissions.Doc.Approve,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Approve))
-                )
-                .AddPolicy(
-                    "AtLeast.Manager",
-                    p =>
-                        p.AddRequirements(
-                            new MinimumRoleRequirement("Manager Transport & Logistic")
-                        )
-                )
+                .AddPolicy("OperationSite", policy => policy.RequireRole("Admin", "Manager", "AP-PO", "AP-Inv"))
+                .AddPolicy("MinimumManager", p => p.Requirements.Add(new MinimumRoleRequirement("Manager")))
+                .AddPolicy(Permissions.WO.Read, p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Read)))
+                .AddPolicy(Permissions.WO.Create, p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Create)))
+                .AddPolicy(Permissions.WO.Edit, p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Edit)))
+                .AddPolicy(Permissions.WO.Delete, p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Delete)))
+                .AddPolicy(Permissions.Vendor.Read, p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Read)))
+                .AddPolicy(Permissions.Vendor.Create, p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Create)))
+                .AddPolicy(Permissions.Vendor.Edit, p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Edit)))
+                .AddPolicy(Permissions.Vendor.Delete, p => p.AddRequirements(new PermissionRequirement(Permissions.Vendor.Delete)))
+                .AddPolicy(Permissions.Doc.Read, p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Read)))
+                .AddPolicy(Permissions.Doc.Upload, p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Upload)))
+                .AddPolicy(Permissions.Doc.Approve, p => p.AddRequirements(new PermissionRequirement(Permissions.Doc.Approve)))
+                .AddPolicy("AtLeast.Manager", p => p.AddRequirements(new MinimumRoleRequirement("Manager Transport & Logistic")))
                 .AddPolicy(Permissions.Doc.Approve, p => p.AddRequirements(new CanApproveWoDocumentRequirement()));
 
-            // Configure Cookie Authentication
+            // ------------ Cookie & Session ------------
             services.ConfigureApplicationCookie(options =>
             {
                 options.LoginPath = "/Auth/Login";
@@ -130,7 +84,6 @@ namespace ProcurementHTE.Web.Extensions
                 options.Cookie.Name = "ProcurementHTE.Auth";
             });
 
-            // Add Session
             services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -138,34 +91,48 @@ namespace ProcurementHTE.Web.Extensions
                 options.Cookie.IsEssential = true;
             });
 
-            // Register Scopes
+            // ------------- Options Binding -------------
+            // MinIO options (Infrastructure)
+            services.Configure<ObjectStorageOptions>(configuration.GetSection("ObjectStorage"));
+
+
+            // ------------- Storage (MinIO) -------------
+            // NOTE: Interface yang benar adalah IObjectStorage (bukan IObjectStorageRepository)
+            services.AddSingleton<IObjectStorage, MinioStorage>();
+
+            // ------------- Repositories -------------
             services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
-            services.AddScoped<IWorkOrderService, WorkOrderService>();
             services.AddScoped<IVendorRepository, VendorRepository>();
-            services.AddScoped<IVendorService, VendorService>();
             services.AddScoped<ITenderRepository, TenderRepository>();
-            services.AddScoped<ITenderService, TenderService>();
             services.AddScoped<IWoTypeRepository, WoTypesRepository>();
-            services.AddScoped<IWoTypeService, WoTypesService>();
             services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
-            services.AddScoped<IDocumentTypeService, DocumentTypeService>();
             services.AddScoped<IProfitLossRepository, ProfitLossRepository>();
-            services.AddScoped<IProfitLossService, ProfitLossService>();
             services.AddScoped<IVendorOfferRepository, VendorOfferRepository>();
+            services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
+            services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
+            services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
+
+            // ------------- Services (Core) -------------
+            services.AddScoped<IWorkOrderService, WorkOrderService>();
+            services.AddScoped<IVendorService, VendorService>();
+            services.AddScoped<ITenderService, TenderService>();
+            services.AddScoped<IWoTypeService, WoTypesService>();
+            services.AddScoped<IDocumentTypeService, DocumentTypeService>();
+            services.AddScoped<IProfitLossService, ProfitLossService>();
             services.AddScoped<IVendorOfferService, VendorOfferService>();
+            services.AddScoped<IWoDocumentService, WoDocumentService>();
+            services.AddScoped<IWoTypeDocumentService, WoTypeDocumentService>();
+            services.AddScoped<IWoDocumentApprovalService, WoDocumentApprovalService>();
+
+            // ------------- Query Services -------------
+            // INI YANG BENAR: WorkOrderDocumentQuery di-bind ke IWorkOrderDocumentQuery (bukan ke IWoDocumentRepository)
+            services.AddScoped<IWorkOrderDocumentQuery, WorkOrderDocumentQuery>();
+
+            // ------------- Authorization Handlers -------------
             services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
             services.AddScoped<IAuthorizationRequirement, CanApproveWoDocumentRequirement>();
             services.AddScoped<IAuthorizationHandler, CanApproveWoDocumentHandler>();
-            services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
-            services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
-            services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
-            services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
-            services.AddScoped<IWoDocumentService, WoDocumentService>();
-            services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
-            services.AddScoped<IWoTypeDocumentService, WoTypeDocumentService>();
-            services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
-            services.AddScoped<IWoDocumentApprovalService, WoDocumentApprovalService>();
 
             return services;
         }

@@ -9,102 +9,147 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public static async Task SeedAsync(AppDbContext context, RoleManager<Role> roleManager)
         {
-            if (await context.DocumentTypes.AnyAsync())
-                return;
+            // === 0) TRANSAKSI (opsional tapi aman)
+            using var tx = await context.Database.BeginTransactionAsync();
 
-            var woType = await context.WoTypes.FirstOrDefaultAsync(t => t.TypeName == "Moving & Mobilization");
-            // Cek apakah tipe sudah ada
-            if (woType == null) {
-                // ---- 1️⃣ WoType
+            // === 1) Pastikan WoType ada (lookup by TypeName)
+            var typeName = "Moving & Mobilization";
+            var woType = await context.WoTypes.FirstOrDefaultAsync(t => t.TypeName == typeName);
+            if (woType == null)
+            {
                 woType = new WoTypes
                 {
-                    TypeName = "Moving & Mobilization",
+                    TypeName = typeName,
                     Description = "Konfigurasi dokumen untuk proses Moving & Mobilization"
                 };
-                await context.WoTypes.AddAsync(woType);
+                context.WoTypes.Add(woType);
                 await context.SaveChangesAsync();
             }
 
-            // ---- 2️⃣ DocumentType
-            var documentTypes = new List<DocumentType>
+            // === 2) Pastikan DocumentTypes yang diperlukan ada (lookup by Name)
+            var docNames = new[]
             {
-                new() { Name = "Memorandum", Description = "Memorandum internal; approval Manager Transport & Logistic" },
-                new() { Name = "Permintaan Pekerjaan", Description = "Di luar role aplikasi; tidak butuh approver/generate" },
-                new() { Name = "Service Order", Description = "Approval Manager Transport & Logistic & digenerate oleh system" },
-                new() { Name = "Market Survey", Description = "Upload dari HTE; mempengaruhi progress WO" },
-                new() { Name = "Profit & Loss", Description = "Di-generate; approval Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic" },
-                new() { Name = "Surat Perintah Mulai Pekerjaan (SPMP)", Description = "Approval Manager Transport & Logistic" },
-                new() { Name = "Surat Penawaran Harga", Description = "Upload dari HTE; mempengaruhi progress WO" },
-                new() { Name = "Surat Negosiasi Harga", Description = "Upload dari HTE; mempengaruhi progress WO" },
-                new() { Name = "Rencana Kerja dan Syarat-Syarat (RKS)", Description = "Generate; approval Assistant Manager HTE dan Manager Transport & Logistic" },
-                new() { Name = "Risk Assessment (RA)", Description = "Jika pengadaan jasa; approval HSE, Assistant Manager HTE, Manager Transport & Logistic" },
-                new() { Name = "Owner Estimate (OE)", Description = "Generate; approval Assistant Manager HTE dan Manager Transport & Logistic" },
-                new() { Name = "Bill of Quantity (BOQ)", Description = "Di-generate oleh sistem" },
+                "Memorandum",
+                "Permintaan Pekerjaan",
+                "Service Order",
+                "Market Survey",
+                "Profit & Loss",
+                "Surat Perintah Mulai Pekerjaan (SPMP)",
+                "Surat Penawaran Harga",
+                "Surat Negosiasi Harga",
+                "Rencana Kerja dan Syarat-Syarat (RKS)",
+                "Risk Assessment (RA)",
+                "Owner Estimate (OE)",
+                "Bill of Quantity (BOQ)"
             };
-            await context.DocumentTypes.AddRangeAsync(documentTypes);
+
+            var existingDocs = await context.DocumentTypes
+                .Where(d => docNames.Contains(d.Name))
+                .ToListAsync();
+
+            // Tambah yang belum ada
+            foreach (var name in docNames.Except(existingDocs.Select(d => d.Name)))
+            {
+                var dt = new DocumentType { Name = name, Description = name };
+                context.DocumentTypes.Add(dt);
+                existingDocs.Add(dt);
+            }
             await context.SaveChangesAsync();
 
-            // ---- 3️⃣ WoTypeDocuments
-            var wtd = new List<WoTypeDocuments>
+            // Helper: ambil DocumentType by Name
+            DocumentType DT(string name) =>
+                existingDocs.First(d => d.Name == name);
+
+            // === 3) Konfigurasi WoTypeDocuments (idempotent, lookup by (WoTypeId, DocumentTypeId))
+            var cfg = new (string Name, int Seq, bool Mandatory, bool Generated, bool UploadReq, bool RequiresApproval, string? Note)[]
             {
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[0].DocumentTypeId, Sequence = 1,  IsMandatory = true,  IsGenerated = false, IsUploadRequired = false, RequiresApproval = true,  Note = "Memorandum approval Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[1].DocumentTypeId, Sequence = 2,  IsMandatory = false, IsGenerated = false, IsUploadRequired = false, RequiresApproval = false, Note = "Dokumen eksternal; tidak di-generate; tidak perlu approval" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[2].DocumentTypeId, Sequence = 3,  IsMandatory = true,  IsGenerated = false, IsUploadRequired = false, RequiresApproval = true,  Note = "Service Order approval Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[3].DocumentTypeId, Sequence = 4,  IsMandatory = false, IsGenerated = false, IsUploadRequired = true,  RequiresApproval = false, Note = "Market Survey upload dari HTE" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[4].DocumentTypeId, Sequence = 5,  IsMandatory = true,  IsGenerated = true,  IsUploadRequired = false, RequiresApproval = true,  Note = "Profit & Loss generate; approval Analyst HTE & LTS -> Assistant Manager HTE -> Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[5].DocumentTypeId, Sequence = 6,  IsMandatory = true,  IsGenerated = false, IsUploadRequired = false, RequiresApproval = true,  Note = "SPMP approval Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[6].DocumentTypeId, Sequence = 7,  IsMandatory = false, IsGenerated = false, IsUploadRequired = true,  RequiresApproval = false, Note = "SPH upload dari HTE" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[7].DocumentTypeId, Sequence = 8,  IsMandatory = false, IsGenerated = false, IsUploadRequired = true,  RequiresApproval = false, Note = "SNH upload dari HTE" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[8].DocumentTypeId, Sequence = 9,  IsMandatory = true,  IsGenerated = true,  IsUploadRequired = false, RequiresApproval = true,  Note = "RKS approval Assistant Manager HTE -> Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[9].DocumentTypeId, Sequence = 10, IsMandatory = true,  IsGenerated = false, IsUploadRequired = true,  RequiresApproval = true,  Note = "Risk Assessment approval HSE -> Assistant Manager HTE -> Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[10].DocumentTypeId, Sequence = 11, IsMandatory = true,  IsGenerated = true,  IsUploadRequired = false, RequiresApproval = true,  Note = "Owner Estimate approval Assistant Manager HTE -> Manager Transport & Logistic" },
-                new() { WoTypeId = woType.WoTypeId, DocumentTypeId = documentTypes[11].DocumentTypeId, Sequence = 12, IsMandatory = true,  IsGenerated = true,  IsUploadRequired = false, RequiresApproval = false, Note = "BOQ generate otomatis oleh sistem" },
+                ("Memorandum",                                   1,  true,  false, true,  true,  "Memorandum approval Manager Transport & Logistic"),
+                ("Permintaan Pekerjaan",                         2,  true,  false, true,  false, "Dokumen eksternal; tidak di-generate; tidak perlu approval"),
+                ("Service Order",                                3,  true,  false, true,  true,  "Service Order approval Manager Transport & Logistic"),
+                ("Market Survey",                                4,  true,  false, true,  false, "Market Survey upload dari HTE"),
+                ("Profit & Loss",                                5,  true,  true,  false, true,  "Generate; approval berjenjang"),
+                ("Surat Perintah Mulai Pekerjaan (SPMP)",        6,  true,  false, true,  true,  "SPMP approval Manager Transport & Logistic"),
+                ("Surat Penawaran Harga",                        7,  true,  false, true,  false, "SPH upload dari HTE"),
+                ("Surat Negosiasi Harga",                        8,  true,  false, true,  false, "SNH upload dari HTE"),
+                ("Rencana Kerja dan Syarat-Syarat (RKS)",        9,  true,  true,  false, true,  "RKS generate; approval berjenjang"),
+                ("Risk Assessment (RA)",                        10,  true,  false, true,  true,  "RA approval HSE -> AM HTE -> Manager T&L"),
+                ("Owner Estimate (OE)",                         11,  true,  true,  false, true,  "OE generate; approval berjenjang"),
+                ("Bill of Quantity (BOQ)",                      12,  true,  true,  false, false, "BOQ generate otomatis oleh sistem")
             };
-            await context.WoTypesDocuments.AddRangeAsync(wtd);
+
+            // DbSet bisa bernama WoTypesDocuments (lihat log EF). Untuk aman gunakan Set<WoTypeDocuments>()
+            var wtdSet = context.Set<WoTypeDocuments>();
+
+            foreach (var c in cfg)
+            {
+                var dt = DT(c.Name);
+                bool exists = await wtdSet.AnyAsync(x =>
+                    x.WoTypeId == woType.WoTypeId && x.DocumentTypeId == dt.DocumentTypeId);
+
+                if (!exists)
+                {
+                    await wtdSet.AddAsync(new WoTypeDocuments
+                    {
+                        WoTypeId = woType.WoTypeId,
+                        DocumentTypeId = dt.DocumentTypeId,
+                        Sequence = c.Seq,
+                        IsMandatory = c.Mandatory,
+                        IsGenerated = c.Generated,
+                        IsUploadRequired = c.UploadReq,
+                        RequiresApproval = c.RequiresApproval,
+                        Note = c.Note
+                    });
+                }
+            }
             await context.SaveChangesAsync();
 
-            // ---- 4️⃣ Role lookup helper
-            async Task<string> GetRoleIdAsync(string roleName)
+            // === 4) Approvals (tambahkan hanya jika ada Role-nya & belum ada barisnya)
+            async Task<string?> GetRoleIdOrNullAsync(string roleName)
             {
                 var role = await roleManager.FindByNameAsync(roleName);
-                if (role == null)
-                    throw new Exception($"Role '{roleName}' belum ada di database.");
-                return role.Id;
+                return role?.Id; // jangan melempar; biarkan skip kalau role belum ada
             }
 
-            // ---- 5️⃣ DocumentApprovals
-            var approvals = new List<DocumentApprovals>
+            async Task AddApprovalIfMissing(string docName, string roleName, int level, int seqOrder)
             {
-                // Memorandum
-                new() { WoTypeDocumentId = wtd[0].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 1, SequenceOrder = 1 },
+                var wtd = await wtdSet
+                    .Include(x => x.DocumentType)
+                    .Where(x => x.WoTypeId == woType.WoTypeId && x.DocumentType.Name == docName)
+                    .FirstAsync();
 
-                // Service Order
-                new() { WoTypeDocumentId = wtd[2].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 1, SequenceOrder = 1 },
+                var roleId = await GetRoleIdOrNullAsync(roleName);
+                if (roleId == null) return; // role belum ada, lewati saja
 
-                // SPMP
-                new() { WoTypeDocumentId = wtd[5].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 1, SequenceOrder = 1 },
+                bool exists = await context.DocumentApprovals.AnyAsync(a =>
+                    a.WoTypeDocumentId == wtd.WoTypeDocumentId &&
+                    a.RoleId == roleId &&
+                    a.Level == level &&
+                    a.SequenceOrder == seqOrder);
 
-                // Profit & Loss
-                new() { WoTypeDocumentId = wtd[4].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Analyst HTE & LTS"), Level = 1, SequenceOrder = 1 },
-                new() { WoTypeDocumentId = wtd[4].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Assistant Manager HTE"), Level = 2, SequenceOrder = 2 },
-                new() { WoTypeDocumentId = wtd[4].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 3, SequenceOrder = 3 },
+                if (!exists)
+                {
+                    context.DocumentApprovals.Add(new DocumentApprovals
+                    {
+                        WoTypeDocumentId = wtd.WoTypeDocumentId,
+                        RoleId = roleId,
+                        Level = level,
+                        SequenceOrder = seqOrder
+                    });
+                }
+            }
 
-                // RKS
-                new() { WoTypeDocumentId = wtd[8].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Assistant Manager HTE"), Level = 1, SequenceOrder = 1 },
-                new() { WoTypeDocumentId = wtd[8].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 2, SequenceOrder = 2 },
+            // contoh minimal sesuai yang kamu tulis
+            await AddApprovalIfMissing("Memorandum", "Manager Transport & Logistic", 1, 1);
+            await AddApprovalIfMissing("Service Order", "Manager Transport & Logistic", 1, 1);
+            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)", "Manager Transport & Logistic", 1, 1);
+            await AddApprovalIfMissing("Profit & Loss", "Manager Transport & Logistic", 1, 3);
+            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)", "Manager Transport & Logistic", 1, 2);
+            await AddApprovalIfMissing("Risk Assessment (RA)", "HSE", 1, 1);
+            await AddApprovalIfMissing("Risk Assessment (RA)", "Manager Transport & Logistic", 1, 3);
+            await AddApprovalIfMissing("Owner Estimate (OE)", "Manager Transport & Logistic", 1, 2);
 
-                // Risk Assessment
-                new() { WoTypeDocumentId = wtd[9].WoTypeDocumentId, RoleId = await GetRoleIdAsync("HSE"), Level = 1, SequenceOrder = 1 },
-                new() { WoTypeDocumentId = wtd[9].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Assistant Manager HTE"), Level = 2, SequenceOrder = 2 },
-                new() { WoTypeDocumentId = wtd[9].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 3, SequenceOrder = 3 },
-
-                // Owner Estimate
-                new() { WoTypeDocumentId = wtd[10].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Assistant Manager HTE"), Level = 1, SequenceOrder = 1 },
-                new() { WoTypeDocumentId = wtd[10].WoTypeDocumentId, RoleId = await GetRoleIdAsync("Manager Transport & Logistic"), Level = 2, SequenceOrder = 2 },
-            };
-
-            await context.DocumentApprovals.AddRangeAsync(approvals);
             await context.SaveChangesAsync();
+            await tx.CommitAsync();
         }
     }
 }

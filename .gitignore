@@ -365,3 +365,7 @@ FodyWeavers.xsd
 # Ignore appsettings for development
 **/appsettings.*.json
 
+/.env
+/docker-compose.minio.yml
+/mc-init.sh
+/minio-policy.json

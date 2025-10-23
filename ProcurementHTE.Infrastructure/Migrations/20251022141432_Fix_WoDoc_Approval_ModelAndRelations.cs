@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateAndUpdateModel : Migration
+    public partial class Fix_WoDoc_Approval_ModelAndRelations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -348,12 +348,14 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         name: "FK_WoTypesDocuments_DocumentTypes_DocumentTypeId",
                         column: x => x.DocumentTypeId,
                         principalTable: "DocumentTypes",
-                        principalColumn: "DocumentTypeId");
+                        principalColumn: "DocumentTypeId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_WoTypesDocuments_WoTypes_WoTypeId",
                         column: x => x.WoTypeId,
                         principalTable: "WoTypes",
-                        principalColumn: "WoTypeId");
+                        principalColumn: "WoTypeId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -413,14 +415,19 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 columns: table => new
                 {
                     WoDocumentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     DocumentTypeId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkOrderId1 = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    FileName = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
+                    ObjectKey = table.Column<string>(type: "nvarchar(600)", maxLength: 600, nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Size = table.Column<long>(type: "bigint", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "Uploaded"),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: true),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ApprovedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -435,12 +442,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         column: x => x.WorkOrderId,
                         principalTable: "WorkOrders",
                         principalColumn: "WorkOrderId");
-                    table.ForeignKey(
-                        name: "FK_WoDocuments_WorkOrders_WorkOrderId1",
-                        column: x => x.WorkOrderId1,
-                        principalTable: "WorkOrders",
-                        principalColumn: "WorkOrderId",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -460,7 +461,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         name: "FK_DocumentApprovals_AspNetRoles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "AspNetRoles",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_DocumentApprovals_WoTypesDocuments_WoTypeDocumentId",
                         column: x => x.WoTypeDocumentId,
@@ -513,13 +515,15 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 columns: table => new
                 {
                     WoDocumentApprovalId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     WoDocumentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ApproverId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    ApproverId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Level = table.Column<int>(type: "int", nullable: false),
+                    SequenceOrder = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "Pending"),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -538,13 +542,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         name: "FK_WoDocumentApprovals_WoDocuments_WoDocumentId",
                         column: x => x.WoDocumentId,
                         principalTable: "WoDocuments",
-                        principalColumn: "WoDocumentId");
-                    table.ForeignKey(
-                        name: "FK_WoDocumentApprovals_WoDocuments_WorkOrderId",
-                        column: x => x.WorkOrderId,
-                        principalTable: "WoDocuments",
                         principalColumn: "WoDocumentId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_WoDocumentApprovals_WorkOrders_WorkOrderId",
+                        column: x => x.WorkOrderId,
+                        principalTable: "WorkOrders",
+                        principalColumn: "WorkOrderId");
                 });
 
             migrationBuilder.CreateIndex(
@@ -643,9 +647,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WoDocumentApprovals_WoDocumentId",
+                name: "IX_WoDocumentApprovals_WoDocumentId_Level",
                 table: "WoDocumentApprovals",
-                column: "WoDocumentId");
+                columns: new[] { "WoDocumentId", "Level" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WoDocumentApprovals_WorkOrderId",
@@ -658,14 +663,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "DocumentTypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WoDocuments_WorkOrderId",
+                name: "IX_WoDocuments_WorkOrderId_DocumentTypeId_Status",
                 table: "WoDocuments",
-                column: "WorkOrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WoDocuments_WorkOrderId1",
-                table: "WoDocuments",
-                column: "WorkOrderId1");
+                columns: new[] { "WorkOrderId", "DocumentTypeId", "Status" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkOrders_StatusId",

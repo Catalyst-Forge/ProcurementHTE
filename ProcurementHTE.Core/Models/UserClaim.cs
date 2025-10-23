@@ -8,14 +8,14 @@ namespace ProcurementHTE.Core.Models {
 
     [ForeignKey("User")]
     public int UserId { get; set; }
-    public virtual User User { get; set; }
+    public virtual User? User { get; set; }
 
     [Required]
     [StringLength(100)]
-    public string ClaimType { get; set; }
+    public string? ClaimType { get; set; }
 
     [StringLength(200)]
-    public string ClaimValue { get; set; }
+    public string? ClaimValue { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
   }

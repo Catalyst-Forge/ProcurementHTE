@@ -572,8 +572,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ApproverId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
@@ -582,9 +584,15 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int>("SequenceOrder")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("Pending");
 
                     b.Property<string>("WoDocumentId")
                         .IsRequired()
@@ -600,11 +608,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.HasIndex("WoDocumentId");
-
                     b.HasIndex("WorkOrderId");
 
-                    b.ToTable("WoDocumentApprovals", (string)null);
+                    b.HasIndex("WoDocumentId", "Level")
+                        .IsUnique();
+
+                    b.ToTable("WoDocumentApprovals");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoDocuments", b =>
@@ -613,11 +622,26 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -627,15 +651,26 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
-                    b.Property<string>("FilePath")
+                    b.Property<bool?>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ObjectKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(600)
+                        .HasColumnType("nvarchar(600)");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("Uploaded");
 
                     b.Property<string>("WorkOrderId")
                         .IsRequired()
@@ -645,7 +680,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("DocumentTypeId");
 
-                    b.HasIndex("WorkOrderId");
+                    b.HasIndex("WorkOrderId", "DocumentTypeId", "Status")
+                        .IsUnique();
 
                     b.ToTable("WoDocuments", (string)null);
                 });
@@ -862,7 +898,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasOne("ProcurementHTE.Core.Models.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ProcurementHTE.Core.Models.WoTypeDocuments", "WoTypeDocument")
@@ -949,8 +985,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasOne("ProcurementHTE.Core.Models.User", "Approver")
                         .WithMany()
                         .HasForeignKey("ApproverId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ProcurementHTE.Core.Models.Role", "Role")
                         .WithMany()
@@ -959,15 +994,15 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("ProcurementHTE.Core.Models.WoDocuments", "WoDocument")
-                        .WithMany("WoDocumentApprovals")
+                        .WithMany("Approvals")
                         .HasForeignKey("WoDocumentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ProcurementHTE.Core.Models.WoDocuments", "WorkOrder")
+                    b.HasOne("ProcurementHTE.Core.Models.WorkOrder", "WorkOrder")
                         .WithMany()
                         .HasForeignKey("WorkOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Approver");
@@ -1003,13 +1038,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasOne("ProcurementHTE.Core.Models.DocumentType", "DocumentType")
                         .WithMany("WoTypeDocuments")
                         .HasForeignKey("DocumentTypeId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ProcurementHTE.Core.Models.WoTypes", "WoType")
                         .WithMany("WoTypeDocuments")
                         .HasForeignKey("WoTypeId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("DocumentType");
@@ -1059,7 +1094,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoDocuments", b =>
                 {
-                    b.Navigation("WoDocumentApprovals");
+                    b.Navigation("Approvals");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoTypeDocuments", b =>

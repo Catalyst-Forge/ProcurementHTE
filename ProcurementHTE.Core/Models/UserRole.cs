@@ -10,12 +10,12 @@ namespace ProcurementHTE.Core.Models
 
         public DateTime AssignedAt { get; set; } = DateTime.Now;
 
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
 
         [ForeignKey("UserId")]
         public virtual User User { get; set; } = default!;
 
-        public string RoleId { get; set; }
+        public string? RoleId { get; set; }
 
         [ForeignKey("RoleId")]
         public virtual Role Role { get; set; } = default!;
