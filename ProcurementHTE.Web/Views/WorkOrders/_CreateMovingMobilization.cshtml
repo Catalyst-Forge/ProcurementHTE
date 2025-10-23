@@ -16,15 +16,15 @@
             </div>
 
             <div class="col-12 col-md-6">
-                <label asp-for="WorkOrder.FromLocation" class="form-label"></label>
-                <input asp-for="WorkOrder.FromLocation" class="form-control" />
-                <span asp-validation-for="WorkOrder.FromLocation" class="text-danger small"></span>
+                <label asp-for="WorkOrder.XS1" class="form-label">From Location</label>
+                <input asp-for="WorkOrder.XS1" class="form-control" />
+                <span asp-validation-for="WorkOrder.XS1" class="text-danger small"></span>
             </div>
 
             <div class="col-12 col-md-6">
-                <label asp-for="WorkOrder.Destination" class="form-label"></label>
-                <input asp-for="WorkOrder.Destination" class="form-control" />
-                <span asp-validation-for="WorkOrder.Destination" class="text-danger small"></span>
+                <label asp-for="WorkOrder.XS2" class="form-label">Destination</label>
+                <input asp-for="WorkOrder.XS2" class="form-control" />
+                <span asp-validation-for="WorkOrder.XS2" class="text-danger small"></span>
             </div>
         </div>
     </fieldset>
@@ -34,13 +34,19 @@
     <fieldset class="card-body">
         <div class="d-flex">
             <legend class="card-title fw-semibold">Detail Items</legend>
-                <button type="button" id="btn-add-detail" class="btn btn-outline-primary mb-2">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
+            <button type="button" id="btn-add-detail" class="btn btn-outline-primary mb-2">
+                <i class="bi bi-plus-lg"></i>
+            </button>
         </div>
         <hr />
 
         <div class="row" id="details-container">
+            <div class="col-12">
+                <label asp-for="WorkOrder.Note" class="form-label"></label>
+                <textarea asp-for="WorkOrder.Note" class="form-control" maxlength="200" rows="3"></textarea>
+                <span asp-validation-for="WorkOrder.Note" class="text-danger small"></span>
+            </div>
+
             @if (Model.Details != null && Model.Details.Count > 0) {
                 for (var i = 0; i < Model.Details.Count; i++) {
                     var key = i.ToString();
@@ -96,6 +102,26 @@
                     </div>
                 </div>
             }
+        </div>
+    </fieldset>
+</section>
+
+<section class="card shadow-sm mb-3">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Contact Person</legend>
+        <hr />
+        <div class="row">
+            <div class="col-6 mb-3">
+                <label asp-for="WorkOrder.XS3" class="form-label">Contact Person in location</label>
+                <input asp-for="WorkOrder.XS3" class="form-control">
+                <span asp-validation-for="WorkOrder.XS3" class="text-danger small"></span>
+            </div>
+
+            <div class="col-6 mb-3">
+                <label asp-for="WorkOrder.XS4" class="form-label">Contact Person in workshop</label>
+                <input asp-for="WorkOrder.XS4" class="form-control">
+                <span asp-validation-for="WorkOrder.XS4" class="text-danger small"></span>
+            </div>
         </div>
     </fieldset>
 </section>
