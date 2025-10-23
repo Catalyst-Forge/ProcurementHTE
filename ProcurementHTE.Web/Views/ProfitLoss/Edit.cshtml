@@ -1,0 +1,469 @@
+﻿@using System.Text.Json
+@model ProcurementHTE.Web.Models.ViewModels.ProfitLossEditViewModel
+@{
+    ViewData["Title"] = "Edit Profit & Loss";
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <header class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h5 mb-1">Edit Profit &amp; Loss</h1>
+                <div class="text-muted small">
+                    WO: <strong>@Model.WorkOrderId</strong>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-controller="WorkOrders" asp-action="Details" asp-route-id="@Model.WorkOrderId" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to WO
+                </a>
+            </div>
+        </header>
+
+        <form asp-action="Edit" method="post" id="pl-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ProfitLossId" />
+            <input type="hidden" asp-for="WorkOrderId" />
+
+            <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+            <!-- ================= VENDOR LIST (prefilled: checkbox checked) ================= -->
+            <section class="card border-0 mb-3">
+                <fieldset class="card-body">
+                    <legend class="card-title fw-semibold">Pilih Vendor yang Diikutkan</legend>
+                    <hr class="mt-0" />
+                    <div class="row row-cols-2 row-cols-md-3 g-3">
+                        @foreach (var vendor in Model.VendorChoices) {
+                            var checkedAttr = Model.SelectedVendorIds.Contains(vendor.Id) ? "checked" : null;
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="SelectedVendorIds"
+                                           value="@vendor.Id"
+                                           id="vendor_@vendor.Id"
+                                           @checkedAttr />
+                                    <label class="form-check-label" for="vendor_@vendor.Id">
+                                        @vendor.Name
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </fieldset>
+            </section>
+
+            <div class="row g-3">
+                <div class="col-4">
+
+                    <!-- ================= TAGIHAN KE PDC ================= -->
+                    <section class="card border-0 mb-3">
+                        <fieldset class="card-body">
+                            <legend class="card-title fw-semibold">Tagihan ke PDC (Revenue Builder)</legend>
+                            <hr class="mt-0" />
+                            <div class="row flex-column g-3 align-items-start">
+                                <div class="col-md-12">
+                                    <label asp-for="TarifAwal" class="form-label"></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input asp-for="TarifAwal" class="form-control text-end" type="number" inputmode="numeric" min="0" />
+                                    </div>
+                                    <span asp-validation-for="TarifAwal" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label asp-for="TarifAdd" class="form-label"></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input asp-for="TarifAdd" class="form-control text-end" type="number" inputmode="numeric" min="0" />
+                                    </div>
+                                    <span asp-validation-for="TarifAdd" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label asp-for="KmPer25" class="form-label"></label>
+                                    <input asp-for="KmPer25" class="form-control text-end" type="number" inputmode="numeric" min="0" />
+                                    <span asp-validation-for="KmPer25" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label">Operator Cost (TarifAdd × Km/25)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input id="operatorCost" class="form-control text-end" readonly />
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Revenue</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input id="revenue" class="form-control text-end fw-bold" readonly />
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </section>
+
+                </div>
+
+                <div class="col-8">
+                    <!-- ================= PENAWARAN VENDOR (prefilled blocks) ================= -->
+                    <section class="card border-0 mb-3">
+                        <div class="card-body">
+                            <div class="hstack justify-content-between">
+                                <h3 class="card-title fw-semibold">Penawaran Vendor</h3>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddVendor">
+                                    <i class="bi bi-person-plus"></i> Tambah Vendor
+                                </button>
+                            </div>
+                            <hr class="mt-0" />
+                            <div id="vendors" class="vstack gap-3"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- ================= RINGKASAN ================= -->
+            <section class="card border-0 mb-3">
+                <fieldset class="card-body">
+                    <legend class="card-title fw-semibold">Ringkasan Sementara</legend>
+                    <hr class="mt-0" />
+                    <div class="table-responsive border rounded-3">
+                        <table class="table align-middle" id="summary">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th class="text-end">Final Offer</th>
+                                    <th class="text-end">Profit</th>
+                                    <th class="text-end">Profit %</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </fieldset>
+            </section>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-controller="WorkOrders" asp-action="Details" asp-route-id="@Model.WorkOrderId" class="btn btn-light">Batal</a>
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // ========= Data dari server (prefilled) =========
+        const vendorChoices = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.VendorChoices.Select(v => new { id = v.Id, name = v.Name })
+            ));
+    const existingVendors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                (Model.Vendors ?? new List<ProcurementHTE.Web.Models.ViewModels.VendorOfferInputViewModel>())
+                        .Select(v => new { v.VendorId, v.Prices })
+        ));
+    const preselectedVendorIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SelectedVendorIds ?? new List<string>()));
+
+        // ========= Helpers UI =========
+        const fmt = n => (Number(n || 0)).toLocaleString('id-ID');
+        const vendorsContainer = document.getElementById('vendors');
+
+        function recalcHeader() {
+          const tarifAwal = parseFloat(document.getElementById('TarifAwal').value || 0);
+          const tarifAdd  = parseFloat(document.getElementById('TarifAdd').value || 0);
+          const km        = parseInt(document.getElementById('KmPer25').value || 0);
+          const opCost    = tarifAdd * km;
+          const revenue   = tarifAwal + opCost;
+          document.getElementById('operatorCost').value = fmt(opCost);
+          document.getElementById('revenue').value = fmt(revenue);
+          recalcSummary();
+        }
+        ['TarifAwal','TarifAdd','KmPer25'].forEach(id =>
+          document.getElementById(id).addEventListener('input', recalcHeader)
+        );
+
+        // --- kumpulkan vendor yang dipilih & yang sudah dipakai blok ---
+        function getSelectedVendorIds() {
+          return Array.from(document.querySelectorAll('input[name="SelectedVendorIds"]:checked'))
+            .map(cb => cb.value);
+        }
+        function getOfferedVendorIds() {
+          return Array.from(vendorsContainer.querySelectorAll('input[type="hidden"][name$=".VendorId"]'))
+            .map(h => h.value).filter(Boolean);
+        }
+
+        // --- opsi untuk satu picker: hanya vendor terpilih, minus yang sudah dipakai blok lain ---
+        function buildAllowedOptionsForCard(currentCardVendorId = null) {
+          const selected = new Set(getSelectedVendorIds());
+          const used     = new Set(getOfferedVendorIds());
+          if (currentCardVendorId) used.delete(currentCardVendorId); // keep current
+          return vendorChoices.filter(v => selected.has(v.id) && !used.has(v.id));
+        }
+
+        // ========= Searchable Picker (tanpa plugin) =========
+        // Struktur per picker:
+        // <div class="vendor-picker" data-card-idx>
+        //   <input type="hidden" name="Vendors[i].VendorId" value="...">
+        //   <div class="position-relative">
+        //     <input type="text" class="form-control vendor-search" placeholder="Cari / pilih vendor">
+        //     <div class="dropdown-menu show vendor-panel">... opsi ...</div>
+        //   </div>
+        // </div>
+
+        function attachPickerBehavior(pickerEl) {
+          const hidden     = pickerEl.querySelector('input[type="hidden"]');
+          const searchBox  = pickerEl.querySelector('.vendor-search');
+          const panel      = pickerEl.querySelector('.vendor-panel');
+          const card       = pickerEl.closest('.card');
+          const currentVid = hidden.value || card.getAttribute('data-vendor-id') || null;
+
+          // render opsi sesuai allowed
+          function renderOptions(filterText = '') {
+            const allowed = buildAllowedOptionsForCard(currentVid);
+            const ft = filterText.trim().toLowerCase();
+            const filtered = allowed.filter(v => v.name.toLowerCase().includes(ft) || v.id.toLowerCase().includes(ft));
+            panel.innerHTML = filtered.length
+              ? filtered.map(v => `<button type="button" class="dropdown-item" data-id="${v.id}">${v.name}</button>`).join('')
+              : `<div class="dropdown-item text-muted">Tidak ada hasil</div>`;
+          }
+
+          // set nilai terpilih (hidden + textbox + attribute card)
+          function setValue(vendorId) {
+            hidden.value = vendorId || '';
+            const choice = vendorChoices.find(v => v.id === vendorId);
+            searchBox.value = choice ? choice.name : '';
+            // update card state
+            card.setAttribute('data-vendor-id', vendorId || '');
+            // setelah pilih, tutup panel dan refresh picker lain (anti duplikat)
+            panel.classList.remove('show');
+            refreshAllPickers();
+            recalcSummary();
+          }
+
+          // buka/tutup panel
+          function openPanel() {
+            renderOptions(searchBox.value);
+            panel.classList.add('show');
+          }
+          function closePanel() { panel.classList.remove('show'); }
+
+          // events
+          searchBox.addEventListener('focus', openPanel);
+          searchBox.addEventListener('click', openPanel);
+          searchBox.addEventListener('input', () => renderOptions(searchBox.value));
+
+          panel.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-id]');
+            if (!btn) return;
+            setValue(btn.getAttribute('data-id'));
+          });
+
+          // klik di luar menutup panel
+          document.addEventListener('click', (e) => {
+            if (!pickerEl.contains(e.target)) closePanel();
+          });
+
+          // init tampilkan nama kalau sudah ada value
+          if (hidden.value) {
+            const choice = vendorChoices.find(v => v.id === hidden.value);
+            if (choice) searchBox.value = choice.name;
+          }
+        }
+
+        // refresh semua picker dropdown (dipanggil saat checkbox berubah / picker lain berubah)
+        function refreshAllPickers() {
+          vendorsContainer.querySelectorAll('.vendor-picker').forEach(p => {
+            const hidden     = p.querySelector('input[type="hidden"]');
+            const searchBox  = p.querySelector('.vendor-search');
+            const panel      = p.querySelector('.vendor-panel');
+            const card       = p.closest('.card');
+            const currentVid = hidden.value || card.getAttribute('data-vendor-id') || null;
+
+            // rebuild panel berdasar allowed terbaru
+            const allowed = buildAllowedOptionsForCard(currentVid);
+            const ft = (searchBox.value || '').trim().toLowerCase();
+            const filtered = allowed.filter(v => v.name.toLowerCase().includes(ft) || v.id.toLowerCase().includes(ft));
+            panel.innerHTML = filtered.length
+              ? filtered.map(v => `<button type="button" class="dropdown-item" data-id="${v.id}">${v.name}</button>`).join('')
+              : `<div class="dropdown-item text-muted">Tidak ada hasil</div>`;
+          });
+          // tombol tambah enable/disable
+          const canAdd = buildAllowedOptionsForCard(null).length > 0;
+          const btn = document.getElementById('btnAddVendor');
+          if (btn) btn.disabled = !canAdd;
+        }
+
+        // --- sinkronkan blok vs checkbox ---
+        function ensureBlocksMatchSelection() {
+          const selected = new Set(getSelectedVendorIds());
+
+          // hapus kartu untuk vendor yang di-uncheck
+          vendorsContainer.querySelectorAll('.card[data-vendor-id]').forEach(card => {
+            const vid = card.getAttribute('data-vendor-id');
+            if (vid && !selected.has(vid)) card.remove();
+          });
+
+          refreshAllPickers();
+          recalcSummary();
+        }
+
+        // ========= Builder blok vendor =========
+        let vendorIdx = 0;
+
+        function addVendorBlock(vendorId, prices = []) {
+          const idx = vendorIdx++;
+          const wrap = document.createElement('div');
+          wrap.className = 'card border';
+          wrap.setAttribute('data-vendor-id', vendorId || '');
+          wrap.innerHTML = `
+            <div class="card-body">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                  <label class="form-label">Vendor</label>
+                  <div class="vendor-picker">
+                    <input type="hidden" name="Vendors[${idx}].VendorId" value="${vendorId || ''}" />
+                    <div class="position-relative">
+                      <input type="text" class="form-control vendor-search" placeholder="Cari / pilih vendor" autocomplete="off" />
+                      <div class="dropdown-menu vendor-panel" style="width:100%; max-height:220px; overflow:auto;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-7">
+                  <div class="hstack gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-add>+ Round</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-del>Hapus Vendor</button>
+                  </div>
+                </div>
+              </div>
+              <div class="table-responsive mt-2">
+                <table class="table table-sm table-bordered mb-0">
+                  <thead class="table-light"><tr><th style="width:120px">Round</th><th>Harga</th><th style="width:70px"></th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>`;
+          vendorsContainer.appendChild(wrap);
+
+          // attach picker
+          const picker = wrap.querySelector('.vendor-picker');
+          attachPickerBehavior(picker);
+
+          const tbody = wrap.querySelector('tbody');
+          let round = 0;
+
+          function addRound(value = '') {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="text-center fw-semibold">${round+1}</td>
+              <td>
+                <input class="form-control form-control-sm text-end"
+                       name="Vendors[${idx}].Prices[${round}]"
+                       value="${value}"
+                       data-price />
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn btn-link text-danger p-0" data-delround>
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </td>`;
+            tbody.appendChild(tr);
+            tr.querySelector('[data-price]').addEventListener('input', recalcSummary);
+            tr.querySelector('[data-delround]').addEventListener('click', () => { tr.remove(); recalcSummary(); });
+            round++;
+          }
+
+          wrap.querySelector('[data-add]').addEventListener('click', () => addRound());
+          wrap.querySelector('[data-del]').addEventListener('click', () => { wrap.remove(); ensureBlocksMatchSelection(); });
+
+          // Prefill rounds
+          if (prices.length > 0) prices.forEach(p => addRound(p)); else addRound();
+
+          // setelah blok jadi, segarkan opsi antar picker
+          refreshAllPickers();
+        }
+
+        function addVendor() {
+          const allowed = buildAllowedOptionsForCard(null);
+          if (allowed.length === 0) {
+            alert('Pilih vendor terlebih dahulu, atau semua vendor terpilih sudah punya blok penawaran.');
+            return;
+          }
+          // pilih kandidat valid pertama
+          addVendorBlock(allowed[0].id, []);
+          ensureBlocksMatchSelection();
+        }
+
+        const btnAdd = document.getElementById('btnAddVendor');
+        if (btnAdd) btnAdd.addEventListener('click', addVendor);
+
+        // checkbox reaction
+        document.querySelectorAll('input[name="SelectedVendorIds"]').forEach(cb => {
+          cb.addEventListener('change', ensureBlocksMatchSelection);
+        });
+
+        // ========= Ringkasan =========
+        function recalcSummary() {
+          const rev = Number((document.getElementById('revenue').value || '0').replace(/\D/g,'')) || 0;
+          const tb = document.querySelector('#summary tbody');
+          tb.innerHTML = '';
+
+          // ambil setiap card vendor
+          vendorsContainer.querySelectorAll('.card[data-vendor-id]').forEach(card => {
+            const vidHidden = card.querySelector('input[type="hidden"][name$=".VendorId"]');
+            const vendorId  = vidHidden ? vidHidden.value : '';
+            if (!vendorId) return;
+
+            const vendorName = (vendorChoices.find(v => v.id === vendorId)?.name) || vendorId;
+            const prices = [...card.querySelectorAll('[data-price]')]
+              .map(x => parseFloat(x.value || '0')).filter(x => x > 0);
+            if (!prices.length) return;
+
+            const final = prices[prices.length - 1];
+            const profit = rev - final;
+            const pct = rev ? (profit / rev) * 100 : 0;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${vendorName}</td>
+              <td class="text-end">${fmt(final)}</td>
+              <td class="text-end">${fmt(profit)}</td>
+              <td class="text-end">${pct.toFixed(2)}%</td>`;
+            tb.appendChild(tr);
+          });
+
+          // highlight best
+          const rows = [...tb.querySelectorAll('tr')];
+          if (rows.length) {
+            const winner = rows.reduce((a, b) => {
+              const av = Number(a.children[1].innerText.replace(/\D/g,'')) || 0;
+              const bv = Number(b.children[1].innerText.replace(/\D/g,'')) || 0;
+              return bv < av ? b : a;
+            });
+            winner.classList.add('table-success');
+          }
+        }
+
+        // ========= Init (prefill) =========
+        (function init() {
+          // centang vendor yang sudah dipilih
+          preselectedVendorIds.forEach(id => {
+            const cb = document.getElementById(`vendor_${id}`);
+            if (cb) cb.checked = true;
+          });
+
+          recalcHeader();
+
+          // bangun blok vendor dari data existing
+          existingVendors.forEach(v => addVendorBlock(v.VendorId, v.Prices || []));
+
+          // jika belum ada block tapi ada vendor terpilih -> buat satu blok default
+          if (existingVendors.length === 0 && preselectedVendorIds.length > 0) {
+            addVendorBlock(preselectedVendorIds[0], []);
+          }
+
+          ensureBlocksMatchSelection();
+          recalcSummary();
+        })();
+    </script>
+}
