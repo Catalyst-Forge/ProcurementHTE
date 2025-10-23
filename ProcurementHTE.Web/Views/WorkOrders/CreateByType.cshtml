@@ -10,8 +10,9 @@
 
 <form asp-action="Create" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
     <input type="hidden" asp-for="WorkOrder.WoTypeId" />
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
     <section class="card shadow-sm mb-3">
         <fieldset class="card-body">
@@ -24,32 +25,49 @@
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.DateLetter" class="form-label"></label>
-                  <input type="date" class="form-control" asp-for="WorkOrder.DateLetter" />
+                    <label asp-for="WorkOrder.DateLetter" class="form-label"></label>
+                    <input type="date" class="form-control" asp-for="WorkOrder.DateLetter" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.FromLocation" class="form-label"></label>
-                  <input type="text" class="form-control" asp-for="WorkOrder.FromLocation" />
+                    <label asp-for="WorkOrder.FromLocation" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.FromLocation" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.Destination" class="form-label"></label>
-                  <input type="text" class="form-control" asp-for="WorkOrder.Destination" />
+                    <label asp-for="WorkOrder.Destination" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.Destination" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.WorkOrderLetter" class="form-label"></label>
-                  <input type="text" class="form-control" asp-for="WorkOrder.WorkOrderLetter" />
+                    <label asp-for="WorkOrder.WorkOrderLetter" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.WorkOrderLetter" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.WBS" class="form-label"></label>
-                  <input type="text" class="form-control" asp-for="WorkOrder.WBS" />
+                    <label asp-for="WorkOrder.WBS" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.WBS" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.GlAccount" class="form-label"></label>
-                  <input type="text" class="form-control" asp-for="WorkOrder.GlAccount" />
+                    <label asp-for="WorkOrder.GlAccount" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.GlAccount" />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label asp-for="WorkOrder.DateRequired" class="form-label"></label>
-                  <input type="date" class="form-control" asp-for="WorkOrder.DateRequired" />
+                    <label asp-for="WorkOrder.DateRequired" class="form-label"></label>
+                    <input type="date" class="form-control" asp-for="WorkOrder.DateRequired" />
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Approval</legend>
+            <hr />
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label asp-for="WorkOrder.Requester" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.Requester" />
+                </div>
+                <div class="col-6 mb-3">
+                    <label asp-for="WorkOrder.Approved" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.Approved" />
                 </div>
             </div>
         </fieldset>
