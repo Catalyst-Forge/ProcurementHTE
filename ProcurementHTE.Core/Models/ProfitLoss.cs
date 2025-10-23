@@ -10,42 +10,27 @@ namespace ProcurementHTE.Core.Models
 
         // Tagihan
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? Revenue { get; set; }
+        public decimal TarifAwal { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? CostOperator { get; set; }
+        public decimal TarifAdd { get; set; }
+
+        public int KmPer25 { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? Profit { get; set; }
+        public decimal OperatorCost { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? ProfitPercentage { get; set; }
-
-        // Penawaran Mitra
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal? HargaPenawaran1 { get; set; }
+        public decimal Revenue { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? HargaPenawaran2 { get; set; }
+        public decimal SelectedVendorFinalOffer { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? HargaPenawaran3 { get; set; }
+        public decimal Profit { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal? BestOfferPrice { get; set; }
-
-        // Adjustment
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal? AdjustmentRate { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal? AdjustedProfit { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal? PotentialNewProfit { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal? ProfitRevenue { get; set; }
+        public decimal ProfitPercent { get; set; }
 
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -55,12 +40,12 @@ namespace ProcurementHTE.Core.Models
 
         // Foreign Keys
         public string WorkOrderId { get; set; } = null!;
-        public string SelectedVendorOfferId { get; set; } = null!;
+        public string? SelectedVendorId { get; set; } = null!;
 
         [ForeignKey("WorkOrderId")]
         public WorkOrder WorkOrder { get; set; } = default!;
 
-        [ForeignKey("SelectedVendorOfferId")]
-        public VendorOffer SelectedVendorOffer { get; set; } = default!;
+        [ForeignKey("SelectedVendorId")]
+        public Vendor SelectedVendor { get; set; } = default!;
     }
 }

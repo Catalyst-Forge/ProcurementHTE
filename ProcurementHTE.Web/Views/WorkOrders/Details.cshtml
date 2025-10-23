@@ -8,7 +8,7 @@
     var no = 1;
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
-    var pnl = ViewBag.PnlViewModel as ProcurementHTE.Web.Models.ViewModels.EditProfitLossViewModel;
+    var pnl = ViewBag.PnlViewModel as ProcurementHTE.Web.Models.ViewModels.ProfitLossSummaryViewModel;
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
@@ -18,45 +18,57 @@
     };
 }
 
-<header class="d-flex justify-content-between align-items-center">
-    <h1 class="h2">Details</h1>
+<header class="mb-3">
+    <div class="hstack justify-content-between">
+        <h1 class="h2">Details</h1>
 
-    <div class="d-flex gap-2" role="group" aria-label="Button Action">
-        <a asp-action="CreatePnL" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create PnL</a>
-        <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-        <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i> Delete</a>
-        <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+        <div class="d-flex gap-2" role="group" aria-label="Button Action">
+            <span title="@(pnl != null ? "data pnl sudah ada" : "")">
+                <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-plus-circle"></i> Create PnL</a>
+            </span>
+            <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i> Delete</a>
+            <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
+        </div>
     </div>
+
+    @* Navigation tabs *@
+    <nav>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="wo-tab" data-bs-toggle="tab"
+                        data-bs-target="#wo-tab-pane" type="button" role="tab"
+                        aria-controls="wo-tab-pane" aria-selected="true">
+                    Work order information
+                </button>
+            </li>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pnl-tab" data-bs-toggle="tab" data-bs-target="#pnl-tab-pane" type="button" role="tab" aria-controls="pnl-tab-pane" aria-selected="false">Profit and Loss</button>
+            </li>
+        </ul>
+    </nav>
 </header>
 
-@* Navigation tabs *@
-<ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="wo-tab" data-bs-toggle="tab" data-bs-target="#wo-tab-pane" type="button" role="tab" aria-controls="wo-tab-pane" aria-selected="true">Work order information</button>
-    </li>
-
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="pnl-tab" data-bs-toggle="tab" data-bs-target="#pnl-tab-pane" type="button" role="tab" aria-controls="pnl-tab-pane" aria-selected="false">Profit and Loss</button>
-    </li>
-</ul>
 
 @* Content body *@
 <div class="tab-content" id="myTabContent">
-    <div class="tab-pane show active" id="wo-tab-pane" role="tabpanel" aria-labelledby="wo-tab" tabindex="0">
+    <!-- ================= WORK ORDER DETAIL ================= -->
+    <section class="tab-pane show active" id="wo-tab-pane" role="tabpanel" aria-labelledby="wo-tab" tabindex="0">
         <div class="d-grid gap-4 mt-2" style="grid-template-columns: 2fr 1fr">
             <div>
                 @* Work request card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header fw-semibold">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header fw-semibold">
                         <h2 class="card-title mb-0 h4">Job Request</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <dl class="row mb-0">
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WoNum)</dt>
                             <dd class="col-sm-9">@Html.DisplayFor(model => model.WoNum)</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateLetter)</dt>
-                            <dd class="col-sm-9">@Model.DateLetter.ToTanggalIndonesia()</dd>
+                            <dd class="col-sm-9">@Model?.DateLetter.ToTanggalIndonesia()</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FromLocation)</dt>
                             <dd class="col-sm-9">@Html.DisplayFor(model => model.FromLocation)</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Destination)</dt>
@@ -64,38 +76,31 @@
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.WBS)</dt>
                             <dd class="col-sm-9">@(Model?.WBS ?? "-")</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.GlAccount)</dt>
-                            <dd class="col-sm-9">@Html.DisplayFor(model => model.GlAccount)</dd>
+                            <dd class="col-sm-9">@(Model?.GlAccount ?? "-")</dd>
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.DateRequired)</dt>
-                            <dd class="col-sm-9">@Model.DateRequired.ToTanggalIndonesia()</dd>
+                            <dd class="col-sm-9">@Model?.DateRequired.ToTanggalIndonesia()</dd>
                         </dl>
                     </div>
-                </div>
+                </article>
 
                 @* Item details card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header fw-semibold">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header fw-semibold">
                         <h2 class="card-title mb-0 h4">Item Details</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover border">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="mw-100 text-nowrap border-end">
-                                            No
-                                        </th>
-                                        <th class="mw-100 text-nowrap border-end">
-                                            Item Name
-                                        </th>
-                                        <th class="mw-100 text-nowrap">
-                                            Qty
-                                        </th>
-                                        <th class="mw-100 text-nowrap">
-                                            Unit
-                                        </th>
+                                        <th class="mw-100 text-nowrap border-end">No</th>
+                                        <th class="mw-100 text-nowrap border-end">Item Name</th>
+                                        <th class="mw-100 text-nowrap">Qty</th>
+                                        <th class="mw-100 text-nowrap">Unit</th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
                                         foreach (var detail in Model.WoDetails) {
@@ -116,13 +121,13 @@
                             </table>
                         </div>
                     </div>
-                </div>
+                </article>
 
                 @* Item card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header">
                         <h2 class="card-title mb-0 h4">Job Description</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <dl class="row mb-0">
@@ -145,26 +150,26 @@
                             <dd class="col-sm-9">@Html.DisplayFor(model => model.XS2)</dd>
                         </dl>
                     </div>
-                </div>
+                </article>
 
                 @* Notes card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header">
                         <h2 class="card-title mb-0 h4">@Html.DisplayNameFor(model => model.Note)</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <p class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info-subtle rounded-3 border-5">@Html.DisplayFor(model => model.Note)</p>
                     </div>
-                </div>
+                </article>
             </div>
 
             <div>
                 @* Work order information card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header">
                         <h2 class="card-title mb-0 h4">Information Work Order</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <dl class="row mb-0">
@@ -198,13 +203,13 @@
                             </dd>
                         </dl>
                     </div>
-                </div>
+                </article>
 
                 @* Contact person card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header">
                         <h2 class="card-title mb-0 h4">Contact Person</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-3 mb-2">
@@ -217,13 +222,13 @@
                             <dd>CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd>
                         </dl>
                     </div>
-                </div>
+                </article>
 
                 @* Approvals card *@
-                <div class="card shadow-sm mb-2">
-                    <div class="card-header">
+                <article class="card shadow-sm mb-2">
+                    <header class="card-header">
                         <h2 class="card-title mb-0 h4">Approvals</h2>
-                    </div>
+                    </header>
 
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-3 mb-2">
@@ -236,140 +241,137 @@
                             <dd>@Html.DisplayFor(model => model.Approved)</dd>
                         </dl>
                     </div>
-                </div>
+                </article>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="tab-pane" id="pnl-tab-pane" role="tabpanel" aria-labelledby="pnl-tab" tabindex="0">
+    <!-- ================= PROFIT & LOSS DETAIL ================= -->
+    <section class="tab-pane" id="pnl-tab-pane" role="tabpanel" aria-labelledby="pnl-tab" tabindex="0">
         @if (pnl == null) {
             <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
                 Belum ada data Profit &amp; Loss untuk WO ini.
             </div>
 
-            <a asp-action="CreatePnL" asp-route-workOrderId="@Model.WorkOrderId" class="btn btn-success">
+            <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model!.WorkOrderId" class="btn btn-success" role="button">
                 <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
             </a>
         } else {
-            <div class="d-grid gap-4 mt-3" style="grid-template-columns: 2fr 1fr">
-                <div>
-                    <!-- Tagihan PDSI -->
-                    <div class="card shadow-sm mb-2">
-                        <div class="card-header fw-semibold">
-                            <h2 class="card-title mb-0 h4">Tagihan PDSI</h2>
-                        </div>
+            <!-- List Vendor -->
+            <article class="card shadow-sm mb-3 mt-2">
+                <header class="card-header fw-semibold">
+                    <h2 class="card-title mb-0 h4">Vendor yang ditawarkan</h2>
+                </header>
 
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <div class="form-label">Revenue</div>
-                                    <div class="fs-5 fw-semibold">@pnl.Revenue.ToIDR()</div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <div class="form-label">Cost Operator</div>
-                                    <div class="fs-5 fw-semibold">@pnl.CostOperator.ToIDR()</div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <div class="form-label">Profit</div>
-                                    <div class="fs-5 fw-semibold text-success">@pnl.Profit.ToIDR()</div>
-                                    <div class="small text-muted">= Revenue − Best Offer − Cost Operator</div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        @if (ViewBag.SelectedVendorNames is List<string> names && names.Count > 0) {
+                            @foreach (var name in names) {
+                                <div class="badge border rounded-5 text-secondary fw-medium p-2">@name</div>
+                            }
+                        }
                     </div>
+                </div>
+            </article>
 
-                    <!-- Penawaran Mitra -->
-                    <div class="card shadow-sm mb-2">
-                        <div class="card-header fw-semibold">
-                            <h2 class="card-title mb-0 h4">Penawaran Mitra</h2>
+            <!-- Tagihan PDSI -->
+            <article class="card shadow-sm mb-3">
+                <header class="card-header fw-semibold">
+                    <h2 class="card-title mb-0 h4">Ringkasan Profit & Loss</h2>
+                </header>
+
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="card-title mb-0 h5">Tagihan PDSI</h3>
+
+                            <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary" role="button">Hitung Ulang</a>
                         </div>
-
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered align-middle">
-                                    <thead class="table-light">
-                                        <tr class="text-center">
-                                            <th style="width:80px;">#</th>
-                                            <th>Harga Penawaran</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody class="text-center">
-                                        <tr>
-                                            <td>1</td>
-                                            <td>@pnl.Penawaran1Price.ToIDR()</td>
-                                        </tr>
-                                        <tr>
-                                            <td>2</td>
-                                            <td>@pnl.Penawaran2Price.ToIDR()</td>
-                                        </tr>
-                                        <tr>
-                                            <td>3</td>
-                                            <td>@pnl.Penawaran3Price.ToIDR()</td>
-                                        </tr>
-                                        <tr class="table-success">
-                                            <td class="fw-semibold">Best</td>
-                                            <td class="fw-bold">@pnl.BestOfferPrice.ToIDR()</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="small text-muted">
-                                Best offer dipilih otomatis sebagai harga terendah (atau sesuai pilihan saat input).
-                            </div>
+                        <hr />
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Tarif Awal</div>
+                            <div>@pnl.TarifAwal.ToIDR()</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Tarif Add</div>
+                            <div>@pnl.TarifAdd.ToIDR()</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">KM per 25 Km</div>
+                            <div>@pnl.KmPer25</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Cost Operator</div>
+                            <div>@pnl.OperatorCost.ToIDR()</div>
+                            <div class="small text-muted"> = Tarif Add * KM per 25 Km</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Revenue</div>
+                            <div class="fw-bold">@pnl.Revenue.ToIDR()</div>
+                            <div class="small text-muted"> = Tarif Awal + Cost Operator</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Best Vendor</div>
+                            <div class="text-success fw-semibold">@pnl.SelectedVendorName</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Final Offer</div>
+                            <div>@pnl.SelectedFinalOffer.ToIDR()</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-semibold">Profit</div>
+                            <div class="fw-bold text-success">@pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())</div>
+                            <div class="small text-muted"> = Revenue − Best Offer</div>
                         </div>
                     </div>
                 </div>
+            </article>
 
-                <div>
-                    <!-- Informasi P&L -->
-                    <div class="card shadow-sm mb-2">
-                        <div class="card-header">
-                            <h2 class="card-title mb-0 h4">Information P&amp;L</h2>
-                        </div>
+            <!-- Penawaran Vendor -->
+            <article class="card shadow-sm mb-3">
+                <header class="card-header fw-semibold">
+                    <h2 class="card-title mb-0 h4">Perbandingan Vendor (Vendor yang Memberi Penawaran)</h2>
+                </header>
 
-                        <div class="card-body">
-                            <dl class="row mb-0">
-                                <dt class="col-sm-5">Vendor Terpilih</dt>
-                                <dd class="col-sm-7">
-                                    <span class="badge text-bg-success">@pnl.VendorName</span>
-                                </dd>
+                <div class="card-body">
+                    <div class="table-responsive border rounded-3">
+                        <table class="table align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th>Final Offer</th>
+                                    <th>Profit</th>
+                                    <th>Profit %</th>
+                                    <th class="text-center">Result</th>
+                                </tr>
+                            </thead>
 
-                                <dt class="col-sm-5">WO Number</dt>
-                                <dd class="col-sm-7">
-                                    <span class="badge text-bg-secondary">@pnl.WoNum</span>
-                                </dd>
-
-                                <dt class="col-sm-5">Profit %</dt>
-                                <dd class="col-sm-7">@pnl.ProfitPercentage.ToPersen()</dd>
-
-                                <dt class="col-sm-5">Adjustment Rate</dt>
-                                <dd class="col-sm-7">@pnl.AdjustmentRate.ToPersen()</dd>
-
-                                <dt class="col-sm-5">Adjusted Profit</dt>
-                                <dd class="col-sm-7">@pnl.AdjustedProfit.ToIDR()</dd>
-                            </dl>
-                        </div>
+                            <tbody>
+                                @foreach (var row in pnl.Rows) {
+                                    <tr class="@(row.IsSelected ? "table-success" : "")">
+                                        <td>@row.VendorName</td>
+                                        <td>@row.FinalOffer.ToIDR()</td>
+                                        <td>@row.Profit.ToIDR()</td>
+                                        <td>@row.ProfitPercent.ToPersen()</td>
+                                        <td class="text-center">
+                                            @if (row.IsSelected == true) {
+                                                <span class="badge text-bg-success">Terpilih</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
 
-                    <!-- Aksi -->
-                    <div class="d-grid gap-2">
-                        <a asp-action="EditPnL" asp-route-id="@pnl.ProfitLossId" class="btn btn-warning">
-                            <i class="bi bi-pencil-square"></i> Edit P&amp;L
-                        </a>
-                        <a asp-action="PnLDetails" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
-                            <i class="bi bi-eye"></i> Lihat P&amp;L Penuh
-                        </a>
+                    <div class="small text-muted">
+                        Best offer dipilih otomatis sebagai harga terendah.
                     </div>
                 </div>
-            </div>
+            </article>
         }
-    </div>
-
+    </section>
 </div>
 
 @section Scripts {
