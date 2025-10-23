@@ -16,6 +16,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<WoDetail> WoDetails { get; set; }
         public DbSet<ProfitLoss> ProfitLosses { get; set; }
         public DbSet<VendorOffer> VendorOffers { get; set; }
+        public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; }
         public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
         public DbSet<DocumentType> DocumentTypes { get; set; }
         public DbSet<WoDocuments> WoDocuments { get; set; }
@@ -186,14 +187,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 .WithMany()
                 .HasForeignKey(woDocumentApproval => woDocumentApproval.ApproverId)
                 .OnDelete(DeleteBehavior.NoAction); // Relation to User
-
-            // ***** Profit and Loss *****
-            builder
-                .Entity<ProfitLoss>()
-                .HasOne(profitLoss => profitLoss.SelectedVendorOffer)
-                .WithMany()
-                .HasForeignKey(profitLoss => profitLoss.SelectedVendorOfferId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
