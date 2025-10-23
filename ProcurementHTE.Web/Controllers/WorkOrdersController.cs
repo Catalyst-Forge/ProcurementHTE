@@ -17,15 +17,18 @@ namespace ProcurementHTE.Web.Controllers
         IWorkOrderService woService,
         IVendorService vendorService,
         IProfitLossService pnlService,
+        IVendorOfferService voService,
         ILogger<WorkOrdersController> logger
     ) : Controller
     {
         private readonly IWorkOrderService _woService = woService;
         private readonly IVendorService _vendorService = vendorService;
         private readonly IProfitLossService _pnlService = pnlService;
+        private readonly IVendorOfferService _voService = voService;
         private readonly ILogger<WorkOrdersController> _logger = logger;
 
         // GET: WorkOrders
+        // Work Order Index Page
         [Authorize(Policy = Permissions.WO.Read)]
         public async Task<IActionResult> Index(
             int page = 1,
@@ -62,68 +65,47 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // GET: WorkOrders/Details/5
+        // Work Order Detail Page
         public async Task<IActionResult> Details(string id)
         {
-            if (!string.IsNullOrEmpty(id))
-                try
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            try
+            {
+                var workOrder = await _woService.GetWorkOrderByIdAsync(id);
+                if (workOrder == null)
+                    return NotFound();
+
+                var summary = await _pnlService.GetSummaryByWorkOrderAsync(id);
+                if (summary != null)
                 {
-                    var workOrder = await _woService.GetWorkOrderByIdAsync(id);
-                    if (workOrder != null)
-                    {
-                        var pnl = await _pnlService.GetProfitLossWithWorkOrderAsync(
-                            workOrder.WorkOrderId
-                        );
-                        if (pnl != null)
-                        {
-                            decimal displayAdjustmentRate =
-                                (pnl.AdjustmentRate ?? 0m) <= 1m
-                                    ? (pnl.AdjustmentRate ?? 0m) * 100m
-                                    : (pnl.AdjustmentRate ?? 0m);
-
-                            var pnlViewModel = new EditProfitLossViewModel
-                            {
-                                ProfitLossId = pnl.ProfitLossId,
-                                WorkOrderId = pnl.WorkOrderId,
-                                WoNum = pnl.WorkOrder?.WoNum ?? "-",
-                                VendorName = pnl.SelectedVendorOffer?.Vendor?.VendorName ?? "-",
-                                Revenue = pnl.Revenue,
-                                CostOperator = pnl.CostOperator,
-                                Profit = pnl.Profit,
-                                ProfitPercentage = pnl.ProfitPercentage,
-                                Penawaran1Price = pnl.HargaPenawaran1,
-                                Penawaran2Price = pnl.HargaPenawaran2,
-                                Penawaran3Price = pnl.HargaPenawaran3,
-                                BestOfferPrice = pnl.BestOfferPrice,
-                                AdjustmentRate = displayAdjustmentRate,
-                                AdjustedProfit = pnl.AdjustedProfit,
-                            };
-
-                            ViewBag.PnlViewModel = pnlViewModel;
-                        }
-
-                        return View(workOrder);
-                    }
-                    else
-                    {
-                        return NotFound();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = "Gagal memuat detail Work Order: " + ex.Message;
-                    return RedirectToAction(nameof(Index));
+                    var viewModel = MapToViewModel(summary);
+                    ViewBag.SelectedVendorNames = summary.SelectedVendorNames;
+                    ViewBag.PnlViewModel = viewModel;
                 }
 
-            return NotFound();
+                return View(workOrder);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading WorkOrder details for ID: {id}", id);
+                TempData["ErrorMessage"] = "Gagal memuat detail Work Order: " + ex.Message;
+
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        // GET: WorkOrders/Create
+        // GET: WorkOrders/SelectType
+        // Work Order select type WO Page
         public async Task<IActionResult> SelectType()
         {
             var related = await _woService.GetRelatedEntitiesForWorkOrderAsync();
             return View(related.WoTypes);
         }
 
+        // POST: WorkOrders/SelectType
+        // Work Order selected type
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SelectType(string woTypeId)
@@ -131,6 +113,8 @@ namespace ProcurementHTE.Web.Controllers
             return RedirectToAction(nameof(CreateByType), new { woTypeId });
         }
 
+        // GET: WorkOrders/CreateByType?woTypeId/1
+        // Form Work Order Type Selected Page
         [HttpGet]
         public async Task<IActionResult> CreateByType(string woTypeId)
         {
@@ -139,8 +123,6 @@ namespace ProcurementHTE.Web.Controllers
             {
                 return NotFound();
             }
-
-            await PopulateDropdownsAsync(selectedWoTypeId: woTypeId);
 
             ViewData["EnumProcurementTypes"] = Enum.GetValues<ProcurementType>();
             ViewBag.SelectedWoTypeName = woType.TypeName;
@@ -153,9 +135,8 @@ namespace ProcurementHTE.Web.Controllers
             return View("CreateByType", createWoVM);
         }
 
-        // POST: WorkOrders/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: WorkOrders/CreateByType?woTypeId/1
+        // Post form work order
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
@@ -163,8 +144,20 @@ namespace ProcurementHTE.Web.Controllers
             string submitAction
         )
         {
-            ModelState.Remove(nameof(User));
+            //ModelState.Remove(nameof(User));
+            //ModelState.Remove("WorkOrder.WoNum");
+            //ModelState.Remove("WorkOrder.WorkOrderId");
+
+            var detailKeys = Request.Form["Details.Index"].ToArray();
+            foreach (var key in detailKeys)
+            {
+                ModelState.Remove($"Details[{key}].WorkOrderId");
+                ModelState.Remove($"Details[{key}].WorkOrder");
+                ModelState.Remove($"Details[{key}].WoDetailId");
+            }
+
             woViewModel ??= new WorkOrderCreateViewModel();
+            woViewModel.Details ??= new List<WoDetail>();
             woViewModel.WorkOrder.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (!string.IsNullOrWhiteSpace(submitAction))
@@ -189,10 +182,6 @@ namespace ProcurementHTE.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                await PopulateDropdownsAsync(
-                    woViewModel.WorkOrder.StatusId,
-                    woViewModel.WorkOrder.WoTypeId
-                );
                 ViewData["EnumProcurementTypes"] = Enum.GetValues<ProcurementType>();
 
                 var woTypeName = (
@@ -210,7 +199,7 @@ namespace ProcurementHTE.Web.Controllers
             {
                 await _woService.AddWorkOrderWithDetailsAsync(
                     woViewModel.WorkOrder,
-                    woViewModel.Details
+                    woViewModel.Details!
                 );
                 TempData["SuccessMessage"] = submitAction.Equals(
                     "Draft",
@@ -232,10 +221,6 @@ namespace ProcurementHTE.Web.Controllers
                     "Terjadi kesalahan saat menyimpan data: " + ex.Message
                 );
             }
-            await PopulateDropdownsAsync(
-                woViewModel.WorkOrder.StatusId,
-                woViewModel.WorkOrder.WoTypeId
-            );
 
             var fallbackName = (
                 await _woService.GetWoTypeByIdAsync(woViewModel.WorkOrder.WoTypeId ?? string.Empty)
@@ -258,7 +243,6 @@ namespace ProcurementHTE.Web.Controllers
 
             try
             {
-                await PopulateDropdownsAsync(workOrder.StatusId, workOrder.WoTypeId);
                 return View(workOrder);
             }
             catch (Exception ex)
@@ -269,8 +253,6 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // POST: WorkOrders/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(WorkOrder workOrder, string id)
@@ -305,7 +287,6 @@ namespace ProcurementHTE.Web.Controllers
                 );
             }
 
-            await PopulateDropdownsAsync(workOrder.StatusId, workOrder.WoTypeId);
             return View(workOrder);
         }
 
@@ -361,242 +342,145 @@ namespace ProcurementHTE.Web.Controllers
             }
         }
 
-        // GET: WorkOrders/5/CreatePnl
-        [HttpGet("WorkOrders/{workOrderId}/CreatePnL")]
-        public async Task<IActionResult> CreatePnL(string workOrderId)
+        //GET: WorkOrders/5/CreatePnl
+        [HttpGet("WorkOrders/{workOrderId}/CreateProfitLoss")]
+        public async Task<IActionResult> CreateProfitLoss(string workOrderId)
         {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+            {
+                TempData["ErrorMessage"] = "Work Order ID tidak valid";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
                 var workOrder = await _woService.GetWorkOrderByIdAsync(workOrderId);
-                if (workOrder == null)
+                if (string.IsNullOrWhiteSpace(workOrderId) || workOrder == null)
                 {
                     TempData["ErrorMessage"] = "Work Order tidak ditemukan";
                     return RedirectToAction("Index", "WorkOrder");
                 }
 
                 var vendors = await _vendorService.GetAllVendorsAsync();
-
-                var viewModel = new CreateProfitLossViewModel
+                var viewModel = new ProfitLossInputViewModel
                 {
                     WorkOrderId = workOrderId,
-                    WoNum = workOrder.WoNum!,
-                    IssuedDate = workOrder.CreatedAt,
-                    Vendors = vendors
-                        .Select(v => new SelectListItem
+                    VendorChoices = vendors
+                        .Select(vendor => new VendorChoiceViewModel
                         {
-                            Value = v.VendorId.ToString(),
-                            Text = v.VendorName,
+                            Id = vendor.VendorId,
+                            Name = vendor.VendorName,
                         })
                         .ToList(),
-                    AdjustmentRate = 15,
                 };
 
-                for (int i = 0; i < 3; i++)
-                {
-                    viewModel.VendorOffers.Add(
-                        new VendorOfferRowDto { RowIndex = i + 1, OfferNumber = i + 1 }
-                    );
-                }
+                ViewBag.WoNum = workOrder.WoNum;
+                ViewBag.IssueDate = workOrder.CreatedAt.ToString("d MMMM yyyy");
 
                 return View(viewModel);
             }
             catch (Exception ex)
             {
+                _logger.LogError(
+                    ex,
+                    "Error creating ProfitLoss form for WorkOrder: {WorkOrderId}",
+                    workOrderId
+                );
                 TempData["ErrorMessage"] = $"Error: {ex.Message}";
-                return RedirectToAction("Index", "WorkOrders");
+                return RedirectToAction(nameof(Index));
             }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreatePnLPost(
-            [FromForm] CreateProfitLossViewModel viewModel
+        public async Task<IActionResult> CreateProfitLossPost(
+            [FromForm] ProfitLossInputViewModel viewModel
         )
         {
-            _logger.LogInformation($"🔵 CreatePnLPost (POST) called");
-            _logger.LogInformation($"ModelState.IsValid: {ModelState.IsValid}");
-
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("ModelState tidak valid");
-                var errors = ModelState.Values.SelectMany(x => x.Errors);
-                foreach (var error in errors)
-                {
-                    _logger.LogWarning($"  - {error.ErrorMessage}");
-                }
+                await RepopulateVendorChoices(viewModel);
+                LogModelStateErrors();
 
-                var vendors = await _vendorService.GetAllVendorsAsync();
-                viewModel.Vendors = vendors
-                    .Select(v => new SelectListItem
-                    {
-                        Value = v.VendorId.ToString(),
-                        Text = v.VendorName,
-                    })
-                    .ToList();
-                return View("CreatePnL", viewModel);
+                return View("CreateProfitLoss", viewModel);
+            }
+
+            var selectedVendors = viewModel.SelectedVendorIds?.Distinct().ToList() ?? [];
+            if (selectedVendors.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.SelectedVendorIds),
+                    "Pilih minimal 1 vendor"
+                );
+                await RepopulateVendorChoices(viewModel);
+
+                return View(viewModel);
             }
 
             try
             {
-                string? bestVendor = viewModel.SelectedBestVendorId;
+                var dto = MapToDto(viewModel, selectedVendors);
+                await _pnlService.SaveInputAndCalculateAsync(dto);
+                TempData["Success"] = "Profit & Loss berhasil dihitung";
 
-                // Validasi minimal ada 1 penawaran
-                var validOffers = viewModel
-                    .VendorOffers.Where(x =>
-                        !string.IsNullOrWhiteSpace(x.VendorId) && x.OfferPrice > 0
-                    )
-                    .ToList();
-
-                _logger.LogInformation($"Valid offers: {validOffers.Count}");
-
-                if (!validOffers.Any())
-                {
-                    ModelState.AddModelError("", "Minimal harus ada 1 penawaran vendor");
-                    var vendors = await _vendorService.GetAllVendorsAsync();
-                    viewModel.Vendors = vendors
-                        .Select(v => new SelectListItem
-                        {
-                            Value = v.VendorId.ToString(),
-                            Text = v.VendorName,
-                        })
-                        .ToList();
-                    return View("CreatePnL", viewModel);
-                }
-
-                if (string.IsNullOrWhiteSpace(bestVendor))
-                {
-                    var lowestOffer = validOffers.MinBy(offer => offer.OfferPrice);
-                    bestVendor = lowestOffer.VendorId;
-                    _logger.LogInformation(
-                        $"Sistem otomatis pilih best vendor: {lowestOffer.VendorId} ({lowestOffer.OfferPrice})"
-                    );
-                }
-                else
-                {
-                    _logger.LogInformation($"🟠 User pilih manual vendor terbaik ID: {bestVendor}");
-                }
-
-                // Validasi selected vendor ada di list
-                var selectedVendorOffer = validOffers.FirstOrDefault(x =>
-                    x.VendorId == viewModel.SelectedBestVendorId
-                );
-                if (selectedVendorOffer == null)
-                {
-                    _logger.LogWarning(
-                        $"Selected vendor {viewModel.SelectedBestVendorId} tidak ada di list penawaran"
-                    );
-                    ModelState.AddModelError(
-                        "",
-                        "Vendor yang dipilih harus ada di daftar penawaran"
-                    );
-
-                    var vendors = await _vendorService.GetAllVendorsAsync();
-                    viewModel.Vendors = vendors
-                        .Select(v => new SelectListItem
-                        {
-                            Value = v.VendorId.ToString(),
-                            Text = v.VendorName,
-                        })
-                        .ToList();
-                    return View("CreatePnL", viewModel);
-                }
-
-                _logger.LogInformation(
-                    $"Membuat VendorOfferInputDto untuk {validOffers.Count} penawaran..."
-                );
-
-                // Prepare DTOs
-                var vendorOfferDtos = validOffers.Select(x => new VendorOfferInputDto
-                {
-                    VendorId = x.VendorId!,
-                    ItemName = x.ItemName,
-                    Trip = x.Trip,
-                    Unit = x.Unit,
-                    OfferNumber = x.OfferNumber,
-                    OfferPrice = x.OfferPrice,
-                });
-
-                var plInputDto = new CreateProfitLossInputDto
-                {
-                    WorkOrderId = viewModel.WorkOrderId,
-                    Revenue = viewModel.Revenue,
-                    CostOperator = viewModel.CostOperator,
-                    AdjustmentRate = viewModel.AdjustmentRate,
-                    SelectedVendorId = viewModel.SelectedBestVendorId!,
-                };
-
-                _logger.LogInformation($"Calling CreateProfitLossWithOffersAsync...");
-
-                // Create P&L
-                var profitLoss = await _pnlService.CreateProfitLossWithOffersAsync(
-                    vendorOfferDtos,
-                    plInputDto
-                );
-
-                _logger.LogInformation(
-                    $"✅ ProfitLoss berhasil dibuat dengan ID: {profitLoss.ProfitLossId}"
-                );
-
-                TempData["SuccessMessage"] = "Profit & Loss berhasil dibuat!";
-                return RedirectToAction("EditPnL", new { id = profitLoss.ProfitLossId });
+                return RedirectToAction(nameof(Index));
             }
             catch (ArgumentException ex)
             {
+                _logger.LogWarning(ex, "Validation error in CreateProfitLoss");
                 ModelState.AddModelError("", ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error di CreatePnLPost: {ex.Message}\n{ex.StackTrace}");
+                _logger.LogError(
+                    ex,
+                    "Error creating ProfitLoss for WorkOrder: {WorkOrderId}",
+                    viewModel.WorkOrderId
+                );
                 ModelState.AddModelError("", $"Error: {ex.Message}");
-                var vendors = await _vendorService.GetAllVendorsAsync();
-                viewModel.Vendors = vendors
-                    .Select(v => new SelectListItem
-                    {
-                        Value = v.VendorId.ToString(),
-                        Text = v.VendorName,
-                    })
-                    .ToList();
-                return View("CreatePnL", viewModel);
             }
 
-            return View("CreatePnL", viewModel);
+            await RepopulateVendorChoices(viewModel);
+            return View(viewModel);
         }
 
-        /// <summary>
-        /// GET: /WorkOrders/EditPnL/5
-        /// </summary>
+        // GET: /WorkOrders/EditPnL/5
         [HttpGet]
-        public async Task<IActionResult> EditPnL(string id)
+        public async Task<IActionResult> EditProfitLoss(string id)
         {
             _logger.LogInformation($"🔵 EditPnL (GET) called with ID: {id}");
 
             try
             {
-                var profitLoss = await _pnlService.GetProfitLossByIdAsync(id);
-                if (profitLoss == null)
-                {
-                    _logger.LogWarning($"ProfitLoss dengan ID {id} tidak ditemukan");
-                    TempData["ErrorMessage"] = "Data tidak ditemukan";
-                    return RedirectToAction("Index");
-                }
+                var dto = await _pnlService.GetEditDataAsync(id);
+                var vendors = await _vendorService.GetAllVendorsAsync();
 
-                var viewModel = new EditProfitLossViewModel
+                var viewModel = new ProfitLossEditViewModel
                 {
-                    ProfitLossId = profitLoss.ProfitLossId,
-                    WoNum = profitLoss.WorkOrder?.WoNum ?? "-",
-                    VendorName = profitLoss.SelectedVendorOffer?.Vendor?.VendorName ?? "-",
-                    Revenue = profitLoss.Revenue,
-                    CostOperator = profitLoss.CostOperator,
-                    Profit = profitLoss.Profit,
-                    ProfitPercentage = profitLoss.ProfitPercentage,
-                    Penawaran1Price = profitLoss.HargaPenawaran1,
-                    Penawaran2Price = profitLoss.HargaPenawaran2,
-                    Penawaran3Price = profitLoss.HargaPenawaran3,
-                    BestOfferPrice = profitLoss.BestOfferPrice,
-                    AdjustmentRate = profitLoss.AdjustmentRate * 100,
-                    AdjustedProfit = profitLoss.AdjustedProfit,
+                    ProfitLossId = dto.ProfitLossId,
+                    WorkOrderId = dto.WorkOrderId,
+                    TarifAwal = dto.TarifAwal,
+                    TarifAdd = dto.TarifAdd,
+                    KmPer25 = dto.KmPer25,
+                    SelectedVendorIds = dto.SelectedVendorIds.ToList(),
+                    Vendors = dto
+                        .Vendors.Select(vendor => new VendorOfferInputViewModel
+                        {
+                            VendorId = vendor.VendorId,
+                            Prices = vendor.Prices,
+                        })
+                        .ToList(),
+                    VendorChoices = vendors
+                        .Select(vendor => new VendorChoiceViewModel
+                        {
+                            Id = vendor.VendorId,
+                            Name = vendor.VendorName,
+                        })
+                        .ToList(),
                 };
 
+                var wo = await _woService.GetWorkOrderByIdAsync(dto.WorkOrderId);
+                ViewBag.WoNum = wo.WoNum;
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
                 _logger.LogInformation($"✅ EditPnL view akan ditampilkan");
                 return View(viewModel);
@@ -609,82 +493,51 @@ namespace ProcurementHTE.Web.Controllers
             }
         }
 
-        //[HttpGet] // -> /WorkOrders/PnLDetails/{id}
-        [HttpGet("WorkOrders/PnLDetails/{id}")]
-        public async Task<IActionResult> PnLDetails(string id)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfitLoss(ProfitLossEditViewModel viewModel)
         {
-            _logger.LogInformation("🔵 PnLDetails (GET) id={Id}", id);
-
-            if (string.IsNullOrWhiteSpace(id))
+            if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "ID P&L tidak valid.";
-                return RedirectToAction(nameof(Index));
+                var vendors = await _vendorService.GetAllVendorsAsync();
+                viewModel.VendorChoices = vendors
+                    .Select(vendor => new VendorChoiceViewModel
+                    {
+                        Id = vendor.VendorId,
+                        Name = vendor.VendorName,
+                    })
+                    .ToList();
+
+                return View(viewModel);
             }
 
-            try
+            var update = new ProfitLossUpdateDto
             {
-                var pl = await _pnlService.GetProfitLossByIdAsync(id);
-                if (pl is null)
-                {
-                    TempData["ErrorMessage"] = "Data Profit & Loss tidak ditemukan.";
-                    return RedirectToAction(nameof(Index));
-                }
+                ProfitLossId = viewModel.ProfitLossId,
+                WorkOrderId = viewModel.WorkOrderId,
+                TarifAwal = viewModel.TarifAwal,
+                TarifAdd = viewModel.TarifAdd,
+                KmPer25 = viewModel.KmPer25,
+                SelectedVendorIds = viewModel.SelectedVendorIds?.Distinct().ToList() ?? [],
+                Vendors = (viewModel.Vendors ?? [])
+                    .Where(vendor =>
+                        vendor.Prices != null && vendor.Prices.Any(price => price > 0m)
+                    )
+                    .Select(item => new VendorOffersDto
+                    {
+                        VendorId = item.VendorId,
+                        Prices = item.Prices.Where(price => price > 0m).ToList(),
+                    })
+                    .ToList(),
+            };
 
-                // Normalisasi tampilan AdjustmentRate:
-                // - jika disimpan 0.15 => tampilkan 15
-                // - jika disimpan 15   => tampilkan 15
-                decimal displayAdjRate =
-                    (pl.AdjustmentRate ?? 0m) <= 1m
-                        ? (pl.AdjustmentRate ?? 0m) * 100m
-                        : (pl.AdjustmentRate ?? 0m);
+            await _pnlService.EditProfitLossAsync(update);
+            TempData["Success"] = "Profit & Loss berhasil diupdate";
 
-                var vm = new EditProfitLossViewModel
-                {
-                    ProfitLossId = pl.ProfitLossId,
-                    WorkOrderId = pl.WorkOrderId,
-                    WoNum = pl.WorkOrder?.WoNum ?? "-",
-                    VendorName = pl.SelectedVendorOffer?.Vendor?.VendorName ?? "-",
-                    Revenue = pl.Revenue,
-                    CostOperator = pl.CostOperator,
-                    Profit = pl.Profit,
-                    ProfitPercentage = pl.ProfitPercentage,
-                    Penawaran1Price = pl.HargaPenawaran1,
-                    Penawaran2Price = pl.HargaPenawaran2,
-                    Penawaran3Price = pl.HargaPenawaran3,
-                    BestOfferPrice = pl.BestOfferPrice,
-                    AdjustmentRate = displayAdjRate, // persen untuk ditampilkan
-                    AdjustedProfit = pl.AdjustedProfit,
-                };
-
-                return View("PnLDetails", vm); // Views/WorkOrders/PnLDetails.cshtml
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Gagal memuat PnLDetails id={Id}", id);
-                TempData["ErrorMessage"] = "Terjadi kesalahan saat memuat Profit & Loss.";
-                return RedirectToAction(nameof(Index));
-            }
+            return RedirectToAction(nameof(Index));
         }
 
-        private async Task PopulateDropdownsAsync(
-            int? selectedStatusId = null,
-            string? selectedWoTypeId = null
-        )
-        {
-            var relatedEntities = await _woService.GetRelatedEntitiesForWorkOrderAsync();
-            ViewData["StatusId"] = new SelectList(
-                relatedEntities.Statuses,
-                "StatusId",
-                "StatusName",
-                selectedStatusId
-            );
-            ViewData["WoTypeId"] = new SelectList(
-                relatedEntities.WoTypes,
-                "WoTypeId",
-                "TypeName",
-                selectedWoTypeId
-            );
-        }
+        #region Helper Methods
 
         private static string ResolveCreatePartialByName(string? typeName)
         {
@@ -707,5 +560,80 @@ namespace ProcurementHTE.Web.Controllers
                 _ => "_CreateOther",
             };
         }
+
+        private ProfitLossSummaryViewModel MapToViewModel(ProfitLossSummaryDto dto)
+        {
+            return new ProfitLossSummaryViewModel
+            {
+                ProfitLossId = dto.ProfitLossId,
+                WorkOrderId = dto.WorkOrderId,
+                TarifAwal = dto.TarifAwal,
+                TarifAdd = dto.TarifAdd,
+                KmPer25 = dto.KmPer25,
+                OperatorCost = dto.OperatorCost,
+                Revenue = dto.Revenue,
+                SelectedVendorId = dto.SelectedVendorId,
+                SelectedVendorName = dto.SelectedVendorName,
+                SelectedFinalOffer = dto.SelectedFinalOffer,
+                Profit = dto.Profit,
+                ProfitPercent = dto.ProfitPercent,
+                Rows = dto
+                    .VendorComparisons.Select(vendor =>
+                        (
+                            vendor.VendorName,
+                            vendor.FinalOffer,
+                            vendor.Profit,
+                            vendor.ProfitPercent,
+                            vendor.IsSelected
+                        )
+                    )
+                    .ToList(),
+            };
+        }
+
+        private ProfitLossInputDto MapToDto(
+            ProfitLossInputViewModel viewModel,
+            List<string> selectedVendors
+        )
+        {
+            var withOffers = viewModel
+                .Vendors.Where(v => v.Prices != null && v.Prices.Any(p => p > 0m))
+                .Where(v => selectedVendors.Contains(v.VendorId))
+                .Select(v => new VendorOffersDto
+                {
+                    VendorId = v.VendorId,
+                    Prices = v.Prices.Where(p => p > 0m).ToList(),
+                })
+                .ToList();
+
+            return new ProfitLossInputDto
+            {
+                WorkOrderId = viewModel.WorkOrderId,
+                TarifAwal = viewModel.TarifAwal,
+                TarifAdd = viewModel.TarifAdd,
+                KmPer25 = viewModel.KmPer25,
+                SelectedVendorIds = selectedVendors,
+                Vendors = withOffers,
+            };
+        }
+
+        private async Task RepopulateVendorChoices(ProfitLossInputViewModel viewModel)
+        {
+            var vendors = await _vendorService.GetAllVendorsAsync();
+            viewModel.VendorChoices = vendors
+                .Select(v => new VendorChoiceViewModel { Id = v.VendorId, Name = v.VendorName })
+                .ToList();
+        }
+
+        private void LogModelStateErrors()
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors);
+            foreach (var error in errors)
+            {
+                _logger.LogWarning("ModelState Error: {Error}", error.ErrorMessage);
+            }
+        }
+
+        #endregion
     }
 }
