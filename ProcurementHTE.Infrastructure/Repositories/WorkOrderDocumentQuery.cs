@@ -77,7 +77,8 @@ public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
                 Uploaded = lastDoc != null,
                 WoDocumentId = lastDoc != null ? lastDoc.WoDocumentId : null,
                 FileName = lastDoc != null ? lastDoc.FileName : null,
-                Size = lastDoc != null ? lastDoc.Size : null
+                Size = lastDoc != null ? lastDoc.Size : null,
+                Status = lastDoc != null ? lastDoc.Status : null
             };
 
         _logger?.LogDebug("[ReqDocs] SQL:\n{Sql}", q.ToQueryString());

@@ -18,6 +18,8 @@ public class WoDocuments
 
     // Uploaded / Deleted / Replaced
     [Required, MaxLength(16)] public string Status { get; set; } = "Uploaded";
+    [MaxLength(512)] public string? QrText { get; set; }          // payload QR
+    [MaxLength(600)] public string? QrObjectKey { get; set; }     // path PNG QR di MinIO
 
     [MaxLength(200)] public string? Description { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

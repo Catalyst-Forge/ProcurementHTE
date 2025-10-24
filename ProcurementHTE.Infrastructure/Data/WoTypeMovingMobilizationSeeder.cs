@@ -71,10 +71,10 @@ namespace ProcurementHTE.Infrastructure.Data
                 ("Surat Perintah Mulai Pekerjaan (SPMP)",        6,  true,  false, true,  true,  "SPMP approval Manager Transport & Logistic"),
                 ("Surat Penawaran Harga",                        7,  true,  false, true,  false, "SPH upload dari HTE"),
                 ("Surat Negosiasi Harga",                        8,  true,  false, true,  false, "SNH upload dari HTE"),
-                ("Rencana Kerja dan Syarat-Syarat (RKS)",        9,  true,  true,  false, true,  "RKS generate; approval berjenjang"),
+                ("Rencana Kerja dan Syarat-Syarat (RKS)",        9,  true,  true,  true, true,  "RKS generate; approval berjenjang"),
                 ("Risk Assessment (RA)",                        10,  true,  false, true,  true,  "RA approval HSE -> AM HTE -> Manager T&L"),
-                ("Owner Estimate (OE)",                         11,  true,  true,  false, true,  "OE generate; approval berjenjang"),
-                ("Bill of Quantity (BOQ)",                      12,  true,  true,  false, false, "BOQ generate otomatis oleh sistem")
+                ("Owner Estimate (OE)",                         11,  true,  true,  true, true,  "OE generate; approval berjenjang"),
+                ("Bill of Quantity (BOQ)",                      12,  true,  true,  true, false, "BOQ generate otomatis oleh sistem")
             };
 
             // DbSet bisa bernama WoTypesDocuments (lihat log EF). Untuk aman gunakan Set<WoTypeDocuments>()

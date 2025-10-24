@@ -16,4 +16,5 @@ public class RequiredDocItemDto
     public string? WoDocumentId { get; set; }
     public string? FileName { get; set; }
     public long? Size { get; set; }
+    public string? Status { get; set; }
 }

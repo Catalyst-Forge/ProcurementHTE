@@ -1,27 +1,49 @@
 ﻿@model ProcurementHTE.Web.Models.ViewModels.WorkOrderRequiredDocsVm
 @{
     ViewData["Title"] = "Dokumen Work Order";
+
+    // Progress calculation
+    var totalDocs = Model.Items?.Count() ?? 0;
+    var uploadedDocs = Model.Items?.Count(x => x.Uploaded) ?? 0;
+    var requiredDocs = Model.Items?.Count(x => x.IsUploadRequired) ?? 0;
+    var progressPercent = requiredDocs > 0 ? (uploadedDocs * 100 / requiredDocs) : 0;
+    var canSendApproval = Model.Items?.Where(x => x.IsUploadRequired).All(x => x.Uploaded) ?? false;
 }
 
 <div class="container py-4">
+    @* Header Section *@
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h4 class="mb-1">Dokumen Work Order</h4>
-            <small class="text-muted">@ViewBag.Wonum</small>
+            <small class="text-muted">@ViewBag.WoNum</small>
         </div>
-        <a class="btn btn-outline-secondary" href="javascript:history.back()">
-            <i class="bi bi-arrow-left me-1"></i> Kembali
-        </a>
+
+        <div class="d-flex gap-2">
+            @if (canSendApproval)
+            {
+                <form asp-controller="WorkOrderDocuments" asp-action="SendApproval" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="workOrderId" value="@Model.WorkOrderId" />
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send-check me-1"></i> Send Approval
+                    </button>
+                </form>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline-secondary" disabled
+                        title="Lengkapi semua dokumen wajib terlebih dahulu">
+                    <i class="bi bi-send me-1"></i> Send Approval
+                </button>
+            }
+
+            <a class="btn btn-outline-secondary" href="javascript:history.back()">
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
     </div>
 
     @* Progress Summary Card *@
-    @{
-        var totalDocs = Model.Items?.Count() ?? 0;
-        var uploadedDocs = Model.Items?.Count(x => x.Uploaded) ?? 0;
-        var requiredDocs = Model.Items?.Count(x => x.IsUploadRequired) ?? 0;
-        var progressPercent = requiredDocs > 0 ? (uploadedDocs * 100 / requiredDocs) : 0;
-    }
-
     <div class="card mb-4 border-0 shadow-sm">
         <div class="card-body">
             <div class="row align-items-center">
@@ -52,6 +74,7 @@
         </div>
     </div>
 
+    @* Documents Table *@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -60,8 +83,8 @@
                         <tr>
                             <th style="width:48px;" class="ps-4">#</th>
                             <th>Dokumen</th>
-                            <th style="width:120px;">Status</th>
-                            <th class="text-end pe-4" style="width:420px;">Aksi</th>
+                            <th style="width:160px;">Status</th>
+                            <th class="text-end pe-4" style="width:520px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -76,142 +99,215 @@
                         }
                         else
                         {
-                            var i = 0;
-                            foreach (var it in Model.Items.OrderBy(x => x.Sequence))
+                            var rowIndex = 0;
+                            foreach (var item in Model.Items.OrderBy(x => x.Sequence))
                             {
-                                i++;
-                                <tr class="@(it.IsUploadRequired && !it.Uploaded ? "table-warning bg-opacity-10" : "")">
-                                    <td class="text-muted ps-4">@i</td>
+                                rowIndex++;
 
+                                // Status determination
+                                var status = !string.IsNullOrWhiteSpace(item.Status)
+                                ? item.Status
+                                : (item.Uploaded ? "Uploaded" : (item.IsUploadRequired ? "Required" : "Optional"));
+
+                                var isPending = string.Equals(status, "Pending Approval", StringComparison.OrdinalIgnoreCase);
+                                var isUploaded = item.Uploaded && !isPending;
+                                var rowClass = item.IsUploadRequired && !item.Uploaded ? "table-warning bg-opacity-10" : "";
+
+                                <tr class="@rowClass">
+                                    <td class="text-muted ps-4">@rowIndex</td>
+
+                                    @* Document Info *@
                                     <td>
                                         <div class="d-flex align-items-start gap-2">
-                                            @if (it.Uploaded)
+                                            @* Icon based on status *@
+                                            @if (isPending)
                                             {
-                                                <i class="bi bi-file-earmark-check-fill text-success fs-5 mt-1"></i>
+                                                <i class="bi bi-hourglass-split text-warning fs-5 mt-1" title="Pending Approval"></i>
                                             }
-                                            else if (it.IsUploadRequired)
+                                            else if (item.Uploaded)
                                             {
-                                                <i class="bi bi-file-earmark-exclamation-fill text-warning fs-5 mt-1"></i>
+                                                <i class="bi bi-file-earmark-check-fill text-success fs-5 mt-1" title="Uploaded"></i>
+                                            }
+                                            else if (item.IsUploadRequired)
+                                            {
+                                                <i class="bi bi-file-earmark-exclamation-fill text-warning fs-5 mt-1" title="Required"></i>
                                             }
                                             else
                                             {
-                                                <i class="bi bi-file-earmark text-secondary fs-5 mt-1"></i>
+                                                <i class="bi bi-file-earmark text-secondary fs-5 mt-1" title="Optional"></i>
                                             }
 
                                             <div class="flex-grow-1">
-                                                <div class="fw-semibold">@it.DocumentTypeName</div>
+                                                <div class="fw-semibold">@item.DocumentTypeName</div>
 
-                                                @if (it.Uploaded && !string.IsNullOrEmpty(it.FileName))
+                                                @if (item.Uploaded && !string.IsNullOrEmpty(item.FileName))
                                                 {
                                                     <div class="small text-muted mt-1">
-                                                        <i class="bi bi-paperclip"></i> @it.FileName
-                                                        @if (it.Size.HasValue)
+                                                        <i class="bi bi-paperclip"></i> @item.FileName
+                                                        @if (item.Size.HasValue)
                                                         {
-                                                            var sizeKB = it.Size.Value / 1024.0;
+                                                            var sizeKB = item.Size.Value / 1024.0;
                                                             var sizeMB = sizeKB / 1024.0;
                                                             var sizeStr = sizeMB >= 1 ? $"{sizeMB:F2} MB" : $"{sizeKB:F2} KB";
-                                                            <span class="text-muted">• @sizeStr</span>
+                                                            <span>• @sizeStr</span>
                                                         }
                                                     </div>
                                                 }
 
-                                                @if (!string.IsNullOrWhiteSpace(it.Note))
+                                                @if (!string.IsNullOrWhiteSpace(item.Note))
                                                 {
                                                     <div class="small text-muted mt-1">
-                                                        <i class="bi bi-info-circle"></i> @it.Note
+                                                        <i class="bi bi-info-circle"></i> @item.Note
                                                     </div>
                                                 }
                                             </div>
                                         </div>
                                     </td>
 
+                                    @* Status Badge *@
                                     <td>
-                                        @if (it.Uploaded)
+                                        @switch (status)
                                         {
-                                            <span class="badge rounded-pill bg-success">
-                                                <i class="bi bi-check-lg"></i> Uploaded
-                                            </span>
-                                        }
-                                        else if (it.IsUploadRequired)
-                                        {
-                                            <span class="badge rounded-pill bg-warning text-dark">
-                                                <i class="bi bi-exclamation-lg"></i> Required
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge rounded-pill bg-secondary">Optional</span>
+                                            case "Pending Approval":
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-split"></i> Pending
+                                                </span>
+                                                break;
+
+                                            case "Uploaded":
+                                                <span class="badge rounded-pill bg-success">
+                                                    <i class="bi bi-check-lg"></i> Uploaded
+                                                </span>
+                                                break;
+
+                                            case "Required":
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-exclamation-lg"></i> Required
+                                                </span>
+                                                break;
+
+                                            case "Optional":
+                                                <span class="badge rounded-pill bg-secondary">Optional</span>
+                                                break;
+
+                                            default:
+                                                <span class="badge rounded-pill bg-secondary">@status</span>
+                                                break;
                                         }
                                     </td>
 
+                                    @* Actions *@
                                     <td class="pe-4">
                                         <div class="d-flex gap-2 justify-content-end align-items-center flex-wrap">
 
-                                            @* === Jika sudah upload: Preview / Download / Delete === *@
-                                            @if (it.Uploaded && !string.IsNullOrEmpty(it.WoDocumentId))
+                                            @* Upload Form - Show when not uploaded and required *@
+                                            @if (!item.Uploaded && item.IsUploadRequired)
                                             {
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-secondary btn-preview"
-                                                        data-doc-id="@it.WoDocumentId"
-                                                        data-doc-name="@it.DocumentTypeName"
-                                                        data-file-name="@it.FileName"
-                                                        title="Preview dokumen">
-                                                    <i class="bi bi-eye"></i> Preview
-                                                </button>
-
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-primary btn-download"
-                                                        data-doc-id="@it.WoDocumentId"
-                                                        data-file-name="@it.FileName"
-                                                        title="Download dokumen">
-                                                    <i class="bi bi-download"></i> Download
-                                                </button>
-
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger btn-delete"
-                                                        data-doc-id="@it.WoDocumentId"
-                                                        data-doc-name="@it.DocumentTypeName"
-                                                        data-file-name="@it.FileName"
-                                                        data-work-order-id="@Model.WorkOrderId"
-                                                        title="Hapus dokumen">
-                                                    <i class="bi bi-trash"></i> Delete
-                                                </button>
-                                            }
-
-                                            @* === Jika perlu upload (atau belum ada file) === *@
-                                            @if (!it.Uploaded && it.IsUploadRequired)
-                                            {
-                                                <form class="d-inline-flex gap-2 align-items-center upload-form-@i"
+                                                <form class="d-inline-flex gap-2 align-items-center"
                                                       asp-controller="WorkOrderDocuments"
                                                       asp-action="Upload"
                                                       method="post"
                                                       enctype="multipart/form-data"
-                                                      data-row="@i">
+                                                      data-row="@rowIndex">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="WorkOrderId" value="@Model.WorkOrderId" />
-                                                    <input type="hidden" name="DocumentTypeId" value="@it.DocumentTypeId" />
+                                                    <input type="hidden" name="DocumentTypeId" value="@item.DocumentTypeId" />
 
-                                                    <label class="btn btn-sm btn-outline-secondary mb-0 file-input-label" style="cursor: pointer;">
+                                                    <label class="btn btn-sm btn-outline-secondary mb-0" style="cursor: pointer;">
                                                         <i class="bi bi-paperclip"></i> Pilih File
                                                         <input class="d-none file-input"
                                                                type="file"
                                                                name="File"
                                                                accept="application/pdf"
                                                                required
-                                                               data-row="@i" />
+                                                               data-row="@rowIndex" />
                                                     </label>
 
-                                                    <span class="small text-muted file-name" data-row="@i">Belum ada file</span>
+                                                    <span class="small text-muted file-name" data-row="@rowIndex">
+                                                        Belum ada file
+                                                    </span>
 
-                                                    <button class="btn btn-sm btn-primary upload-btn" type="submit" disabled data-row="@i">
+                                                    <button class="btn btn-sm btn-primary upload-btn"
+                                                            type="submit"
+                                                            disabled
+                                                            data-row="@rowIndex">
                                                         <i class="bi bi-upload"></i> Upload
                                                     </button>
                                                 </form>
                                             }
 
-                                            @if (!it.Uploaded && !it.IsUploadRequired)
+                                            @* Preview/Download/Delete - Show when uploaded and not pending *@
+                                            @if (isUploaded && !string.IsNullOrEmpty(item.WoDocumentId))
                                             {
-                                                <span class="text-muted small fst-italic">Tidak ada aksi</span>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-secondary btn-preview"
+                                                        data-doc-id="@item.WoDocumentId"
+                                                        data-doc-name="@item.DocumentTypeName"
+                                                        data-file-name="@item.FileName">
+                                                    <i class="bi bi-eye"></i> Preview
+                                                </button>
+
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary btn-download"
+                                                        data-doc-id="@item.WoDocumentId"
+                                                        data-file-name="@item.FileName">
+                                                    <i class="bi bi-download"></i> Download
+                                                </button>
+
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger btn-delete"
+                                                        data-doc-id="@item.WoDocumentId"
+                                                        data-doc-name="@item.DocumentTypeName"
+                                                        data-file-name="@item.FileName"
+                                                        data-work-order-id="@Model.WorkOrderId">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            }
+
+                                            @* Pending Actions - Show when pending approval *@
+                                            @if (isPending && !string.IsNullOrEmpty(item.WoDocumentId))
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-secondary btn-preview"
+                                                        data-doc-id="@item.WoDocumentId"
+                                                        data-doc-name="@item.DocumentTypeName"
+                                                        data-file-name="@item.FileName">
+                                                    <i class="bi bi-eye"></i> Preview
+                                                </button>
+
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary btn-download"
+                                                        data-doc-id="@item.WoDocumentId"
+                                                        data-file-name="@item.FileName">
+                                                    <i class="bi bi-download"></i> Download
+                                                </button>
+
+                                                <div class="btn-group" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-success btn-show-qr"
+                                                            data-doc-id="@item.WoDocumentId"
+                                                            title="Tampilkan QR Code">
+                                                        <i class="bi bi-qr-code"></i>
+                                                    </button>
+                                                    <a class="btn btn-sm btn-outline-success"
+                                                       asp-controller="WorkOrderDocuments"
+                                                       asp-action="DownloadQr"
+                                                       asp-route-id="@item.WoDocumentId"
+                                                       title="Download QR PNG">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-success btn-print-qr"
+                                                            title="Print QR Code">
+                                                        <i class="bi bi-printer"></i>
+                                                    </button>
+                                                </div>
+                                            }
+
+                                            @* No Actions - Optional and not uploaded *@
+                                            @if (!item.Uploaded && !item.IsUploadRequired)
+                                            {
+                                                <span class="text-muted small fst-italic">—</span>
                                             }
                                         </div>
                                     </td>
@@ -262,81 +358,98 @@
     </div>
 </div>
 
-@* Hidden form for delete action *@
+@* QR Code Modal *@
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="qrImg" src="" class="img-fluid border rounded mb-3" alt="QR Code">
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <a id="btnDownloadQr" class="btn btn-outline-primary" download>
+                    <i class="bi bi-download"></i> Download
+                </a>
+                <button type="button" class="btn btn-outline-secondary" id="btnPrintQr">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Hidden Delete Form *@
 <form id="deleteForm" method="post" asp-controller="WorkOrderDocuments" asp-action="Delete" style="display: none;">
     @Html.AntiForgeryToken()
     <input type="hidden" name="id" id="deleteDocId" />
     <input type="hidden" name="workOrderId" id="deleteWorkOrderId" />
 </form>
 
-@* SweetAlert2 CDN *@
+@* Scripts *@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    // Global variables
     let currentPreviewUrl = null;
     let currentDownloadDocId = null;
+    let currentQrImageSrc = null;
+
+    // Utility function for showing toast notifications
+    function showToast(icon, title, text = '', timer = 4000) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: icon,
+            title: title,
+            text: text,
+            showConfirmButton: false,
+            timer: timer,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Show success/error notifications using SweetAlert2
+        // Show server-side notifications
         @if (TempData["success"] is string successMsg)
         {
-                <text>
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: '@Html.Raw(System.Text.Json.JsonEncodedText.Encode(successMsg))',
-                    showConfirmButton: false,
-                    timer: 4000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.addEventListener('mouseenter', Swal.stopTimer)
-                        toast.addEventListener('mouseleave', Swal.resumeTimer)
-                    }
-                });
-                </text>
+                <text>showToast('success', 'Berhasil!', '@Html.Raw(System.Text.Json.JsonEncodedText.Encode(successMsg))');</text>
         }
-
         @if (TempData["error"] is string errorMsg)
         {
-                <text>
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'error',
-                    title: 'Error!',
-                    text: '@Html.Raw(System.Text.Json.JsonEncodedText.Encode(errorMsg))',
-                    showConfirmButton: false,
-                    timer: 5000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.addEventListener('mouseenter', Swal.stopTimer)
-                        toast.addEventListener('mouseleave', Swal.resumeTimer)
-                    }
-                });
-                </text>
+                <text>showToast('error', 'Error!', '@Html.Raw(System.Text.Json.JsonEncodedText.Encode(errorMsg))', 5000);</text>
         }
 
-        // Preview button handler
-        document.querySelectorAll('.btn-preview').forEach(function(btn) {
+        // Initialize event handlers
+        initPreviewHandlers();
+        initDownloadHandlers();
+        initDeleteHandlers();
+        initFileInputHandlers();
+        initUploadFormHandlers();
+        initQrHandlers();
+    });
+
+    // Preview button handlers
+    function initPreviewHandlers() {
+        document.querySelectorAll('.btn-preview').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const docId = this.dataset.docId;
                 const docName = this.dataset.docName;
                 const fileName = this.dataset.fileName;
 
-                // Set modal title
                 document.getElementById('previewModalTitle').textContent = docName;
                 document.getElementById('previewFileName').textContent = fileName;
-
-                // Store current doc ID for download button
                 currentDownloadDocId = docId;
 
-                // Show modal
                 const modal = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
                 modal.show();
 
-                // Reset iframe and show loading
                 const iframe = document.getElementById('pdfPreviewFrame');
                 const loadingContainer = document.getElementById('pdfLoadingContainer');
                 const errorContainer = document.getElementById('pdfErrorContainer');
@@ -347,7 +460,6 @@
                 errorContainer.classList.add('d-none');
 
                 try {
-                    // Fetch preview URL from API
                     const response = await fetch(`/WorkOrderDocuments/PreviewUrl/${docId}?workOrderId=@Model.WorkOrderId`);
                     const data = await response.json();
 
@@ -355,14 +467,12 @@
                         currentPreviewUrl = data.url;
                         iframe.src = data.url;
 
-                        // Wait for iframe to load
-                        iframe.onload = function() {
+                        iframe.onload = () => {
                             loadingContainer.classList.add('d-none');
                             iframe.style.display = 'block';
                         };
 
-                        // Handle iframe load error
-                        iframe.onerror = function() {
+                        iframe.onerror = () => {
                             loadingContainer.classList.add('d-none');
                             errorContainer.classList.remove('d-none');
                         };
@@ -373,43 +483,31 @@
                     console.error('Preview error:', error);
                     loadingContainer.classList.add('d-none');
                     errorContainer.classList.remove('d-none');
-
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'error',
-                        title: 'Gagal memuat preview',
-                        text: error.message,
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
+                    showToast('error', 'Gagal memuat preview', error.message, 3000);
                 }
             });
         });
 
-        // Download button handler (direct download)
-        document.querySelectorAll('.btn-download').forEach(function(btn) {
+        // Download from preview modal
+        document.getElementById('downloadFromPreview')?.addEventListener('click', function() {
+            if (currentDownloadDocId) {
+                const downloadBtn = document.querySelector(`.btn-download[data-doc-id="${currentDownloadDocId}"]`);
+                downloadBtn?.click();
+            }
+        });
+    }
+
+    // Download button handlers
+    function initDownloadHandlers() {
+        document.querySelectorAll('.btn-download').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const docId = this.dataset.docId;
                 const fileName = this.dataset.fileName;
 
-                // Show loading toast
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'info',
-                    title: 'Memproses download...',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true
-                });
+                showToast('info', 'Memproses download...', '', 2000);
 
                 try {
-                    // Get download URL
                     const downloadUrl = `/WorkOrderDocuments/Download/${docId}?workOrderId=@Model.WorkOrderId`;
-
-                    // Create temporary link and trigger download
                     const link = document.createElement('a');
                     link.href = downloadUrl;
                     link.download = fileName;
@@ -417,113 +515,20 @@
                     link.click();
                     document.body.removeChild(link);
 
-                    // Show success toast
                     setTimeout(() => {
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'success',
-                            title: 'Download dimulai',
-                            text: fileName,
-                            showConfirmButton: false,
-                            timer: 3000,
-                            timerProgressBar: true
-                        });
+                        showToast('success', 'Download dimulai', fileName, 3000);
                     }, 500);
                 } catch (error) {
                     console.error('Download error:', error);
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'error',
-                        title: 'Gagal mendownload',
-                        text: error.message,
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
+                    showToast('error', 'Gagal mendownload', error.message, 3000);
                 }
             });
         });
+    }
 
-        // Download from preview modal
-        document.getElementById('downloadFromPreview').addEventListener('click', function() {
-            if (currentDownloadDocId) {
-                const downloadBtn = document.querySelector(`.btn-download[data-doc-id="${currentDownloadDocId}"]`);
-                if (downloadBtn) {
-                    downloadBtn.click();
-                }
-            }
-        });
-
-        // File input handling
-        document.querySelectorAll('.file-input').forEach(function(input) {
-            input.addEventListener('change', function(e) {
-                const row = this.dataset.row;
-                const fileName = this.files.length > 0 ? this.files[0].name : 'Belum ada file';
-                const fileNameSpan = document.querySelector(`.file-name[data-row="${row}"]`);
-                const uploadBtn = document.querySelector(`.upload-btn[data-row="${row}"]`);
-
-                if (fileNameSpan) {
-                    fileNameSpan.textContent = fileName;
-                    fileNameSpan.classList.toggle('text-muted', this.files.length === 0);
-                    fileNameSpan.classList.toggle('text-dark', this.files.length > 0);
-                }
-
-                if (uploadBtn) {
-                    uploadBtn.disabled = this.files.length === 0;
-                }
-
-                // Validate file size (max 10MB)
-                if (this.files.length > 0) {
-                    const file = this.files[0];
-                    const maxSize = 10 * 1024 * 1024; // 10MB
-
-                    if (file.size > maxSize) {
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'warning',
-                            title: 'File terlalu besar!',
-                            text: 'Ukuran file maksimal 10MB',
-                            showConfirmButton: false,
-                            timer: 3000,
-                            timerProgressBar: true
-                        });
-                        this.value = '';
-                        fileNameSpan.textContent = 'Belum ada file';
-                        fileNameSpan.classList.add('text-muted');
-                        fileNameSpan.classList.remove('text-dark');
-                        uploadBtn.disabled = true;
-                    }
-                }
-            });
-        });
-
-        // Add loading state to upload forms
-        document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function(form) {
-            form.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
-
-                    // Show loading toast
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'info',
-                        title: 'Mengupload dokumen...',
-                        showConfirmButton: false,
-                        timer: 2000,
-                        timerProgressBar: true
-                    });
-                }
-            });
-        });
-
-        // Delete button handler with SweetAlert2
-        document.querySelectorAll('.btn-delete').forEach(function(btn) {
+    // Delete button handlers
+    function initDeleteHandlers() {
+        document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
 
@@ -553,7 +558,6 @@
                     focusCancel: true
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // Set form values and submit
                         document.getElementById('deleteDocId').value = docId;
                         document.getElementById('deleteWorkOrderId').value = workOrderId;
                         document.getElementById('deleteForm').submit();
@@ -561,24 +565,154 @@
                 });
             });
         });
-    });
+    }
+
+    // File input handlers
+    function initFileInputHandlers() {
+        document.querySelectorAll('.file-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const row = this.dataset.row;
+                const file = this.files[0];
+                const fileName = file ? file.name : 'Belum ada file';
+                const fileNameSpan = document.querySelector(`.file-name[data-row="${row}"]`);
+                const uploadBtn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+
+                if (fileNameSpan) {
+                    fileNameSpan.textContent = fileName;
+                    fileNameSpan.classList.toggle('text-muted', !file);
+                    fileNameSpan.classList.toggle('text-dark', !!file);
+                }
+
+                if (uploadBtn) {
+                    uploadBtn.disabled = !file;
+                }
+
+                // Validate file size (max 10MB)
+                if (file) {
+                    const maxSize = 10 * 1024 * 1024; // 10MB
+                    if (file.size > maxSize) {
+                        showToast('warning', 'File terlalu besar!', 'Ukuran file maksimal 10MB', 3000);
+                        this.value = '';
+                        if (fileNameSpan) {
+                            fileNameSpan.textContent = 'Belum ada file';
+                            fileNameSpan.classList.add('text-muted');
+                            fileNameSpan.classList.remove('text-dark');
+                        }
+                        if (uploadBtn) {
+                            uploadBtn.disabled = true;
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // Upload form handlers
+    function initUploadFormHandlers() {
+        document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(form => {
+            form.addEventListener('submit', function() {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
+                    showToast('info', 'Mengupload dokumen...', '', 2000);
+                }
+            });
+        });
+    }
+
+    // QR Code handlers
+    function initQrHandlers() {
+        // Show QR button
+        document.querySelectorAll('.btn-show-qr').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const docId = this.dataset.docId;
+                await showQrCode(docId);
+            });
+        });
+
+        // Print QR button
+        document.getElementById('btnPrintQr')?.addEventListener('click', printQrCode);
+    }
+
+    // Show QR Code in modal
+    async function showQrCode(docId) {
+        try {
+            const response = await fetch(`/WorkOrderDocuments/QrUrl/${docId}`);
+            const data = await response.json();
+
+            if (!data.ok || !data.url) {
+                throw new Error(data.error || 'Gagal membangun URL QR');
+            }
+
+            currentQrImageSrc = data.url;
+            document.getElementById('qrImg').src = data.url;
+            document.getElementById('btnDownloadQr').href = `/WorkOrderDocuments/DownloadQr/${docId}`;
+
+            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+            modal.show();
+        } catch (error) {
+            console.error('QR error:', error);
+            showToast('error', 'Gagal memuat QR', error.message, 3000);
+        }
+    }
+    // GANTI fungsi lama dengan ini
+    function printQrCode() {
+        if (!currentQrImageSrc) return;
+
+        const w = window.open('', '_blank', 'width=600,height=600');
+        const doc = w.document;
+
+        // Bersihkan dokumen lalu susun via DOM API (tanpa template literal/quote panjang)
+        doc.title = 'Print QR Code';
+
+        // Pastikan <head> ada
+        if (!doc.head) doc.documentElement.appendChild(doc.createElement('head'));
+        const style = doc.createElement('style');
+        style.textContent = `
+            html,body{height:100%;margin:0}
+            body{display:flex;align-items:center;justify-content:center}
+            img{max-width:90%;max-height:90%}
+        `;
+        doc.head.appendChild(style);
+
+        // Isi body dengan <img>
+        doc.body.innerHTML = '';
+        const img = doc.createElement('img');
+        img.id = 'qrToPrint';
+        img.alt = 'QR Code';
+        img.src = currentQrImageSrc;
+        doc.body.appendChild(img);
+
+        img.onload = function () {
+            w.focus();
+            w.print();
+            // w.close(); // aktifkan jika ingin menutup otomatis
+        };
+    }
 </script>
+
 
 <style>
     .table > tbody > tr:hover {
         background-color: rgba(0, 0, 0, 0.02);
     }
 
-    .file-input-label:hover {
-        background-color: var(--bs-secondary-bg);
-    }
-
     .card {
-        transition: box-shadow 0.2s;
+        transition: box-shadow 0.2s ease;
     }
 
     .modal-xl {
-        max-width: 90%;
+        max-width: 95%;
+    }
+
+    .btn-sm {
+        font-size: 0.8125rem;
+        padding: 0.25rem 0.625rem;
+    }
+
+    .file-input + label {
+        transition: background-color 0.15s ease-in-out;
     }
 
     .btn-sm {
@@ -587,8 +721,53 @@
     }
 
     .modal-xl {
-        max-width: 95%;
+        max-width: 98%;
     }
 
+    .d-flex.gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    }
+
+    /* Loading spinner animation */
+    .spinner-border-sm {
+        width: 0.875rem;
+        height: 0.875rem;
+        border-width: 0.125em;
+    }
+
+    /* Badge animations */
+    .badge {
+        transition: all 0.2s ease;
+    }
+
+        .badge:hover {
+            transform: translateY(-1px);
+        }
+
+    /* Button hover effects */
+    .btn-outline-secondary:hover,
+    .btn-outline-primary:hover,
+    .btn-outline-danger:hover,
+    .btn-outline-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* QR Modal image */
+    #qrImg {
+        max-width: 100%;
+        height: auto;
+        transition: transform 0.2s ease;
+    }
+
+        #qrImg:hover {
+            transform: scale(1.02);
+        }
+
+    /* Progress bar animation */
+    .progress-bar {
+        transition: width 0.6s ease;
     }
 </style>

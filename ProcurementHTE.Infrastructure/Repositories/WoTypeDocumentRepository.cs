@@ -34,5 +34,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     x.WoTypeId == woTypeId &&
                     x.DocumentTypeId == documentTypeId);
         }
+
+        public async Task<IReadOnlyList<WoTypeDocuments>> ListByWoTypeAsync(string woTypeId)
+        {
+            return await _context.WoTypesDocuments
+                .AsNoTracking()
+                .Include(x => x.DocumentType) // supaya tersedia DocumentType.Name saat diproyeksikan
+                .Where(x => x.WoTypeId == woTypeId)
+                .OrderBy(x => x.Sequence)
+                .ToListAsync();
+        }
     }
 }

@@ -13,4 +13,7 @@ public interface IWoDocumentService
     Task<UploadWoDocumentResult> UploadAsync(UploadWoDocumentRequest request, CancellationToken ct = default);
     Task<string> GetPresignedDownloadUrlAsync(string woDocumentId, TimeSpan ttl, CancellationToken ct = default);
     Task<string> GetPresignedPreviewUrlAsync(string id, TimeSpan expiry, CancellationToken ct = default);
+    Task<bool> CanSendApprovalAsync(string workOrderId);
+    Task SendApprovalAsync(string workOrderId, string requestedByUserId, CancellationToken ct = default);
+    Task<string?> GetPresignedQrUrlAsync(string woDocumentId, TimeSpan expiry, CancellationToken ct = default);
 }

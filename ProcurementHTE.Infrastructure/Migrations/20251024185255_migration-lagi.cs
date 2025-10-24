@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Fix_WoDoc_Approval_ModelAndRelations : Migration
+    public partial class migrationlagi : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -73,6 +73,20 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProfitLossSelectedVendors",
+                columns: table => new
+                {
+                    ProfitLossSelectedVendorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkOrderId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VendorId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfitLossSelectedVendors", x => x.ProfitLossSelectedVendorId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Statuses",
                 columns: table => new
                 {
@@ -113,10 +127,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     Province = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PostalCode = table.Column<int>(type: "int", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ContactPerson = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ContactPosition = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Comment = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -279,7 +289,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Note = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     ProcurementType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    WoLetter = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    WoNumLetter = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateLetter = table.Column<DateTime>(type: "datetime2", nullable: true),
                     FromLocation = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Destination = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -297,7 +307,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     WoTypeId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     StatusId = table.Column<int>(type: "int", nullable: true),
-                    VendorId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
@@ -314,12 +323,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         column: x => x.StatusId,
                         principalTable: "Statuses",
                         principalColumn: "StatusId");
-                    table.ForeignKey(
-                        name: "FK_WorkOrders_Vendors_VendorId",
-                        column: x => x.VendorId,
-                        principalTable: "Vendors",
-                        principalColumn: "VendorId",
-                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_WorkOrders_WoTypes_WoTypeId",
                         column: x => x.WoTypeId,
@@ -359,18 +362,47 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProfitLosses",
+                columns: table => new
+                {
+                    ProfitLossId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TarifAwal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TarifAdd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    KmPer25 = table.Column<int>(type: "int", nullable: false),
+                    OperatorCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Revenue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SelectedVendorFinalOffer = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Profit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ProfitPercent = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    SelectedVendorId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfitLosses", x => x.ProfitLossId);
+                    table.ForeignKey(
+                        name: "FK_ProfitLosses_Vendors_SelectedVendorId",
+                        column: x => x.SelectedVendorId,
+                        principalTable: "Vendors",
+                        principalColumn: "VendorId");
+                    table.ForeignKey(
+                        name: "FK_ProfitLosses_WorkOrders_WorkOrderId",
+                        column: x => x.WorkOrderId,
+                        principalTable: "WorkOrders",
+                        principalColumn: "WorkOrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "VendorOffers",
                 columns: table => new
                 {
                     VendorOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ItemName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Trip = table.Column<int>(type: "int", nullable: true),
-                    Unit = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    OfferNumber = table.Column<int>(type: "int", nullable: false),
-                    OfferPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    OfferDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Round = table.Column<int>(type: "int", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     VendorId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -422,6 +454,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     ContentType = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Size = table.Column<long>(type: "bigint", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "Uploaded"),
+                    QrText = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    QrObjectKey = table.Column<string>(type: "nvarchar(600)", maxLength: 600, nullable: true),
                     Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedByUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
@@ -468,45 +502,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         column: x => x.WoTypeDocumentId,
                         principalTable: "WoTypesDocuments",
                         principalColumn: "WoTypeDocumentId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProfitLosses",
-                columns: table => new
-                {
-                    ProfitLossId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Revenue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    CostOperator = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Profit = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    ProfitPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    HargaPenawaran1 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    HargaPenawaran2 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    HargaPenawaran3 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    BestOfferPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    AdjustmentRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    AdjustedProfit = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    PotentialNewProfit = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    ProfitRevenue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    SelectedVendorOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProfitLosses", x => x.ProfitLossId);
-                    table.ForeignKey(
-                        name: "FK_ProfitLosses_VendorOffers_SelectedVendorOfferId",
-                        column: x => x.SelectedVendorOfferId,
-                        principalTable: "VendorOffers",
-                        principalColumn: "VendorOfferId",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProfitLosses_WorkOrders_WorkOrderId",
-                        column: x => x.WorkOrderId,
-                        principalTable: "WorkOrders",
-                        principalColumn: "WorkOrderId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -601,9 +596,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "WoTypeDocumentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProfitLosses_SelectedVendorOfferId",
+                name: "IX_ProfitLosses_SelectedVendorId",
                 table: "ProfitLosses",
-                column: "SelectedVendorOfferId");
+                column: "SelectedVendorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProfitLosses_WorkOrderId",
@@ -681,11 +676,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 .Annotation("SqlServer:Include", new[] { "WoNum", "Description", "StatusId" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkOrders_VendorId",
-                table: "WorkOrders",
-                column: "VendorId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_WorkOrders_WoTypeId",
                 table: "WorkOrders",
                 column: "WoTypeId");
@@ -726,10 +716,16 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "ProfitLosses");
 
             migrationBuilder.DropTable(
+                name: "ProfitLossSelectedVendors");
+
+            migrationBuilder.DropTable(
                 name: "Tenders");
 
             migrationBuilder.DropTable(
                 name: "UserRole");
+
+            migrationBuilder.DropTable(
+                name: "VendorOffers");
 
             migrationBuilder.DropTable(
                 name: "WoDetails");
@@ -741,7 +737,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "WoTypesDocuments");
 
             migrationBuilder.DropTable(
-                name: "VendorOffers");
+                name: "Vendors");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -760,9 +756,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Statuses");
-
-            migrationBuilder.DropTable(
-                name: "Vendors");
 
             migrationBuilder.DropTable(
                 name: "WoTypes");

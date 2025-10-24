@@ -5,6 +5,9 @@ using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
+using QRCoder;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace ProcurementHTE.Core.Services;
 
@@ -219,6 +222,85 @@ public class WoDocumentService(
 
         var url = await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, expiry);
         return url;
+    }
+
+    public async Task<bool> CanSendApprovalAsync(string workOrderId)
+    {
+        // 1) Ambil WO
+        var wo = await _woRepo.GetByIdAsync(workOrderId)
+            ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
+
+        if (string.IsNullOrWhiteSpace(wo.WoTypeId))
+            throw new InvalidOperationException("Work Order belum memiliki WoType.");
+
+        // 2) Ambil semua konfigurasi dokumen untuk WoType tsb, lalu filter yang wajib upload
+        var requiredDocTypeIds = (await _wtdRepo.ListByWoTypeAsync(wo.WoTypeId))
+            .Where(x => x.IsUploadRequired)
+            .Select(x => x.DocumentTypeId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (requiredDocTypeIds.Count == 0)
+            return false; // tidak ada yang wajib => tidak perlu send approval
+
+        // 3) Ambil semua dokumen yang sudah ter-upload untuk WO ini (abaikan yang Deleted)
+        var uploaded = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
+        var uploadedDocTypeIds = uploaded
+            .Where(d => !string.Equals(d.Status, "Deleted", StringComparison.OrdinalIgnoreCase))
+            .Select(d => d.DocumentTypeId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // 4) Valid: semua doc type yang wajib sudah ada di uploaded?
+        return requiredDocTypeIds.IsSubsetOf(uploadedDocTypeIds);
+    }
+
+
+    public async Task SendApprovalAsync(string workOrderId, string requestedByUserId, CancellationToken ct = default)
+    {
+        if (!await CanSendApprovalAsync(workOrderId))
+            throw new InvalidOperationException("Dokumen wajib belum lengkap.");
+
+        var wo = await _woRepo.GetByIdAsync(workOrderId)
+            ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
+
+        // Ambil semua dokumen terakhir per DocumentType utk WO ini
+        var docs = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
+
+        var now = DateTime.UtcNow;
+        foreach (var doc in docs.Where(d => d.Status != "Deleted"))
+        {
+            // 1) Generate payload & gambar QR (PNG) per dokumen
+            var payload = $"WO={wo.WoNum};DocType={doc.DocumentTypeId};DocId={doc.WoDocumentId};ts={now:o}";
+            using var qrGen = new QRCodeGenerator();
+            using var data = qrGen.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
+            using var qr = new QRCode(data);
+            using var bmp = qr.GetGraphic(10);
+            await using var ms = new MemoryStream();
+            bmp.Save(ms, ImageFormat.Png);
+            ms.Position = 0;
+
+            // 2) Upload PNG ke MinIO (pakai folder yg sama dgn file dokumennya)
+            var qrKey = doc.ObjectKey.Replace(".pdf", "") + "_QR.png";
+            await _storage.UploadAsync(_opts.Bucket, qrKey, ms, ms.Length, "image/png", ct);
+
+            // 3) Update metadata dokumen
+            doc.QrText = payload;
+            doc.QrObjectKey = qrKey;
+            doc.Status = "Pending Approval"; // status transisi
+            await _woDocRepo.UpdateAsync(doc);
+        }
+
+        await _woDocRepo.SaveAsync();
+    }
+
+    public async Task<string?> GetPresignedQrUrlAsync(string woDocumentId, TimeSpan expiry, CancellationToken ct = default)
+    {
+        var doc = await _repo.GetByIdAsync(woDocumentId);
+        if (doc == null || string.IsNullOrWhiteSpace(doc.QrObjectKey)) return null;
+
+        if (expiry <= TimeSpan.Zero)
+            expiry = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
+
+        return await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.QrObjectKey, expiry, ct);
     }
 
 

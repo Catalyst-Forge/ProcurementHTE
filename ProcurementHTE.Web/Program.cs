@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddApplicationServices(builder.Configuration);
-
+builder.Services.AddHttpClient("MinioProxy");
 var app = builder.Build();
 
 
