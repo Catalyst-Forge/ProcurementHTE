@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using ProcurementHTE.Core.Options;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Storage;
 using ProcurementHTE.Web.Extensions;

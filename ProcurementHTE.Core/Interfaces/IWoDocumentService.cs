@@ -12,4 +12,5 @@ public interface IWoDocumentService
     Task<IReadOnlyList<WoDocuments>> ListByWorkOrderAsync(string workOrderId);
     Task<UploadWoDocumentResult> UploadAsync(UploadWoDocumentRequest request, CancellationToken ct = default);
     Task<string> GetPresignedDownloadUrlAsync(string woDocumentId, TimeSpan ttl, CancellationToken ct = default);
+    Task<string> GetPresignedPreviewUrlAsync(string id, TimeSpan expiry, CancellationToken ct = default);
 }

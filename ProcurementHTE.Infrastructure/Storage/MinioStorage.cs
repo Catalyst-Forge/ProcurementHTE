@@ -1,33 +1,53 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;
 using ProcurementHTE.Core.Interfaces;
-using ProcurementHTE.Core.Options;
-using ProcurementHTE.Infrastructure.Storage;
 
 namespace ProcurementHTE.Infrastructure.Storage
 {
     public class MinioStorage : IObjectStorage
     {
-        private readonly IMinioClient _client;   // ⬅️ IMinioClient (bukan MinioClient)
+        private readonly IMinioClient _client;
         private readonly ObjectStorageOptions _options;
 
         public MinioStorage(IOptions<ObjectStorageOptions> options)
         {
-            _options = options.Value;
+            _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
 
-            Console.WriteLine($"[MinIO cfg] Endpoint={_options.Endpoint}, SSL={_options.UseSSL}, Bucket={_options.Bucket}, AccessKey={_options.AccessKey}");
+            if (string.IsNullOrWhiteSpace(_options.Endpoint))
+                throw new ArgumentException("MinIO endpoint is required (Minio:Endpoint).");
 
-            _client = new MinioClient()
-                .WithEndpoint(_options.Endpoint)
-                .WithCredentials(_options.AccessKey, _options.SecretKey)
-                .WithSSL(_options.UseSSL)
-                .Build(); 
+            if (string.IsNullOrWhiteSpace(_options.AccessKey))
+                throw new ArgumentException("MinIO access key is required (Minio:AccessKey).");
+
+            if (string.IsNullOrWhiteSpace(_options.SecretKey))
+                throw new ArgumentException("MinIO secret key is required (Minio:SecretKey).");
+
+            // --- Sanitize endpoint: buang skema & trailing slash ---
+            var endpoint = _options.Endpoint.Trim().TrimEnd('/');
+            var schemeIdx = endpoint.IndexOf("://", StringComparison.Ordinal);
+            if (schemeIdx >= 0)
+                endpoint = endpoint[(schemeIdx + 3)..]; // potong "http(s)://"
+
+            // --- Log untuk verifikasi (tanpa menampilkan secret) ---
+            Console.WriteLine($"[MinIO cfg] Endpoint={endpoint}, SSL={_options.UseSSL}, Bucket={_options.Bucket}");
+
+            var client = new MinioClient()
+                .WithEndpoint(endpoint)
+                .WithCredentials(_options.AccessKey, _options.SecretKey);
+
+            if (_options.UseSSL)
+                client = client.WithSSL(); // aktifkan https
+
+            _client = client.Build();
         }
 
         public Task DeleteAsync(string bucket, string objectKey, CancellationToken ct = default) =>
-            _client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(bucket).WithObject(objectKey), ct);
+            _client.RemoveObjectAsync(
+                new RemoveObjectArgs()
+                    .WithBucket(bucket)
+                    .WithObject(objectKey),
+                ct);
 
         public async Task UploadAsync(string bucket, string objectKey, Stream content, long size, string contentType, CancellationToken ct = default)
         {
@@ -38,15 +58,14 @@ namespace ProcurementHTE.Infrastructure.Storage
                     .WithStreamData(content)
                     .WithObjectSize(size)
                     .WithContentType(contentType),
-                ct
-            );
+                ct);
         }
 
-
         public Task<string> GetPresignedUrlAsync(string bucket, string objectKey, TimeSpan expiry, CancellationToken ct = default) =>
-            _client.PresignedGetObjectAsync(new PresignedGetObjectArgs()
-                .WithBucket(bucket)
-                .WithObject(objectKey)
-                .WithExpiry((int)expiry.TotalSeconds));
+            _client.PresignedGetObjectAsync(
+                new PresignedGetObjectArgs()
+                    .WithBucket(bucket)
+                    .WithObject(objectKey)
+                    .WithExpiry((int)expiry.TotalSeconds));
     }
 }

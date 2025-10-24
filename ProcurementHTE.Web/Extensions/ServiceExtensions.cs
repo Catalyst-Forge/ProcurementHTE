@@ -6,7 +6,6 @@ using ProcurementHTE.Core.Authorization.Handlers;
 using ProcurementHTE.Core.Authorization.Requirements;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Core.Options;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Repositories;
@@ -93,7 +92,7 @@ namespace ProcurementHTE.Web.Extensions
 
             // ------------- Options Binding -------------
             // MinIO options (Infrastructure)
-            services.Configure<ObjectStorageOptions>(configuration.GetSection("ObjectStorage"));
+            services.Configure<ObjectStorageOptions>(configuration.GetSection("Minio"));
 
 
             // ------------- Storage (MinIO) -------------

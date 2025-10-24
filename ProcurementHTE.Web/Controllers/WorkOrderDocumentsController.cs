@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Client.Extensions.Msal;
 using ProcurementHTE.Core.Interfaces;
-using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Core.Services;
 using ProcurementHTE.Web.Models.ViewModels;
-
 
 namespace ProcurementHTE.Web.Controllers;
 
@@ -16,16 +12,18 @@ public class WorkOrderDocumentsController : Controller
     private readonly IWorkOrderDocumentQuery _query;
     private readonly IWoDocumentService _docSvc;
     private readonly ILogger<WorkOrderDocumentsController> _logger;
-
+    private readonly IWorkOrderService _woService;
 
     public WorkOrderDocumentsController(
-        IWorkOrderDocumentQuery query, 
+        IWorkOrderDocumentQuery query,
+        IWorkOrderService woService,
         IWoDocumentService docSvc,
         ILogger<WorkOrderDocumentsController> logger)
     {
         _query = query;
         _docSvc = docSvc;
         _logger = logger;
+        _woService = woService;
     }
 
     // GET: /WorkOrderDocuments/Index/{workOrderId}
@@ -47,14 +45,13 @@ public class WorkOrderDocumentsController : Controller
                 return NotFound("Work Order tidak ditemukan.");
             }
 
-            _logger.LogInformation("[WODocs] VM Items Count: {Count} (WO={WO}, WoTypeId={Type})",
-                dto.Items.Count, dto.WorkOrderId, dto.WoTypeId);
-
+            var wonum = await _woService.GetWorkOrderByIdAsync(workOrderId);
+            ViewBag.WoNum = wonum?.WoNum ?? "-";  
             var vm = new WorkOrderRequiredDocsVm
             {
                 WorkOrderId = dto.WorkOrderId,
                 WoTypeId = dto.WoTypeId,
-                Items = dto.Items.Select(x => new RequiredDocItemDto
+                Items = [.. dto.Items.Select(x => new RequiredDocItemDto
                 {
                     WoTypeDocumentId = x.WoTypeDocumentId,
                     Sequence = x.Sequence,
@@ -69,7 +66,7 @@ public class WorkOrderDocumentsController : Controller
                     WoDocumentId = x.WoDocumentId,
                     FileName = x.FileName,
                     Size = x.Size
-                }).ToList()
+                })]
             };
 
             return View(vm);
@@ -88,11 +85,20 @@ public class WorkOrderDocumentsController : Controller
     [RequestSizeLimit(25L * 1024 * 1024)]
     public async Task<IActionResult> Upload(string WorkOrderId, string DocumentTypeId, IFormFile File, string? Description)
     {
+        if (string.IsNullOrWhiteSpace(WorkOrderId) || string.IsNullOrWhiteSpace(DocumentTypeId))
+        {
+            TempData["error"] = "Parameter tidak lengkap.";
+            return RedirectToAction(nameof(Index), new { workOrderId = WorkOrderId });
+        }
+
         if (File is null || File.Length == 0)
         {
             TempData["error"] = "File belum dipilih.";
             return RedirectToAction(nameof(Index), new { workOrderId = WorkOrderId });
         }
+
+        // opsional: enforce PDF
+        var contentType = (File.ContentType ?? "").ToLowerInvariant();
 
         try
         {
@@ -104,9 +110,10 @@ public class WorkOrderDocumentsController : Controller
                 Content = stream,
                 Size = File.Length,
                 FileName = File.FileName,
-                ContentType = string.IsNullOrWhiteSpace(File.ContentType) ? "application/octet-stream" : File.ContentType,
+                ContentType = contentType,
                 Description = Description,
-                UploadedByUserId = User?.Identity?.Name
+                UploadedByUserId = User?.Identity?.Name,
+                NowUtc = DateTime.UtcNow
             };
 
             var result = await _docSvc.UploadAsync(req, HttpContext.RequestAborted);
@@ -121,8 +128,9 @@ public class WorkOrderDocumentsController : Controller
         return RedirectToAction(nameof(Index), new { workOrderId = WorkOrderId });
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Download(string id)
+    // GET: /WorkOrderDocuments/Download/{id}?workOrderId=WO123
+    [HttpGet("WorkOrderDocuments/Download/{id}")]
+    public async Task<IActionResult> Download(string id, string? workOrderId)
     {
         if (string.IsNullOrWhiteSpace(id)) return BadRequest();
 
@@ -135,8 +143,46 @@ public class WorkOrderDocumentsController : Controller
         {
             _logger.LogError(ex, "[WODocs] Download gagal: id={Id}", id);
             TempData["error"] = "Gagal membuat link download.";
-            return RedirectToAction(nameof(Index)); // opsional tambahkan workOrderId if available
+            return RedirectToAction(nameof(Index), new { workOrderId });
         }
     }
 
+    // GET: /WorkOrderDocuments/Preview/{id}?workOrderId=WO123
+    [HttpGet("WorkOrderDocuments/PreviewUrl/{id}")]
+    public async Task<IActionResult> PreviewUrl(string id, string? workOrderId)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return BadRequest();
+        try
+        {
+            var url = await _docSvc.GetPresignedPreviewUrlAsync(id, TimeSpan.FromMinutes(15), HttpContext.RequestAborted);
+            return Json(new { ok = true, url });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[WODocs] PreviewUrl gagal: id={Id}", id);
+            return Json(new { ok = false, error = "Gagal membuat link preview." });
+        }
+    }
+
+
+    // POST: /WorkOrderDocuments/Delete/{id}
+    [HttpPost("WorkOrderDocuments/Delete/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(string id, string workOrderId)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return BadRequest();
+
+        try
+        {
+            var ok = await _docSvc.DeleteAsync(id);
+            TempData[ok ? "success" : "error"] = ok ? "Dokumen dihapus." : "Dokumen tidak ditemukan.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[WODocs] Delete gagal: id={Id}", id);
+            TempData["error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { workOrderId });
+    }
 }

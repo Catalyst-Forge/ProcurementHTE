@@ -1,16 +1,13 @@
-﻿namespace ProcurementHTE.Core.Options
+﻿using Microsoft.Extensions.Options;
+using Minio;
+
+public sealed class ObjectStorageOptions
 {
-    public class ObjectStorageOptions
-    {
-        public string Endpoint { get; set; } = string.Empty;
-        public bool UseSSL { get; set; }
-        public string AccessKey { get; set; } = string.Empty;
-        public string SecretKey { get; set; } = string.Empty;
-
-        // 👇 inilah nama bucket yang nanti dipakai
-        public string Bucket { get; set; } = "procurementhte";
-
-        public string Region { get; set; } = "us-east-1";
-        public int PresignExpirySeconds { get; set; } = 1800;
-    }
+    public string Endpoint { get; set; } = default!;
+    public bool UseSSL { get; set; }
+    public string AccessKey { get; set; } = default!;
+    public string SecretKey { get; set; } = default!;
+    public string Bucket { get; set; } = default!;
+    public string Region { get; set; } = "us-east-1";
+    public int PresignExpirySeconds { get; set; } = 1800;
 }

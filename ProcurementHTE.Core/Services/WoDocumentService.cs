@@ -5,7 +5,6 @@ using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Core.Options;
 
 namespace ProcurementHTE.Core.Services;
 
@@ -18,7 +17,7 @@ public class WoDocumentService(
     IDocumentTypeRepository documentTypeRepository,
     IWoDocumentRepository woDocumentRepository,
     ILogger<WoDocumentService> logger
-    ) : IWoDocumentService
+) : IWoDocumentService
 {
     private readonly IWoDocumentRepository _repo = repo;
     private readonly IObjectStorage _storage = storage;
@@ -195,12 +194,32 @@ public class WoDocumentService(
         }
     }
 
-    public Task<string> GetPresignedDownloadUrlAsync(
-        string woDocumentId,
-        TimeSpan ttl,
-        CancellationToken ct = default
-    )
+    public async Task<string> GetPresignedDownloadUrlAsync(
+        string woDocumentId, TimeSpan ttl, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var doc = await _repo.GetByIdAsync(woDocumentId)
+                  ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
+
+        if (ttl <= TimeSpan.Zero)
+            ttl = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
+
+        // Hanya ambil URL presign — tanpa menambah query lagi
+        var url = await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, ttl);
+        return url;
     }
+
+    public async Task<string> GetPresignedPreviewUrlAsync(
+        string woDocumentId, TimeSpan expiry, CancellationToken ct = default)
+    {
+        var doc = await _repo.GetByIdAsync(woDocumentId)
+                  ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
+
+        if (expiry <= TimeSpan.Zero)
+            expiry = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
+
+        var url = await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, expiry);
+        return url;
+    }
+
+
 }
