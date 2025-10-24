@@ -1,22 +1,21 @@
 @model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 
-<section class="card shadow-sm mb-3">
+<section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
         <legend class="card-title fw-semibold">Description</legend>
         <hr />
         <div class="row">
             <div class="col-12">
                 <label asp-for="WorkOrder.Note" class="form-label"></label>
-                <input asp-for="WorkOrder.Note" class="form-control" />
+                <textarea asp-for="WorkOrder.Note" class="form-control" maxlength="200" rows="3"></textarea>
                 <span asp-validation-for="WorkOrder.Note" class="text-danger small"></span>
             </div>
         </div>
     </fieldset>
 </section>
 
-<div class="mb-3">
+<div class="mb-3 w-100 d-flex justify-content-end">
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO Other</button>
-    <a class="btn btn-secondary" asp-action="SelectType" role="button"><i class="bi bi-arrow-left-circle"></i> Back</a>
 </div>
 
 @* Modal *@

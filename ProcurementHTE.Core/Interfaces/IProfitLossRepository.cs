@@ -5,17 +5,14 @@ namespace ProcurementHTE.Core.Interfaces
     public interface IProfitLossRepository
     {
         // Get Data
-        Task<IEnumerable<ProfitLoss>> GetAllAsync();
-        Task<ProfitLoss?> GetByIdAsync(string id);
+        Task<ProfitLoss?> GetByIdAsync(string profitLossId);
         Task<ProfitLoss?> GetByWorkOrderAsync(string woId);
-        Task<IEnumerable<ProfitLoss>> GetProfitLossByDateRangeAsync(
-            DateTime startDate,
-            DateTime endDate
-        );
+        Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId);
 
         // Transaction DB
-        Task<ProfitLoss> StoreProfitLossAsync(ProfitLoss pnl);
-        Task UpdateProfitLossAsync(ProfitLoss pnl);
-        Task DropProfitLossAsync(string id);
+        Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId);
+        Task StoreProfitLossAsync(ProfitLoss profitLoss);
+        Task RemoveSelectedVendorsAsync(string woId);
+        Task UpdateProfitLossAsync(ProfitLoss profitLoss);
     }
 }

@@ -8,7 +8,5 @@ namespace ProcurementHTE.Core.Models {
     [Required]
     [MaxLength(100)]
     public string StatusName { get; set; } = null!;
-
-    public virtual ICollection<WorkOrder> WorkOrders { get; set; }
   }
 }

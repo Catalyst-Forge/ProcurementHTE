@@ -82,8 +82,6 @@
             <tr>
                 <th class="border-end">Vendor</th>
                 <th class="d-none d-md-table-cell border-end">Location</th>
-                <th class="d-none d-lg-table-cell border-end">Contact</th>
-                <th class="border-end">Status</th>
                 <th class="text-center">Action</th>
             </tr>
         </thead>
@@ -112,18 +110,6 @@
 
                         <td class="d-none d-md-table-cell">
                             <span>@v.City, @v.Province</span>
-                        </td>
-
-                        <td class="d-none d-lg-table-cell">
-                            <span>@v.ContactPerson</span>
-                            @if (!string.IsNullOrWhiteSpace(v.PhoneNumber)) {
-                                <span class="mx-1">•</span>
-                                <a href="tel:@v.PhoneNumber" class="text-decoration-none">@v.PhoneNumber</a>
-                            }
-                        </td>
-
-                        <td>
-                            <span class="badge rounded-pill px-2 py-1 @BadgeClass(v.Status)">@v.Status</span>
                         </td>
 
                         <td class="text-center text-nowrap">

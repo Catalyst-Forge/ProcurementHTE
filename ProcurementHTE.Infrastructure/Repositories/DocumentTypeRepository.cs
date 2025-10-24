@@ -10,10 +10,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public DocumentTypeRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public DocumentTypeRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public Task<PagedResult<DocumentType>> GetAllAsync(
             int page,
@@ -47,7 +44,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task CreateDocumentTypeAsync(DocumentType documentType)
         {
-            await _context.AddAsync(documentType);
+            await _context.DocumentTypes.AddAsync(documentType);
             await _context.SaveChangesAsync();
         }
 

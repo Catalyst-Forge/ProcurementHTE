@@ -9,10 +9,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public WoDocumentRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public WoDocumentRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<WoDocuments?> GetByIdAsync(string id)
         {
@@ -23,9 +20,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<IReadOnlyList<WoDocuments>> GetByWorkOrderAsync(string workOrderId)
         {
             return await _context.WoDocuments
-                .AsNoTracking()
                 .Where(d => d.WorkOrderId == workOrderId)
                 .OrderByDescending(d => d.CreatedAt)
+                .AsNoTracking()
                 .ToListAsync();
         }
 

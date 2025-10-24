@@ -12,6 +12,7 @@ namespace ProcurementHTE.Core.Models
         public string VendorCode { get; set; } = null!;
 
         [Required]
+        [DisplayName("Vendor Name")]
         public string VendorName { get; set; } = null!;
 
         [Required]
@@ -39,21 +40,6 @@ namespace ProcurementHTE.Core.Models
         [Required]
         [DisplayName("Email Vendor")]
         public string Email { get; set; } = null!;
-
-        [DisplayName("Phone Number")]
-        public string? PhoneNumber { get; set; }
-
-        [Required]
-        [DisplayName("Contact Person")]
-        public string ContactPerson { get; set; } = null!;
-
-        [Required]
-        [DisplayName("Contact Position")]
-        public string ContactPosition { get; set; } = null!;
-
-        [Required]
-        [DisplayName("Status")]
-        public string Status { get; set; } = null!;
 
         [DisplayName("Comment")]
         [MaxLength(200)]

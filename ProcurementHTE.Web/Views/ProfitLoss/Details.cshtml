@@ -1,0 +1,102 @@
+﻿@model ProcurementHTE.Web.Models.ViewModels.ProfitLossSummaryViewModel
+@{
+    ViewData["Title"] = "Profit & Loss Result";
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="mb-2">Vendor yang Diikutkan</h2>
+        @if (ViewBag.SelectedVendorNames is List<string> names && names.Count > 0) {
+            <ul class="mb-0">
+                @foreach (var name in names) {
+                    <li>@name</li>
+                }
+            </ul>
+        } else {
+            <p class="text-muted mb-0">Tidak ada vendor yang dipilih.</p>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="mb-3">Ringkasan Profit & Loss</h2>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="fw-semibold">Tarif Awal</div>
+                <div>@Model.TarifAwal.ToIDR()</div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="fw-semibold">Tarif Add / 25 km</div>
+                <div>@Model.TarifAdd.ToIDR()</div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="fw-semibold">Km per 25 km</div>
+                <div>@Model.KmPer25</div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="fw-semibold">Operator Cost</div>
+                <div>@Model.OperatorCost.ToIDR()</div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="fw-semibold">Revenue</div>
+                <div class="fw-bold">@Model.Revenue.ToIDR()</div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="fw-semibold">Best Vendor</div>
+                <div class="text-success fw-semibold">@Model.SelectedVendorName</div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="fw-semibold">Final Offer</div>
+                <div>@Model.SelectedFinalOffer.ToIDR()</div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="fw-semibold">Profit</div>
+                <div class="text-success fw-bold">@Model.Profit.ToIDR() (@Model.ProfitPercent.ToPersen())</div>
+            </div>
+        </div>
+            
+        <div class="mt-3 text-end">
+            <a asp-action="Edit" asp-route-id="@Model.ProfitLossId" class="btn btn-outline-primary">Hitung Ulang</a>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="mb-2">Perbandingan Vendor (Vendor yang Memberi Penawaran)</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vendor</th>
+                        <th class="text-end">Final Offer</th>
+                        <th class="text-end">Profit</th>
+                        <th class="text-end">Profit %</th>
+                        <th class="text-center">Result</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var r in Model.Rows) {
+                        <tr class="@(r.IsSelected ? "table-success" : "")">
+                            <td>@r.VendorName</td>
+                            <td class="text-end">@r.FinalOffer.ToIDR()</td>
+                            <td class="text-end">@r.Profit.ToIDR()</td>
+                            <td class="text-end">@r.ProfitPercent.ToString("N2")%</td>
+                            <td class="text-center">@if (r.IsSelected == true) {<span class="badge text-bg-success">Terpilih</span>}</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

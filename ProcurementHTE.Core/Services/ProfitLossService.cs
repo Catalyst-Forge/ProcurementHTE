@@ -8,189 +8,271 @@ namespace ProcurementHTE.Core.Services
     {
         private readonly IProfitLossRepository _pnlRepository;
         private readonly IVendorOfferRepository _voRepository;
-        private readonly IWorkOrderRepository _woRepository;
+        private readonly IVendorRepository _vendorRepository;
 
         public ProfitLossService(
             IProfitLossRepository pnlRepository,
             IVendorOfferRepository voRepository,
-            IWorkOrderRepository woRepository
+            IVendorRepository vendorRepository
         )
         {
             _pnlRepository = pnlRepository;
             _voRepository = voRepository;
-            _woRepository = woRepository;
+            _vendorRepository = vendorRepository;
         }
 
-        public async Task<IEnumerable<ProfitLoss>> GetAllProfitLossAsync()
+        public Task<ProfitLoss?> GetByWorkOrderAsync(string woId) {
+            return _pnlRepository.GetByWorkOrderAsync(woId);
+        }
+
+        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId) {
+            return _pnlRepository.GetSelectedVendorsAsync(woId);
+        }
+
+        public async Task<ProfitLossSummaryDto> GetSummaryByWorkOrderAsync(string woId)
         {
-            return await _pnlRepository.GetAllAsync();
-        }
-
-        public async Task<ProfitLoss?> GetProfitLossByIdAsync(string id) {
-            return await _pnlRepository.GetByIdAsync(id);
-        }
-
-        public async Task<ProfitLoss?> GetProfitLossWithWorkOrderAsync(string woId)
-        {
-            return await _pnlRepository.GetByWorkOrderAsync(woId);
-        }
-
-        public async Task<ProfitLoss> CreateProfitLossWithOffersAsync(
-            IEnumerable<VendorOfferInputDto> vendorOffers,
-            CreateProfitLossInputDto pnlInput
-        )
-        {
-            if (string.IsNullOrWhiteSpace(pnlInput.WorkOrderId))
-                throw new ArgumentException("Work Order wajib diisi");
-
-            var validOffers = vendorOffers
-                .Where(vo => !string.IsNullOrWhiteSpace(vo.VendorId) && (vo.OfferPrice ?? 0) > 0)
-                .ToList();
-            if (!validOffers.Any())
-                throw new ArgumentException("Minimal satu penawaran vendor valid");
-
-            try
-            {
-                // Save VendorOffers
-                var offers = validOffers
-                    .Select(offer => new VendorOffer
-                    {
-                        WorkOrderId = pnlInput.WorkOrderId,
-                        VendorId = offer.VendorId,
-                        ItemName = offer.ItemName,
-                        Trip = offer.Trip,
-                        Unit = offer.Unit,
-                        OfferPrice = offer.OfferPrice,
-                        OfferNumber = offer.OfferNumber,
-                        OfferDate = DateTime.Now,
-                    })
-                    .ToList();
-
-                await _voRepository.StoreVendorOfferAsync(offers);
-
-                // Menentukan best offer
-                VendorOffer bestOffer = offers
-                    .OrderBy(offer => offer.OfferPrice ?? decimal.MaxValue)
-                    .First();
-
-                if (!string.IsNullOrWhiteSpace(pnlInput.SelectedVendorId))
-                {
-                    var offer = offers.FirstOrDefault(offer =>
-                        offer.VendorId == pnlInput.SelectedVendorId
-                    );
-                    if (offer != null)
-                        bestOffer = offer;
-                }
-
-                decimal revenue = pnlInput.Revenue;
-                decimal bestOfferPrice = bestOffer.OfferPrice ?? 0m;
-                decimal costOperator = pnlInput.CostOperator;
-
-                // Hitung Profit & Loss
-                decimal profit = revenue - bestOfferPrice - costOperator;
-                decimal profitPercentage =
-                    revenue > 0 ? Math.Round((profit / revenue) * 100m, 2) : 0m;
-                decimal adjustmentRate = pnlInput.AdjustmentRate / 100m;
-                decimal adjustedProfit = Math.Round(profit * (1 + adjustmentRate), 2);
-
-                // Membuat Profit & Loss
-                var pnl = new ProfitLoss
-                {
-                    WorkOrderId = pnlInput.WorkOrderId,
-                    Revenue = revenue,
-                    CostOperator = costOperator,
-                    Profit = profit,
-                    ProfitPercentage = profitPercentage,
-                    BestOfferPrice = bestOfferPrice,
-                    HargaPenawaran1 = offers.ElementAtOrDefault(0)?.OfferPrice,
-                    HargaPenawaran2 = offers.ElementAtOrDefault(1)?.OfferPrice,
-                    HargaPenawaran3 = offers.ElementAtOrDefault(2)?.OfferPrice,
-                    AdjustmentRate = pnlInput.AdjustmentRate,
-                    AdjustedProfit = adjustedProfit,
-                    PotentialNewProfit = adjustedProfit,
-                    ProfitRevenue = revenue > 0 ? Math.Round(profit / revenue, 4) : 0,
-                    SelectedVendorOfferId = bestOffer.VendorOfferId,
-                };
-
-                await _pnlRepository.StoreProfitLossAsync(pnl);
-                return pnl;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Gagal membuat Profit and Loss: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<ProfitLoss> UpdateProfitLossAsync(string id, UpdateProfitLossDto dto)
-        {
-            var pnl = await _pnlRepository.GetByIdAsync(id);
+            var pnl = await _pnlRepository.GetByWorkOrderAsync(woId);
             if (pnl == null)
-                throw new InvalidOperationException("Profit and Loss tidak ditemukan");
+                return null;
 
-            pnl.CostOperator = dto.CostOperator;
-            pnl.AdjustmentRate = dto.AdjustmentRate;
-            pnl.UpdatedAt = DateTime.Now;
+            var allVendors = await _vendorRepository.GetAllAsync();
+            var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(woId);
+            var offers = await _voRepository.GetByWorkOrderAsync(woId);
 
-            // Recalculate
-            pnl.Profit = pnl.Revenue - pnl.CostOperator;
-            pnl.ProfitPercentage = pnl.Revenue > 0 ? (pnl.Profit / pnl.Revenue) * 100 : 0;
-            pnl.AdjustedProfit = pnl.Profit * (1 - pnl.AdjustmentRate);
-            pnl.PotentialNewProfit = pnl.Profit - (pnl.BestOfferPrice - pnl.CostOperator);
+            var selectedVendorNames = selectedRows
+                .Select(row =>
+                    allVendors.FirstOrDefault(vendor => vendor.VendorId == row.VendorId)?.VendorName
+                    ?? row.VendorId
+                )
+                .ToList();
 
+            var vendorComparisons = offers
+                .GroupBy(offer => offer.VendorId)
+                .Select(group =>
+                {
+                    var finalOffer = group.OrderBy(item => item.Round).Last().Price;
+                    var profit = pnl.Revenue - finalOffer;
+                    var profitPercent = pnl.Revenue > 0 ? (profit / pnl.Revenue) * 100m : 0m;
+                    var vendorName =
+                        allVendors
+                            .FirstOrDefault(vendor => vendor.VendorId == group.Key)
+                            ?.VendorName ?? group.Key;
+                    var isSelected = pnl.SelectedVendorId == group.Key;
+
+                    return new VendorComparisonDto
+                    {
+                        VendorName = vendorName,
+                        FinalOffer = finalOffer,
+                        Profit = profit,
+                        ProfitPercent = profitPercent,
+                        IsSelected = isSelected,
+                    };
+                })
+                .OrderBy(row => row.FinalOffer)
+                .ToList();
+
+            return new ProfitLossSummaryDto
+            {
+                ProfitLossId = pnl.ProfitLossId,
+                WorkOrderId = pnl.WorkOrderId,
+                TarifAwal = pnl.TarifAwal,
+                TarifAdd = pnl.TarifAdd,
+                KmPer25 = pnl.KmPer25,
+                OperatorCost = pnl.OperatorCost,
+                Revenue = pnl.Revenue,
+                SelectedVendorId = pnl.SelectedVendorId ?? "",
+                SelectedVendorName = vendorComparisons
+                    .FirstOrDefault(vendor => vendor.IsSelected)
+                    ?.VendorName,
+                SelectedFinalOffer = pnl.SelectedVendorFinalOffer,
+                Profit = pnl.Profit,
+                ProfitPercent = pnl.ProfitPercent,
+                SelectedVendorNames = selectedVendorNames,
+                VendorComparisons = vendorComparisons,
+            };
+        }
+
+        public async Task<ProfitLossEditDto> GetEditDataAsync(string profitLossId) {
+            var pnl =
+                await _pnlRepository.GetByIdAsync(profitLossId)
+                ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
+
+            var offers = await _voRepository.GetByWorkOrderAsync(pnl.WorkOrderId);
+            var vendors = offers
+                .GroupBy(offer => offer.VendorId)
+                .Select(group => new VendorOffersDto {
+                    VendorId = group.Key,
+                    Prices = group.OrderBy(item => item.Round).Select(item => item.Price).ToList(),
+                })
+                .ToList();
+
+            var selectedVendorIds = vendors.Select(vendor => vendor.VendorId).Distinct().ToList();
+
+            return new ProfitLossEditDto {
+                ProfitLossId = pnl.ProfitLossId,
+                WorkOrderId = pnl.WorkOrderId,
+                TarifAwal = pnl.TarifAwal,
+                TarifAdd = pnl.TarifAdd,
+                KmPer25 = pnl.KmPer25,
+                OperatorCost = pnl.OperatorCost,
+                Revenue = pnl.Revenue,
+                SelectedVendorId = pnl.SelectedVendorId,
+                SelectedVendorFinalOffer = pnl.SelectedVendorFinalOffer,
+                Profit = pnl.Profit,
+                ProfitPercent = pnl.ProfitPercent,
+                RowVersion = null,
+                SelectedVendorIds = selectedVendorIds,
+                Vendors = vendors,
+            };
+        }
+
+        public async Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto)
+        {
+            await _pnlRepository.RemoveSelectedVendorsAsync(dto.WorkOrderId);
+            await _pnlRepository.StoreSelectedVendorsAsync(dto.WorkOrderId, dto.SelectedVendorIds);
+
+            var offers = BuildVendorOffers(dto);
+            if (offers.Count > 0)
+                await _voRepository.StoreAllOffersAsync(offers);
+
+            var profitLoss = CalculateProfitLoss(dto, offers);
+
+            await _pnlRepository.StoreProfitLossAsync(profitLoss);
+
+            return profitLoss;
+        }
+
+        public async Task<ProfitLoss> EditProfitLossAsync(ProfitLossUpdateDto dto)
+        {
+            if (dto.SelectedVendorIds?.Count > 0)
+            {
+                await _pnlRepository.RemoveSelectedVendorsAsync(dto.WorkOrderId);
+                await _pnlRepository.StoreSelectedVendorsAsync(
+                    dto.WorkOrderId,
+                    dto.SelectedVendorIds
+                );
+            }
+
+            var pnl =
+                await _pnlRepository.GetByIdAsync(dto.ProfitLossId)
+                ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
+
+            await _voRepository.RemoveByWorkOrderAsync(dto.WorkOrderId);
+
+            var newOffers = BuildVendorOffersForUpdate(dto);
+            if (newOffers.Count > 0)
+                await _voRepository.StoreAllOffersAsync(newOffers);
+
+            UpdateProfitLoss(pnl, dto, newOffers);
             await _pnlRepository.UpdateProfitLossAsync(pnl);
             return pnl;
         }
 
-        public async Task<ProfitLoss> CalculateProfitLossAsync(
-            string id,
-            string selectedVendorOfferId
-        )
+        private List<VendorOffer> BuildVendorOffers(ProfitLossInputDto dto)
         {
-            var wo = await _woRepository.GetWithOffersAsync(id);
-            if (wo != null)
+            var offers = new List<VendorOffer>();
+            foreach (var vendor in dto.Vendors)
             {
-                var pnl = await _pnlRepository.GetByWorkOrderAsync(id);
-                pnl ??= new ProfitLoss
+                for (int i = 0; i < vendor.Prices.Count; i++)
                 {
-                    WorkOrderId = id,
-                    SelectedVendorOfferId = selectedVendorOfferId,
-                    CreatedAt = wo.CreatedAt,
-                    AdjustmentRate = 0.15m,
-                };
-
-                return await CalculateAndSaveAsync(pnl, wo);
+                    offers.Add(
+                        new VendorOffer
+                        {
+                            WorkOrderId = dto.WorkOrderId,
+                            VendorId = vendor.VendorId,
+                            Round = i + 1,
+                            Price = vendor.Prices[i],
+                        }
+                    );
+                }
             }
 
-            throw new InvalidOperationException("Work order tidak ditemukan");
+            return offers;
         }
 
-        public async Task DeleteProfitLossAsync(string id)
+        private List<VendorOffer> BuildVendorOffersForUpdate(ProfitLossUpdateDto dto)
         {
-            ArgumentNullException.ThrowIfNull(id);
-            await _pnlRepository.DropProfitLossAsync(id);
+            var offers = new List<VendorOffer>();
+            foreach (var vendor in dto.Vendors)
+            {
+                for (int i = 0; i < vendor.Prices.Count; i++)
+                {
+                    offers.Add(
+                        new VendorOffer
+                        {
+                            WorkOrderId = dto.WorkOrderId,
+                            VendorId = vendor.VendorId,
+                            Round = i + 1,
+                            Price = vendor.Prices[i],
+                        }
+                    );
+                }
+            }
+
+            return offers;
         }
 
-        private async Task<ProfitLoss> CalculateAndSaveAsync(ProfitLoss profitLoss, WorkOrder wo)
+        private ProfitLoss CalculateProfitLoss(ProfitLossInputDto dto, List<VendorOffer> offers)
         {
-            var offers = wo.VendorOffers.OrderBy(x => x.OfferPrice).ToList();
+            var operatorCost = dto.TarifAdd * dto.KmPer25;
+            var revenue = dto.TarifAwal + operatorCost;
 
-            if (offers.Count > 0)
-                profitLoss.HargaPenawaran1 = offers[0].OfferPrice;
-            if (offers.Count > 1)
-                profitLoss.HargaPenawaran2 = offers[1].OfferPrice;
-            if (offers.Count > 2)
-                profitLoss.HargaPenawaran3 = offers[2].OfferPrice;
+            var finals = offers
+                .GroupBy(offer => offer.VendorId)
+                .Select(group => group.OrderBy(offer => offer.Round).Last())
+                .ToList();
 
-            profitLoss.BestOfferPrice = offers.Min(x => x.OfferPrice);
-            profitLoss.Profit = profitLoss.Revenue - profitLoss.CostOperator;
-            profitLoss.ProfitPercentage =
-                profitLoss.Revenue > 0 ? (profitLoss.Profit / profitLoss.Revenue) * 100 : 0;
-            profitLoss.AdjustedProfit = profitLoss.Profit * (1 - profitLoss.AdjustmentRate);
-            profitLoss.PotentialNewProfit =
-                profitLoss.Profit - (profitLoss.BestOfferPrice - profitLoss.CostOperator);
+            if (!finals.Any())
+                throw new InvalidOperationException("Tidak ada penawaran vendor");
 
-            await _pnlRepository.UpdateProfitLossAsync(profitLoss);
-            return profitLoss;
+            var best = finals.OrderBy(final => final.Price).First();
+            var profit = revenue - best.Price;
+            var profitPercent = revenue > 0 ? (profit / revenue) * 100m : 0m;
+
+            return new ProfitLoss
+            {
+                WorkOrderId = dto.WorkOrderId,
+                TarifAwal = dto.TarifAwal,
+                TarifAdd = dto.TarifAdd,
+                KmPer25 = dto.KmPer25,
+                OperatorCost = operatorCost,
+                Revenue = revenue,
+                SelectedVendorId = best.VendorId,
+                SelectedVendorFinalOffer = best.Price,
+                Profit = profit,
+                ProfitPercent = profitPercent,
+            };
+        }
+
+        private void UpdateProfitLoss(
+            ProfitLoss pnl,
+            ProfitLossUpdateDto dto,
+            List<VendorOffer> offers
+        )
+        {
+            var operatorCost = dto.TarifAdd * dto.KmPer25;
+            var revenue = dto.TarifAwal + operatorCost;
+
+            var finals = offers
+                .GroupBy(offer => offer.VendorId)
+                .Select(group => group.OrderBy(item => item.Round).Last())
+                .ToList();
+
+            if (!finals.Any())
+                throw new InvalidOperationException("Tidak ada penawaran vendor untuk dihitung");
+
+            var best = finals.OrderBy(final => final.Price).First();
+
+            pnl.TarifAwal = dto.TarifAwal;
+            pnl.TarifAdd = dto.TarifAdd;
+            pnl.KmPer25 = dto.KmPer25;
+            pnl.OperatorCost = operatorCost;
+            pnl.Revenue = revenue;
+            pnl.SelectedVendorId = best.VendorId;
+            pnl.SelectedVendorFinalOffer = best.Price;
+            pnl.Profit = revenue - best.Price;
+            pnl.ProfitPercent = revenue > 0 ? (pnl.Profit / revenue) * 100m : 0m;
+            pnl.UpdatedAt = DateTime.Now;
         }
     }
 }

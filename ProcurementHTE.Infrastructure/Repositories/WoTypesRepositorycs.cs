@@ -11,10 +11,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public WoTypesRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public WoTypesRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task CreateWoTypeAsync(WoTypes woType)
         {

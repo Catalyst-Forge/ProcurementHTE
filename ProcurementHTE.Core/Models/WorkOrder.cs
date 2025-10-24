@@ -30,7 +30,7 @@ namespace ProcurementHTE.Core.Models
         [DisplayName("Procurement Type")]
         public ProcurementType ProcurementType { get; set; }
 
-        public string? WoLetter { get; set; }
+        public string? WoNumLetter { get; set; }
 
         [DisplayName("Date Letter")]
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
@@ -42,6 +42,7 @@ namespace ProcurementHTE.Core.Models
         [DisplayName("To")]
         public string? Destination { get; set; }
 
+        [DisplayName("Work Order")]
         public string? WorkOrderLetter { get; set; }
 
         public string? WBS { get; set; }
@@ -74,7 +75,6 @@ namespace ProcurementHTE.Core.Models
         // Foreign Keys
         public string? WoTypeId { get; set; }
         public int? StatusId { get; set; }
-        public string? VendorId { get; set; }
         public string? UserId { get; set; }
 
         [ForeignKey("WoTypeId")]
@@ -87,11 +87,8 @@ namespace ProcurementHTE.Core.Models
         [JsonIgnore]
         public Status? Status { get; set; }
 
-        [ForeignKey("VendorId")]
-        [JsonIgnore]
-        public Vendor? Vendor { get; set; }
-
         [ForeignKey("UserId")]
+        [DisplayName("Created By")]
         [JsonIgnore]
         public User? User { get; set; }
 

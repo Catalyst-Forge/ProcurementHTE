@@ -39,7 +39,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ProcurementType = (ProcurementType)2, // contoh: jasa
                 WoTypeId = woType.WoTypeId, // FK ke WoTypes
 
-                WoLetter = "PERMINTAAN PEKERJAAN",
+                WoNumLetter = "1063/WO-DS/DSI1310/2025",
                 DateLetter = new DateTime(2025, 9, 1),
                 Description =
                     "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
@@ -49,16 +49,15 @@ namespace ProcurementHTE.Infrastructure.Data
                 WBS = null,
                 GlAccount = "5005000130",
                 DateRequired = new DateTime(2025, 8, 5),
-                XS1 = "Lokasi: LBK-INF16, Rig PDSI #29.3/D1500-E, Lembak",
-                XS2 = "Workshop PDSI Sunter",
-                Note = "- Driver & Kenek dilengkapi PPE lengkap",
-                XS3 = "CP Lokasi: Seto W - 081320602326",
-                XS4 = "CP Workshop: Zainal Arifin - 085893668808",
+                XS1 = "LBK-INF16, Rig PDSI #29.3/D1500-E, Lembak",
+                XS2 = "PDSI Sunter",
+                Note = "- Driver & Kenek dilengkapi PPE lengkap (Safety Helmet, Safety Shoes, Kaca Mata Safety, dan Hand Gloves",
+                XS3 = "Seto W - 081320602326",
+                XS4 = "Zainal Arifin - 085893668808",
                 Requester = "Tito Ambardi J.",
                 Approved = "I Made Trisna Mirawan",
                 CreatedAt = DateTime.Now,
                 FileWorkOrder = "permintaan-pekerjaan-2025.pdf",
-                VendorId = null,
             };
 
             db.WorkOrders.Add(wo);
@@ -69,8 +68,8 @@ namespace ProcurementHTE.Infrastructure.Data
             {
                 new()
                 {
-                    ItemName = "Core Barrel 6-3/4\" (c/w protector)",
-                    Quantity = 2,
+                    ItemName = "Core Barrel (2 Jts 6-3/4\" Core Barrel dan 2 Jts 7\" Core Barrel) c/w protector",
+                    Quantity = 4,
                     Unit = "Jts",
                     WorkOrderId = wo.WorkOrderId,
                 },
@@ -81,7 +80,41 @@ namespace ProcurementHTE.Infrastructure.Data
                     Unit = "Ea",
                     WorkOrderId = wo.WorkOrderId,
                 },
-                // tambahkan item lain sesuai kebutuhan
+                new()
+                {
+                    ItemName = "Inner Barrel Aluminium 4.3/4\" OD",
+                    Quantity = 2,
+                    Unit = "Jts",
+                    WorkOrderId = wo.WorkOrderId
+                },
+                new()
+                {
+                    ItemName = "Float Sub 6.3/4\" c/w protector (dalam tool box)",
+                    Quantity = 2,
+                    Unit = "Ea",
+                    WorkOrderId = wo.WorkOrderId
+                },
+                new()
+                {
+                    ItemName = "Tool box",
+                    Quantity = 2,
+                    Unit = "Ea",
+                    WorkOrderId = wo.WorkOrderId
+                },
+                new()
+                {
+                    ItemName = "Marine Box (Dimensi 12,2 x 1,2 x 1 mtr)",
+                    Quantity = 1,
+                    Unit = "Ea",
+                    WorkOrderId = wo.WorkOrderId
+                },
+                new()
+                {
+                    ItemName = "Pneumatic Air Saw",
+                    Quantity = 1,
+                    Unit = "Ea",
+                    WorkOrderId = wo.WorkOrderId
+                }
             };
 
             db.WoDetails.AddRange(details);

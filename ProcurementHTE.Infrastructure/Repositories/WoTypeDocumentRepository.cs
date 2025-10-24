@@ -9,10 +9,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public WoTypeDocumentRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public WoTypeDocumentRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<WoTypeDocuments?> FindByWoTypeAndDocTypeAsync(
             string woTypeId,

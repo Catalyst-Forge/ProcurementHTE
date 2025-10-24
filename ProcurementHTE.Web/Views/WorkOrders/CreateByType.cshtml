@@ -1,27 +1,78 @@
 @model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 @{
-    ViewData["Title"] = "Buat Work Order";
+    ViewData["Title"] = "Create Work Order";
     var partialName = ViewBag.CreatePartial as string ?? "_CreateOther";
     var woTypeName = ViewBag.SelectedWoTypeName as string ?? "Other";
 }
 
-<h2 class="mb-1">@ViewData["Title"]</h2>
-<p class="text-muted mb-4">Tipe: <span class="fw-semibold">@woTypeName</span></p>
+<header class="hstack justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">@ViewData["Title"]</h2>
+      <p class="text-muted mb-0">Type: <span class="fw-semibold">@woTypeName</span></p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="SelectType" role="button"><i class="bi bi-arrow-left"></i> Back</a>
+</header>
 
 <form asp-action="Create" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
     <input type="hidden" asp-for="WorkOrder.WoTypeId" />
 
-    <section class="card shadow-sm mb-3">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Work Order Type</legend>
+            <legend class="card-title fw-semibold">Work Order Information</legend>
             <hr />
             <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">Procurement Type</label>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.ProcurementType" class="form-label"></label>
                     <select asp-for="WorkOrder.ProcurementType" class="form-select" asp-items="Html.GetEnumSelectList<ProcurementHTE.Core.Models.ProcurementType>()">
                     </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.DateLetter" class="form-label"></label>
+                    <input type="date" class="form-control" asp-for="WorkOrder.DateLetter" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.FromLocation" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.FromLocation" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.Destination" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.Destination" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.WorkOrderLetter" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.WorkOrderLetter" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.WBS" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.WBS" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.GlAccount" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.GlAccount" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.DateRequired" class="form-label"></label>
+                    <input type="date" class="form-control" asp-for="WorkOrder.DateRequired" />
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Approval</legend>
+            <hr />
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label asp-for="WorkOrder.Requester" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.Requester" />
+                </div>
+                <div class="col-6 mb-3">
+                    <label asp-for="WorkOrder.Approved" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.Approved" />
                 </div>
             </div>
         </fieldset>
@@ -60,7 +111,7 @@
                     <label class="form-label">Unit</label>
                     <input class="form-control" name="Details[${key}].Unit" />
                   </div>
-                  <div class="col-md-1 d-grid">
+                  <div class="col-md-1">
                     <button type="button" class="btn btn-outline-danger js-remove-detail">
                       <i class="bi bi-trash"></i>
                     </button>

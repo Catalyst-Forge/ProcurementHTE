@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProcurementHTE.Core.Models
 {
@@ -9,6 +10,7 @@ namespace ProcurementHTE.Core.Models
 
         [Required]
         [MaxLength(100)]
+        [DisplayName("Type Name")]
         public string TypeName { get; set; } = null!;
 
         public string? Description { get; set; }

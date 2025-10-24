@@ -11,10 +11,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public WorkOrderRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        public WorkOrderRepository(AppDbContext context) =>
+            _context = context ?? throw new ArgumentNullException(nameof(context));
 
         private async Task<string?> GetLastWoNumAsync(string prefix)
         {
@@ -42,7 +40,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .WorkOrders.Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
-                .Include(wo => wo.Vendor)
                 .Include(wo => wo.WoDetails)
                 .AsNoTracking();
 
@@ -59,7 +56,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 query = query.Where(w =>
                     (byWoNum && w.WoNum != null && w.WoNum.Contains(s))
                     || (byDesc && w.Description != null && w.Description.Contains(s))
-                    || (byLetter && w.WoLetter != null && w.WoLetter.Contains(s))
+                    || (byLetter && w.WoNumLetter != null && w.WoNumLetter.Contains(s))
                     || (byWbs && w.WBS != null && w.WBS.Contains(s))
                     || (byGlAccount && w.GlAccount != null && w.GlAccount.Contains(s))
                     || (byStat && w.Status != null && w.Status.StatusName.Contains(s))
@@ -80,13 +77,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .WorkOrders.Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
-                .Include(wo => wo.Vendor)
                 .FirstOrDefaultAsync(t => t.WorkOrderId == id);
 
             if (wo == null)
-            {
                 return null;
-            }
 
             if (!string.IsNullOrWhiteSpace(wo.WorkOrderId))
             {
@@ -118,11 +112,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<Status?> GetStatusByNameAsync(string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return null;
-            }
-
             var normalized = name.Trim().ToLower();
             return await _context
                 .Statuses.AsNoTracking()
@@ -232,14 +221,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                var exists = await _context.WorkOrders.AnyAsync(w =>
-                    w.WorkOrderId == wo.WorkOrderId
+                throw new KeyNotFoundException(
+                    $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
                 );
-                if (!exists)
-                    throw new KeyNotFoundException(
-                        $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
-                    );
-
+            }
+            catch (Exception ex)
+            {
                 throw new InvalidOperationException(
                     "Data telah diubah oleh user lain. Silakan refresh dan coba lagi",
                     ex

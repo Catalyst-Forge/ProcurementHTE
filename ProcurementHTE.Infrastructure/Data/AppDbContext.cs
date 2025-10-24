@@ -16,6 +16,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<WoDetail> WoDetails { get; set; }
         public DbSet<ProfitLoss> ProfitLosses { get; set; }
         public DbSet<VendorOffer> VendorOffers { get; set; }
+        public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; }
         public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
         public DbSet<DocumentType> DocumentTypes { get; set; }
         public DbSet<WoDocuments> WoDocuments { get; set; }
@@ -120,12 +121,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 .WithOne(vendorOffer => vendorOffer.WorkOrder)
                 .HasForeignKey(vendorOffer => vendorOffer.WorkOrderId)
                 .OnDelete(DeleteBehavior.Cascade); // Relation to Vendor Offer
-            builder
-                .Entity<WorkOrder>()
-                .HasOne(workOrder => workOrder.Vendor)
-                .WithMany()
-                .HasForeignKey(workOrder => workOrder.VendorId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // ***** WO Detail *****
             builder
@@ -194,15 +189,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 // 1 baris per dokumen per level
                 entity.HasIndex(a => new { a.WoDocumentId, a.Level }).IsUnique();
             });
-
-
-            // ***** Profit and Loss *****
-            builder
-                .Entity<ProfitLoss>()
-                .HasOne(profitLoss => profitLoss.SelectedVendorOffer)
-                .WithMany()
-                .HasForeignKey(profitLoss => profitLoss.SelectedVendorOfferId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

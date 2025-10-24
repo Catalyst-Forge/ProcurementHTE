@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
     <h1 class="h3">Edit Vendor</h1>
     <a asp-action="Index" class="btn btn-outline-secondary" role="button">
-        <i class="bi bi-arrow-left-circle"></i> Back to list
+        <i class="bi bi-arrow-left"></i> Back to list
     </a>
 </div>
 
@@ -17,9 +17,9 @@
     <input type="hidden" asp-for="VendorId" />
     <input type="hidden" asp-for="VendorCode" />
 
-    <section class="card mb-3">
+    <section class="card mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Vendor Info</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-info-circle-fill text-primary me-1"></i> Vendor Info</legend>
             <hr />
             <div class="row">
                 <div class="col-md-4 mb-3">
@@ -38,12 +38,17 @@
                     <span asp-validation-for="NPWP" class="text-danger small"></span>
                 </div>
             </div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" type="email" class="form-control" placeholder="vendor@example.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
         </fieldset>
     </section>
 
-    <section class="card mb-3">
+    <section class="card mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Address</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-geo-alt text-primary me-1"></i> Address</legend>
             <hr />
             <div class="row">
                 <div class="col-12 mb-3">
@@ -70,59 +75,20 @@
         </fieldset>
     </section>
 
-    <section class="card mb-3">
+    <section class="card mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Contact</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-stickies text-primary me-1"></i> Notes</legend>
             <hr />
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" type="email" class="form-control" placeholder="vendor@example.com" />
-                    <span asp-validation-for="Email" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="PhoneNumber" class="form-label"></label>
-                    <input asp-for="PhoneNumber" class="form-control" inputmode="tel" placeholder="+62..." />
-                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="ContactPerson" class="form-label"></label>
-                    <input asp-for="ContactPerson" class="form-control" />
-                    <span asp-validation-for="ContactPerson" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="ContactPosition" class="form-label"></label>
-                    <input asp-for="ContactPosition" class="form-control" />
-                    <span asp-validation-for="ContactPosition" class="text-danger small"></span>
-                </div>
+            <div class="mb-3">
+                <label asp-for="Comment" class="form-label"></label>
+                <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Optional notes..."></textarea>
+                <span asp-validation-for="Comment" class="text-danger small"></span>
             </div>
         </fieldset>
     </section>
 
-    <section class="card mb-3">
-        <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Status & Notes</legend>
-            <hr />
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label asp-for="Status" class="form-label"></label>
-                    <select asp-for="Status" class="form-select" asp-items="ViewBag.Statuses">
-                        <option value="">-- Select Status --</option>
-                    </select>
-                    <span asp-validation-for="Status" class="text-danger small"></span>
-                </div>
-
-                <div class="col-md-8 mb-3">
-                    <label asp-for="Comment" class="form-label"></label>
-                    <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Optional notes..."></textarea>
-                    <span asp-validation-for="Comment" class="text-danger small"></span>
-                </div>
-            </div>
-        </fieldset>
-    </section>
-
-    <div class="mb-3">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save</button>
+    <div class="mb-3 w-100 d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save Changes</button>
     </div>
 </form>
 

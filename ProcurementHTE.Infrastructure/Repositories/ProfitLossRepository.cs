@@ -5,86 +5,68 @@ using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories
 {
-    public class ProfitLossRepository(AppDbContext context) : IProfitLossRepository
+    public class ProfitLossRepository : IProfitLossRepository
     {
-        private readonly AppDbContext _context = context;
+        private readonly AppDbContext _context;
 
-        public async Task<IEnumerable<ProfitLoss>> GetAllAsync()
-        {
-            return await _context
-                .ProfitLosses.Include(x => x.WorkOrder)
-                .Include(x => x.SelectedVendorOffer)
-                .AsNoTracking()
-                .ToListAsync();
-        }
+        public ProfitLossRepository(AppDbContext context) =>
+            _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<ProfitLoss?> GetByIdAsync(string id)
+        public Task<ProfitLoss?> GetByIdAsync(string profitLossId)
         {
-            return await _context
+            return _context
                 .ProfitLosses.Include(pnl => pnl.WorkOrder)
-                .Include(pnl => pnl.SelectedVendorOffer)
-                .ThenInclude(offer => offer.Vendor)
-                .FirstOrDefaultAsync(pnl => pnl.ProfitLossId == id);
+                .FirstOrDefaultAsync(pnl => pnl.ProfitLossId == profitLossId);
         }
 
         public async Task<ProfitLoss?> GetByWorkOrderAsync(string woId)
         {
             return await _context
-                .ProfitLosses.Include(profitLoss => profitLoss.WorkOrder)
-                .Include(profitLoss => profitLoss.SelectedVendorOffer)
-                .ThenInclude(profitLoss => profitLoss.Vendor)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.WorkOrderId == woId);
+                .ProfitLosses.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.WorkOrderId == woId);
         }
 
-        public async Task<IEnumerable<ProfitLoss>> GetProfitLossByDateRangeAsync(
-            DateTime startDate,
-            DateTime endDate
-        )
+        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string workOrderId)
         {
-            return await _context
-                .ProfitLosses.Include(x => x.WorkOrder)
-                .Include(x => x.SelectedVendorOffer)
-                .Where(x => x.CreatedAt >= startDate && x.CreatedAt <= endDate)
+            return _context
+                .ProfitLossSelectedVendors.Where(x => x.WorkOrderId == workOrderId)
+                .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<ProfitLoss> StoreProfitLossAsync(ProfitLoss pnl)
-        {
-            await _context.AddAsync(pnl);
+        public async Task StoreProfitLossAsync(ProfitLoss profitLoss) {
+            await _context.ProfitLosses.AddAsync(profitLoss);
             await _context.SaveChangesAsync();
-            return pnl;
         }
 
-        public async Task UpdateProfitLossAsync(ProfitLoss pnl)
-        {
-            try
-            {
-                _context.Entry(pnl).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                var pnlExists = await _context.ProfitLosses.AnyAsync(profitLoss =>
-                    profitLoss.ProfitLossId == pnl.ProfitLossId
-                );
-                if (!pnlExists)
-                    throw new KeyNotFoundException(
-                        $"Profit and Loss dengan ID {pnl.ProfitLossId} tidak ditemukan"
-                    );
 
-                throw new InvalidOperationException("Data tidak valid", ex);
-            }
+        public async Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId)
+        {
+            var rows = vendorId
+                .Distinct()
+                .Select(vendor => new ProfitLossSelectedVendor
+                {
+                    WorkOrderId = woId,
+                    VendorId = vendor,
+                });
+
+            await _context.ProfitLossSelectedVendors.AddRangeAsync(rows);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task DropProfitLossAsync(string id)
+        public async Task RemoveSelectedVendorsAsync(string woId)
         {
-            var pnl = await _context.ProfitLosses.FindAsync(id);
-            if (pnl != null)
-            {
-                _context.ProfitLosses.Remove(pnl);
-                await _context.SaveChangesAsync();
-            }
+            var olds = await _context
+                .ProfitLossSelectedVendors.Where(item => item.WorkOrderId == woId)
+                .ToListAsync();
+            if (olds.Count > 0)
+                _context.RemoveRange(olds);
+        }
+
+        public Task UpdateProfitLossAsync(ProfitLoss profitLoss)
+        {
+            _context.ProfitLosses.Update(profitLoss);
+            return Task.CompletedTask;
         }
     }
 }
