@@ -1,11 +1,10 @@
 @model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 @{
-    ViewData["Title"] = "Buat Work Order";
     var partialName = ViewBag.CreatePartial as string ?? "_CreateOther";
     var woTypeName = ViewBag.SelectedWoTypeName as string ?? "Other";
 }
 
-<section class="card shadow-sm mb-3">
+<section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
         <legend class="card-title fw-semibold">Subject</legend>
         <hr />
@@ -30,7 +29,7 @@
     </fieldset>
 </section>
 
-<section class="card shadow-sm mb-3">
+<section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
         <div class="d-flex">
             <legend class="card-title fw-semibold">Detail Items</legend>
@@ -106,7 +105,7 @@
     </fieldset>
 </section>
 
-<section class="card shadow-sm mb-3">
+<section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
         <legend class="card-title fw-semibold">Contact Person</legend>
         <hr />
@@ -126,9 +125,8 @@
     </fieldset>
 </section>
 
-<div class="mt-4 d-flex gap-2">
+<div class="mb-3 d-flex w-100 justify-content-end">
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO Moving</button>
-    <a class="btn btn-secondary" asp-action="SelectType" role="button"><i class="bi bi-arrow-left-circle"></i> Back</a>
 </div>
 
 @* Modal *@

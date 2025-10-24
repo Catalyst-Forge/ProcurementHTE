@@ -1,6 +1,6 @@
 @model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 
-<section class="card shadow-sm mb-3">
+<section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
         <legend class="card-title fw-semibold">Description</legend>
         <hr />
@@ -14,9 +14,8 @@
     </fieldset>
 </section>
 
-<div class="mb-3">
+<div class="mb-3 w-100 d-flex justify-content-end">
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO Other</button>
-    <a class="btn btn-secondary" asp-action="SelectType" role="button"><i class="bi bi-arrow-left-circle"></i> Back</a>
 </div>
 
 @* Modal *@

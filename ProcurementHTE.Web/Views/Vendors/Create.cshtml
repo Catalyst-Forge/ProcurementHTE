@@ -7,15 +7,15 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
     <h1 class="h3 mb-0">Create Vendor</h1>
-    <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to list</a>
+    <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to list</a>
 </div>
 
 <form asp-action="Create" method="post" asp-antiforgery="true" novalidate>
     <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 
-    <section class="card shadow-sm mb-3">
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Vendor Info</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-info-circle-fill text-primary me-1"></i> Vendor Info</legend>
             <hr />
             <div class="row">
                 <div class="col-md-4 mb-3">
@@ -37,9 +37,9 @@
         </fieldset>
     </section>
 
-    <section class="card shadow-sm mb-3">
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Address</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-geo-alt text-primary me-1"></i> Address</legend>
             <hr />
             <div class="row">
                 <div class="col-12 mb-3">
@@ -67,9 +67,9 @@
     </section>
 
     <!-- Status & Notes -->
-    <section class="card shadow-sm mb-3">
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Status & Notes</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-stickies text-primary me-1"></i> Notes</legend>
             <hr />
             <div class="mb-3">
                 <label asp-for="Comment" class="form-label"></label>
@@ -79,7 +79,7 @@
         </fieldset>
     </section>
 
-    <div class="mb-3">
+    <div class="mb-3 w-100 d-flex justify-content-end">
         <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Submit</button>
     </div>
 </form>
