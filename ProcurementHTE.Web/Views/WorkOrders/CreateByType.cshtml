@@ -1,12 +1,17 @@
 @model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
 @{
-    ViewData["Title"] = "Buat Work Order";
+    ViewData["Title"] = "Create Work Order";
     var partialName = ViewBag.CreatePartial as string ?? "_CreateOther";
     var woTypeName = ViewBag.SelectedWoTypeName as string ?? "Other";
 }
 
-<h2 class="mb-1">@ViewData["Title"]</h2>
-<p class="text-muted mb-4">Tipe: <span class="fw-semibold">@woTypeName</span></p>
+<header class="hstack justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">@ViewData["Title"]</h2>
+      <p class="text-muted mb-0">Type: <span class="fw-semibold">@woTypeName</span></p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="SelectType" role="button"><i class="bi bi-arrow-left"></i> Back</a>
+</header>
 
 <form asp-action="Create" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
@@ -14,7 +19,7 @@
 
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-    <section class="card shadow-sm mb-3">
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <legend class="card-title fw-semibold">Work Order Information</legend>
             <hr />
@@ -56,7 +61,7 @@
         </fieldset>
     </section>
 
-    <section class="card shadow-sm mb-3">
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <legend class="card-title fw-semibold">Approval</legend>
             <hr />
