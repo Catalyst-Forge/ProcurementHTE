@@ -79,13 +79,13 @@
                     @Html.DisplayNameFor(model => model.Items[0].WoNum)
                 </th>
                 <th class="border-end">
-                    @Html.DisplayNameFor(model => model.Items[0].Status)
-                </th>
-                <th class="border-end">
                     @Html.DisplayNameFor(model => model.Items[0].WoType)
                 </th>
                 <th class="border-end">
                     @Html.DisplayNameFor(model => model.Items[0].ProcurementType)
+                </th>
+                <th class="border-end">
+                    @Html.DisplayNameFor(model => model.Items[0].Status)
                 </th>
                 <th class="border-end">
                     @Html.DisplayNameFor(model => model.Items[0].DateLetter)
@@ -106,15 +106,15 @@
                             @Html.DisplayFor(modelItem => item.WoNum)
                         </td>
                         <td>
-                            <span class="badge @BadgeClass(item.Status?.StatusName ?? "")">
-                                @(item.Status?.StatusName ?? "-")
-                            </span>
-                        </td>
-                        <td>
                             @(item.WoType?.TypeName ?? "-")
                         </td>
                         <td>
                             @Html.DisplayFor(modelItem => item.ProcurementType)
+                        </td>
+                        <td>
+                            <span class="badge @BadgeClass(item.Status?.StatusName ?? "")">
+                                @(item.Status?.StatusName ?? "-")
+                            </span>
                         </td>
                         <td>
                             @Html.DisplayFor(modelItem => item.DateLetter)
