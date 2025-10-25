@@ -147,6 +147,10 @@ namespace ProcurementHTE.Infrastructure.Data
                       .HasForeignKey(d => d.DocumentTypeId)
                       .OnDelete(DeleteBehavior.NoAction);
 
+                entity.HasIndex(d => d.QrText).HasDatabaseName("IX_WoDocuments_QrText");
+                entity.HasIndex(d => new { d.WorkOrderId, d.CreatedAt })
+                      .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
+
                 // relasi ke WorkOrder (kamu sudah mengatur di WorkOrder.WithMany(WoDocuments))
                 // indeks & constraints untuk MinIO
                 entity.Property(d => d.FileName).HasMaxLength(300).IsRequired();
