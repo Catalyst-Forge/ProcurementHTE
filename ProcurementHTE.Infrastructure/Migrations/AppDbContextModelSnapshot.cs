@@ -680,6 +680,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("DocumentTypeId");
 
+                    b.HasIndex("QrText")
+                        .HasDatabaseName("IX_WoDocuments_QrText");
+
+                    b.HasIndex("WorkOrderId", "CreatedAt")
+                        .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
+
                     b.HasIndex("WorkOrderId", "DocumentTypeId", "Status")
                         .IsUnique();
 

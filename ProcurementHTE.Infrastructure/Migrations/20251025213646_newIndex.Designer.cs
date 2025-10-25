@@ -12,8 +12,8 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251024185255_migration-lagi")]
-    partial class migrationlagi
+    [Migration("20251025213646_newIndex")]
+    partial class newIndex
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -682,6 +682,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasKey("WoDocumentId");
 
                     b.HasIndex("DocumentTypeId");
+
+                    b.HasIndex("QrText")
+                        .HasDatabaseName("IX_WoDocuments_QrText");
+
+                    b.HasIndex("WorkOrderId", "CreatedAt")
+                        .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
 
                     b.HasIndex("WorkOrderId", "DocumentTypeId", "Status")
                         .IsUnique();

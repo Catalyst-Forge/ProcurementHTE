@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class migrationlagi : Migration
+    public partial class newIndex : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -656,6 +656,16 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "IX_WoDocuments_DocumentTypeId",
                 table: "WoDocuments",
                 column: "DocumentTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WoDocuments_QrText",
+                table: "WoDocuments",
+                column: "QrText");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WoDocuments_WorkOrderId_CreatedAt",
+                table: "WoDocuments",
+                columns: new[] { "WorkOrderId", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WoDocuments_WorkOrderId_DocumentTypeId_Status",
