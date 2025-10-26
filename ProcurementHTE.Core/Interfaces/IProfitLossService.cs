@@ -10,6 +10,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId);
         Task<ProfitLossSummaryDto> GetSummaryByWorkOrderAsync(string woId);
         Task<ProfitLossEditDto> GetEditDataAsync(string profitLossId);
+        Task<ProfitLoss?> GetLatestByWorkOrderAsync(string workOrderId);
 
         // Transaction DB
         Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto);

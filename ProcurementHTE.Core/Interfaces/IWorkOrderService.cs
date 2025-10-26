@@ -24,5 +24,6 @@ namespace ProcurementHTE.Core.Interfaces
         Task AddWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details);
         Task EditWorkOrderAsync(WorkOrder wo, string id);
         Task DeleteWorkOrderAsync(WorkOrder wo);
+        Task MarkAsCompletedAsync(string woId);
     }
 }
