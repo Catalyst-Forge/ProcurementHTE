@@ -23,6 +23,7 @@
         <h1 class="h2">@ViewBag.Title</h1>
 
         <div class="d-flex gap-2" role="group" aria-label="Button Action">
+            <a asp-controller="WorkOrderDocuments" asp-action="Index" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-pencil-square"></i> Document</a>
             <span title="@(pnl != null ? "data pnl sudah ada" : "")">
                 <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-file-earmark-text-fill"></i> Create Profit & Loss</a>
             </span>
