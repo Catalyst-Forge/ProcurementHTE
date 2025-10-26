@@ -18,6 +18,9 @@ namespace ProcurementHTE.Web.Controllers
         IVendorService vendorService,
         IProfitLossService pnlService,
         IVendorOfferService voService,
+        IPdfGenerator pdfGenerator,
+        IDocumentTypeService docTypeService,
+        IWoDocumentService woDocService,
         ILogger<WorkOrdersController> logger
     ) : Controller
     {
@@ -25,6 +28,9 @@ namespace ProcurementHTE.Web.Controllers
         private readonly IVendorService _vendorService = vendorService;
         private readonly IProfitLossService _pnlService = pnlService;
         private readonly IVendorOfferService _voService = voService;
+        private readonly IPdfGenerator _pdfGenerator = pdfGenerator;
+        private readonly IDocumentTypeService _docTypeService = docTypeService;
+        private readonly IWoDocumentService _woDocService = woDocService;
         private readonly ILogger<WorkOrdersController> _logger = logger;
 
         // GET: WorkOrders
@@ -420,8 +426,36 @@ namespace ProcurementHTE.Web.Controllers
             try
             {
                 var dto = MapToDto(viewModel, selectedVendors);
-                await _pnlService.SaveInputAndCalculateAsync(dto);
-                TempData["Success"] = "Profit & Loss berhasil dihitung";
+                var pnl = await _pnlService.SaveInputAndCalculateAsync(dto);
+
+                var wo = await _woService.GetWorkOrderByIdAsync(dto.WorkOrderId)!;
+                var offers = await _voService.GetByWorkOrderAsync(pnl.WorkOrderId);
+                Vendor? bestVendor = null;
+
+                if (!string.IsNullOrWhiteSpace(pnl.SelectedVendorId)) {
+                    bestVendor = (await _vendorService.GetAllVendorsAsync()).FirstOrDefault(vendor => vendor.VendorId == pnl.SelectedVendorId);
+                }
+
+                var pdfBytes = await _pdfGenerator.GenerateProfitLossPdfAsync(pnl, wo!, bestVendor, offers);
+
+                var docTypes = await _docTypeService.GetAllDocumentTypesAsync(page: 1, pageSize: 200, search: null, fields: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name" }, ct: default);
+
+                var pnlDocTypeId = docTypes.Items.FirstOrDefault(doc => doc.Name.Equals("Profit & Loss", StringComparison.OrdinalIgnoreCase))?.DocumentTypeId ?? throw new InvalidOperationException("DocumentType 'Profit & Loss' tidak ditemukan");
+
+                var generateReq = new GeneratedWoDocumentRequest {
+                    WorkOrderId = dto.WorkOrderId,
+                    DocumentTypeId = pnlDocTypeId,
+                    FileName = $"Profit_Loss_{wo!.WoNum}.pdf",
+                    ContentType = "application/pdf",
+                    Bytes = pdfBytes,
+                    Description = "Profit & Loss auto-generated",
+                    GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    CreatedAt = DateTime.Now
+                };
+
+                var saveResult = await _woDocService.SaveGeneratedAsync(generateReq);
+
+                TempData["Success"] = "Profit & Loss berhasil dibuat & generate dokumen telah berhasil";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -480,7 +514,7 @@ namespace ProcurementHTE.Web.Controllers
                 };
 
                 var wo = await _woService.GetWorkOrderByIdAsync(dto.WorkOrderId);
-                ViewBag.WoNum = wo.WoNum;
+                ViewBag.WoNum = wo!.WoNum;
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
                 _logger.LogInformation($"✅ EditPnL view akan ditampilkan");
                 return View(viewModel);
