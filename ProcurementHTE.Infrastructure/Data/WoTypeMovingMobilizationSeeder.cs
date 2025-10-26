@@ -139,14 +139,37 @@ namespace ProcurementHTE.Infrastructure.Data
             }
 
             // contoh minimal sesuai yang kamu tulis
-            await AddApprovalIfMissing("Memorandum", "Manager Transport & Logistic", 1, 1);
-            await AddApprovalIfMissing("Service Order", "Manager Transport & Logistic", 1, 1);
-            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)", "Manager Transport & Logistic", 1, 1);
-            await AddApprovalIfMissing("Profit & Loss", "Manager Transport & Logistic", 1, 3);
-            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)", "Manager Transport & Logistic", 1, 2);
-            await AddApprovalIfMissing("Risk Assessment (RA)", "HSE", 1, 1);
-            await AddApprovalIfMissing("Risk Assessment (RA)", "Manager Transport & Logistic", 1, 3);
-            await AddApprovalIfMissing("Owner Estimate (OE)", "Manager Transport & Logistic", 1, 2);
+            await AddApprovalIfMissing("Memorandum",                                "HSE", 1, 1);
+            await AddApprovalIfMissing("Service Order",                             "HSE", 1, 1);
+            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "HSE", 1, 1);
+            await AddApprovalIfMissing("Profit & Loss",                             "HSE", 1, 1);
+            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "HSE", 1, 1);
+            await AddApprovalIfMissing("Risk Assessment (RA)",                      "HSE", 1, 1);
+            await AddApprovalIfMissing("Owner Estimate (OE)",                       "HSE", 1, 1);
+
+            await AddApprovalIfMissing("Memorandum",                                "Assistant Manager HTE", 2, 2);
+            await AddApprovalIfMissing("Service Order",                             "Assistant Manager HTE", 2, 2);
+            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "Assistant Manager HTE", 2, 2);
+            await AddApprovalIfMissing("Profit & Loss",                             "Assistant Manager HTE", 2, 2);
+            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "Assistant Manager HTE", 2, 2);
+            await AddApprovalIfMissing("Risk Assessment (RA)",                      "Assistant Manager HTE", 2, 2);
+            await AddApprovalIfMissing("Owner Estimate (OE)",                       "Assistant Manager HTE", 2, 2);
+
+            await AddApprovalIfMissing("Memorandum",                                "Manager Transport & Logistic", 3, 3);
+            await AddApprovalIfMissing("Service Order",                             "Manager Transport & Logistic", 3, 3);
+            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "Manager Transport & Logistic", 3, 3);
+            await AddApprovalIfMissing("Profit & Loss",                             "Manager Transport & Logistic", 3, 3);
+            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "Manager Transport & Logistic", 3, 3);
+            await AddApprovalIfMissing("Risk Assessment (RA)",                      "Manager Transport & Logistic", 3, 3);
+            await AddApprovalIfMissing("Owner Estimate (OE)",                       "Manager Transport & Logistic", 3, 3);
+
+            await AddApprovalIfMissing("Memorandum",                                "Vice President", 4, 4);
+            await AddApprovalIfMissing("Service Order",                             "Vice President", 4, 4);
+            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "Vice President", 4, 4);
+            await AddApprovalIfMissing("Profit & Loss",                             "Vice President", 4, 4);
+            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "Vice President", 4, 4);
+            await AddApprovalIfMissing("Risk Assessment (RA)",                      "Vice President", 4, 4);
+            await AddApprovalIfMissing("Owner Estimate (OE)",                       "Vice President", 4, 4);
 
             await context.SaveChangesAsync();
             await tx.CommitAsync();
