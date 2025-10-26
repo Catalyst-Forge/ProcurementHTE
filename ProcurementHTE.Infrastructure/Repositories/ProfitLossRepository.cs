@@ -34,6 +34,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId) {
+            return await _context.ProfitLosses
+                .AsNoTracking()
+                .Where(p => p.WorkOrderId == workOrderId)
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task StoreProfitLossAsync(ProfitLoss profitLoss) {
             await _context.ProfitLosses.AddAsync(profitLoss);
             await _context.SaveChangesAsync();
