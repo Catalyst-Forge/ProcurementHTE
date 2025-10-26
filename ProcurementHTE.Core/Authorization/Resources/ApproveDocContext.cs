@@ -1,3 +1,6 @@
 ﻿namespace ProcurementHTE.Core.Authorization.Resources {
-    public sealed record ApproveDocContext(string WoNum, string WoDocumentId);
+    public sealed class ApproveDocContext {
+        public string WoDocumentId { get; set; } = null!;
+        public decimal TotalPenawaran { get; set; }
+    }
 }
