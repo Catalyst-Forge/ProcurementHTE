@@ -110,6 +110,8 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
             services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
             services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
+            services.AddScoped<IWoDocApprovalFlowRepository, WoDocApprovalFlowRepository>();
+            services.AddScoped<IApprovalRepository, ApprovalRepository>();
 
             // ------------- Services (Core) -------------
             services.AddScoped<IWorkOrderService, WorkOrderService>();
@@ -122,6 +124,9 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IWoDocumentService, WoDocumentService>();
             services.AddScoped<IWoTypeDocumentService, WoTypeDocumentService>();
             services.AddScoped<IWoDocumentApprovalService, WoDocumentApprovalService>();
+            services.AddScoped<IWoDocApprovalFlowService, WoDocApprovalFlowService>();
+            services.AddScoped<IPdfGenerator, PdfGeneratorService>();
+            services.AddScoped<IApprovalService, ApprovalService>();
 
             // ------------- Query Services -------------
             // INI YANG BENAR: WorkOrderDocumentQuery di-bind ke IWorkOrderDocumentQuery (bukan ke IWoDocumentRepository)
