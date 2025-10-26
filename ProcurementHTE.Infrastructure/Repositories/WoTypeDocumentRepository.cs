@@ -20,6 +20,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Where(woTypeDoc => woTypeDoc.WoTypeId == woTypeId && woTypeDoc.DocumentTypeId == documentTypeId)
                 .Include(woTypeDoc => woTypeDoc.WoType)
                 .Include(woTypeDoc => woTypeDoc.DocumentType)
+                .Include(woTypeDoc => woTypeDoc.DocumentApprovals).ThenInclude(da => da.Role)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
         }

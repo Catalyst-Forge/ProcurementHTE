@@ -151,5 +151,22 @@ namespace ProcurementHTE.Core.Services
             ArgumentNullException.ThrowIfNull(wo);
             await _woRepository.DropWorkOrderAsync(wo);
         }
+
+        public async Task MarkAsCompletedAsync(string woId) {
+            var wo = await _woRepository.GetByIdAsync(woId) ?? throw new ArgumentException("Work order tidak ditemukan");
+
+            var statuses = await _woRepository.GetStatusesAsync();
+            var statusCompleted = statuses.Where(status => status.StatusName == "Completed")
+            .OrderByDescending(status => status.StatusId)
+            .FirstOrDefault();
+
+            if (statusCompleted is null)
+                throw new InvalidOperationException("Status completed tidak ditemukan di table Statuses");
+
+            wo.StatusId = statusCompleted.StatusId;
+             wo.CompletedAt = DateTime.Now;
+            await _woRepository.UpdateWorkOrderAsync(wo);
+        }
+
     }
 }

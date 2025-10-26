@@ -8,6 +8,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task<ProfitLoss?> GetByIdAsync(string profitLossId);
         Task<ProfitLoss?> GetByWorkOrderAsync(string woId);
         Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId);
+        Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId);
 
         // Transaction DB
         Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId);

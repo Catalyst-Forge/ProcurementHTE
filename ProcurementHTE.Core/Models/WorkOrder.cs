@@ -72,6 +72,12 @@ namespace ProcurementHTE.Core.Models
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+        public DateTime? UpdatedAt { get; set; }
+
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+        public DateTime? CompletedAt { get; set; }
+
         // Foreign Keys
         public string? WoTypeId { get; set; }
         public int? StatusId { get; set; }

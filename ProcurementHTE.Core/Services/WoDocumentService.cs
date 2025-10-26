@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Drawing;
+using System.Drawing.Imaging;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -6,8 +8,6 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using QRCoder;
-using System.Drawing;
-using System.Drawing.Imaging;
 
 namespace ProcurementHTE.Core.Services;
 
@@ -19,6 +19,9 @@ public class WoDocumentService(
     IWoTypeDocumentRepository woTypeDocumentRepository,
     IDocumentTypeRepository documentTypeRepository,
     IWoDocumentRepository woDocumentRepository,
+    IProfitLossService pnlService,
+    IWoTypeDocumentRepository wtdConfigRepo,
+    IWoDocumentApprovalRepository approvalRepo,
     ILogger<WoDocumentService> logger
 ) : IWoDocumentService
 {
@@ -30,6 +33,9 @@ public class WoDocumentService(
     private readonly IWoTypeDocumentRepository _wtdRepo = woTypeDocumentRepository;
     private readonly IDocumentTypeRepository _docTypeRepo = documentTypeRepository;
     private readonly IWoDocumentRepository _woDocRepo = woDocumentRepository;
+    private readonly IProfitLossService _pnlService = pnlService;
+    private readonly IWoTypeDocumentRepository _wtdConfigRepo = wtdConfigRepo;
+    private readonly IWoDocumentApprovalRepository _approvalRepo = approvalRepo;
     private readonly ILogger<WoDocumentService> _logger = logger;
 
     public Task<WoDocuments?> GetByIdAsync(string id) => _repo.GetByIdAsync(id);
@@ -198,10 +204,14 @@ public class WoDocumentService(
     }
 
     public async Task<string> GetPresignedDownloadUrlAsync(
-        string woDocumentId, TimeSpan ttl, CancellationToken ct = default)
+        string woDocumentId,
+        TimeSpan ttl,
+        CancellationToken ct = default
+    )
     {
-        var doc = await _repo.GetByIdAsync(woDocumentId)
-                  ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
+        var doc =
+            await _repo.GetByIdAsync(woDocumentId)
+            ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
 
         if (ttl <= TimeSpan.Zero)
             ttl = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
@@ -212,10 +222,14 @@ public class WoDocumentService(
     }
 
     public async Task<string> GetPresignedPreviewUrlAsync(
-        string woDocumentId, TimeSpan expiry, CancellationToken ct = default)
+        string woDocumentId,
+        TimeSpan expiry,
+        CancellationToken ct = default
+    )
     {
-        var doc = await _repo.GetByIdAsync(woDocumentId)
-                  ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
+        var doc =
+            await _repo.GetByIdAsync(woDocumentId)
+            ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
 
         if (expiry <= TimeSpan.Zero)
             expiry = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
@@ -227,7 +241,8 @@ public class WoDocumentService(
     public async Task<bool> CanSendApprovalAsync(string workOrderId)
     {
         // 1) Ambil WO
-        var wo = await _woRepo.GetByIdAsync(workOrderId)
+        var wo =
+            await _woRepo.GetByIdAsync(workOrderId)
             ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
 
         if (string.IsNullOrWhiteSpace(wo.WoTypeId))
@@ -253,8 +268,11 @@ public class WoDocumentService(
         return requiredDocTypeIds.IsSubsetOf(uploadedDocTypeIds);
     }
 
-
-    public async Task SendApprovalAsync(string workOrderId, string requestedByUserId, CancellationToken ct = default)
+    public async Task SendApprovalAsync(
+        string workOrderId,
+        string requestedByUserId,
+        CancellationToken ct = default
+    )
     {
         if (!await CanSendApprovalAsync(workOrderId))
             throw new InvalidOperationException("Dokumen wajib belum lengkap.");
@@ -265,7 +283,13 @@ public class WoDocumentService(
         // Ambil semua dokumen terakhir per DocumentType utk WO ini
         var docs = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
 
-        var now = DateTime.UtcNow;
+        const decimal ThresholdVP = 500_000_000m;
+        var pnl = await _pnlService.GetLatestByWorkOrderAsync(workOrderId);
+        var needVP = pnl!.SelectedVendorFinalOffer > ThresholdVP;
+
+        var now = DateTime.Now;
+        var approvalsToInsert = new List<WoDocumentApprovals>();
+
         foreach (var doc in docs.Where(d => d.Status != "Deleted"))
         {
             // 1) Generate payload & gambar QR (PNG) per dokumen
@@ -285,17 +309,73 @@ public class WoDocumentService(
             // 3) Update metadata dokumen
             doc.QrText = payload;
             doc.QrObjectKey = qrKey;
-            doc.Status = "Pending Approval"; // status transisi
             await _woDocRepo.UpdateAsync(doc);
+
+            var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(
+                wo.WoTypeId!,
+                doc.DocumentTypeId
+            );
+            if (
+                wtdConfig is null
+                || !wtdConfig.RequiresApproval
+                || wtdConfig.DocumentApprovals.Count == 0
+            )
+                continue;
+
+            // bentuk chain
+            var chain = wtdConfig
+                .DocumentApprovals.OrderBy(a => a.SequenceOrder)
+                .ToList();
+
+            if (!needVP)
+            {
+                chain = chain
+                    .Where(a => a.Role != null
+                        && !string.Equals(a.Role.Name, "Vice President", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(a => a.SequenceOrder)
+                    .ToList();
+            }
+
+            if (chain.Count == 0)
+                continue;
+
+            var firstStep = chain.OrderBy(c => c.SequenceOrder).First();
+
+            // hindari duplikasi flow
+            var existing = await _approvalRepo.GetByWoDocumentIdAsync(doc.WoDocumentId);
+            if (existing.Any())
+                continue;
+
+            approvalsToInsert.Add(new WoDocumentApprovals {
+                WorkOrderId = workOrderId,
+                WoDocumentId = doc.WoDocumentId,
+                RoleId = firstStep.RoleId,
+                Level = firstStep.Level,
+                SequenceOrder = firstStep.SequenceOrder,
+                Status = "Pending"
+            });
+
+            _logger.LogInformation("[SendApproval] WO={WorkOrderId} NeedVP={NeedVP}, Total chain={ChainCount}", workOrderId, needVP, chain.Count);
         }
 
-        await _woDocRepo.SaveAsync();
+        if (approvalsToInsert.Count > 0)
+        {
+            await _approvalRepo.AddRangeAsync(approvalsToInsert);
+        }
+
+        await _woDocRepo.SaveAsync(); // perubahan WoDocuments
+        await _approvalRepo.SaveChangesAsync(); // insert WoDocumentApprovals
     }
 
-    public async Task<string?> GetPresignedQrUrlAsync(string woDocumentId, TimeSpan expiry, CancellationToken ct = default)
+    public async Task<string?> GetPresignedQrUrlAsync(
+        string woDocumentId,
+        TimeSpan expiry,
+        CancellationToken ct = default
+    )
     {
         var doc = await _repo.GetByIdAsync(woDocumentId);
-        if (doc == null || string.IsNullOrWhiteSpace(doc.QrObjectKey)) return null;
+        if (doc == null || string.IsNullOrWhiteSpace(doc.QrObjectKey))
+            return null;
 
         if (expiry <= TimeSpan.Zero)
             expiry = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
@@ -303,5 +383,69 @@ public class WoDocumentService(
         return await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.QrObjectKey, expiry, ct);
     }
 
+    public async Task<UploadWoDocumentResult> SaveGeneratedAsync(
+        GeneratedWoDocumentRequest request,
+        CancellationToken ct = default
+    )
+    {
+        var wo =
+            await _woRepo.GetByIdAsync(request.WorkOrderId)
+            ?? throw new InvalidOperationException("Work order tidak ditemukan");
 
+        var wtd =
+            await _wtdRepo.GetByWoTypeAndDocumentTypeAsync(wo.WoTypeId!, request.DocumentTypeId)
+            ?? throw new InvalidOperationException(
+                "Dokumen ini tidak terdaftar pada WoType terkait"
+            );
+
+        if (!wtd.IsGenerated)
+            throw new InvalidOperationException(
+                "Dokumen ini bukan dokumen yang digenerate oleh sistem"
+            );
+
+        var now = request.CreatedAt;
+        var safeWoType = SlugFolderHelper.SlugFolder(wo.WoType!.TypeName);
+        var safeDocType = SlugFolderHelper.SlugFolder(wtd.DocumentType.Name);
+        var guid = Guid.NewGuid().ToString("N");
+        var objectKey =
+            $"{safeWoType}/{safeDocType}/{now:yyyy}/{now:MM}/{now:dd}/{guid}_{wo.WoNum}.pdf";
+
+        await using var ms = new MemoryStream(request.Bytes);
+        await _storage.UploadAsync(_opts.Bucket, objectKey, ms, ms.Length, request.ContentType, ct);
+
+        var last = await _woDocRepo.GetLatestActiveByWorkOrderAndDocTypeAsync(
+            request.WorkOrderId,
+            request.DocumentTypeId
+        );
+        if (last is not null && last.Status != "Deleted")
+        {
+            last.Status = "Replaced";
+            await _woDocRepo.UpdateAsync(last);
+        }
+
+        var entity = new WoDocuments
+        {
+            WorkOrderId = request.WorkOrderId,
+            DocumentTypeId = request.DocumentTypeId,
+            FileName = request.FileName,
+            ObjectKey = objectKey,
+            ContentType = request.ContentType,
+            Size = request.Bytes.LongLength,
+            Status = "Generated",
+            Description = request.Description,
+            CreatedAt = now,
+            CreatedByUserId = request.GeneratedByUserId,
+        };
+
+        await _woDocRepo.AddAsync(entity);
+        await _woDocRepo.SaveAsync();
+
+        return new UploadWoDocumentResult
+        {
+            WoDocumentId = entity.WoDocumentId,
+            ObjectKey = objectKey,
+            FileName = entity.FileName,
+            Size = entity.Size,
+        };
+    }
 }

@@ -28,6 +28,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<WoDocuments?> GetLatestActiveByWorkOrderAndDocTypeAsync(string woId, string documentTypeId) {
+            return await _context.WoDocuments
+            .Where(doc => doc.WorkOrderId == woId && doc.DocumentTypeId == documentTypeId && doc.Status != "Deleted")
+            .OrderByDescending(doc => doc.CreatedAt)
+            .FirstOrDefaultAsync();
+        }
+
         public async Task AddAsync(WoDocuments doc)
         {
             await _context.WoDocuments.AddAsync(doc);

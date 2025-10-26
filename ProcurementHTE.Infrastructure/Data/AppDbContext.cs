@@ -189,9 +189,6 @@ namespace ProcurementHTE.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(a => a.ApproverId)
                       .OnDelete(DeleteBehavior.NoAction);
-
-                // 1 baris per dokumen per level
-                entity.HasIndex(a => new { a.WoDocumentId, a.Level }).IsUnique();
             });
         }
 

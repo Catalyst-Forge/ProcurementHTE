@@ -90,7 +90,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 Permissions.WO.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
-                Permissions.Doc.Upload
+                Permissions.Doc.Upload,
+                Permissions.Doc.Approve
             );
 
             await AddPermissions(
@@ -123,7 +124,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 "HSE",
                 Permissions.WO.Read,
                 Permissions.Vendor.Read,
-                Permissions.Doc.Read
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
             );
 
             await AddPermissions(
