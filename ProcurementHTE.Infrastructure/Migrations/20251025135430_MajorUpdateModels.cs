@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class migrationlagi : Migration
+    public partial class MajorUpdateModels : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -12,8 +12,8 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251024185255_migration-lagi")]
-    partial class migrationlagi
+    [Migration("20251025135430_MajorUpdateModels")]
+    partial class MajorUpdateModels
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
