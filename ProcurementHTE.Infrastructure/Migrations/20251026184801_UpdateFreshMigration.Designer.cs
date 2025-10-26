@@ -12,13 +12,8 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:ProcurementHTE.Infrastructure/Migrations/20251025213646_newIndex.Designer.cs
-    [Migration("20251025213646_newIndex")]
-    partial class newIndex
-========
-    [Migration("20251025135430_MajorUpdateModels")]
-    partial class MajorUpdateModels
->>>>>>>> approval-feature:ProcurementHTE.Infrastructure/Migrations/20251025135430_MajorUpdateModels.Designer.cs
+    [Migration("20251026184801_UpdateFreshMigration")]
+    partial class UpdateFreshMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -608,10 +603,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.HasIndex("WorkOrderId");
+                    b.HasIndex("WoDocumentId");
 
-                    b.HasIndex("WoDocumentId", "Level")
-                        .IsUnique();
+                    b.HasIndex("WorkOrderId");
 
                     b.ToTable("WoDocumentApprovals");
                 });
@@ -769,6 +763,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("Approved")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -806,6 +803,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<int?>("StatusId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");

@@ -6,11 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-<<<<<<<< HEAD:ProcurementHTE.Infrastructure/Migrations/20251025213646_newIndex.cs
-    public partial class newIndex : Migration
-========
-    public partial class MajorUpdateModels : Migration
->>>>>>>> approval-feature:ProcurementHTE.Infrastructure/Migrations/20251025135430_MajorUpdateModels.cs
+    public partial class UpdateFreshMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -309,6 +305,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     Requester = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Approved = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     WoTypeId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     StatusId = table.Column<int>(type: "int", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
@@ -646,10 +644,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WoDocumentApprovals_WoDocumentId_Level",
+                name: "IX_WoDocumentApprovals_WoDocumentId",
                 table: "WoDocumentApprovals",
-                columns: new[] { "WoDocumentId", "Level" },
-                unique: true);
+                column: "WoDocumentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WoDocumentApprovals_WorkOrderId",
