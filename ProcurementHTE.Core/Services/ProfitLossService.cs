@@ -1,4 +1,5 @@
-﻿using ProcurementHTE.Core.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 
@@ -33,7 +34,7 @@ namespace ProcurementHTE.Core.Services
         {
             var pnl = await _pnlRepository.GetByWorkOrderAsync(woId);
             if (pnl == null)
-                return null;
+                return null!;
 
             var allVendors = await _vendorRepository.GetAllAsync();
             var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(woId);
@@ -166,6 +167,13 @@ namespace ProcurementHTE.Core.Services
             UpdateProfitLoss(pnl, dto, newOffers);
             await _pnlRepository.UpdateProfitLossAsync(pnl);
             return pnl;
+        }
+
+        public async Task<ProfitLoss?> GetLatestByWorkOrderAsync(string workOrderId) {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                throw new ArgumentException("WorkOrderId tidak boleh kosong", nameof(workOrderId));
+
+            return await _pnlRepository.GetLatestByWorkOrderIdAsync(workOrderId);
         }
 
         private List<VendorOffer> BuildVendorOffers(ProfitLossInputDto dto)
