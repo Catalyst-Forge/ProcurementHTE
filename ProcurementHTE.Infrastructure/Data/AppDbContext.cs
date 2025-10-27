@@ -22,6 +22,8 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<WoDocuments> WoDocuments { get; set; }
         public DbSet<WoTypeDocuments> WoTypesDocuments { get; set; }
         public DbSet<WoDocumentApprovals> WoDocumentApprovals { get; set; }
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
