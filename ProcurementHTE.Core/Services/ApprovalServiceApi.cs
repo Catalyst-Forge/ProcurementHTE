@@ -23,5 +23,13 @@ namespace ProcurementHTE.Core.Services
             string? approvedByUserId,
             CancellationToken ct = default
         ) => _repo.UpdateStatusAsync(woDocumentId, newStatus, reason, approvedByUserId, ct);
+
+        public async Task<WoDocumentLiteDto?> GetWoDocumentByQrCode(
+            string qrText,
+            CancellationToken ct = default
+        )
+        {
+            return await _repo.GetWoDocumentByQrCode(qrText, ct);
+        }
     }
 }

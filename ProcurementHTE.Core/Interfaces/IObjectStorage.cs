@@ -32,13 +32,17 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
 
+        Task<string> GetPresignedUrlHeaderAsync(
+            string bucket,
+            string objectKey,
+            TimeSpan expiry,
+            IDictionary<string, string>? responseHeaders,
+            CancellationToken ct = default
+        );
+
         /// <summary>
         /// Hapus object dari bucket.
         /// </summary>
-        Task DeleteAsync(
-            string bucket,
-            string objectKey,
-            CancellationToken ct = default
-        );
+        Task DeleteAsync(string bucket, string objectKey, CancellationToken ct = default);
     }
 }

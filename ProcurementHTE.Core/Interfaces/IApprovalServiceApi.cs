@@ -18,5 +18,10 @@ namespace ProcurementHTE.Core.Interfaces
             string? approvedByUserId,
             CancellationToken ct = default
         );
+
+        Task<WoDocumentLiteDto?> GetWoDocumentByQrCode(
+            string qrText,
+            CancellationToken ct = default
+        );
     }
 }

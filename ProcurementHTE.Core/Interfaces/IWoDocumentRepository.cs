@@ -18,6 +18,10 @@ public interface IWoDocumentRepository
         string? approvedByUserId,
         CancellationToken ct = default
     );
+    Task<WoDocumentLiteDto?> GetWoDocumentByQrCode(
+    string QrText,
+    CancellationToken ct = default
+);
     Task<WoDocuments?> GetByIdAsync(string id);
     Task<IReadOnlyList<WoDocuments>> GetByWorkOrderAsync(string workOrderId);
     Task AddAsync(WoDocuments doc);
