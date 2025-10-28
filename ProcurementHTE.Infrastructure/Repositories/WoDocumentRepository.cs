@@ -129,6 +129,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     wd.QrText!,
                     wd.ObjectKey,
                     wd.Description,
+                    wd.CreatedByUserId,
                     wd.CreatedAt
                 ))
                 .ToListAsync(ct);
@@ -195,6 +196,28 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 entity.QrText!,
                 entity.ObjectKey,
                 entity.Description,
+                entity.CreatedByUserId,
+                entity.CreatedAt
+            );
+        }
+
+        public async Task<WoDocumentLiteDto?> GetWoDocumentByQrCode(
+            string QrText,
+            CancellationToken ct = default)
+        {
+            var entity = await _context.WoDocuments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.QrText == QrText, ct);
+            if (entity is null) return null;
+            return new WoDocumentLiteDto(
+                entity.WoDocumentId,
+                entity.WorkOrderId,
+                entity.FileName,
+                entity.Status,
+                entity.QrText!,
+                entity.ObjectKey,
+                entity.Description,
+                entity.CreatedByUserId,
                 entity.CreatedAt
             );
         }

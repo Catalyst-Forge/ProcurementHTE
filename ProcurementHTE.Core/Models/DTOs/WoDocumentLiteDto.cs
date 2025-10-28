@@ -8,5 +8,6 @@ public record WoDocumentLiteDto(
     string QrText,
     string ObjectKey,
     string? Description,
+    string? CreatedByUserId,
     DateTime CreatedAt
 );

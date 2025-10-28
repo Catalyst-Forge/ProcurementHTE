@@ -277,7 +277,8 @@ public class WoDocumentService(
         if (!await CanSendApprovalAsync(workOrderId))
             throw new InvalidOperationException("Dokumen wajib belum lengkap.");
 
-        var wo = await _woRepo.GetByIdAsync(workOrderId)
+        var wo =
+            await _woRepo.GetByIdAsync(workOrderId)
             ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
 
         // Ambil semua dokumen terakhir per DocumentType utk WO ini
@@ -293,7 +294,8 @@ public class WoDocumentService(
         foreach (var doc in docs.Where(d => d.Status != "Deleted"))
         {
             // 1) Generate payload & gambar QR (PNG) per dokumen
-            var payload = $"WO={wo.WoNum};DocType={doc.DocumentTypeId};DocId={doc.WoDocumentId};ts={now:o}";
+            var payload =
+                $"WO={wo.WoNum};DocType={doc.DocumentTypeId};DocId={doc.WoDocumentId};ts={now:o}";
             using var qrGen = new QRCodeGenerator();
             using var data = qrGen.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
             using var qr = new QRCode(data);
@@ -323,15 +325,19 @@ public class WoDocumentService(
                 continue;
 
             // bentuk chain
-            var chain = wtdConfig
-                .DocumentApprovals.OrderBy(a => a.SequenceOrder)
-                .ToList();
+            var chain = wtdConfig.DocumentApprovals.OrderBy(a => a.SequenceOrder).ToList();
 
             if (!needVP)
             {
                 chain = chain
-                    .Where(a => a.Role != null
-                        && !string.Equals(a.Role.Name, "Vice President", StringComparison.OrdinalIgnoreCase))
+                    .Where(a =>
+                        a.Role != null
+                        && !string.Equals(
+                            a.Role.Name,
+                            "Vice President",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     .OrderBy(a => a.SequenceOrder)
                     .ToList();
             }
@@ -346,16 +352,24 @@ public class WoDocumentService(
             if (existing.Any())
                 continue;
 
-            approvalsToInsert.Add(new WoDocumentApprovals {
-                WorkOrderId = workOrderId,
-                WoDocumentId = doc.WoDocumentId,
-                RoleId = firstStep.RoleId,
-                Level = firstStep.Level,
-                SequenceOrder = firstStep.SequenceOrder,
-                Status = "Pending"
-            });
+            approvalsToInsert.Add(
+                new WoDocumentApprovals
+                {
+                    WorkOrderId = workOrderId,
+                    WoDocumentId = doc.WoDocumentId,
+                    RoleId = firstStep.RoleId,
+                    Level = firstStep.Level,
+                    SequenceOrder = firstStep.SequenceOrder,
+                    Status = "Pending",
+                }
+            );
 
-            _logger.LogInformation("[SendApproval] WO={WorkOrderId} NeedVP={NeedVP}, Total chain={ChainCount}", workOrderId, needVP, chain.Count);
+            _logger.LogInformation(
+                "[SendApproval] WO={WorkOrderId} NeedVP={NeedVP}, Total chain={ChainCount}",
+                workOrderId,
+                needVP,
+                chain.Count
+            );
         }
 
         if (approvalsToInsert.Count > 0)
@@ -447,5 +461,28 @@ public class WoDocumentService(
             FileName = entity.FileName,
             Size = entity.Size,
         };
+    }
+
+    public async Task<string> GetPresignedViewUrlByObjectKeyAsync(
+        string objectKey,
+        string? fileName,
+        string? contentType,
+        TimeSpan ttl,
+        CancellationToken ct = default
+    )
+    {
+        if (ttl <= TimeSpan.Zero)
+            ttl = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
+
+        var headers = new Dictionary<string, string>
+        {
+            ["response-content-disposition"] =
+                $"inline; filename=\"{(string.IsNullOrWhiteSpace(fileName) ? "document.pdf" : fileName)}\"",
+            ["response-content-type"] = string.IsNullOrWhiteSpace(contentType)
+                ? "application/pdf"
+                : contentType,
+        };
+
+        return await _storage.GetPresignedUrlHeaderAsync(_opts.Bucket, objectKey, ttl, headers, ct);
     }
 }

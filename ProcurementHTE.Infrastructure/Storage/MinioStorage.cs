@@ -30,7 +30,9 @@ namespace ProcurementHTE.Infrastructure.Storage
                 endpoint = endpoint[(schemeIdx + 3)..]; // potong "http(s)://"
 
             // --- Log untuk verifikasi (tanpa menampilkan secret) ---
-            Console.WriteLine($"[MinIO cfg] Endpoint={endpoint}, SSL={_options.UseSSL}, Bucket={_options.Bucket}");
+            Console.WriteLine(
+                $"[MinIO cfg] Endpoint={endpoint}, SSL={_options.UseSSL}, Bucket={_options.Bucket}"
+            );
 
             var client = new MinioClient()
                 .WithEndpoint(endpoint)
@@ -44,12 +46,18 @@ namespace ProcurementHTE.Infrastructure.Storage
 
         public Task DeleteAsync(string bucket, string objectKey, CancellationToken ct = default) =>
             _client.RemoveObjectAsync(
-                new RemoveObjectArgs()
-                    .WithBucket(bucket)
-                    .WithObject(objectKey),
-                ct);
+                new RemoveObjectArgs().WithBucket(bucket).WithObject(objectKey),
+                ct
+            );
 
-        public async Task UploadAsync(string bucket, string objectKey, Stream content, long size, string contentType, CancellationToken ct = default)
+        public async Task UploadAsync(
+            string bucket,
+            string objectKey,
+            Stream content,
+            long size,
+            string contentType,
+            CancellationToken ct = default
+        )
         {
             await _client.PutObjectAsync(
                 new PutObjectArgs()
@@ -58,14 +66,41 @@ namespace ProcurementHTE.Infrastructure.Storage
                     .WithStreamData(content)
                     .WithObjectSize(size)
                     .WithContentType(contentType),
-                ct);
+                ct
+            );
         }
 
-        public Task<string> GetPresignedUrlAsync(string bucket, string objectKey, TimeSpan expiry, CancellationToken ct = default) =>
+        public Task<string> GetPresignedUrlAsync(
+            string bucket,
+            string objectKey,
+            TimeSpan expiry,
+            CancellationToken ct = default
+        ) =>
             _client.PresignedGetObjectAsync(
                 new PresignedGetObjectArgs()
                     .WithBucket(bucket)
                     .WithObject(objectKey)
-                    .WithExpiry((int)expiry.TotalSeconds));
+                    .WithExpiry((int)expiry.TotalSeconds)
+            );
+
+        public async Task<string> GetPresignedUrlHeaderAsync(
+            string bucket,
+            string objectKey,
+            TimeSpan expiry,
+            IDictionary<string, string>? responseHeaders,
+            CancellationToken ct = default
+        )
+        {
+            var args = new PresignedGetObjectArgs()
+                .WithBucket(bucket)
+                .WithObject(objectKey)
+                .WithExpiry((int)expiry.TotalSeconds);
+
+            if (responseHeaders is not null && responseHeaders.Count > 0)
+                args = args.WithHeaders(responseHeaders);
+
+            // Tetap tanpa ct
+            return await _client.PresignedGetObjectAsync(args).ConfigureAwait(false);
+        }
     }
 }
