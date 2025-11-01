@@ -14,12 +14,12 @@
 
 <body class="mb-0 min-vh-100" data-active-page="@ViewBag.ActivePage">
     <div class="row g-0 flex-nowrap">
-        <div class="col-auto col-md-3 col-xl-2">
+        <div class="col-9 col-md-3 col-xl-2 offcanvas-md offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <partial name="Partials/_Sidebar" />
         </div>
 
-        <div class="col position-relative">
-            <header>
+        <div class="col position-relative content">
+            <header class="sticky-top">
                 <partial name="Partials/_Navbar" />
             </header>
 
@@ -31,12 +31,13 @@
 
             <footer class="border-top footer text-muted">
                 <div class="container">
-                    &copy; 2025 - ProcurementHTE - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                    &copy; 2025 - Procurement HTE
                 </div>
             </footer>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @await Html.PartialAsync("_SweetAlerts")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

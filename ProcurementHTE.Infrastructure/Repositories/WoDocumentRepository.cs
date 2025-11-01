@@ -28,11 +28,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<WoDocuments?> GetLatestActiveByWorkOrderAndDocTypeAsync(string woId, string documentTypeId) {
-            return await _context.WoDocuments
-            .Where(doc => doc.WorkOrderId == woId && doc.DocumentTypeId == documentTypeId && doc.Status != "Deleted")
-            .OrderByDescending(doc => doc.CreatedAt)
-            .FirstOrDefaultAsync();
+        public async Task<WoDocuments?> GetLatestActiveByWorkOrderAndDocTypeAsync(
+            string woId,
+            string documentTypeId
+        )
+        {
+            return await _context
+                .WoDocuments.Where(doc =>
+                    doc.WorkOrderId == woId
+                    && doc.DocumentTypeId == documentTypeId
+                    && doc.Status != "Deleted"
+                )
+                .OrderByDescending(doc => doc.CreatedAt)
+                .FirstOrDefaultAsync();
         }
 
         public async Task AddAsync(WoDocuments doc)
@@ -60,41 +68,25 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         // Implementasi metode GetListByQrTextSameWoAsync
         public async Task<PagedResult<WoDocumentLiteDto>> GetListByQrTextSameWoAsync(
-                    string qrText, int page, int pageSize, CancellationToken ct = default)
+            string qrText,
+            int page,
+            int pageSize,
+            CancellationToken ct = default
+        )
         {
             // Parse DocId dari QR → lebih robust
             string? workOrderId = null;
             var parts = qrText.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            var docIdStr = parts.FirstOrDefault(p => p.StartsWith("DocId=", StringComparison.OrdinalIgnoreCase))?
-                                .Substring("DocId=".Length);
+            var docIdStr = parts
+                .FirstOrDefault(p => p.StartsWith("DocId=", StringComparison.OrdinalIgnoreCase))
+                ?.Substring("DocId=".Length);
 
             if (!string.IsNullOrWhiteSpace(docIdStr))
             {
-                workOrderId = await _context.WoDocuments.AsNoTracking()
+                workOrderId = await _context
+                    .WoDocuments.AsNoTracking()
                     .Where(d => d.WoDocumentId == docIdStr)
                     .Select(d => d.WorkOrderId)
                     .FirstOrDefaultAsync(ct);
@@ -103,7 +95,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             // Fallback: berdasarkan QrText penuh + status 'Pending Approval'
             if (string.IsNullOrEmpty(workOrderId))
             {
-                workOrderId = await _context.WoDocuments.AsNoTracking()
+                workOrderId = await _context
+                    .WoDocuments.AsNoTracking()
                     .Where(d => d.QrText == qrText && d.Status == "Pending Approval")
                     .Select(d => d.WorkOrderId)
                     .FirstOrDefaultAsync(ct);
@@ -112,7 +105,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             if (string.IsNullOrEmpty(workOrderId))
                 return new PagedResult<WoDocumentLiteDto>(Array.Empty<WoDocumentLiteDto>(), 0);
 
-            var baseQuery = _context.WoDocuments.AsNoTracking()
+            var baseQuery = _context
+                .WoDocuments.AsNoTracking()
                 .Where(wd => wd.WorkOrderId == workOrderId);
 
             var total = await baseQuery.CountAsync(ct);
@@ -137,10 +131,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
         }
 
         public async Task<WoDocumentLiteDto?> UpdateStatusAsync(
-        string woDocumentId, string newStatus, string? reason, string? approvedByUserId, CancellationToken ct = default)
+            string woDocumentId,
+            string newStatus,
+            string? reason,
+            string? approvedByUserId,
+            CancellationToken ct = default
+        )
         {
-            var entity = await _context.WoDocuments.FirstOrDefaultAsync(d => d.WoDocumentId == woDocumentId, ct);
-            if (entity is null) return null;
+            var entity = await _context.WoDocuments.FirstOrDefaultAsync(
+                d => d.WoDocumentId == woDocumentId,
+                ct
+            );
+            if (entity is null)
+                return null;
 
             if (!DocStatuses.All.Contains(newStatus))
                 throw new ArgumentException($"Unknown status '{newStatus}'", nameof(newStatus));
@@ -149,20 +152,34 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var from = entity.Status ?? DocStatuses.Uploaded;
             bool allowed = from switch
             {
-                var s when s.Equals(DocStatuses.PendingApproval, StringComparison.OrdinalIgnoreCase)
-                    => newStatus is DocStatuses.Approved or DocStatuses.Rejected or DocStatuses.Replaced,
-                var s when s.Equals(DocStatuses.Uploaded, StringComparison.OrdinalIgnoreCase)
-                    => newStatus is DocStatuses.PendingApproval or DocStatuses.Deleted or DocStatuses.Replaced,
-                _ => true
+                var s
+                    when s.Equals(
+                        DocStatuses.PendingApproval,
+                        StringComparison.OrdinalIgnoreCase
+                    ) => newStatus
+                    is DocStatuses.Approved
+                        or DocStatuses.Rejected
+                        or DocStatuses.Replaced,
+                var s when s.Equals(DocStatuses.Uploaded, StringComparison.OrdinalIgnoreCase) =>
+                    newStatus
+                        is DocStatuses.PendingApproval
+                            or DocStatuses.Deleted
+                            or DocStatuses.Replaced,
+                _ => true,
             };
             if (!allowed)
-                throw new InvalidOperationException($"Transition {from} -> {newStatus} is not allowed.");
+                throw new InvalidOperationException(
+                    $"Transition {from} -> {newStatus} is not allowed."
+                );
 
             // Update status & kolom approval ringkas
             entity.Status = newStatus;
             if (DocStatuses.IsFinal(newStatus))
             {
-                entity.IsApproved = newStatus.Equals(DocStatuses.Approved, StringComparison.OrdinalIgnoreCase);
+                entity.IsApproved = newStatus.Equals(
+                    DocStatuses.Approved,
+                    StringComparison.OrdinalIgnoreCase
+                );
                 entity.ApprovedAt = DateTime.UtcNow;
                 entity.ApprovedByUserId = approvedByUserId;
             }
@@ -180,7 +197,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             {
                 await _context.SaveChangesAsync(ct);
             }
-            catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number is 2601 or 2627))
+            catch (DbUpdateException ex)
+                when (ex.InnerException is SqlException sqlEx && (sqlEx.Number is 2601 or 2627))
             {
                 // kalau kamu punya unique index (WorkOrderId, DocumentTypeId, Status)
                 throw new InvalidOperationException("Status conflict with unique constraint.", ex);

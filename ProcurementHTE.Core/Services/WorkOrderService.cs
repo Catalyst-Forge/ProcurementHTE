@@ -13,7 +13,13 @@ namespace ProcurementHTE.Core.Services
             _woRepository = woRepository;
         }
 
-        public Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(int page, int pageSize, string? search, ISet<string> fields, CancellationToken ct)
+        public Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
             return _woRepository.GetAllAsync(page, pageSize, search, fields, ct);
         }
@@ -47,7 +53,8 @@ namespace ProcurementHTE.Core.Services
             return await _woRepository.GetStatusByNameAsync(name);
         }
 
-        public async Task<WorkOrder?> GetWithOffersAsync(string id) {
+        public async Task<WorkOrder?> GetWithOffersAsync(string id)
+        {
             return await _woRepository.GetWithOffersAsync(id);
         }
 
@@ -152,21 +159,26 @@ namespace ProcurementHTE.Core.Services
             await _woRepository.DropWorkOrderAsync(wo);
         }
 
-        public async Task MarkAsCompletedAsync(string woId) {
-            var wo = await _woRepository.GetByIdAsync(woId) ?? throw new ArgumentException("Work order tidak ditemukan");
+        public async Task MarkAsCompletedAsync(string woId)
+        {
+            var wo =
+                await _woRepository.GetByIdAsync(woId)
+                ?? throw new ArgumentException("Work order tidak ditemukan");
 
             var statuses = await _woRepository.GetStatusesAsync();
-            var statusCompleted = statuses.Where(status => status.StatusName == "Completed")
-            .OrderByDescending(status => status.StatusId)
-            .FirstOrDefault();
+            var statusCompleted = statuses
+                .Where(status => status.StatusName == "Completed")
+                .OrderByDescending(status => status.StatusId)
+                .FirstOrDefault();
 
             if (statusCompleted is null)
-                throw new InvalidOperationException("Status completed tidak ditemukan di table Statuses");
+                throw new InvalidOperationException(
+                    "Status completed tidak ditemukan di table Statuses"
+                );
 
             wo.StatusId = statusCompleted.StatusId;
-             wo.CompletedAt = DateTime.Now;
+            wo.CompletedAt = DateTime.Now;
             await _woRepository.UpdateWorkOrderAsync(wo);
         }
-
     }
 }

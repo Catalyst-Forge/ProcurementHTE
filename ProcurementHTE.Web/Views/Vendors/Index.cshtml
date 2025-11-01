@@ -39,7 +39,7 @@
     <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
-<form method="get" id="filterForm" class="border rounded-3 d-flex gap-2 p-2 mb-2">
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
     <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
 
     <div class="input-group w-auto">
@@ -47,7 +47,7 @@
         <input class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
     </div>
 
-    <div class="dropdown ms-auto">
+    <div class="dropdown ms-sm-auto">
         <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-funnel"></i> Filter
         </button>

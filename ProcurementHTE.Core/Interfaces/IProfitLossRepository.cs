@@ -1,4 +1,5 @@
 ﻿using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.DTOs;
 
 namespace ProcurementHTE.Core.Interfaces
 {
@@ -9,6 +10,8 @@ namespace ProcurementHTE.Core.Interfaces
         Task<ProfitLoss?> GetByWorkOrderAsync(string woId);
         Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId);
         Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId);
+        Task<decimal> GetTotalRevenueThisMonthAsync();
+        Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year);
 
         // Transaction DB
         Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId);

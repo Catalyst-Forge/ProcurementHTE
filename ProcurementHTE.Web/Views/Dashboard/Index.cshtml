@@ -1,4 +1,5 @@
-﻿@using ProcurementHTE.Web.Models.ViewModels
+﻿@using MigraDocCore.DocumentObjectModel
+@using ProcurementHTE.Web.Models.ViewModels
 @model IEnumerable<DashboardWoViewModel>
 @{
     ViewData["Title"] = "Dashboard";
@@ -14,7 +15,7 @@
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
@@ -24,10 +25,7 @@
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <div class="text-muted small">Total Users</div>
-                        <div class="fs-4 fw-bold">""</div>
-                        <div class="text-success small">
-                            <i class="bi bi-arrow-up"></i> 12% dari bulan lalu
-                        </div>
+                        <div class="fs-4 fw-bold">@ViewBag.TotalUsers</div>
                     </div>
                 </div>
             </div>
@@ -35,7 +33,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
@@ -45,10 +43,7 @@
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <div class="text-muted small">Revenue</div>
-                        <div class="fs-4 fw-bold">Rp </div>
-                        <div class="text-success small">
-                            <i class="bi bi-arrow-up"></i> 8% dari bulan lalu
-                        </div>
+                        <div class="fs-4 fw-bold">Rp @ViewBag.TotalRevenueThisMonth.ToString("N0")</div>
                     </div>
                 </div>
             </div>
@@ -56,7 +51,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
@@ -67,7 +62,6 @@
                     <div class="flex-grow-1 ms-3">
                         <div class="text-muted small">Total Work Orders</div>
                         <div class="fs-4 fw-bold">@ViewBag.TotalWo</div>
-                        <div class="text-secondary small">bulan ini</div>
                     </div>
                 </div>
             </div>
@@ -75,19 +69,19 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
                         <div class="bg-info bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-bag-check-fill text-info fs-4"></i>
+                            <i class="bi bi-check2-circle text-info fs-4"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Products</div>
-                        <div class="fs-4 fw-bold">""</div>
-                        <div class="text-success small">
-                            <i class="bi bi-arrow-up"></i> 5% dari bulan lalu
+                        <div class="text-muted small">Approval Status</div>
+                        <div class="fs-4 fw-bold">@((ViewBag.ApprovalStatus as IEnumerable<dynamic>)?.Sum(x => (int)x.Count) ?? 0)</div>
+                        <div class="text-muted small">
+                            Approved / Pending / Rejected
                         </div>
                     </div>
                 </div>
@@ -96,11 +90,12 @@
     </div>
 </div>
 
-<!-- Charts & Tables Row -->
+@if (User.IsInRole("Admin")) {
+@* Charts & Tables Row *@
 <div class="row g-3 mb-4">
-    <!-- Recent Orders -->
+    @* Recent Orders *@
     <div class="col-xl-8">
-        <div class="card border-0 shadow-sm">
+        <div class="card shadow-sm mb-3">
             <div class="card-header bg-white border-0 py-3">
                 <h5 class="mb-0">Recent Work Orders</h5>
             </div>
@@ -149,60 +144,161 @@
                 <a asp-controller="WorkOrders" asp-action="Index" class="btn btn-outline-primary btn-sm">View All Work Orders</a>
             </div>
         </div>
-    </div>
-
-    <!-- Traffic Sources -->
-    <div class="col-xl-4">
-        <div class="card border-0 shadow-sm">
+        
+        @* Revenue Chart  *@
+        <div class="card shadow-sm mb-3">
             <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Traffic Sources</h5>
+                <h5 class="mb-0">Profit &amp; Loss Overview</h5>
             </div>
             <div class="card-body">
-                <canvas id="trafficChart"></canvas>
+                <canvas id="revenueChart" height="80"></canvas>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row gap-3">
+            @* Approval Status Chart *@
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">Approval Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="approvalStatusChart"></canvas>
+                </div>
+            </div>
+
+            @* WO Status Chart *@
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">Work Orders by Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="woStatusChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Recent Activities & Orders -->
-<div class="row g-3 mb-4">
-    <!-- Sales Chart -->
-    <div class="col-xl-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Sales Overview</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="salesChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activities -->
     <div class="col-xl-4">
-        <div class="card border-0 shadow-sm">
+        @* Recent Activities *@
+        <div class="card shadow-sm">
             <div class="card-header bg-white border-0 py-3">
                 <h5 class="mb-0">Recent Activities</h5>
             </div>
             <div class="card-body">
                 <div class="activity-list">
-                    @* @foreach (var activity in Model.RecentActivities)
-                    {
-                        <div class="d-flex mb-3 pb-3 border-bottom">
-                            <div class="flex-shrink-0">
-                                <div class="bg-primary bg-opacity-10 rounded-circle p-2">
-                                    <i class="bi @activity.Icon text-primary"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <div class="small fw-semibold">@activity.Title</div>
-                                <div class="text-muted small">@activity.Description</div>
-                                <div class="text-muted small">@activity.Time</div>
-                            </div>
-                        </div>
-                    } *@
+                    @if (ViewBag.RecentActivities != null) {
+                      @foreach (var activity in ViewBag.RecentActivities)
+                      {
+                          <div class="d-flex mb-3 pb-3 border-bottom">
+                              <div class="flex-shrink-0">
+                                  <div class="bg-primary bg-opacity-10 rounded-circle p-2 py-1">
+                                      <i class="bi bi-info text-primary"></i>
+                                  </div>
+                              </div>
+                              <div class="flex-grow-1 ms-3">
+                                  <div class="small fw-semibold">@activity.User</div>
+                                  <div class="text-muted small">@activity.Description</div>
+                                  <div class="text-muted small">@activity.Time</div>
+                              </div>
+                          </div>
+                      } 
+                    } else {
+                      <div class="text-muted small">No activities</div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const woStatusData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.WoByStatus ?? new object[] {}))
+        const revenuePerMonth = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.RevenuePerMonth ?? new object[] {}))
+        const approvalStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.ApprovalStatus ?? new object[] {}));
+
+        // WO by Status Chart
+        const woStatusCtx = document.getElementById('woStatusChart').getContext('2d');
+        new Chart(woStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: woStatusData.map(item => item.Status),
+                datasets: [{
+                    data: woStatusData.map(item => item.Count),
+                    backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6c757d'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+            }
+        });
+
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const revenueLabels = revenuePerMonth.map(item => monthNames[item.Month - 1]);
+        const revenueData = revenuePerMonth.map(item => item.Total);
+
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.12)',
+                    tension: 0.35,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + value.toLocaleString('id-ID');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Approval Status Chart
+        const approvalEl = document.getElementById('approvalStatusChart').getContext('2d');
+        new Chart(approvalEl, {
+            type: 'doughnut',
+            data: {
+                labels: approvalStatus.map(x => x.Status),
+                datasets: [{
+                    data: approvalStatus.map(x => x.Count),
+                    backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+}

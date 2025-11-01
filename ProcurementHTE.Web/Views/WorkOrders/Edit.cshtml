@@ -24,15 +24,15 @@
             <legend class="card-title fw-semibold"><i class="bi bi-info-circle-fill text-primary me-1"></i> Header Information</legend>
             <hr />
             <div class="row">
-                <div class="col-2">
+                <div class="col-12 col-sm-auto col-md-4">
                     <div class="mb-3">
                         <label asp-for="WoNum" class="form-label"></label>
-                        <input type="text" asp-for="WoNum" class="form-control-plaintext" value="@Model.WoNum" />
+                        <input type="text" asp-for="WoNum" class="form-control-plaintext" value="@Model.WoNum" readonly />
                         <span class="form-text">Auto-generated • not editable</span>
                     </div>
                 </div>
 
-                <div class="col">
+                <div class="col-12 col-sm-auto col-md-4">
                     <div class="mb-3">
                         <label asp-for="WoNumLetter" class="form-label">Work Order Number Letter</label>
                         <input type="text" asp-for="WoNumLetter" class="form-control" />
@@ -40,7 +40,7 @@
                     </div>
                 </div>
 
-                <div class="col">
+                <div class="col-12 col-sm-auto col-md-4">
                     <div class="mb-3">
                         <label asp-for="WorkOrderLetter" class="form-label"></label>
                         <input type="text" asp-for="WorkOrderLetter" class="form-control" />
@@ -68,7 +68,7 @@
             </div>
 
             <div class="row">
-                <div class="col">
+                <div class="col-12 col-sm">
                     <div class="mb-3">
                         <label asp-for="FromLocation" class="form-label"></label>
                         <input type="text" asp-for="FromLocation" class="form-control" />
@@ -76,7 +76,7 @@
                     </div>
                 </div>
 
-                <div class="col">
+                <div class="col-12 col-sm">
                     <div class="mb-3">
                         <label asp-for="Destination" class="form-label"></label>
                         <input type="text" asp-for="Destination" class="form-control" />
@@ -86,7 +86,7 @@
             </div>
 
             <div class="row">
-                <div class="col">
+                <div class="col-12 col-sm">
                     <div class="mb-3">
                         <label asp-for="WBS" class="form-label"></label>
                         <input type="text" asp-for="WBS" class="form-control" />
@@ -94,7 +94,7 @@
                     </div>
                 </div>
 
-                <div class="col">
+                <div class="col-12 col-sm">
                     <div class="mb-3">
                         <label asp-for="GlAccount" class="form-label"></label>
                         <input type="text" asp-for="GlAccount" class="form-control" />
@@ -116,7 +116,7 @@
             </div>
 
             <div class="row">
-                <div class="col">
+                <div class="col-12 col-sm">
                     <div class="mb-3">
                         <label asp-for="XS1" class="form-label">From Location</label>
                         <input type="text" asp-for="XS1" class="form-control" />
@@ -124,7 +124,7 @@
                     </div>
                 </div>
 
-                <div class="col">
+                <div class="col-12 col-sm">
                     <div class="mb-3">
                         <label asp-for="XS2" class="form-label">Destination</label>
                         <input type="text" asp-for="XS2" class="form-control" />
@@ -144,13 +144,13 @@
             <hr />
 
             <div class="row">
-                <div class="col mb-3">
+                <div class="col-12 col-sm mb-3">
                     <label asp-for="XS3" class="form-label">Contact Person in location</label>
                     <input type="text" asp-for="XS3" class="form-control" />
                     <span asp-validation-for="XS3" class="text-danger"></span>
                 </div>
 
-                <div class="col mb-3">
+                <div class="col-12 col-sm mb-3">
                     <label asp-for="XS4" class="form-label">Contact Person in workshop</label>
                     <input type="text" asp-for="XS4" class="form-control" />
                     <span asp-validation-for="XS4" class="text-danger"></span>
@@ -164,13 +164,13 @@
             <legend class="card-title fw-semibold"><i class="bi bi-person-check-fill text-primary me-1"></i> Signatures</legend>
             <hr />
             <div class="row gap-2">
-                <div class="mb-3 col d-flex flex-column align-items-center border rounded-4 p-3">
+                <div class="mb-3 col-12 col-sm d-flex flex-column align-items-center border rounded-4 p-3">
                     <label asp-for="Requester" class="form-label fw-semibold text-info-emphasis"></label>
                     <input type="text" asp-for="Requester" class="form-control w-50 text-center border-2" />
                     <span asp-validation-for="Requester" class="text-danger"></span>
                 </div>
 
-                <div class="mb-3 col d-flex flex-column align-items-center border rounded-4 p-3">
+                <div class="mb-3 col-12 col-sm d-flex flex-column align-items-center border rounded-4 p-3">
                     <label asp-for="Approved" class="form-label fw-semibold text-info-emphasis"></label>
                     <input type="text" asp-for="Approved" class="form-control w-50 text-center border-2" />
                     <span asp-validation-for="Approved" class="text-danger"></span>

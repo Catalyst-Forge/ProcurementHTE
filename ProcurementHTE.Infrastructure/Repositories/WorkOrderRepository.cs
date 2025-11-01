@@ -2,6 +2,7 @@
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Core.Utils;
 using ProcurementHTE.Infrastructure.Data;
 
@@ -28,7 +29,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             && sqlEx.Number == 2627
             && (sqlEx.Message?.Contains("AK_WorkOrders_WoNum") ?? false);
 
-        public async Task<PagedResult<WorkOrder>> GetAllAsync(
+        public async Task<Core.Common.PagedResult<WorkOrder>> GetAllAsync(
             int page,
             int pageSize,
             string? search,
@@ -149,6 +150,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<int> CountAsync(CancellationToken ct)
         {
             return await _context.WorkOrders.CountAsync(ct);
+        }
+
+        public async Task<IReadOnlyList<WoStatusCountDto>> GetCountByStatusAsync()
+        {
+            return await _context
+                .WorkOrders.GroupBy(wo => wo.Status!.StatusName)
+                .Select(group => new WoStatusCountDto { Status = group.Key, Count = group.Count() })
+                .ToListAsync();
         }
 
         public async Task StoreWorkOrderAsync(WorkOrder wo)

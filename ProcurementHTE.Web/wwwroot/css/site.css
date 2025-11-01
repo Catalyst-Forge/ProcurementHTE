@@ -4,6 +4,7 @@
 
 html {
   font-size: 14px;
+  interpolate-size: allow-keywords;
 }
 
 @media (min-width: 768px) {
@@ -35,6 +36,14 @@ a {
 
 .btn-outline-secondary {
   --bs-btn-border-color: var(--bs-border-color);
+}
+
+#sidebar {
+  transition: all 300ms ease-in-out;
+}
+
+.content {
+  min-height: 100vh;
 }
 
 .nav {
@@ -84,6 +93,74 @@ a {
   --bs-pagination-color: rgb(var(--bs-secondary-color-rgb));
 }
 
+.wo-content {
+  grid-template-columns: 1fr;
+}
+
+.button-nav-wrap {
+  position: fixed;
+}
+
+.group-nav-button {
+  position: fixed;
+  bottom: 4rem;
+  right: -100%;
+  z-index: 9;
+  transition: right 250ms ease;
+}
+
+.group-nav-button.show {
+  right: 1.5rem;
+}
+
+/* --- Tampilan Mobile (Pola Card Stack) --- */
+@media screen and (max-width: 575px) {
+  .mobile-table thead {
+    display: none;
+  }
+
+  .mobile-table,
+  .mobile-table tbody,
+  .mobile-table tr,
+  .mobile-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-table tbody {
+    padding: 0.3rem;
+  }
+
+  .mobile-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .mobile-table td {
+    border: none;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    text-align: right;
+  }
+
+  .mobile-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-table td[data-label]::before {
+    content: attr(data-label);
+    margin-right: auto;
+    position: sticky;
+    left: 0;
+    width: 45%;
+    padding-right: 10px;
+    font-weight: bold;
+    text-align: left;
+  }
+}
+
 @media (min-width: 576px) {
   .auth-container {
     width: 80%;
@@ -91,13 +168,44 @@ a {
 }
 
 @media (min-width: 768px) {
+  #sidebar {
+    aside {
+      height: 100vh !important;
+    }
+  }
+
   .auth-container {
     width: 60%;
+  }
+
+  .button-nav-wrap {
+    position: relative;
+  }
+
+  .group-nav-button {
+    border: none !important;
+    box-shadow: none !important;
+    position: relative !important;
+    bottom: unset !important;
+    right: unset !important;
   }
 }
 
 @media (min-width: 992px) {
+  .gx-8 {
+    --bs-gutter-x: 8rem;
+  }
+
+  #sidebar {
+    position: sticky !important;
+    visibility: visible;
+  }
+
   .auth-container {
     width: 40%;
+  }
+
+  .wo-content {
+    grid-template-columns: 2fr 1fr;
   }
 }

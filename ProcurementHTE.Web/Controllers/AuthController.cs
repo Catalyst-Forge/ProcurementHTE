@@ -94,86 +94,75 @@ namespace ProcurementHTE.Web.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null || !user.IsActive)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
+                ModelState.AddModelError(string.Empty, "Akun tidak ditemukan atau tidak aktif");
+                return View(model);
+            }
 
-                if (user != null && user.IsActive)
+            var result = await _signInManager.PasswordSignInAsync(
+                user.UserName!,
+                model.Password,
+                isPersistent: true,
+                lockoutOnFailure: true
+            );
+
+            if (result.Succeeded)
+            {
+                user.LastLoginAt = DateTime.Now;
+                await _userManager.UpdateAsync(user);
+                _logger.LogInformation("User {model.Email} logged in", model.Email);
+
+                var claims = new List<Claim>
                 {
-                    var result = await _signInManager.PasswordSignInAsync(
-                        user.UserName!,
-                        model.Password,
-                        isPersistent: true,
-                        lockoutOnFailure: true
+                    new(ClaimTypes.Name, user.FullName!),
+                    new(ClaimTypes.Email, user.Email!),
+                    new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, "Login");
+                var authProperties = new AuthenticationProperties { IsPersistent = true };
+
+                var existingClaims = await _userManager.GetClaimsAsync(user);
+
+                if (!existingClaims.Any(c => c.Type == ClaimTypes.Name))
+                {
+                    await _userManager.AddClaimAsync(
+                        user,
+                        new Claim(ClaimTypes.Name, user.FullName!)
                     );
-
-                    if (result.Succeeded)
-                    {
-                        user.LastLoginAt = DateTime.Now;
-                        await _userManager.UpdateAsync(user);
-                        _logger.LogInformation("User {model.Email} logged in", model.Email);
-
-                        var claims = new List<Claim>
-                        {
-                            new(ClaimTypes.Name, user.FullName!),
-                            new(ClaimTypes.Email, user.Email!),
-                            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        };
-
-                        var claimsIdentity = new ClaimsIdentity(claims, "Login");
-                        var authProperties = new AuthenticationProperties { IsPersistent = true };
-
-                        await HttpContext.SignInAsync(
-                            IdentityConstants.ApplicationScheme,
-                            new ClaimsPrincipal(claimsIdentity),
-                            authProperties
-                        );
-
-                        var existingClaims = await _userManager.GetClaimsAsync(user);
-
-                        if (!existingClaims.Any(c => c.Type == ClaimTypes.Name))
-                        {
-                            await _userManager.AddClaimAsync(
-                                user,
-                                new Claim(ClaimTypes.Name, user.FullName!)
-                            );
-                        }
-
-                        if (!existingClaims.Any(c => c.Type == ClaimTypes.Email))
-                        {
-                            await _userManager.AddClaimAsync(
-                                user,
-                                new Claim(ClaimTypes.Email, user.Email!)
-                            );
-                        }
-
-                        if (!existingClaims.Any(c => c.Type == ClaimTypes.NameIdentifier))
-                        {
-                            await _userManager.AddClaimAsync(
-                                user,
-                                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-                            );
-                        }
-
-                        return RedirectToLocal(returnUrl);
-                    }
-
-                    if (result.IsLockedOut)
-                    {
-                        ModelState.AddModelError(
-                            string.Empty,
-                            "Akun Anda terkunci. Coba lagi nanti."
-                        );
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "Email atau Password salah");
-                    }
                 }
-                else
+
+                if (!existingClaims.Any(c => c.Type == ClaimTypes.Email))
                 {
-                    ModelState.AddModelError(string.Empty, "Akun tidak ditemukan atau tidak aktif");
+                    await _userManager.AddClaimAsync(
+                        user,
+                        new Claim(ClaimTypes.Email, user.Email!)
+                    );
                 }
+
+                if (!existingClaims.Any(c => c.Type == ClaimTypes.NameIdentifier))
+                {
+                    await _userManager.AddClaimAsync(
+                        user,
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                    );
+                }
+
+                return RedirectToLocal(returnUrl);
+            }
+
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError(string.Empty, "Akun Anda terkunci. Coba lagi nanti.");
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, "Email atau Password salah");
             }
 
             return View(model);
@@ -198,6 +187,13 @@ namespace ProcurementHTE.Web.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        public async Task<IActionResult> Refresh()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            await _signInManager.RefreshSignInAsync(user!); // ← rebuild principal + cookie
+            return RedirectToAction("Index", "Dashboard");
         }
 
         private IActionResult RedirectToLocal(string returnUrl)

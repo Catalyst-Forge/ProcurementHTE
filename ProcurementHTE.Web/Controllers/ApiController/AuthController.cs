@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,6 @@ using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Repositories;
-using System.Security.Claims;
 
 namespace ProcurementHTE.Web.Controllers.ApiController
 {
@@ -37,7 +36,10 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto model, CancellationToken ct)
+        public async Task<ActionResult<LoginResponseDto>> Login(
+            [FromBody] LoginRequestDto model,
+            CancellationToken ct
+        )
         {
             try
             {
@@ -87,7 +89,13 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Login gagal untuk {Identifier}", model.Email);
-                return Unauthorized(new LoginResponseDto { Success = false, Message = "Email/username atau password salah" });
+                return Unauthorized(
+                    new LoginResponseDto
+                    {
+                        Success = false,
+                        Message = "Email/username atau password salah",
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -105,50 +113,86 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
         [HttpPost("refresh")]
         [AllowAnonymous]
-        public async Task<ActionResult<TokenResponseDto>> Refresh([FromBody] RefreshRequestDto dto, CancellationToken ct) {
-            try {
+        public async Task<ActionResult<TokenResponseDto>> Refresh(
+            [FromBody] RefreshRequestDto dto,
+            CancellationToken ct
+        )
+        {
+            try
+            {
                 var res = await _authService.RefreshAsync(dto, ct);
                 return Ok(res);
-            } catch (UnauthorizedAccessException ex) {
+            }
+            catch (UnauthorizedAccessException ex)
+            {
                 _logger.LogWarning(ex, "Refresh token invalid");
                 return Unauthorized(new { success = false, message = "Refresh token tidak valid" });
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, "Error refreshing token");
-                return StatusCode(500, new { success = false, message = "Terjadi kesalahan pada server" });
+                return StatusCode(
+                    500,
+                    new { success = false, message = "Terjadi kesalahan pada server" }
+                );
             }
         }
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout([FromBody] LogoutRequestDto dto, CancellationToken ct) {
-            try {
-                if (dto is null ||
-                   (string.IsNullOrWhiteSpace(dto.RefreshToken) &&
-                    !(dto.RevokeAllForDevice && !string.IsNullOrWhiteSpace(dto.DeviceId)))) {
-                    return BadRequest(new { success = false, message = "Kirim RefreshToken, atau RevokeAllForDevice=true + DeviceId." });
+        public async Task<IActionResult> Logout(
+            [FromBody] LogoutRequestDto dto,
+            CancellationToken ct
+        )
+        {
+            try
+            {
+                if (
+                    dto is null
+                    || (
+                        string.IsNullOrWhiteSpace(dto.RefreshToken)
+                        && !(dto.RevokeAllForDevice && !string.IsNullOrWhiteSpace(dto.DeviceId))
+                    )
+                )
+                {
+                    return BadRequest(
+                        new
+                        {
+                            success = false,
+                            message = "Kirim RefreshToken, atau RevokeAllForDevice=true + DeviceId.",
+                        }
+                    );
                 }
 
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                             ?? User.FindFirst("sub")?.Value
-                             ?? string.Empty;
+                var userId =
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? User.FindFirst("sub")?.Value
+                    ?? string.Empty;
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized(new { success = false, message = "Token tidak valid" });
 
                 await _authService.LogoutAsync(dto, userId, ct);
 
-                return Ok(new {
-                    success = true,
-                    message = dto.RevokeAllForDevice
-                        ? "Logout berhasil. Semua refresh token untuk device ini dihapus."
-                        : "Logout berhasil. Refresh token dihapus.",
-                    timestampUtc = DateTime.UtcNow
-                });
-            } catch (Exception ex) {
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        message = dto.RevokeAllForDevice
+                            ? "Logout berhasil. Semua refresh token untuk device ini dihapus."
+                            : "Logout berhasil. Refresh token dihapus.",
+                        timestampUtc = DateTime.UtcNow,
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, "Error during logout");
-                return StatusCode(500, new { success = false, message = "Terjadi kesalahan pada server" });
+                return StatusCode(
+                    500,
+                    new { success = false, message = "Terjadi kesalahan pada server" }
+                );
             }
         }
-
 
         [HttpGet("profile")]
         [Authorize]
@@ -193,74 +237,101 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
         [HttpGet("validate")]
         [Authorize]
-        public async Task<IActionResult> ValidateToken([FromQuery] string? deviceId, CancellationToken ct) {
+        public async Task<IActionResult> ValidateToken(
+            [FromQuery] string? deviceId,
+            CancellationToken ct
+        )
+        {
             // Jika sampai sini, berarti JWT sudah lolos verifikasi kriptografi & expiry oleh middleware.
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                         ?? User.FindFirst("sub")?.Value;
+            var userId =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
 
-            if (string.IsNullOrEmpty(userId)) {
-                return Unauthorized(new {
-                    valid = false,
-                    message = "Token tidak valid",
-                    reason = "NoUserIdClaim",
-                    timestamp = DateTime.Now
-                });
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(
+                    new
+                    {
+                        valid = false,
+                        message = "Token tidak valid",
+                        reason = "NoUserIdClaim",
+                        timestamp = DateTime.Now,
+                    }
+                );
             }
 
             // Jika deviceId dikirim, cek apakah masih ada refresh token aktif untuk device tsb.
-            if (!string.IsNullOrWhiteSpace(deviceId)) {
-                var hasActive = await _refreshTokenRepository.HasActiveTokenForDeviceAsync(userId, deviceId, ct);
-                if (!hasActive) {
-                    return Ok(new {
-                        valid = false,
-                        message = "Token dianggap tidak valid: sesi device sudah logout.",
-                        reason = "NoActiveRefreshTokenForDevice",
-                        userId,
-                        deviceId,
-                        timestamp = DateTime.Now
-                    });
+            if (!string.IsNullOrWhiteSpace(deviceId))
+            {
+                var hasActive = await _refreshTokenRepository.HasActiveTokenForDeviceAsync(
+                    userId,
+                    deviceId,
+                    ct
+                );
+                if (!hasActive)
+                {
+                    return Ok(
+                        new
+                        {
+                            valid = false,
+                            message = "Token dianggap tidak valid: sesi device sudah logout.",
+                            reason = "NoActiveRefreshTokenForDevice",
+                            userId,
+                            deviceId,
+                            timestamp = DateTime.Now,
+                        }
+                    );
                 }
             }
 
             // Tanpa deviceId, kita tidak bisa memastikan status logout device-level.
             var userName = User.Identity?.Name;
-            return Ok(new {
-                valid = true,
-                message = "Token valid",
-                userId,
-                userName,
-                deviceId = deviceId ?? null,
-                timestamp = DateTime.Now
-            });
+            return Ok(
+                new
+                {
+                    valid = true,
+                    message = "Token valid",
+                    userId,
+                    userName,
+                    deviceId = deviceId ?? null,
+                    timestamp = DateTime.Now,
+                }
+            );
         }
-
 
         [HttpGet("ping")]
         [AllowAnonymous]
         public IActionResult Ping()
         {
-            return Ok(new {
-                message = "Mobile API is working",
-                timestamp = DateTime.Now,
-                routes = new {
-                    login = "/api/v1/auth/login",
-                    refresh = "/api/v1/auth/refresh",
-                    logout = "/api/v1/auth/logout",
-                    profile = "/api/v1/auth/profile",
-                    validate = "/api/v1/auth/validate"
+            return Ok(
+                new
+                {
+                    message = "Mobile API is working",
+                    timestamp = DateTime.Now,
+                    routes = new
+                    {
+                        login = "/api/v1/auth/login",
+                        refresh = "/api/v1/auth/refresh",
+                        logout = "/api/v1/auth/logout",
+                        profile = "/api/v1/auth/profile",
+                        validate = "/api/v1/auth/validate",
+                    },
                 }
-            });
+            );
         }
 
-        private static string GetUserIdFromAccessToken(string jwt) {
+        private static string GetUserIdFromAccessToken(string jwt)
+        {
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
             var token = handler.ReadJwtToken(jwt);
-            var subId = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var subId = token
+                .Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)
+                ?.Value;
             if (!string.IsNullOrEmpty(subId))
                 return subId;
 
-            return token.Claims.FirstOrDefault(c => c.Type == "nameid")?.Value
-                ?? token.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+            return token.Claims.FirstOrDefault(c => c.Type == "nameid")?.Value ?? token
+                    .Claims.FirstOrDefault(c => c.Type == "sub")
+                    ?.Value
                 ?? string.Empty;
         }
     }

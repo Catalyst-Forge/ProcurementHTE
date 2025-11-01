@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
+using System.Security.Claims;
 
 namespace ProcurementHTE.Web.Controllers;
 
@@ -20,7 +21,8 @@ public class WorkOrderDocumentsController : Controller
         IWorkOrderService woService,
         IWoDocumentService docSvc,
         ILogger<WorkOrderDocumentsController> logger,
-        IHttpClientFactory http)
+        IHttpClientFactory http
+    )
     {
         _query = query;
         _docSvc = docSvc;
@@ -54,23 +56,26 @@ public class WorkOrderDocumentsController : Controller
             {
                 WorkOrderId = dto.WorkOrderId,
                 WoTypeId = dto.WoTypeId,
-                Items = [.. dto.Items.Select(x => new RequiredDocItemDto
-                {
-                    WoTypeDocumentId = x.WoTypeDocumentId,
-                    Sequence = x.Sequence,
-                    DocumentTypeId = x.DocumentTypeId,
-                    DocumentTypeName = x.DocumentTypeName,
-                    IsMandatory = x.IsMandatory,
-                    IsUploadRequired = x.IsUploadRequired,
-                    IsGenerated = x.IsGenerated,
-                    RequiresApproval = x.RequiresApproval,
-                    Note = x.Note,
-                    Uploaded = x.Uploaded,
-                    WoDocumentId = x.WoDocumentId,
-                    FileName = x.FileName,
-                    Size = x.Size,
-                    Status = x.Status
-                })]
+                Items =
+                [
+                    .. dto.Items.Select(x => new RequiredDocItemDto
+                    {
+                        WoTypeDocumentId = x.WoTypeDocumentId,
+                        Sequence = x.Sequence,
+                        DocumentTypeId = x.DocumentTypeId,
+                        DocumentTypeName = x.DocumentTypeName,
+                        IsMandatory = x.IsMandatory,
+                        IsUploadRequired = x.IsUploadRequired,
+                        IsGenerated = x.IsGenerated,
+                        RequiresApproval = x.RequiresApproval,
+                        Note = x.Note,
+                        Uploaded = x.Uploaded,
+                        WoDocumentId = x.WoDocumentId,
+                        FileName = x.FileName,
+                        Size = x.Size,
+                        Status = x.Status,
+                    }),
+                ],
             };
 
             return View(vm);
@@ -87,7 +92,12 @@ public class WorkOrderDocumentsController : Controller
     [ValidateAntiForgeryToken]
     [RequestFormLimits(MultipartBodyLengthLimit = 25L * 1024 * 1024)]
     [RequestSizeLimit(25L * 1024 * 1024)]
-    public async Task<IActionResult> Upload(string WorkOrderId, string DocumentTypeId, IFormFile File, string? Description)
+    public async Task<IActionResult> Upload(
+        string WorkOrderId,
+        string DocumentTypeId,
+        IFormFile File,
+        string? Description
+    )
     {
         if (string.IsNullOrWhiteSpace(WorkOrderId) || string.IsNullOrWhiteSpace(DocumentTypeId))
         {
@@ -103,6 +113,7 @@ public class WorkOrderDocumentsController : Controller
 
         // opsional: enforce PDF
         var contentType = (File.ContentType ?? "").ToLowerInvariant();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         try
         {
@@ -116,8 +127,8 @@ public class WorkOrderDocumentsController : Controller
                 FileName = File.FileName,
                 ContentType = contentType,
                 Description = Description,
-                UploadedByUserId = User?.Identity?.Name,
-                NowUtc = DateTime.UtcNow
+                UploadedByUserId = userId,
+                NowUtc = DateTime.UtcNow,
             };
 
             var result = await _docSvc.UploadAsync(req, HttpContext.RequestAborted);
@@ -125,7 +136,13 @@ public class WorkOrderDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[WODocs] Upload gagal: WO={WO}, DocType={DT}, File={FN}", WorkOrderId, DocumentTypeId, File?.FileName);
+            _logger.LogError(
+                ex,
+                "[WODocs] Upload gagal: WO={WO}, DocType={DT}, File={FN}",
+                WorkOrderId,
+                DocumentTypeId,
+                File?.FileName
+            );
             TempData["error"] = ex.Message;
         }
 
@@ -136,20 +153,27 @@ public class WorkOrderDocumentsController : Controller
     [HttpGet("WorkOrderDocuments/Download/{id}")]
     public async Task<IActionResult> Download(string id, string? workOrderId)
     {
-        if (string.IsNullOrWhiteSpace(id)) return BadRequest();
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
 
         try
         {
             var doc = await _docSvc.GetByIdAsync(id);
-            if (doc is null) return NotFound();
+            if (doc is null)
+                return NotFound();
 
             var url = await _docSvc.GetPresignedDownloadUrlAsync(
-                id, TimeSpan.FromMinutes(30), HttpContext.RequestAborted);
+                id,
+                TimeSpan.FromMinutes(30),
+                HttpContext.RequestAborted
+            );
 
             var client = _http.CreateClient("MinioProxy");
-            var resp = await client.GetAsync(url,
+            var resp = await client.GetAsync(
+                url,
                 HttpCompletionOption.ResponseHeadersRead,
-                HttpContext.RequestAborted);
+                HttpContext.RequestAborted
+            );
 
             resp.EnsureSuccessStatusCode();
 
@@ -161,7 +185,12 @@ public class WorkOrderDocumentsController : Controller
                 : doc.ContentType;
 
             // enableRangeProcessing true kalau mau dukung resume/dll
-            return File(stream, contentType, fileDownloadName: doc.FileName, enableRangeProcessing: true);
+            return File(
+                stream,
+                contentType,
+                fileDownloadName: doc.FileName,
+                enableRangeProcessing: true
+            );
         }
         catch (Exception ex)
         {
@@ -171,15 +200,19 @@ public class WorkOrderDocumentsController : Controller
         }
     }
 
-
     // GET: /WorkOrderDocuments/Preview/{id}?workOrderId=WO123
     [HttpGet("WorkOrderDocuments/PreviewUrl/{id}")]
     public async Task<IActionResult> PreviewUrl(string id, string? workOrderId)
     {
-        if (string.IsNullOrWhiteSpace(id)) return BadRequest();
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
         try
         {
-            var url = await _docSvc.GetPresignedPreviewUrlAsync(id, TimeSpan.FromMinutes(15), HttpContext.RequestAborted);
+            var url = await _docSvc.GetPresignedPreviewUrlAsync(
+                id,
+                TimeSpan.FromMinutes(15),
+                HttpContext.RequestAborted
+            );
             return Json(new { ok = true, url });
         }
         catch (Exception ex)
@@ -189,18 +222,20 @@ public class WorkOrderDocumentsController : Controller
         }
     }
 
-
     // POST: /WorkOrderDocuments/Delete/{id}
     [HttpPost("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete([FromForm] string id, [FromForm] string workOrderId)
     {
-        if (string.IsNullOrWhiteSpace(id)) return BadRequest();
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
 
         try
         {
             var ok = await _docSvc.DeleteAsync(id);
-            TempData[ok ? "success" : "error"] = ok ? "Dokumen dihapus." : "Dokumen tidak ditemukan.";
+            TempData[ok ? "success" : "error"] = ok
+                ? "Dokumen dihapus."
+                : "Dokumen tidak ditemukan.";
         }
         catch (Exception ex)
         {
@@ -227,7 +262,8 @@ public class WorkOrderDocumentsController : Controller
             }
 
             await _docSvc.SendApprovalAsync(workOrderId, userId, HttpContext.RequestAborted);
-            TempData["success"] = "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
+            TempData["success"] =
+                "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
         }
         catch (Exception ex)
         {
@@ -243,7 +279,11 @@ public class WorkOrderDocumentsController : Controller
     {
         try
         {
-            var url = await _docSvc.GetPresignedQrUrlAsync(id, TimeSpan.FromMinutes(15), HttpContext.RequestAborted);
+            var url = await _docSvc.GetPresignedQrUrlAsync(
+                id,
+                TimeSpan.FromMinutes(15),
+                HttpContext.RequestAborted
+            );
             return Json(new { ok = url != null, url });
         }
         catch (Exception ex)
@@ -259,14 +299,21 @@ public class WorkOrderDocumentsController : Controller
         try
         {
             var doc = await _docSvc.GetByIdAsync(id);
-            if (doc is null || string.IsNullOrWhiteSpace(doc.QrObjectKey)) return NotFound();
+            if (doc is null || string.IsNullOrWhiteSpace(doc.QrObjectKey))
+                return NotFound();
 
-            var url = await _docSvc.GetPresignedQrUrlAsync(id, TimeSpan.FromMinutes(30), HttpContext.RequestAborted);
+            var url = await _docSvc.GetPresignedQrUrlAsync(
+                id,
+                TimeSpan.FromMinutes(30),
+                HttpContext.RequestAborted
+            );
 
             var client = _http.CreateClient("MinioProxy"); // sama seperti download file
-            var resp = await client.GetAsync(url!,
+            var resp = await client.GetAsync(
+                url!,
                 HttpCompletionOption.ResponseHeadersRead,
-                HttpContext.RequestAborted);
+                HttpContext.RequestAborted
+            );
             resp.EnsureSuccessStatusCode();
 
             var stream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
@@ -278,6 +325,4 @@ public class WorkOrderDocumentsController : Controller
             return BadRequest("Gagal mengunduh QR.");
         }
     }
-
-
 }

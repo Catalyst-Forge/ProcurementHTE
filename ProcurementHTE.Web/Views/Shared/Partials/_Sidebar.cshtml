@@ -1,12 +1,15 @@
-<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 border-end vh-100 sticky-top">
-  <a asp-controller="Home" asp-action="Index" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">ProcurementHTE</a>
+<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top">
+  <div class="d-flex w-100 justify-content-between">
+    <a asp-controller="Home" asp-action="Index" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">Procurement HTE</a>
+    <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+  </div>
 
   <small class="text-muted opacity-75 ms-3 mb-2">Menu</small>
 
   <ul class="nav flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100">
     <li class="nav-item w-100">
       <a class="nav-link link-secondary rounded-1" asp-controller="Dashboard" asp-action="Index" data-page="Dashboard">
-        <i class="bi bi-grid"></i> <span class="ms-1 d-none d-sm-inline">Dashboard</span>
+        <i class="bi bi-grid"></i> <span class="ms-1">Dashboard</span>
       </a>
     </li>
 
@@ -20,7 +23,7 @@
          aria-controls="procurementSubmenu">
         <div>
           <i class="bi bi-briefcase"></i>
-          <span class="ms-1 d-none d-sm-inline">Procurements</span>
+          <span class="ms-1">Procurements</span>
         </div>
         <i class="bi bi-chevron-down small"></i>
       </a>
@@ -56,7 +59,7 @@
          aria-controls="procurementSettingSubmenu">
         <div>
           <i class="bi bi-gear-fill"></i>
-          <span class="ms-1 d-none d-sm-inline">Procurement Settings</span>
+          <span class="ms-1">Procurement Settings</span>
         </div>
         <i class="bi bi-chevron-down small"></i>
       </a>
@@ -92,7 +95,7 @@
           </li>
 
           @* Rules & Mapping Menu *@
-          <li>
+          @* <li>
             <a class="nav-link link-secondary rounded-1 d-flex align-items-center"
               data-bs-toggle="collapse"
               href="#rulesAndMappingSubmenu"
@@ -117,41 +120,29 @@
                 </li>
               </ul>
             </div>
-          </li>
+          </li> *@
         </ul>
       </div>
     </li>
 
     <li class="nav-item w-100">
-      <a class="nav-link link-secondary rounded-1" data-page="Monitor">
-        <i class="bi bi-activity"></i> <span class="ms-1 d-none d-sm-inline">Monitoring</span>
-      </a>
-    </li>
-
-    <li class="nav-item w-100">
-      <a class="nav-link link-secondary rounded-1" data-page="Analytics">
-        <i class="bi bi-graph-up"></i> <span class="ms-1 d-none d-sm-inline">Analytics</span>
-      </a>
-    </li>
-
-    <li class="nav-item w-100">
       <a class="nav-link link-secondary rounded-1" asp-controller="Approvals" asp-action="Index" data-page="Documents">
-        <i class="bi bi-file-earmark"></i> <span class="ms-1 d-none d-sm-inline">Approval Documents</span>
+        <i class="bi bi-file-earmark"></i> <span class="ms-1">Approval Documents</span>
       </a>
     </li>
 
     <hr class="mt-auto w-100" />
 
-    <li class="nav-item w-100">
+    <li class="nav-item w-100 pb-4">
       <a class="nav-link link-secondary rounded-1" data-page="Settings">
-        <i class="bi bi-gear"></i> <span class="ms-1 d-none d-sm-inline">Settings</span>
+        <i class="bi bi-gear"></i> <span class="ms-1">Settings</span>
       </a>
     </li>
 
-    <li class="nav-item w-100 pb-4">
+    @* <li class="nav-item w-100 pb-4">
       <a class="nav-link link-secondary rounded-1" asp-controller="Home" asp-action="Privacy" data-page="Privacy">
-        <i class="bi bi-shield-check"></i> <span class="ms-1 d-none d-sm-inline">Privacy</span>
+        <i class="bi bi-shield-check"></i> <span class="ms-1">Privacy</span>
       </a>
-    </li>
+    </li> *@
   </ul>
 </aside>

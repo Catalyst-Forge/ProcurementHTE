@@ -20,7 +20,7 @@
     <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
 </header>
 
-<form method="get" id="filterForm" class="border rounded-3 d-flex gap-2 p-2 mb-2">
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
     <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
 
     <div class="input-group w-auto">
@@ -28,7 +28,7 @@
         <input class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
     </div>
 
-    <div class="dropdown ms-auto">
+    <div class="dropdown ms-sm-auto">
         <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-funnel"></i> Filter
         </button>
@@ -58,7 +58,7 @@
 </form>
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover">
+    <table class="table table-hover mobile-table">
         <thead class="table-light">
             <tr>
                 <th class="border-end">
@@ -79,13 +79,13 @@
             } else {
                 foreach (var item in Model.Items) {
                     <tr>
-                        <td>
+                        <td class="d-flex" data-label="Name">
                             @Html.DisplayFor(modelItem => item.Name)
                         </td>
-                        <td>
+                        <td class="d-flex" data-label="Description">
                             @Html.DisplayFor(modelItem => item.Description)
                         </td>
-                        <td class="text-center">
+                        <td class="text-center d-flex" data-label="Action">
                             <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
                                asp-action="Edit" asp-route-id="@item.DocumentTypeId" role="button">
                                 <span class="visually-hidden">Edit</span>

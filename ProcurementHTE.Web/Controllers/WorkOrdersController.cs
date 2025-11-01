@@ -91,6 +91,12 @@ namespace ProcurementHTE.Web.Controllers
                     ViewBag.PnlViewModel = viewModel;
                 }
 
+                var documents = await _woDocService.ListByWorkOrderAsync(id);
+                if (documents != null)
+                {
+                    ViewBag.Documents = documents;
+                }
+
                 return View(workOrder);
             }
             catch (Exception ex)
@@ -151,7 +157,7 @@ namespace ProcurementHTE.Web.Controllers
         )
         {
             //ModelState.Remove(nameof(User));
-            //ModelState.Remove("WorkOrder.WoNum");
+            ModelState.Remove("WorkOrder.WoNum");
             //ModelState.Remove("WorkOrder.WorkOrderId");
 
             var detailKeys = Request.Form["Details.Index"].ToArray();
@@ -432,17 +438,40 @@ namespace ProcurementHTE.Web.Controllers
                 var offers = await _voService.GetByWorkOrderAsync(pnl.WorkOrderId);
                 Vendor? bestVendor = null;
 
-                if (!string.IsNullOrWhiteSpace(pnl.SelectedVendorId)) {
-                    bestVendor = (await _vendorService.GetAllVendorsAsync()).FirstOrDefault(vendor => vendor.VendorId == pnl.SelectedVendorId);
+                if (!string.IsNullOrWhiteSpace(pnl.SelectedVendorId))
+                {
+                    bestVendor = (await _vendorService.GetAllVendorsAsync()).FirstOrDefault(
+                        vendor => vendor.VendorId == pnl.SelectedVendorId
+                    );
                 }
 
-                var pdfBytes = await _pdfGenerator.GenerateProfitLossPdfAsync(pnl, wo!, bestVendor, offers);
+                var pdfBytes = await _pdfGenerator.GenerateProfitLossPdfAsync(
+                    pnl,
+                    wo!,
+                    bestVendor,
+                    offers
+                );
 
-                var docTypes = await _docTypeService.GetAllDocumentTypesAsync(page: 1, pageSize: 200, search: null, fields: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name" }, ct: default);
+                var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
+                    page: 1,
+                    pageSize: 200,
+                    search: null,
+                    fields: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name" },
+                    ct: default
+                );
 
-                var pnlDocTypeId = docTypes.Items.FirstOrDefault(doc => doc.Name.Equals("Profit & Loss", StringComparison.OrdinalIgnoreCase))?.DocumentTypeId ?? throw new InvalidOperationException("DocumentType 'Profit & Loss' tidak ditemukan");
+                var pnlDocTypeId =
+                    docTypes
+                        .Items.FirstOrDefault(doc =>
+                            doc.Name.Equals("Profit & Loss", StringComparison.OrdinalIgnoreCase)
+                        )
+                        ?.DocumentTypeId
+                    ?? throw new InvalidOperationException(
+                        "DocumentType 'Profit & Loss' tidak ditemukan"
+                    );
 
-                var generateReq = new GeneratedWoDocumentRequest {
+                var generateReq = new GeneratedWoDocumentRequest
+                {
                     WorkOrderId = dto.WorkOrderId,
                     DocumentTypeId = pnlDocTypeId,
                     FileName = $"Profit_Loss_{wo!.WoNum}.pdf",
@@ -450,12 +479,13 @@ namespace ProcurementHTE.Web.Controllers
                     Bytes = pdfBytes,
                     Description = "Profit & Loss auto-generated",
                     GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
                 };
 
                 var saveResult = await _woDocService.SaveGeneratedAsync(generateReq);
 
-                TempData["Success"] = "Profit & Loss berhasil dibuat & generate dokumen telah berhasil";
+                TempData["Success"] =
+                    "Profit & Loss berhasil dibuat & generate dokumen telah berhasil";
 
                 return RedirectToAction(nameof(Index));
             }
