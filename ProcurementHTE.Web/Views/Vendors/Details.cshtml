@@ -22,10 +22,14 @@
 }
 
 <header class="mb-3">
-    <div class="hstack justify-content-between">
+    <div class="hstack flex-wrap justify-content-between mb-2">
         <h1 class="h3 mb-1">@Model.VendorName</h1>
 
-        <div class="d-flex gap-2" role="group" aria-label="Button Action">
+        <button class="btn btn-primary d-md-none position-fixed bottom-0 end-0 mb-4 mb-md-0 me-4 me-md-0 z-3" type="button" id="buttonNavToggle">
+            <i class="bi bi-three-dots-vertical"></i>
+        </button>
+
+        <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
             <a asp-action="Edit" asp-route-id="@Model.VendorId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
             <a asp-action="Delete" asp-route-id="@Model.VendorId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
             <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to list</a>
@@ -34,10 +38,10 @@
 </header>
 <hr />
 
-<div class="d-grid gap-4" style="grid-template-columns: 2fr 1fr">
+<div class="d-grid gap-md-3 wo-content">
     <div>
         @* Company Info *@
-        <article class="card shadow-sm mb-3 p-2 rounded-4">
+        <article class="card shadow-sm mb-3 rounded-4">
             <header class="card-header fw-semibold mt-2 bg-transparent border-bottom-0">
                 <h2 class="card-title mb-0 h5"><i class="bi bi-building text-primary me-1"></i> Company Info</h2>
             </header>
@@ -69,7 +73,7 @@
         </article>
 
         @* Notes *@
-        <article class="card shadow-sm mb-3 p-2 rounded-4">
+        <article class="card shadow-sm mb-3 rounded-4">
             <header class="card-header fw-semibold mt-2 bg-transparent border-bottom-0">
                 <h2 class="card-title mb-0 h5"><i class="bi bi-stickies text-primary me-1"></i> Notes</h2>
             </header>
@@ -83,7 +87,7 @@
 
     <div>
         @* Address *@
-        <article class="card shadow-sm mb-3 p-2 rounded-4">
+        <article class="card shadow-sm mb-3 rounded-4">
             <header class="card-header fw-semibold mt-2 bg-transparent border-bottom-0">
                 <h2 class="card-title mb-0 h5"><i class="bi bi-geo-alt text-primary me-1"></i> Address</h2>
             </header>
@@ -115,18 +119,29 @@
         </article>
 
         @* Contacts *@
-        <article class="card shadow-sm mb-3 p-2 rounded-4">
+        <article class="card shadow-sm mb-3 rounded-4">
             <header class="card-header fw-semibold mt-2 bg-transparent border-bottom-0">
                 <h2 class="card-title mb-0 h5"><i class="bi bi-person-lines-fill text-primary me-1"></i> Contacts</h2>
             </header>
             <hr class="mx-3 my-2" />
 
             <div class="card-body">
-                <dl class="row mb-0 mb-0">
-                    <dt class="col-5 col-sm-3">Email</dt>
-                    <dd class="col-7 col-sm-9"><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></dd>
+                <dl class="mb-0">
+                    <dt class="fw-semibold text-uppercase text-secondary">Email</dt>
+                    <dd class="fw-medium"><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></dd>
                 </dl>
             </div>
         </article>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const toggleButtonGroup = document.getElementById("buttonNavToggle");
+        const buttonGroupWrap = document.getElementById("groupNavButton");
+
+        toggleButtonGroup.addEventListener("click", () => {
+        buttonGroupWrap.classList.toggle("show");
+        });
+    </script>
+}

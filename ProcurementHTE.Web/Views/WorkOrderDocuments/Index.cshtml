@@ -12,8 +12,8 @@
 
 <div class="container py-4">
     @* Header Section *@
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+        <div class="mb-2 mb-md-0">
             <h4 class="mb-1">Dokumen Work Order</h4>
             <small class="text-muted">@ViewBag.WoNum</small>
         </div>
@@ -78,10 +78,10 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table align-middle table-hover mb-0">
+                <table class="table align-middle table-hover mb-0 mobile-table">
                     <thead class="table-light">
                         <tr>
-                            <th style="width:48px;" class="ps-4">#</th>
+                            <th style="width:48px;" class="ps-4 d-none d-md-table-cell">#</th>
                             <th>Dokumen</th>
                             <th style="width:160px;">Status</th>
                             <th class="text-end pe-4" style="width:520px;">Aksi</th>
@@ -114,11 +114,11 @@
                                 var rowClass = item.IsUploadRequired && !item.Uploaded ? "table-warning bg-opacity-10" : "";
 
                                 <tr class="@rowClass">
-                                    <td class="text-muted ps-4">@rowIndex</td>
+                                    <td class="text-muted ps-4 d-none d-md-table-cell">@rowIndex</td>
 
                                     @* Document Info *@
-                                    <td>
-                                        <div class="d-flex align-items-start gap-2">
+                                    <td class="text-start">
+                                        <div class="d-flex flex-column flex-md-row align-items-start gap-2">
                                             @* Icon based on status *@
                                             @if (isPending)
                                             {
@@ -165,7 +165,7 @@
                                     </td>
 
                                     @* Status Badge *@
-                                    <td>
+                                    <td class="text-start">
                                         @switch (status)
                                         {
                                             case "Pending Approval":
@@ -198,7 +198,7 @@
 
                                     @* Actions *@
                                     <td class="pe-4">
-                                        <div class="d-flex gap-2 justify-content-end align-items-center flex-wrap">
+                                        <div class="d-flex gap-2 justify-content-md-end align-items-center flex-md-wrap">
 
                                             @* Upload Form - Show when not uploaded and required *@
                                             @if (!item.Uploaded && item.IsUploadRequired)

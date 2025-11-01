@@ -22,11 +22,13 @@ namespace ProcurementHTE.Core.Services
             _vendorRepository = vendorRepository;
         }
 
-        public Task<ProfitLoss?> GetByWorkOrderAsync(string woId) {
+        public Task<ProfitLoss?> GetByWorkOrderAsync(string woId)
+        {
             return _pnlRepository.GetByWorkOrderAsync(woId);
         }
 
-        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId) {
+        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId)
+        {
             return _pnlRepository.GetSelectedVendorsAsync(woId);
         }
 
@@ -93,7 +95,8 @@ namespace ProcurementHTE.Core.Services
             };
         }
 
-        public async Task<ProfitLossEditDto> GetEditDataAsync(string profitLossId) {
+        public async Task<ProfitLossEditDto> GetEditDataAsync(string profitLossId)
+        {
             var pnl =
                 await _pnlRepository.GetByIdAsync(profitLossId)
                 ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
@@ -101,7 +104,8 @@ namespace ProcurementHTE.Core.Services
             var offers = await _voRepository.GetByWorkOrderAsync(pnl.WorkOrderId);
             var vendors = offers
                 .GroupBy(offer => offer.VendorId)
-                .Select(group => new VendorOffersDto {
+                .Select(group => new VendorOffersDto
+                {
                     VendorId = group.Key,
                     Prices = group.OrderBy(item => item.Round).Select(item => item.Price).ToList(),
                 })
@@ -109,7 +113,8 @@ namespace ProcurementHTE.Core.Services
 
             var selectedVendorIds = vendors.Select(vendor => vendor.VendorId).Distinct().ToList();
 
-            return new ProfitLossEditDto {
+            return new ProfitLossEditDto
+            {
                 ProfitLossId = pnl.ProfitLossId,
                 WorkOrderId = pnl.WorkOrderId,
                 TarifAwal = pnl.TarifAwal,
@@ -125,6 +130,11 @@ namespace ProcurementHTE.Core.Services
                 SelectedVendorIds = selectedVendorIds,
                 Vendors = vendors,
             };
+        }
+
+        public async Task<decimal> GetTotalRevenueThisMonthAsync()
+        {
+            return await _pnlRepository.GetTotalRevenueThisMonthAsync();
         }
 
         public async Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto)
@@ -169,7 +179,8 @@ namespace ProcurementHTE.Core.Services
             return pnl;
         }
 
-        public async Task<ProfitLoss?> GetLatestByWorkOrderAsync(string workOrderId) {
+        public async Task<ProfitLoss?> GetLatestByWorkOrderAsync(string workOrderId)
+        {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 throw new ArgumentException("WorkOrderId tidak boleh kosong", nameof(workOrderId));
 

@@ -129,7 +129,7 @@
                     <legend class="card-title fw-semibold" id="summary-section-title">Ringkasan Sementara</legend>
                     <hr />
                     <div class="table-responsive border rounded-3">
-                        <table class="table align-middle" id="summary">
+                        <table class="table align-middle mobile-table" id="summary">
                             <thead class="table-light">
                                 <tr>
                                     <th>Vendor</th>
@@ -147,7 +147,6 @@
 
         <!-- ================= ACTION ================= -->
         <div class="col-12 d-flex justify-content-end gap-2 mb-3">
-            <a asp-action="DetailsProfitnLoss" asp-route-workOrderId="@Model.WorkOrderId" class="btn btn-light" role="button">Lihat Hasil</a>
             <button type="submit" class="btn btn-primary">Simpan & Hitung</button>
         </div>
     </div>
@@ -255,7 +254,7 @@
                         </div>
                     </div>
                     <div class="table-responsive mt-2">
-                        <table class="table table-sm table-bordered mb-0">
+                        <table class="table table-sm table-bordered mb-0 mobile-table">
                             <thead class="table-light">
                                 <tr><th style="width:120px">Round</th><th>Harga</th><th style="width:70px"></th></tr>
                             </thead>
@@ -280,8 +279,8 @@
             function addRound() {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="text-center fw-semibold">${roundCount + 1}</td>
-                    <td><input class="form-control form-control-sm text-end" name="Vendors[${idx}].Prices[${roundCount}]" data-price /></td>
+                    <td class="text-center fw-semibold d-flex px-2" data-label="Round">${roundCount + 1}</td>
+                    <td class="text-start px-2" data-label="Harga"><div class="input-group mt-1"><span class="input-group-text">Rp</span><input class="form-control form-control-sm text-end" name="Vendors[${idx}].Prices[${roundCount}]" data-price /></div></td>
                     <td class="text-center"><button type="button" class="btn btn-link text-danger p-0" data-delround><i class="bi bi-x-lg"></i></button></td>`;
                 tbody.appendChild(tr);
                 roundCount++;
@@ -329,10 +328,10 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${vendorName}</td>
-                    <td class="text-end">${fmtClean(finalPrice)}</td>
-                    <td class="text-end">${fmtClean(profit)}</td>
-                    <td class="text-end">${profitPct.toFixed(2)}%</td>`;
+                    <td class="d-flex" data-label="Vendor">${vendorName}</td>
+                    <td class="text-end d-flex d-md-table-cell" data-label="Final Offer">${fmtClean(finalPrice)}</td>
+                    <td class="text-end d-flex d-md-table-cell" data-label="Profit">${fmtClean(profit)}</td>
+                    <td class="text-end d-flex d-md-table-cell" data-label="Profit %">${profitPct.toFixed(2)}%</td>`;
                 tbody.appendChild(tr);
             });
 

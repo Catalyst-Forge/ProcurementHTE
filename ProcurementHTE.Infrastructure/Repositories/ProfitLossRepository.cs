@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories
@@ -34,19 +35,44 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId) {
-            return await _context.ProfitLosses
-                .AsNoTracking()
+        public async Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId)
+        {
+            return await _context
+                .ProfitLosses.AsNoTracking()
                 .Where(p => p.WorkOrderId == workOrderId)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task StoreProfitLossAsync(ProfitLoss profitLoss) {
+        public async Task<decimal> GetTotalRevenueThisMonthAsync()
+        {
+            var today = DateTime.Today;
+            var start = new DateTime(today.Year, today.Month, 1);
+            var end = start.AddMonths(1);
+
+            return await _context
+                .ProfitLosses.Where(pnl => pnl.CreatedAt >= start && pnl.CreatedAt < end)
+                .SumAsync(pnl => pnl.Revenue);
+        }
+
+        public async Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year)
+        {
+            return await _context
+                .ProfitLosses.Where(pnl => pnl.CreatedAt.Year == year)
+                .GroupBy(pnl => pnl.CreatedAt.Month)
+                .Select(g => new RevenuePerMonthDto
+                {
+                    Month = g.Key,
+                    Total = g.Sum(pnl => pnl.Revenue),
+                })
+                .ToListAsync();
+        }
+
+        public async Task StoreProfitLossAsync(ProfitLoss profitLoss)
+        {
             await _context.ProfitLosses.AddAsync(profitLoss);
             await _context.SaveChangesAsync();
         }
-
 
         public async Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId)
         {

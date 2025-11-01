@@ -1,6 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Authorization
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
+@using ProcurementHTE.Web.Models.ViewModels
 @inject IAuthorizationService AuthZ
 @model WorkOrder
 @{
@@ -8,7 +9,8 @@
     var no = 1;
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
-    var pnl = ViewBag.PnlViewModel as ProcurementHTE.Web.Models.ViewModels.ProfitLossSummaryViewModel;
+    var pnl = ViewBag.PnlViewModel as ProfitLossSummaryViewModel;
+    var documents = ViewBag.Documents as IReadOnlyList<WoDocuments>;
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
@@ -19,11 +21,15 @@
 }
 
 <header class="mb-3">
-    <div class="hstack justify-content-between">
+    <div class="hstack flex-wrap justify-content-between mb-2">
         <h1 class="h2">@ViewBag.Title</h1>
 
-        <div class="d-flex gap-2" role="group" aria-label="Button Action">
-            <a asp-controller="WorkOrderDocuments" asp-action="Index" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-pencil-square"></i> Document</a>
+        <button class="btn btn-primary d-md-none position-fixed bottom-0 end-0 mb-4 mb-md-0 me-4 me-md-0 z-3" type="button" id="buttonNavToggle">
+            <i class="bi bi-three-dots-vertical"></i>
+        </button>
+
+        <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
+            <a asp-controller="WorkOrderDocuments" asp-action="Index" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
             <span title="@(pnl != null ? "data pnl sudah ada" : "")">
                 <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-file-earmark-text-fill"></i> Create Profit & Loss</a>
             </span>
@@ -47,6 +53,10 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pnl-tab" data-bs-toggle="tab" data-bs-target="#pnl-tab-pane" type="button" role="tab" aria-controls="pnl-tab-pane" aria-selected="false">Profit and Loss</button>
             </li>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="document-tab" data-bs-toggle="tab" data-bs-target="#document-tab-pane" type="button" role="tab" aria-controls="document-tab-pane" aria-selected="false">Documents</button>
+            </li>
         </ul>
     </nav>
 </header>
@@ -55,10 +65,10 @@
 <div class="tab-content" id="myTabContent">
     <!-- ================= WORK ORDER DETAIL ================= -->
     <section class="tab-pane show active" id="wo-tab-pane" role="tabpanel" aria-labelledby="wo-tab" tabindex="0">
-        <div class="d-grid gap-4 mt-2" style="grid-template-columns: 2fr 1fr">
+        <div class="d-grid gap-md-3 mt-2 wo-content">
             <div>
                 @* Work request card *@
-                <article class="card shadow-sm mb-3 p-2 rounded-4">
+                <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Job Request</h2>
                     </header>
@@ -106,7 +116,7 @@
                 </article>
 
                 @* Item details card *@
-                <article class="card shadow-sm mb-3 p-2 rounded-4">
+                <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Item Details</h2>
                     </header>
@@ -128,7 +138,7 @@
                                     @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
                                         foreach (var detail in Model.WoDetails) {
                                             <tr>
-                                                <td>@no</td>
+                                                <td class="text-nowrap">@no</td>
                                                 <td>@detail.ItemName</td>
                                                 <td>@detail.Quantity</td>
                                                 <td>@detail.Unit</td>
@@ -147,7 +157,7 @@
                 </article>
 
                 @* Item card *@
-                <article class="card shadow-sm mb-3 p-2 rounded-4">
+                <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-file-text-fill text-primary me-1"></i> Job Description</h2>
                     </header>
@@ -185,7 +195,7 @@
 
             <div>
                 @* Work order information card *@
-                <article class="card shadow-sm mb-3 p-2 rounded-4">
+                <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Information Work Order</h2>
                     </header>
@@ -193,7 +203,7 @@
 
                     <div class="card-body">
                         <div class="row mb-0">
-                            <dl class="col-6">
+                            <dl class="col-6 col-lg-12 col-xl-6">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.WoType)
                                 </dt>
@@ -204,7 +214,7 @@
                                 </dd>
                             </dl>
 
-                            <dl class="col-6">
+                            <dl class="col-6 col-lg-12 col-xl-6">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.Status)
                                 </dt>
@@ -215,7 +225,7 @@
                                 </dd>
                             </dl>
 
-                            <dl class="col-6">
+                            <dl class="col-6 col-lg-12 col-xl-6">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.CreatedAt)
                                 </dt>
@@ -224,7 +234,7 @@
                                 </dd>
                             </dl>
 
-                            <dl class="col-6">
+                            <dl class="col-6 col-lg-12 col-xl-6">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.User)
                                 </dt>
@@ -237,7 +247,7 @@
                 </article>
 
                 @* Contact person card *@
-                <article class="card shadow-sm mb-3 p-2 rounded-4">
+                <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-person-fill text-primary me-1"></i> Contact Person</h2>
                     </header>
@@ -257,7 +267,7 @@
                 </article>
 
                 @* Approvals card *@
-                <article class="card shadow-sm mb-3 p-2 rounded-4">
+                <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-check-circle-fill text-primary me-1"></i> Approvals</h2>
                     </header>
@@ -292,14 +302,14 @@
             </a>
         } else {
             <!-- List Vendor -->
-            <article class="card shadow-sm mb-3 p-2 rounded-4">
+            <article class="card shadow-sm mb-3 rounded-4">
                 <header class="card-header fw-semibold fw-semibold bg-transparent border-bottom-0">
                     <h2 class="card-title mb-0 h5"><i class="bi bi-building-fill text-primary me-1"></i> Vendor yang ditawarkan</h2>
                 </header>
                 <hr class="mx-3 my-2" />
 
                 <div class="card-body">
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap gap-2">
                         @if (ViewBag.SelectedVendorNames is List<string> names && names.Count > 0) {
                             @foreach (var name in names) {
                                 <div class="badge border rounded-5 text-secondary fw-medium p-2">@name</div>
@@ -310,7 +320,7 @@
             </article>
 
             <!-- Tagihan PDSI -->
-            <article class="card shadow-sm mb-3 p-2 rounded-4">
+            <article class="card shadow-sm mb-3 rounded-4">
                 <header class="card-header fw-semibold fw-semibold bg-transparent border-bottom-0">
                     <h2 class="card-title mb-0 h5"><i class="bi bi-bar-chart text-primary me-1"></i> Ringkasan Profit & Loss</h2>
                 </header>
@@ -324,37 +334,37 @@
                             <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary" role="button">Hitung Ulang</a>
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Tarif Awal</div>
                             <div>@pnl.TarifAwal.ToIDR()</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Tarif Add</div>
                             <div>@pnl.TarifAdd.ToIDR()</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">KM per 25 Km</div>
                             <div>@pnl.KmPer25</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Cost Operator</div>
                             <div>@pnl.OperatorCost.ToIDR()</div>
                             <div class="small text-muted"> = Tarif Add * KM per 25 Km</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Revenue</div>
                             <div class="fw-bold">@pnl.Revenue.ToIDR()</div>
                             <div class="small text-muted"> = Tarif Awal + Cost Operator</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Best Vendor</div>
                             <div class="text-success fw-semibold">@pnl.SelectedVendorName</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Final Offer</div>
                             <div>@pnl.SelectedFinalOffer.ToIDR()</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Profit</div>
                             <div class="fw-bold text-success">@pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())</div>
                             <div class="small text-muted"> = Revenue − Best Offer</div>
@@ -364,7 +374,7 @@
             </article>
 
             <!-- Penawaran Vendor -->
-            <article class="card shadow-sm mb-3 p-2 rounded-4">
+            <article class="card shadow-sm mb-3 rounded-4">
                 <header class="card-header fw-semibold fw-semibold bg-transparent border-bottom-0">
                     <h2 class="card-title mb-0 h5"><i class="bi bi-award text-primary me-1"></i> Perbandingan Vendor (Vendor yang Memberi Penawaran)</h2>
                 </header>
@@ -375,21 +385,21 @@
                         <table class="table align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="text-uppercase">Vendor</th>
-                                    <th class="text-uppercase">Final Offer</th>
-                                    <th class="text-uppercase">Profit</th>
-                                    <th class="text-uppercase">Profit %</th>
-                                    <th class="text-center">Result</th>
+                                    <th class="text-uppercase text-nowrap">Vendor</th>
+                                    <th class="text-uppercase text-nowrap">Final Offer</th>
+                                    <th class="text-uppercase text-nowrap">Profit</th>
+                                    <th class="text-uppercase text-nowrap">Profit %</th>
+                                    <th class="text-center text-nowrap">Result</th>
                                 </tr>
                             </thead>
 
                             <tbody>
                                 @foreach (var row in pnl.Rows) {
                                     <tr class="@(row.IsSelected ? "table-success" : "")">
-                                        <td>@row.VendorName</td>
-                                        <td>@row.FinalOffer.ToIDR()</td>
-                                        <td>@row.Profit.ToIDR()</td>
-                                        <td>@row.ProfitPercent.ToPersen()</td>
+                                        <td class="text-nowrap">@row.VendorName</td>
+                                        <td class="text-nowrap">@row.FinalOffer.ToIDR()</td>
+                                        <td class="text-nowrap">@row.Profit.ToIDR()</td>
+                                        <td class="text-nowrap">@row.ProfitPercent.ToPersen()</td>
                                         <td class="text-center">
                                             @if (row.IsSelected == true) {
                                                 <span class="badge text-bg-success">Terpilih</span>
@@ -408,14 +418,172 @@
             </article>
         }
     </section>
+
+    <!-- ================= WORK ORDER DOCUMENTS ================= -->
+    <section class="tab-pane" id="document-tab-pane" role="tabpanel" aria-labelledby="document-tab" tabindex="0">
+        <div class="mb-3">
+            @* Work Order Documents card *@
+            <header class="mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-folder-fill text-primary me-1"></i> Work Order Documents</h2>
+            </header>
+            <hr />
+
+            @if (documents != null && documents!.Any()) {
+                <div class="list-group shadow-sm rounded-3">
+                    @foreach (var doc in documents) {
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center">
+                                <i class="bi bi-file-earmark-pdf text-danger fs-5 me-3"></i>
+                                <div>
+                                    <div class="fw-semibold">@doc.FileName</div>
+                                    <small class="text-muted">@doc.Description</small>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <small class="small text-muted d-block mb-1">@doc.CreatedAt.ToLongDateString()</small>
+                                <div class="d-flex flex-column flex-sm-row gap-1 align-items-end">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary btn-preview"
+                                            data-doc-id="@doc.WoDocumentId"
+                                            data-doc-name="@(doc.FileName)"
+                                            data-file-name="@(doc.FileName)">
+                                        <i class="bi bi-eye"></i> Preview
+                                    </button>
+
+                                    <a asp-controller="WorkOrderDocuments" asp-action="Download" asp-route-id="@doc.WoDocumentId" class="btn btn-outline-primary btn-sm btn-download" role="button" data-doc-id="@doc.WoDocumentId">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            } else {
+                <div class="alert alert-info mb-0">No documents available for this work order.</div>
+            }
+        </div>
+    </section>
+</div>
+
+@* PDF Preview Modal *@
+<div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title" id="previewModalTitle">Preview Dokumen</h5>
+                    <small class="text-muted" id="previewFileName"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="pdfLoadingContainer" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Memuat dokumen...</p>
+                </div>
+                <div id="pdfErrorContainer" class="text-center py-5 d-none">
+                    <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+                    <p class="text-muted">Gagal memuat dokumen. Silakan coba lagi.</p>
+                </div>
+                <iframe id="pdfPreviewFrame"
+                        style="width: 100%; height: 75vh; border: none; display: none;"
+                        title="PDF Preview">
+                </iframe>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="downloadFromPreview">
+                    <i class="bi bi-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
+        let currentDownloadDocId = null;
+        let currentPreviewUrl = null;
+
+        function initPreviewHandlers() {
+            document.querySelectorAll(".btn-preview").forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName;
+                    const fileName = this.dataset.fileName;
+
+                    currentDownloadDocId = docId;
+
+                    const titleElement = document.getElementById("previewModalTitle");
+                    const fileNameElement = document.getElementById("previewFileName");
+                    const loadingContainer = document.getElementById("pdfLoadingContainer");
+                    const errorContainer = document.getElementById("pdfErrorContainer");
+                    const previewFrame = document.getElementById("pdfPreviewFrame");
+
+                    if (titleElement) titleElement.textContent = `Preview Dokumen: ${docName}` || "Preview Dokumen";
+                    if (fileNameElement) fileNameElement.textContent = fileName || "";
+
+                    const modalElement = document.getElementById("pdfPreviewModal");
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+
+                    previewFrame.style.display = "none";
+                    previewFrame.src = "";
+                    loadingContainer.classList.remove("d-none");
+                    errorContainer.classList.add("d-none");
+
+                    try {
+                        const response = await fetch(`/WorkOrderDocuments/PreviewUrl/${docId}?workOrderId=@Model?.WorkOrderId`);
+                        const data = await response.json();
+
+                        if (data.ok && data.url) {
+                            currentPreviewUrl = data.url;
+                            previewFrame.src = data.url;
+
+                            previewFrame.onload = () => {
+                                loadingContainer.classList.add("d-none");
+                                previewFrame.style.display = "block";
+                            };
+
+                            previewFrame.onerror = () => {
+                                loadingContainer.classList.add("d-none");
+                                errorContainer.classList.remove("d-none");
+                            };
+                        } else {
+                            throw new Error("Failed to get preview URL" ||data.error);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching preview URL:", error);
+                        loadingContainer.classList.add("d-none");
+                        errorContainer.classList.remove("d-none");
+                    }
+                })
+            })
+
+            document.getElementById("downloadFromPreview").addEventListener('click', () => {
+                if (!currentDownloadDocId) return;
+
+                const btn = document.querySelector(`.btn-download[data-doc-id='${currentDownloadDocId}']`);
+                btn.click();
+            });
+        }
+
+        const toggleButtonGroup = document.getElementById("buttonNavToggle");
+        const buttonGroupWrap = document.getElementById("groupNavButton");
+
+        toggleButtonGroup.addEventListener("click", () => {
+        buttonGroupWrap.classList.toggle("show");
+        });
+
         document.addEventListener("DOMContentLoaded", function () {
             var triggerEl = document.querySelector('#wo-tab')
             var tab = new bootstrap.Tab(triggerEl)
-            tab.show() // force tab aktif saat load
+            tab.show()
+
+            initPreviewHandlers();
         });
     </script>
 }

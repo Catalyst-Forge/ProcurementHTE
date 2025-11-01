@@ -51,7 +51,7 @@
                     var key = i.ToString();
                     <div class="col-12 detail-row position-relative">
                         <input type="hidden" name="Details.Index" value="@key" />
-                        <div class="row mb-3 align-items-end">
+                        <div class="row g-3 mb-3 align-items-end">
                             <div class="col-md-6">
                                 <label class="form-label">Item Name</label>
                                 <input type="text" class="form-control"
@@ -110,13 +110,13 @@
         <legend class="card-title fw-semibold">Contact Person</legend>
         <hr />
         <div class="row">
-            <div class="col-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
                 <label asp-for="WorkOrder.XS3" class="form-label">Contact Person in location</label>
                 <input asp-for="WorkOrder.XS3" class="form-control">
                 <span asp-validation-for="WorkOrder.XS3" class="text-danger small"></span>
             </div>
 
-            <div class="col-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
                 <label asp-for="WorkOrder.XS4" class="form-label">Contact Person in workshop</label>
                 <input asp-for="WorkOrder.XS4" class="form-control">
                 <span asp-validation-for="WorkOrder.XS4" class="text-danger small"></span>
@@ -126,7 +126,9 @@
 </section>
 
 <div class="mb-3 d-flex w-100 justify-content-end">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO Moving</button>
+    @* <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO Moving</button> *@
+    <button type="submit" class="btn btn-success" name="submitAction" value="Created"><i class="bi bi-check2-circle"></i> Create WO Moving</button>
+
 </div>
 
 @* Modal *@

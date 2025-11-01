@@ -1,12 +1,18 @@
-﻿using ProcurementHTE.Core.Common;
-using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.DTOs;
 
 namespace ProcurementHTE.Core.Interfaces
 {
     public interface IWorkOrderRepository
     {
         // Get Data
-        Task<PagedResult<WorkOrder>> GetAllAsync(int page, int pageSize, string? search, ISet<string> fields, CancellationToken ct);
+        Task<Common.PagedResult<WorkOrder>> GetAllAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        );
         Task<WorkOrder?> GetByIdAsync(string id);
         Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(
             string userId,
@@ -20,6 +26,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task<WorkOrder?> GetWithOffersAsync(string id);
         Task<WorkOrder?> GetWithSelectedOfferAsync(string id);
         Task<int> CountAsync(CancellationToken ct);
+        Task<IReadOnlyList<WoStatusCountDto>> GetCountByStatusAsync();
 
         // Transactions DB
         Task StoreWorkOrderAsync(WorkOrder wo);

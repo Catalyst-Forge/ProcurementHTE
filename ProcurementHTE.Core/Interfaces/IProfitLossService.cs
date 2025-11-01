@@ -11,6 +11,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task<ProfitLossSummaryDto> GetSummaryByWorkOrderAsync(string woId);
         Task<ProfitLossEditDto> GetEditDataAsync(string profitLossId);
         Task<ProfitLoss?> GetLatestByWorkOrderAsync(string workOrderId);
+        Task<decimal> GetTotalRevenueThisMonthAsync();
 
         // Transaction DB
         Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto);

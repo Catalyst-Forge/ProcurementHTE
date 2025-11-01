@@ -66,11 +66,11 @@
             <legend class="card-title fw-semibold">Approval</legend>
             <hr />
             <div class="row">
-                <div class="col-6 mb-3">
+                <div class="col-12 col-md-6 mb-3">
                     <label asp-for="WorkOrder.Requester" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.Requester" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-12 col-md-6 mb-3">
                     <label asp-for="WorkOrder.Approved" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.Approved" />
                 </div>
@@ -98,7 +98,7 @@
             return `
               <div class="col-12 detail-row position-relative">
                 <input type="hidden" name="Details.Index" value="${key}" />
-                <div class="row g-3 align-items-end">
+                <div class="row g-3 mb-3 align-items-end">
                   <div class="col-md-6">
                     <label class="form-label">Item Name</label>
                     <input class="form-control" name="Details[${key}].ItemName" />

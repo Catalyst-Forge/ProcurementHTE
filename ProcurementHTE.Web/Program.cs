@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Storage;
 using ProcurementHTE.Web.Extensions;
-using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,11 +13,16 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddHttpClient("MinioProxy");
 var app = builder.Build();
 
-
 // Nanti Hapus ini setelah yakin konfigurasi Object Storage benar
 var s = app.Services.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
-app.Logger.LogInformation("ObjectStorage => Endpoint={Endpoint}, SSL={SSL}, Bucket={Bucket}, AccessKey={AK}, SecretKey={SecretKey}",
-    s.Endpoint, s.UseSSL, s.Bucket, s.AccessKey, s.SecretKey);
+app.Logger.LogInformation(
+    "ObjectStorage => Endpoint={Endpoint}, SSL={SSL}, Bucket={Bucket}, AccessKey={AK}, SecretKey={SecretKey}",
+    s.Endpoint,
+    s.UseSSL,
+    s.Bucket,
+    s.AccessKey,
+    s.SecretKey
+);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -32,27 +37,35 @@ app.UseStaticFiles();
 app.UseSession();
 app.UseRouting();
 
-app.Use(async (context, next) => {
-    if (context.Request.Path.StartsWithSegments("/api")) {
-        var authHeader = context.Request.Headers["Authorization"].ToString();
-        Console.WriteLine($"======================================");
-        Console.WriteLine($"[API Request] {context.Request.Method} {context.Request.Path}");
-        Console.WriteLine($"[Authorization Header] {(string.IsNullOrEmpty(authHeader) ? "MISSING" : $"Present - {authHeader.Substring(0, Math.Min(30, authHeader.Length))}...")}");
-        Console.WriteLine($"[All Headers]:");
-        foreach (var header in context.Request.Headers) {
-            Console.WriteLine($"  {header.Key}: {header.Value}");
+app.Use(
+    async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            var authHeader = context.Request.Headers["Authorization"].ToString();
+            Console.WriteLine($"======================================");
+            Console.WriteLine($"[API Request] {context.Request.Method} {context.Request.Path}");
+            Console.WriteLine(
+                $"[Authorization Header] {(string.IsNullOrEmpty(authHeader) ? "MISSING" : $"Present - {authHeader.Substring(0, Math.Min(30, authHeader.Length))}...")}"
+            );
+            Console.WriteLine($"[All Headers]:");
+            foreach (var header in context.Request.Headers)
+            {
+                Console.WriteLine($"  {header.Key}: {header.Value}");
+            }
+        }
+
+        await next();
+
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            Console.WriteLine($"[Response] Status: {context.Response.StatusCode}");
+            Console.WriteLine($"[User Authenticated] {context.User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"[Auth Type] {context.User.Identity?.AuthenticationType ?? "None"}");
+            Console.WriteLine($"======================================");
         }
     }
-
-    await next();
-
-    if (context.Request.Path.StartsWithSegments("/api")) {
-        Console.WriteLine($"[Response] Status: {context.Response.StatusCode}");
-        Console.WriteLine($"[User Authenticated] {context.User.Identity?.IsAuthenticated}");
-        Console.WriteLine($"[Auth Type] {context.User.Identity?.AuthenticationType ?? "None"}");
-        Console.WriteLine($"======================================");
-    }
-});
+);
 
 app.UseAuthentication();
 app.UseAuthorization();
