@@ -131,7 +131,7 @@ namespace ProcurementHTE.Web.Extensions
 
             // ------------- Options Binding -------------
             // MinIO options (Infrastructure)
-            services.Configure<ObjectStorageOptions>(configuration.GetSection("Minio"));
+            services.Configure<ObjectStorageOptions>(configuration.GetSection("ObjectStorage"));
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
 
             // ------------ Cookie & Session Authentication ------------
