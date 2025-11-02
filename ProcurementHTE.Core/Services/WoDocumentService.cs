@@ -1,13 +1,10 @@
-﻿using System.Drawing;
-using System.Drawing.Imaging;
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using QRCoder;
+using System.IO;
 
 namespace ProcurementHTE.Core.Services;
 
@@ -277,11 +274,9 @@ public class WoDocumentService(
         if (!await CanSendApprovalAsync(workOrderId))
             throw new InvalidOperationException("Dokumen wajib belum lengkap.");
 
-        var wo =
-            await _woRepo.GetByIdAsync(workOrderId)
-            ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
+        var wo = await _woRepo.GetByIdAsync(workOrderId)
+                 ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
 
-        // Ambil semua dokumen terakhir per DocumentType utk WO ini
         var docs = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
 
         const decimal ThresholdVP = 500_000_000m;
@@ -293,50 +288,52 @@ public class WoDocumentService(
 
         foreach (var doc in docs.Where(d => d.Status != "Deleted"))
         {
-            // 1) Generate payload & gambar QR (PNG) per dokumen
+            // 1) Generate payload
             var payload =
                 $"WO={wo.WoNum};DocType={doc.DocumentTypeId};DocId={doc.WoDocumentId};ts={now:o}";
-            using var qrGen = new QRCodeGenerator();
-            using var data = qrGen.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
-            using var qr = new QRCode(data);
-            using var bmp = qr.GetGraphic(10);
-            await using var ms = new MemoryStream();
-            bmp.Save(ms, ImageFormat.Png);
-            ms.Position = 0;
 
-            // 2) Upload PNG ke MinIO (pakai folder yg sama dgn file dokumennya)
-            var qrKey = doc.ObjectKey.Replace(".pdf", "") + "_QR.png";
-            await _storage.UploadAsync(_opts.Bucket, qrKey, ms, ms.Length, "image/png", ct);
+            // 1a) QR non-System.Drawing
+            var qrGen = new QRCodeGenerator();
+            var qrData = qrGen.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
+            var pngQr = new PngByteQRCode(qrData);
+            var qrBytes = pngQr.GetGraphic(20); // byte[] PNG
+
+            // 2) Upload PNG ke object storage
+            var baseKey = string.IsNullOrWhiteSpace(doc.ObjectKey)
+                ? $"wo/{workOrderId}/{doc.WoDocumentId}"
+                : doc.ObjectKey.Replace(".pdf", "");
+            var qrKey = $"{baseKey}_QR.png";
+
+            await using (var ms = new MemoryStream(qrBytes))
+            {
+                await _storage.UploadAsync(_opts.Bucket, qrKey, ms, ms.Length, "image/png", ct);
+            }
 
             // 3) Update metadata dokumen
             doc.QrText = payload;
             doc.QrObjectKey = qrKey;
+            doc.Status = "Pending Approval";
             await _woDocRepo.UpdateAsync(doc);
 
+            // 4) Bentuk approval chain
             var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(
                 wo.WoTypeId!,
                 doc.DocumentTypeId
             );
-            if (
-                wtdConfig is null
-                || !wtdConfig.RequiresApproval
-                || wtdConfig.DocumentApprovals.Count == 0
-            )
+
+            if (wtdConfig is null || !wtdConfig.RequiresApproval || wtdConfig.DocumentApprovals.Count == 0)
                 continue;
 
-            // bentuk chain
-            var chain = wtdConfig.DocumentApprovals.OrderBy(a => a.SequenceOrder).ToList();
+            var chain = wtdConfig.DocumentApprovals
+                .OrderBy(a => a.SequenceOrder)
+                .ToList();
 
             if (!needVP)
             {
                 chain = chain
                     .Where(a =>
-                        a.Role != null
-                        && !string.Equals(
-                            a.Role.Name,
-                            "Vice President",
-                            StringComparison.OrdinalIgnoreCase
-                        )
+                        a.Role != null &&
+                        !string.Equals(a.Role.Name, "Vice President", StringComparison.OrdinalIgnoreCase)
                     )
                     .OrderBy(a => a.SequenceOrder)
                     .ToList();
@@ -345,24 +342,21 @@ public class WoDocumentService(
             if (chain.Count == 0)
                 continue;
 
-            var firstStep = chain.OrderBy(c => c.SequenceOrder).First();
-
-            // hindari duplikasi flow
             var existing = await _approvalRepo.GetByWoDocumentIdAsync(doc.WoDocumentId);
             if (existing.Any())
                 continue;
 
-            approvalsToInsert.Add(
-                new WoDocumentApprovals
-                {
-                    WorkOrderId = workOrderId,
-                    WoDocumentId = doc.WoDocumentId,
-                    RoleId = firstStep.RoleId,
-                    Level = firstStep.Level,
-                    SequenceOrder = firstStep.SequenceOrder,
-                    Status = "Pending",
-                }
-            );
+            var firstStep = chain.First();
+
+            approvalsToInsert.Add(new WoDocumentApprovals
+            {
+                WorkOrderId = workOrderId,
+                WoDocumentId = doc.WoDocumentId,
+                RoleId = firstStep.RoleId,
+                Level = firstStep.Level,
+                SequenceOrder = firstStep.SequenceOrder,
+                Status = "Pending",
+            });
 
             _logger.LogInformation(
                 "[SendApproval] WO={WorkOrderId} NeedVP={NeedVP}, Total chain={ChainCount}",
@@ -373,12 +367,10 @@ public class WoDocumentService(
         }
 
         if (approvalsToInsert.Count > 0)
-        {
             await _approvalRepo.AddRangeAsync(approvalsToInsert);
-        }
 
-        await _woDocRepo.SaveAsync(); // perubahan WoDocuments
-        await _approvalRepo.SaveChangesAsync(); // insert WoDocumentApprovals
+        await _woDocRepo.SaveAsync();
+        await _approvalRepo.SaveChangesAsync();
     }
 
     public async Task<string?> GetPresignedQrUrlAsync(
