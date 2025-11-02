@@ -219,7 +219,7 @@ namespace ProcurementHTE.Web.Extensions
                     options =>
                     {
                         options.SaveToken = true;
-                        options.RequireHttpsMetadata = false; // Set true di production
+                        options.RequireHttpsMetadata = true; // Set true di production
                         options.TokenValidationParameters = new TokenValidationParameters
                         {
                             ValidateIssuer = true,
