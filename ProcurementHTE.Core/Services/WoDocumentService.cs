@@ -313,56 +313,94 @@ public class WoDocumentService(
             doc.QrObjectKey = qrKey;
             await _woDocRepo.UpdateAsync(doc);
 
-            var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(
-                wo.WoTypeId!,
-                doc.DocumentTypeId
-            );
-            if (
-                wtdConfig is null
-                || !wtdConfig.RequiresApproval
-                || wtdConfig.DocumentApprovals.Count == 0
-            )
+            //var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(
+            //    wo.WoTypeId!,
+            //    doc.DocumentTypeId
+            //);
+            //if (
+            //    wtdConfig is null
+            //    || !wtdConfig.RequiresApproval
+            //    || wtdConfig.DocumentApprovals.Count == 0
+            //)
+            //    continue;
+
+            //// bentuk chain
+            //var chain = wtdConfig.DocumentApprovals.OrderBy(a => a.SequenceOrder).ToList();
+
+            //if (!needVP)
+            //{
+            //    chain = chain
+            //        .Where(a =>
+            //            a.Role != null
+            //            && !string.Equals(
+            //                a.Role.Name,
+            //                "Vice President",
+            //                StringComparison.OrdinalIgnoreCase
+            //            )
+            //        )
+            //        .OrderBy(a => a.SequenceOrder)
+            //        .ToList();
+            //}
+
+            //if (chain.Count == 0)
+            //    continue;
+
+            //var firstStep = chain.OrderBy(c => c.SequenceOrder).First();
+
+            //// hindari duplikasi flow
+            //var existing = await _approvalRepo.GetByWoDocumentIdAsync(doc.WoDocumentId);
+            //if (existing.Any())
+            //    continue;
+
+            //approvalsToInsert.Add(
+            //    new WoDocumentApprovals
+            //    {
+            //        WorkOrderId = workOrderId,
+            //        WoDocumentId = doc.WoDocumentId,
+            //        RoleId = firstStep.RoleId,
+            //        Level = firstStep.Level,
+            //        SequenceOrder = firstStep.SequenceOrder,
+            //        Status = "Pending",
+            //    }
+            //);
+
+            var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(wo.WoTypeId!, doc.DocumentTypeId);
+
+            if (wtdConfig is null || !wtdConfig.RequiresApproval || wtdConfig.DocumentApprovals.Count == 0)
                 continue;
 
-            // bentuk chain
-            var chain = wtdConfig.DocumentApprovals.OrderBy(a => a.SequenceOrder).ToList();
+            var chain = wtdConfig.DocumentApprovals
+                .OrderBy(a => a.Level)
+                .ThenBy(a => a.SequenceOrder)
+                .ToList();
 
-            if (!needVP)
-            {
-                chain = chain
-                    .Where(a =>
-                        a.Role != null
-                        && !string.Equals(
-                            a.Role.Name,
-                            "Vice President",
-                            StringComparison.OrdinalIgnoreCase
-                        )
-                    )
-                    .OrderBy(a => a.SequenceOrder)
+            if (!needVP) {
+                chain = chain.Where(a => a.Role != null &&
+                    !string.Equals(a.Role.Name, "Vice President", StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
-
             if (chain.Count == 0)
                 continue;
 
-            var firstStep = chain.OrderBy(c => c.SequenceOrder).First();
-
-            // hindari duplikasi flow
             var existing = await _approvalRepo.GetByWoDocumentIdAsync(doc.WoDocumentId);
             if (existing.Any())
                 continue;
 
-            approvalsToInsert.Add(
-                new WoDocumentApprovals
-                {
+            var firstLevel = chain.Min(c => c.Level);
+            var firstSeqOnFirstLevel = chain.Where(c => c.Level == firstLevel).Min(c => c.SequenceOrder);
+
+            foreach (var step in chain) {
+                approvalsToInsert.Add(new WoDocumentApprovals {
                     WorkOrderId = workOrderId,
                     WoDocumentId = doc.WoDocumentId,
-                    RoleId = firstStep.RoleId,
-                    Level = firstStep.Level,
-                    SequenceOrder = firstStep.SequenceOrder,
-                    Status = "Pending",
-                }
-            );
+                    RoleId = step.RoleId,
+                    Level = step.Level,
+                    SequenceOrder = step.SequenceOrder,
+                    Status = (step.Level == firstLevel && step.SequenceOrder == firstSeqOnFirstLevel)
+                                ? "Pending"
+                                : "Blocked"
+                });
+            }
 
             _logger.LogInformation(
                 "[SendApproval] WO={WorkOrderId} NeedVP={NeedVP}, Total chain={ChainCount}",

@@ -79,13 +79,13 @@
             } else {
                 foreach (var item in Model.Items) {
                     <tr>
-                        <td class="d-flex" data-label="Name">
+                        <td class="d-flex d-md-table-cell" data-label="Name">
                             @Html.DisplayFor(modelItem => item.Name)
                         </td>
-                        <td class="d-flex" data-label="Description">
+                        <td class="d-flex d-md-table-cell" data-label="Description">
                             @Html.DisplayFor(modelItem => item.Description)
                         </td>
-                        <td class="text-center d-flex" data-label="Action">
+                        <td class="text-center d-flex d-md-table-cell" data-label="Action">
                             <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
                                asp-action="Edit" asp-route-id="@item.DocumentTypeId" role="button">
                                 <span class="visually-hidden">Edit</span>

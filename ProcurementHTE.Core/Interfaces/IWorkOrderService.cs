@@ -24,7 +24,6 @@ namespace ProcurementHTE.Core.Interfaces
         Task<Status?> GetStatusByNameAsync(string name);
         Task<WorkOrder?> GetWithOffersAsync(string id);
         Task<int> CountAllWoAsync(CancellationToken ct);
-
         // Transaction DB
         Task AddWorkOrderAsync(WorkOrder wo);
         Task AddWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details);
