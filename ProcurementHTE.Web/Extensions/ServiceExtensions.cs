@@ -1,5 +1,5 @@
-﻿using System.Security.Claims;
-using System.Text;
+﻿using DinkToPdf;
+using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,6 +14,8 @@ using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Repositories;
 using ProcurementHTE.Infrastructure.Storage;
+using System.Security.Claims;
+using System.Text;
 
 namespace ProcurementHTE.Web.Extensions
 {
@@ -374,6 +376,7 @@ namespace ProcurementHTE.Web.Extensions
             // ------------- Storage (MinIO) -------------
             // NOTE: Interface yang benar adalah IObjectStorage (bukan IObjectStorageRepository)
             services.AddSingleton<IObjectStorage, MinioStorage>();
+            services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
             // ------------- Repositories -------------
             services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
@@ -410,6 +413,9 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<ITemplateProvider, FileSystemTemplateProvider>();
+            services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
+            services.AddScoped<IDocumentGenerator, DocumentGenerator>();
 
             // ------------- Query Services -------------
             // INI YANG BENAR: WorkOrderDocumentQuery di-bind ke IWorkOrderDocumentQuery (bukan ke IWoDocumentRepository)
