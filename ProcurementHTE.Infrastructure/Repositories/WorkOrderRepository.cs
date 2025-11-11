@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -11,6 +12,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class WorkOrderRepository : IWorkOrderRepository
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<WorkOrderRepository>? _logger;
 
         public WorkOrderRepository(AppDbContext context) =>
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -228,11 +230,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 _context.Entry(wo).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (InvalidOperationException ex)
             {
-                throw new KeyNotFoundException(
-                    $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
-                );
+                _logger?.LogWarning(ex, "WorkOrderRepository: operasi X gagal (ignored).");
             }
             catch (Exception ex)
             {

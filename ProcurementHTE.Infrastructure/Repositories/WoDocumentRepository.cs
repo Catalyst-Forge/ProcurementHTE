@@ -111,21 +111,26 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             var total = await baseQuery.CountAsync(ct);
 
-            var items = await baseQuery
-                .OrderByDescending(wd => wd.CreatedAt)
+            var itemsQuery = from wd in baseQuery
+                             join u in _context.Users on wd.CreatedByUserId equals u.Id into gj
+                             from u in gj.DefaultIfEmpty()
+                             orderby wd.CreatedAt descending
+                             select new WoDocumentLiteDto(
+                                 wd.WoDocumentId,
+                                 wd.WorkOrderId,
+                                 wd.FileName,
+                                 wd.Status,
+                                 wd.QrText!,
+                                 wd.ObjectKey,
+                                 wd.Description,
+                                 wd.CreatedByUserId,
+                                 u != null ? u.FullName : null,
+                                 wd.CreatedAt
+                             );
+
+            var items = await itemsQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(wd => new WoDocumentLiteDto(
-                    wd.WoDocumentId,
-                    wd.WorkOrderId,
-                    wd.FileName,
-                    wd.Status,
-                    wd.QrText!,
-                    wd.ObjectKey,
-                    wd.Description,
-                    wd.CreatedByUserId,
-                    wd.CreatedAt
-                ))
                 .ToListAsync(ct);
 
             return new PagedResult<WoDocumentLiteDto>(items, total);
@@ -206,6 +211,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
 
             // map balik ke DTO ringan (sesuaikan dengan DTO-mu)
+            var createdByName = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == entity.CreatedByUserId)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync(ct);
+
             return new WoDocumentLiteDto(
                 entity.WoDocumentId,
                 entity.WorkOrderId,
@@ -215,6 +226,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 entity.ObjectKey,
                 entity.Description,
                 entity.CreatedByUserId,
+                createdByName,
                 entity.CreatedAt
             );
         }
@@ -227,6 +239,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.QrText == QrText, ct);
             if (entity is null) return null;
+            var createdByName = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == entity.CreatedByUserId)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync(ct);
+
             return new WoDocumentLiteDto(
                 entity.WoDocumentId,
                 entity.WorkOrderId,
@@ -236,6 +254,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 entity.ObjectKey,
                 entity.Description,
                 entity.CreatedByUserId,
+                createdByName,
                 entity.CreatedAt
             );
         }

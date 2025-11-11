@@ -1,39 +1,45 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions; // ⬅️ tambahkan
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories;
 
-public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
+public sealed class WorkOrderDocumentQuery : IWorkOrderDocumentQuery
 {
-    private readonly AppDbContext _db = db;
-    private readonly ILogger<WorkOrderDocumentQuery>? _logger;
+    private readonly AppDbContext _db;
+    // ⬇️ init supaya tidak pernah null, sekaligus hilangkan CS0649
+    private readonly ILogger<WorkOrderDocumentQuery> _logger = NullLogger<WorkOrderDocumentQuery>.Instance;
+
+    public WorkOrderDocumentQuery(
+        AppDbContext context,
+        ILogger<WorkOrderDocumentQuery> logger)
+    {
+        _db = context;
+        _logger = logger; // DI akan override NullLogger dengan real logger
+    }
 
     public async Task<WorkOrderRequiredDocsDto?> GetRequiredDocsAsync(string workOrderId, TimeSpan? _)
     {
-        // 1) WorkOrder
         var wo = await _db.WorkOrders
             .AsNoTracking()
             .Where(x => x.WorkOrderId == workOrderId)
             .Select(x => new { x.WorkOrderId, x.WoTypeId })
             .FirstOrDefaultAsync();
 
-        _logger?.LogInformation("[ReqDocs] WO={WO} => Found={Found} WoTypeId={WoTypeId}",
+        _logger.LogInformation("[ReqDocs] WO={WO} => Found={Found} WoTypeId={WoTypeId}",
             workOrderId, wo != null, wo?.WoTypeId);
 
         if (wo is null) return null;
 
-        // 2) Ada konfigurasi WoTypeDocuments untuk WoTypeId ini?
         var cfgCount = await _db.WoTypesDocuments
             .AsNoTracking()
             .Where(c => c.WoTypeId == wo.WoTypeId)
             .CountAsync();
-        _logger?.LogInformation("[ReqDocs] WoTypeDocuments Count for WoTypeId={WoTypeId}: {Count}", wo.WoTypeId, cfgCount);
+        _logger.LogInformation("[ReqDocs] WoTypeDocuments Count for WoTypeId={WoTypeId}: {Count}", wo.WoTypeId, cfgCount);
 
-        // 3) Ada DocumentTypes yang direferensikan oleh WoTypeDocuments tsb?
         var docTypeIds = await _db.WoTypesDocuments
             .AsNoTracking()
             .Where(c => c.WoTypeId == wo.WoTypeId)
@@ -45,16 +51,14 @@ public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
             .AsNoTracking()
             .Where(dt => docTypeIds.Contains(dt.DocumentTypeId))
             .CountAsync();
-        _logger?.LogInformation("[ReqDocs] DocumentTypes referenced: {dtCount}", dtCount);
+        _logger.LogInformation("[ReqDocs] DocumentTypes referenced: {dtCount}", dtCount);
 
-        // 4) Ada WoDocuments untuk WO ini?
         var wdCount = await _db.WoDocuments
             .AsNoTracking()
             .Where(d => d.WorkOrderId == workOrderId)
             .CountAsync();
-        _logger?.LogInformation("[ReqDocs] Existing WoDocuments for WO={WO}: {wdCount}", workOrderId, wdCount);
+        _logger.LogInformation("[ReqDocs] Existing WoDocuments for WO={WO}: {wdCount}", workOrderId, wdCount);
 
-        // 5) Query utama (pakai OUTER APPLY/let lastDoc)
         var q =
             from cfg in _db.WoTypesDocuments.AsNoTracking()
             where cfg.WoTypeId == wo.WoTypeId
@@ -81,10 +85,10 @@ public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
                 Status = lastDoc != null ? lastDoc.Status : null
             };
 
-        _logger?.LogDebug("[ReqDocs] SQL:\n{Sql}", q.ToQueryString());
+        _logger.LogDebug("[ReqDocs] SQL:\n{Sql}", q.ToQueryString());
 
         var items = await q.ToListAsync();
-        _logger?.LogInformation("[ReqDocs] Items materialized: {Count}", items.Count);
+        _logger.LogInformation("[ReqDocs] Items materialized: {Count}", items.Count);
 
         return new WorkOrderRequiredDocsDto
         {
@@ -93,5 +97,4 @@ public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
             Items = items
         };
     }
-
 }
