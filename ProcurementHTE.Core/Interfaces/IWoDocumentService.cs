@@ -32,7 +32,7 @@ public interface IWoDocumentService
         TimeSpan expiry,
         CancellationToken ct = default
     );
-    Task<bool> CanSendApprovalAsync(string workOrderId);
+    Task<bool> CanSendApprovalAsync(string workOrderId, CancellationToken ct = default);
     Task SendApprovalAsync(string workOrderId, string requestedByUserId, CancellationToken ct = default);
     Task<string?> GetPresignedQrUrlAsync(string woDocumentId, TimeSpan expiry, CancellationToken ct = default);
     Task<UploadWoDocumentResult> SaveGeneratedAsync(GeneratedWoDocumentRequest request, CancellationToken ct = default);

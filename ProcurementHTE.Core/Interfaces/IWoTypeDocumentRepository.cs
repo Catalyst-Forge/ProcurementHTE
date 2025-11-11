@@ -2,10 +2,13 @@
 
 namespace ProcurementHTE.Core.Interfaces
 {
+    // Interface (sudah OK)
     public interface IWoTypeDocumentRepository
     {
         Task<WoTypeDocuments?> FindByWoTypeAndDocTypeAsync(string woTypeId, string documentTypeId);
         Task<WoTypeDocuments?> GetByWoTypeAndDocumentTypeAsync(string woTypeId, string documentTypeId);
-        Task<IReadOnlyList<WoTypeDocuments>> ListByWoTypeAsync(string woTypeId);
+        Task<IReadOnlyList<WoTypeDocuments>> ListByWoTypeAsync(string woTypeId, CancellationToken ct = default);
+
     }
+
 }
