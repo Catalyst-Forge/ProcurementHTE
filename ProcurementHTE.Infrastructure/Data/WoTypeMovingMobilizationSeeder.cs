@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
+using System.Linq;
 using System.Reflection.Metadata;
 
 namespace ProcurementHTE.Infrastructure.Data
@@ -63,18 +64,18 @@ namespace ProcurementHTE.Infrastructure.Data
             // === 3) Konfigurasi WoTypeDocuments (idempotent, lookup by (WoTypeId, DocumentTypeId))
             var cfg = new (string Name, int Seq, bool Mandatory, bool Generated, bool UploadReq, bool RequiresApproval, string? Note)[]
             {
-                ("Memorandum",                                   1,  true,  false, true,  true,  "Memorandum approval Manager Transport & Logistic"),
+                ("Memorandum",                                   1,  true,  false, true,  true,  "Memorandum upload dengan approval Manager"),
                 ("Permintaan Pekerjaan",                         2,  true,  false, true,  false, "Dokumen eksternal; tidak di-generate; tidak perlu approval"),
-                ("Service Order",                                3,  true,  false, true,  true,  "Service Order approval Manager Transport & Logistic"),
-                ("Market Survey",                                4,  true,  false, true,  false, "Market Survey upload dari HTE"),
-                ("Profit & Loss",                                5,  true,  true,  false, true,  "Generate; approval berjenjang"),
-                ("Surat Perintah Mulai Pekerjaan (SPMP)",        6,  true,  false, true,  true,  "SPMP approval Manager Transport & Logistic"),
-                ("Surat Penawaran Harga",                        7,  true,  false, true,  false, "SPH upload dari HTE"),
-                ("Surat Negosiasi Harga",                        8,  true,  false, true,  false, "SNH upload dari HTE"),
-                ("Rencana Kerja dan Syarat-Syarat (RKS)",        9,  true,  true,  true, true,  "RKS generate; approval berjenjang"),
-                ("Risk Assessment (RA)",                        10,  true,  false, true,  true,  "RA approval HSE -> AM HTE -> Manager T&L"),
-                ("Owner Estimate (OE)",                         11,  true,  true,  true, true,  "OE generate; approval berjenjang"),
-                ("Bill of Quantity (BOQ)",                      12,  true,  true,  true, false, "BOQ generate otomatis oleh sistem")
+                ("Service Order",                                3,  true,  false, true,  true,  "Service Order upload dengan approval Manager"),
+                ("Market Survey",                                4,  true,  false, true,  false, "Upload dari HTE; mempengaruhi progress"),
+                ("Profit & Loss",                                5,  true,  true,  false, true,  "Digenerate sistem; approval Analyst HTE & LTS -> AM HTE -> Manager"),
+                ("Surat Perintah Mulai Pekerjaan (SPMP)",        6,  true,  false, true,  true,  "SPMP upload dengan approval Manager"),
+                ("Surat Penawaran Harga",                        7,  true,  false, true,  false, "Upload dari HTE"),
+                ("Surat Negosiasi Harga",                        8,  true,  false, true,  false, "Upload dari HTE"),
+                ("Rencana Kerja dan Syarat-Syarat (RKS)",        9,  true,  false, true, true,  "Digenerate sistem; approval AM HTE -> Manager"),
+                ("Risk Assessment (RA)",                        10,  true,  false, true,  true,  "Upload (khusus pengadaan jasa); approval HSE -> AM HTE -> Manager"),
+                ("Owner Estimate (OE)",                         11,  true,  false,  true, true,  "Digenerate sistem; approval AM HTE -> Manager"),
+                ("Bill of Quantity (BOQ)",                      12,  true,  false, true, true, "BOQ digenerate otomatis oleh sistem")
             };
 
             // DbSet bisa bernama WoTypesDocuments (lihat log EF). Untuk aman gunakan Set<WoTypeDocuments>()
@@ -138,38 +139,44 @@ namespace ProcurementHTE.Infrastructure.Data
                 }
             }
 
-            // contoh minimal sesuai yang kamu tulis
-            await AddApprovalIfMissing("Memorandum",                                "HSE", 1, 1);
-            await AddApprovalIfMissing("Service Order",                             "HSE", 1, 1);
-            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "HSE", 1, 1);
-            await AddApprovalIfMissing("Profit & Loss",                             "HSE", 1, 1);
-            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "HSE", 1, 1);
-            await AddApprovalIfMissing("Risk Assessment (RA)",                      "HSE", 1, 1);
-            await AddApprovalIfMissing("Owner Estimate (OE)",                       "HSE", 1, 1);
+            var approvalMatrix = new (string Doc, (string Role, int Level, int Seq)[] Steps)[]
+            {
+                ("Memorandum", new[] {
+                    ("Manager Transport & Logistic", 1, 1)
+                }),
+                ("Service Order", new[] {
+                    ("Manager Transport & Logistic", 1, 1)
+                }),
+                ("Surat Perintah Mulai Pekerjaan (SPMP)", new[] {
+                    ("Manager Transport & Logistic", 1, 1)
+                }),
+                ("Profit & Loss", new[] {
+                    ("Analyst HTE & LTS", 1, 1),
+                    ("Assistant Manager HTE", 2, 2),
+                    ("Manager Transport & Logistic", 3, 3)
+                }),
+                ("Rencana Kerja dan Syarat-Syarat (RKS)", new[] {
+                    ("Assistant Manager HTE", 1, 1),
+                    ("Manager Transport & Logistic", 2, 2)
+                }),
+                ("Risk Assessment (RA)", new[] {
+                    ("HSE", 1, 1),
+                    ("Assistant Manager HTE", 2, 2),
+                    ("Manager Transport & Logistic", 3, 3)
+                }),
+                ("Owner Estimate (OE)", new[] {
+                    ("Assistant Manager HTE", 1, 1),
+                    ("Manager Transport & Logistic", 2, 2)
+                })
+            };
 
-            await AddApprovalIfMissing("Memorandum",                                "Assistant Manager HTE", 2, 2);
-            await AddApprovalIfMissing("Service Order",                             "Assistant Manager HTE", 2, 2);
-            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "Assistant Manager HTE", 2, 2);
-            await AddApprovalIfMissing("Profit & Loss",                             "Assistant Manager HTE", 2, 2);
-            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "Assistant Manager HTE", 2, 2);
-            await AddApprovalIfMissing("Risk Assessment (RA)",                      "Assistant Manager HTE", 2, 2);
-            await AddApprovalIfMissing("Owner Estimate (OE)",                       "Assistant Manager HTE", 2, 2);
-
-            await AddApprovalIfMissing("Memorandum",                                "Manager Transport & Logistic", 3, 3);
-            await AddApprovalIfMissing("Service Order",                             "Manager Transport & Logistic", 3, 3);
-            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "Manager Transport & Logistic", 3, 3);
-            await AddApprovalIfMissing("Profit & Loss",                             "Manager Transport & Logistic", 3, 3);
-            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "Manager Transport & Logistic", 3, 3);
-            await AddApprovalIfMissing("Risk Assessment (RA)",                      "Manager Transport & Logistic", 3, 3);
-            await AddApprovalIfMissing("Owner Estimate (OE)",                       "Manager Transport & Logistic", 3, 3);
-
-            await AddApprovalIfMissing("Memorandum",                                "Vice President", 4, 4);
-            await AddApprovalIfMissing("Service Order",                             "Vice President", 4, 4);
-            await AddApprovalIfMissing("Surat Perintah Mulai Pekerjaan (SPMP)",     "Vice President", 4, 4);
-            await AddApprovalIfMissing("Profit & Loss",                             "Vice President", 4, 4);
-            await AddApprovalIfMissing("Rencana Kerja dan Syarat-Syarat (RKS)",     "Vice President", 4, 4);
-            await AddApprovalIfMissing("Risk Assessment (RA)",                      "Vice President", 4, 4);
-            await AddApprovalIfMissing("Owner Estimate (OE)",                       "Vice President", 4, 4);
+            foreach (var (doc, steps) in approvalMatrix)
+            {
+                foreach (var (role, level, seq) in steps)
+                {
+                    await AddApprovalIfMissing(doc, role, level, seq);
+                }
+            }
 
             await context.SaveChangesAsync();
             await tx.CommitAsync();

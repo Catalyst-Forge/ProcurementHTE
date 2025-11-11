@@ -24,7 +24,6 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<WoDocumentApprovals> WoDocumentApprovals { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
-
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -144,14 +143,16 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<WoDocuments>(entity =>
             {
                 // relasi ke DocumentType (sudah ada di kode lama kamu—aku rapikan property names)
-                entity.HasOne(d => d.DocumentType)
-                      .WithMany(t => t.WoDocuments)
-                      .HasForeignKey(d => d.DocumentTypeId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(d => d.DocumentType)
+                    .WithMany(t => t.WoDocuments)
+                    .HasForeignKey(d => d.DocumentTypeId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasIndex(d => d.QrText).HasDatabaseName("IX_WoDocuments_QrText");
-                entity.HasIndex(d => new { d.WorkOrderId, d.CreatedAt })
-                      .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
+                entity
+                    .HasIndex(d => new { d.WorkOrderId, d.CreatedAt })
+                    .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
 
                 // relasi ke WorkOrder (kamu sudah mengatur di WorkOrder.WithMany(WoDocuments))
                 // indeks & constraints untuk MinIO
@@ -162,7 +163,14 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(d => d.Description).HasMaxLength(200).IsRequired(false);
 
                 // satu dokumen "status" per (WO, DocumentType) (misal menjaga 1 'Uploaded' aktif per type)
-                entity.HasIndex(d => new { d.WorkOrderId, d.DocumentTypeId, d.Status }).IsUnique();
+                entity
+                    .HasIndex(d => new
+                    {
+                        d.WorkOrderId,
+                        d.DocumentTypeId,
+                        d.Status,
+                    })
+                    .IsUnique();
             });
 
             // ***** WO Document Approval *****
@@ -171,26 +179,54 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(a => a.Status).HasMaxLength(16).HasDefaultValue("Pending");
 
                 // FK ke WorkOrders (INI WAJIB, sebelumnya belum ada di kode kamu)
-                entity.HasOne(a => a.WorkOrder)
-                      .WithMany(/* w => w.WoDocumentApprovals */) // boleh tanpa nav kalau tidak kamu tambahkan di WorkOrder
-                      .HasForeignKey(a => a.WorkOrderId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(a => a.WorkOrder)
+                    .WithMany( /* w => w.WoDocumentApprovals */
+                    ) // boleh tanpa nav kalau tidak kamu tambahkan di WorkOrder
+                    .HasForeignKey(a => a.WorkOrderId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // FK ke WoDocuments (perbaiki WithMany: gunakan koleksi Approvals di WoDocuments)
-                entity.HasOne(a => a.WoDocument)
-                      .WithMany(d => d.Approvals)
-                      .HasForeignKey(a => a.WoDocumentId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                entity
+                    .HasOne(a => a.WoDocument)
+                    .WithMany(d => d.Approvals)
+                    .HasForeignKey(a => a.WoDocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(a => a.Role)
-                      .WithMany()
-                      .HasForeignKey(a => a.RoleId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(a => a.Role)
+                    .WithMany()
+                    .HasForeignKey(a => a.RoleId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
-                entity.HasOne(a => a.Approver)
-                      .WithMany()
-                      .HasForeignKey(a => a.ApproverId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(a => a.Approver)
+                    .WithMany()
+                    .HasForeignKey(a => a.ApproverId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasIndex(a => new
+                    {
+                        a.WoDocumentId,
+                        a.Level,
+                        a.SequenceOrder,
+                    })
+                    .IsUnique()
+                    .HasDatabaseName("UX_WoDocApprovals_Doc_Level_Seq");
+
+                // 2) Index untuk inbox approver (Role + Status)
+                // IncludeProperties akan dibuat sebagai INCLUDE index (SQL Server)
+                entity
+                    .HasIndex(a => new { a.RoleId, a.Status })
+                    .HasDatabaseName("IX_WoDocApprovals_Role_Status")
+                    .IncludeProperties(a => new
+                    {
+                        a.WoDocumentId,
+                        a.WorkOrderId,
+                        a.Level,
+                        a.SequenceOrder,
+                    });
             });
         }
 
