@@ -5,7 +5,7 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IWorkOrderService
     {
-        // Get Data
+        // Query Methods
         Task<PagedResult<WorkOrder>> GetAllWorkOrderWithDetailsAsync(
             int page,
             int pageSize,
@@ -19,15 +19,25 @@ namespace ProcurementHTE.Core.Interfaces
             int limit,
             CancellationToken ct
         );
+        Task<int> CountAllWoAsync(CancellationToken ct);
+
+        // Lookup Methods
         Task<(List<WoTypes> WoTypes, List<Status> Statuses)> GetRelatedEntitiesForWorkOrderAsync();
         Task<WoTypes?> GetWoTypeByIdAsync(string id);
         Task<Status?> GetStatusByNameAsync(string name);
-        Task<WorkOrder?> GetWithOffersAsync(string id);
-        Task<int> CountAllWoAsync(CancellationToken ct);
-        // Transaction DB
-        Task AddWorkOrderAsync(WorkOrder wo);
-        Task AddWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details);
-        Task EditWorkOrderAsync(WorkOrder wo, string id);
+
+        // Command Methods
+        Task AddWorkOrderWithDetailsAsync(
+            WorkOrder wo,
+            List<WoDetail> details,
+            List<WoOffer> offers
+        );
+        Task EditWorkOrderAsync(
+            WorkOrder wo,
+            string id,
+            List<WoDetail> details,
+            List<WoOffer> offers
+        );
         Task DeleteWorkOrderAsync(WorkOrder wo);
         Task MarkAsCompletedAsync(string woId);
     }

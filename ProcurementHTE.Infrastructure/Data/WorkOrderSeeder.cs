@@ -43,8 +43,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 DateLetter = new DateTime(2025, 9, 1),
                 Description =
                     "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
-                FromLocation = "Subsurface Services Manager",
-                Destination = "Manager Transport & Logistic",
+                From = "Subsurface Services Manager",
+                To = "Manager Transport & Logistic",
                 WorkOrderLetter = null,
                 WBS = null,
                 GlAccount = "5005000130",

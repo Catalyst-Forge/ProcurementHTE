@@ -11,58 +11,20 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class WorkOrderRepository : IWorkOrderRepository
     {
         private readonly AppDbContext _context;
+        private const string WO_PREFIX = "WO";
+        private const int MAX_RETRY_ATTEMPTS = 5;
 
         public WorkOrderRepository(AppDbContext context) =>
             _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        private async Task<string?> GetLastWoNumAsync(string prefix)
-        {
-            return await _context
-                .WorkOrders.Where(w => w.WoNum!.StartsWith(prefix))
-                .OrderByDescending(w => w.WoNum)
-                .Select(w => w.WoNum)
-                .FirstOrDefaultAsync();
-        }
+        #region Query Methods
 
-        private static bool IsUniqueWoNumViolation(DbUpdateException ex) =>
-            ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx
-            && sqlEx.Number == 2627
-            && (sqlEx.Message?.Contains("AK_WorkOrders_WoNum") ?? false);
-
-        public async Task<Core.Common.PagedResult<WorkOrder>> GetAllAsync(
-            int page,
-            int pageSize,
-            string? search,
-            ISet<string> fields,
-            CancellationToken ct
-        )
+        public async Task<Core.Common.PagedResult<WorkOrder>> GetAllAsync(int page, int pageSize, string? search, ISet<string> fields, CancellationToken ct)
         {
-            var query = _context
-                .WorkOrders.Include(wo => wo.Status)
-                .Include(wo => wo.WoType)
-                .Include(wo => wo.User)
-                .Include(wo => wo.WoDetails)
-                .AsNoTracking();
+            var query = BuildBaseQuery();
 
             if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
-            {
-                var s = search.Trim();
-                bool byWoNum = fields.Contains("WoNum");
-                bool byDesc = fields.Contains("Description");
-                bool byLetter = fields.Contains("WoLetter");
-                bool byWbs = fields.Contains("WBS");
-                bool byGlAccount = fields.Contains("GlAccount");
-                bool byStat = fields.Contains("Status");
-
-                query = query.Where(w =>
-                    (byWoNum && w.WoNum != null && w.WoNum.Contains(s))
-                    || (byDesc && w.Description != null && w.Description.Contains(s))
-                    || (byLetter && w.WoNumLetter != null && w.WoNumLetter.Contains(s))
-                    || (byWbs && w.WBS != null && w.WBS.Contains(s))
-                    || (byGlAccount && w.GlAccount != null && w.GlAccount.Contains(s))
-                    || (byStat && w.Status != null && w.Status.StatusName.Contains(s))
-                );
-            }
+                query = ApplySearchFilter(query, search.Trim(), fields);
 
             return await query.ToPagedResultAsync(
                 page,
@@ -74,82 +36,37 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<WorkOrder?> GetByIdAsync(string id)
         {
-            var wo = await _context
-                .WorkOrders.Include(wo => wo.Status)
+            return await _context
+                .WorkOrders.Include(wo => wo.WoOffers)
+                .Include(wo => wo.Status)
                 .Include(wo => wo.WoType)
                 .Include(wo => wo.User)
+                .Include(wo => wo.WoDetails)
                 .FirstOrDefaultAsync(t => t.WorkOrderId == id);
-
-            if (wo == null)
-                return null;
-
-            if (!string.IsNullOrWhiteSpace(wo.WorkOrderId))
-            {
-                var details = await _context
-                    .WoDetails.Where(d => d.WorkOrderId == wo.WorkOrderId)
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                wo.WoDetails = details;
-            }
-
-            return wo;
-        }
-
-        public async Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(
-            string userId,
-            int limit,
-            CancellationToken ct
-        )
-        {
-            return await _context
-                .WorkOrders.Where(w => w.UserId == userId)
-                .OrderByDescending(w => w.CreatedAt)
-                .Include(w => w.Status)
-                .AsNoTracking()
-                .Take(limit)
-                .ToListAsync(ct);
-        }
-
-        public async Task<Status?> GetStatusByNameAsync(string name)
-        {
-            var normalized = name.Trim().ToLower();
-            return await _context
-                .Statuses.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.StatusName.ToLower() == normalized);
-        }
-
-        public async Task<List<WoTypes>> GetWoTypesAsync()
-        {
-            return await _context.WoTypes.OrderBy(wt => wt.TypeName).ToListAsync();
-        }
-
-        public async Task<WoTypes?> GetWoTypeByIdAsync(string id)
-        {
-            return await _context.WoTypes.FirstOrDefaultAsync(x => x.WoTypeId == id);
-        }
-
-        public async Task<List<Status>> GetStatusesAsync()
-        {
-            return await _context.Statuses.OrderBy(s => s.StatusName).ToListAsync();
-        }
-
-        public async Task<WorkOrder?> GetWithOffersAsync(string id)
-        {
-            return await _context.WorkOrders.FirstOrDefaultAsync(x => x.WorkOrderId == id);
         }
 
         public async Task<WorkOrder?> GetWithSelectedOfferAsync(string id)
         {
             return await _context
-                .WorkOrders.Include(x => x.VendorOffers)
-                .ThenInclude(x => x!.Vendor)
-                .FirstOrDefaultAsync(x => x.WorkOrderId == id);
+                .WorkOrders.Include(wo => wo.VendorOffers)
+                .ThenInclude(vo => vo.Vendor)
+                .FirstOrDefaultAsync(wo => wo.WorkOrderId == id);
         }
 
-        public async Task<int> CountAsync(CancellationToken ct)
+        public async Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(string userId, int limit, CancellationToken ct)
         {
-            return await _context.WorkOrders.CountAsync(ct);
+            return await _context
+                .WorkOrders.Where(wo => wo.UserId == userId)
+                .OrderByDescending(wo => wo.CreatedAt)
+                .Include(wo => wo.Status)
+                .AsNoTracking()
+                .Take(limit)
+                .ToListAsync(ct);
+        }
+
+        public Task<int> CountAsync(CancellationToken ct)
+        {
+            return _context.WorkOrders.CountAsync(ct);
         }
 
         public async Task<IReadOnlyList<WoStatusCountDto>> GetCountByStatusAsync()
@@ -160,45 +77,64 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task StoreWorkOrderAsync(WorkOrder wo)
+        #endregion
+
+        #region Lookup Methods
+
+        public async Task<Status?> GetStatusByNameAsync(string name)
         {
-            await _context.AddAsync(wo);
-            await _context.SaveChangesAsync();
+            var normalized = name.Trim();
+            return await _context
+                .Statuses.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.StatusName != null && EF.Functions.Like(s.StatusName, normalized));
         }
 
-        public async Task StoreWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details)
+        public Task<List<Status>> GetStatusesAsync()
         {
-            const string prefix = "WO";
-            const int maxRetry = 5;
+            return _context.Statuses.AsNoTracking().OrderBy(s => s.StatusName).ToListAsync();
+        }
 
-            details = (details ?? new())
-                .Where(d =>
-                    !string.IsNullOrWhiteSpace(d.ItemName)
-                    && !string.IsNullOrWhiteSpace(d.Unit)
-                    && d.Quantity > 0
-                )
-                .ToList();
+        public Task<WoTypes?> GetWoTypeByIdAsync(string id)
+        {
+            return _context.WoTypes.FirstOrDefaultAsync(wt => wt.WoTypeId == id);
+        }
 
-            for (var attempt = 1; attempt <= maxRetry; attempt++)
+        public Task<List<WoTypes>> GetWoTypesAsync()
+        {
+            return _context.WoTypes.OrderBy(wt => wt.TypeName).ToListAsync();
+        }
+
+        #endregion
+
+        #region Command Methods
+
+        public async Task StoreWorkOrderWithDetailsAsync(
+            WorkOrder wo,
+            List<WoDetail> details,
+            List<WoOffer> offers
+        )
+        {
+            var validDetails = FilterValidDetails(details);
+            var validOffers = FilterValidOffers(offers);
+
+            for (var attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++)
             {
                 using var transactionDb = await _context.Database.BeginTransactionAsync();
 
                 try
                 {
-                    var lastId = await GetLastWoNumAsync(prefix);
-                    wo.WoNum = SequenceNumberGenerator.NumId(prefix, lastId);
+                    wo.WoNum = await GenerateNextWoNumAsync();
 
-                    foreach (var detail in details)
-                    {
-                        detail.WorkOrderId = wo.WorkOrderId;
-                    }
+                    AssignWorkOrderIdToDetails(wo.WorkOrderId, validDetails);
+                    AssignWorkOrderIdToOffers(wo.WorkOrderId, validOffers);
 
                     await _context.WorkOrders.AddAsync(wo);
 
-                    if (details != null && details.Count > 0)
-                    {
-                        await _context.WoDetails.AddRangeAsync(details);
-                    }
+                    if (validDetails.Count != 0)
+                        await _context.WoDetails.AddRangeAsync(validDetails);
+
+                    if (validOffers.Count != 0)
+                        await _context.WoOffers.AddRangeAsync(validOffers);
 
                     await _context.SaveChangesAsync();
                     await transactionDb.CommitAsync();
@@ -207,9 +143,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 catch (DbUpdateException ex) when (IsUniqueWoNumViolation(ex))
                 {
                     await transactionDb.RollbackAsync();
-                    if (attempt == maxRetry)
+                    if (attempt == MAX_RETRY_ATTEMPTS)
                     {
-                        throw;
+                        throw new InvalidOperationException(
+                            "Gagal membuat nomor Work Order unik setelah beberapa percobaan.",
+                            ex
+                        );
                     }
                 }
                 catch
@@ -224,29 +163,208 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             try
             {
-                //_context.WorkOrders.Update(wo);
                 _context.Entry(wo).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (DbUpdateConcurrencyException)
             {
-                throw new KeyNotFoundException(
-                    $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
+                var exists = await _context.WorkOrders.AsNoTracking().AnyAsync(wo =>
+                    wo.WorkOrderId == wo.WorkOrderId
+                );
+
+                if (!exists)
+                    throw new KeyNotFoundException(
+                        $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
+                    );
+
+                throw new InvalidOperationException(
+                    "Data telah diubah oleh user lain. Silakan refresh dan coba lagi"
                 );
             }
-            catch (Exception ex)
+        }
+
+        public async Task UpdateWorkOrderWithDetailsAsync(
+            WorkOrder wo,
+            List<WoDetail> details,
+            List<WoOffer> offers
+        )
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                throw new InvalidOperationException(
-                    "Data telah diubah oleh user lain. Silakan refresh dan coba lagi",
-                    ex
-                );
+                _context.Entry(wo).State = EntityState.Modified;
+
+                var existingDetails = await _context
+                    .WoDetails.Where(d => d.WorkOrderId == wo.WorkOrderId)
+                    .ToListAsync();
+
+                var existingOffers = await _context
+                    .WoOffers.Where(o => o.WorkOrderId == wo.WorkOrderId)
+                    .ToListAsync();
+
+                if (existingDetails.Count != 0)
+                    _context.WoDetails.RemoveRange(existingDetails);
+
+                if (existingOffers.Count != 0)
+                    _context.WoOffers.RemoveRange(existingOffers);
+
+                var validDetails = FilterValidDetails(details);
+                var validOffers = FilterValidOffers(offers);
+
+                AssignWorkOrderIdToDetails(wo.WorkOrderId, validDetails);
+                AssignWorkOrderIdToOffers(wo.WorkOrderId, validOffers);
+
+                if (validDetails.Count != 0)
+                    await _context.WoDetails.AddRangeAsync(validDetails);
+
+                if (validOffers.Count != 0)
+                    await _context.WoOffers.AddRangeAsync(validOffers);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
         public async Task DropWorkOrderAsync(WorkOrder wo)
         {
-            _context.WorkOrders.Remove(wo);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                _context.WorkOrders.Remove(wo);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private IQueryable<WorkOrder> BuildBaseQuery()
+        {
+            return _context
+                .WorkOrders.Include(wo => wo.WoOffers)
+                .Include(wo => wo.Status)
+                .Include(wo => wo.WoType)
+                .Include(wo => wo.User)
+                .Include(wo => wo.WoDetails)
+                .AsNoTracking();
+        }
+
+        private static IQueryable<WorkOrder> ApplySearchFilter(
+            IQueryable<WorkOrder> query,
+            string searchTerm,
+            ISet<string> fields
+        )
+        {
+            //var predicates = new List<Func<WorkOrder, bool>>();
+
+            //if (fields.Contains("WoNum"))
+            //    predicates.Add(wo => wo.WoNum != null && wo.WoNum.Contains(searchTerm));
+
+            //if (fields.Contains("Description"))
+            //    predicates.Add(wo => wo.Description != null && wo.Description.Contains(searchTerm));
+
+            //if (fields.Contains("WoNumLetter"))
+            //    predicates.Add(wo => wo.WoNumLetter != null && wo.WoNumLetter.Contains(searchTerm));
+
+            //if (fields.Contains("WBS"))
+            //    predicates.Add(wo => wo.WBS != null && wo.WBS.Contains(searchTerm));
+
+            //if (fields.Contains("GlAccount"))
+            //    predicates.Add(wo => wo.GlAccount != null && wo.GlAccount.Contains(searchTerm));
+
+            //if (fields.Contains("Status"))
+            //    predicates.Add(wo =>
+            //        wo.Status != null && wo.Status.StatusName.Contains(searchTerm)
+            //    );
+
+            //if (predicates.Count == 0)
+            //    return query;
+
+            //return query.Where(wo => predicates.Any(p => p(wo)));
+
+            bool byWoNum = fields.Contains("WoNum", StringComparer.OrdinalIgnoreCase);
+            bool byDescription = fields.Contains("Description", StringComparer.OrdinalIgnoreCase);
+            bool byWoNumLetter = fields.Contains("WoNumLetter", StringComparer.OrdinalIgnoreCase);
+            bool byWbs = fields.Contains("WBS", StringComparer.OrdinalIgnoreCase);
+            bool byGlAccount = fields.Contains("GlAccount", StringComparer.OrdinalIgnoreCase);
+            bool byStatus = fields.Contains("Status", StringComparer.OrdinalIgnoreCase);
+
+            var like = $"%{searchTerm}%";
+
+            return query.Where(wo =>
+                (byWoNum && wo.WoNum != null && EF.Functions.Like(wo.WoNum, like)) ||
+                (byDescription && wo.Description != null && EF.Functions.Like(wo.Description, like)) ||
+                (byWoNumLetter && wo.WoNumLetter != null && EF.Functions.Like(wo.WoNumLetter, like)) ||
+                (byWbs && wo.WBS != null && EF.Functions.Like(wo.WBS, like)) ||
+                (byGlAccount && wo.GlAccount != null && EF.Functions.Like(wo.GlAccount, like)) ||
+                (byStatus && wo.Status != null && EF.Functions.Like(wo.Status.StatusName, like))
+            );
+        }
+
+        private async Task<string> GenerateNextWoNumAsync()
+        {
+            var lastWoNum = await GetLastWoNumAsync(WO_PREFIX);
+            return SequenceNumberGenerator.NumId(WO_PREFIX, lastWoNum);
+        }
+
+        private async Task<string?> GetLastWoNumAsync(string prefix)
+        {
+            return await _context
+                .WorkOrders.Where(w => w.WoNum!.StartsWith(prefix))
+                .OrderByDescending(w => w.WoNum)
+                .Select(w => w.WoNum)
+                .FirstOrDefaultAsync();
+        }
+
+        private static List<WoDetail> FilterValidDetails(List<WoDetail>? details)
+        {
+            return (details ?? [])
+                .Where(detail =>
+                    !string.IsNullOrWhiteSpace(detail.ItemName)
+                    && !string.IsNullOrWhiteSpace(detail.Unit)
+                    && detail.Quantity > 0
+                )
+                .ToList();
+        }
+
+        private static List<WoOffer> FilterValidOffers(List<WoOffer>? offers)
+        {
+            return (offers ?? [])
+                .Where(offer => !string.IsNullOrWhiteSpace(offer.ItemPenawaran))
+                .ToList();
+        }
+
+        private static void AssignWorkOrderIdToDetails(string workOrderId, List<WoDetail> details)
+        {
+            foreach (var detail in details)
+                detail.WorkOrderId = workOrderId;
+        }
+
+        private static void AssignWorkOrderIdToOffers(string workOrderId, List<WoOffer> offers)
+        {
+            foreach (var offer in offers)
+                offer.WorkOrderId = workOrderId;
+        }
+
+        private static bool IsUniqueWoNumViolation(DbUpdateException ex) =>
+            ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx
+            && sqlEx.Number == 2627
+            && (sqlEx.Message?.Contains("AK_WorkOrders_WoNum") ?? false);
+
+        #endregion
     }
 }

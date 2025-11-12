@@ -5,7 +5,7 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IWorkOrderRepository
     {
-        // Get Data
+        // Query Methods
         Task<Common.PagedResult<WorkOrder>> GetAllAsync(
             int page,
             int pageSize,
@@ -14,24 +14,33 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct
         );
         Task<WorkOrder?> GetByIdAsync(string id);
+        Task<WorkOrder?> GetWithSelectedOfferAsync(string id);
         Task<IReadOnlyList<WorkOrder>> GetRecentByUserAsync(
             string userId,
             int limit,
             CancellationToken ct
         );
-        Task<Status?> GetStatusByNameAsync(string name);
-        Task<List<WoTypes>> GetWoTypesAsync();
-        Task<WoTypes?> GetWoTypeByIdAsync(string id);
-        Task<List<Status>> GetStatusesAsync();
-        Task<WorkOrder?> GetWithOffersAsync(string id);
-        Task<WorkOrder?> GetWithSelectedOfferAsync(string id);
         Task<int> CountAsync(CancellationToken ct);
         Task<IReadOnlyList<WoStatusCountDto>> GetCountByStatusAsync();
 
-        // Transactions DB
-        Task StoreWorkOrderAsync(WorkOrder wo);
-        Task StoreWorkOrderWithDetailsAsync(WorkOrder wo, List<WoDetail> details);
+        // Lookup Methods
+        Task<Status?> GetStatusByNameAsync(string name);
+        Task<List<Status>> GetStatusesAsync();
+        Task<WoTypes?> GetWoTypeByIdAsync(string id);
+        Task<List<WoTypes>> GetWoTypesAsync();
+
+        // Command Methods
+        Task StoreWorkOrderWithDetailsAsync(
+            WorkOrder wo,
+            List<WoDetail> details,
+            List<WoOffer> offers
+        );
         Task UpdateWorkOrderAsync(WorkOrder wo);
+        Task UpdateWorkOrderWithDetailsAsync(
+            WorkOrder wo,
+            List<WoDetail> details,
+            List<WoOffer> offers
+        );
         Task DropWorkOrderAsync(WorkOrder wo);
     }
 }

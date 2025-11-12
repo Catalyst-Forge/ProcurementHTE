@@ -7,10 +7,10 @@ using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories;
 
-public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
+public class WorkOrderDocumentQuery(AppDbContext db, ILogger<WorkOrderDocumentQuery> logger) : IWorkOrderDocumentQuery
 {
     private readonly AppDbContext _db = db;
-    private readonly ILogger<WorkOrderDocumentQuery>? _logger;
+    private readonly ILogger<WorkOrderDocumentQuery>? _logger = logger;
 
     public async Task<WorkOrderRequiredDocsDto?> GetRequiredDocsAsync(string workOrderId, TimeSpan? _)
     {
