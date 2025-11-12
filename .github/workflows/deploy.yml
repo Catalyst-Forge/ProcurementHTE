@@ -87,15 +87,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      # gunakan **Secrets**, bukan vars, biar tidak kosong
+      # gunakan Secrets agar tidak kosong
       DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}      # contoh: /var/www/ProcurementHTE
       APP_SERVICE: ${{ secrets.APP_SERVICE }}    # contoh: procurementhte.service
 
       DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT || '1433' }}
+      DB_PORT: ${{ secrets.DB_PORT }}            # default 1433 di-handle di script
       DB_USER: ${{ secrets.DB_USER }}
       DB_PASS: ${{ secrets.DB_PASS }}
-      DB_NAME: ${{ secrets.DB_NAME || 'ProcurementHTE' }}
+      DB_NAME: ${{ secrets.DB_NAME }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -111,6 +111,12 @@ jobs:
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "RDIR=/releases/${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "Done: $RELEASE_NAME"
+
+      - name: Debug vars
+        run: |
+          echo "DEPLOY_DIR=${{ env.DEPLOY_DIR }}"
+          echo "APP_SERVICE=${{ env.APP_SERVICE }}"
+          echo "RELEASE_NAME=${{ env.RELEASE_NAME }}"
 
       - name: Create release dir on server
         uses: appleboy/ssh-action@v1.2.0
@@ -137,7 +143,7 @@ jobs:
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
 
-      # ⬇️ kirim **ISI** folder artifact (bukan foldernya) agar tidak tercipta subfolder "artifact/"
+      # ⬇️ kirim ISI folder artifact (bukan foldernya)
       - name: Upload release files (contents only)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -149,7 +155,8 @@ jobs:
           source: "artifact/."
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}/"
 
-      - name: Verify release contents (debug)
+      # ⬇️ antisipasi kalau action tetap membuat subfolder artifact/
+      - name: Flatten release (remove artifact/ if created)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -161,8 +168,26 @@ jobs:
           script: |
             set -Eeuo pipefail
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            if [ -d "$RELEASE/artifact" ]; then
+              shopt -s dotglob
+              mv "$RELEASE/artifact/"* "$RELEASE"/
+              rmdir "$RELEASE/artifact" || true
+            fi
             echo "[INFO] Final contents of $RELEASE"
             ls -la "$RELEASE"
+
+      - name: Verify release contents
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR,RELEASE_NAME
+          script: |
+            set -Eeuo pipefail
+            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; exit 1; }
             if [ -f "$RELEASE/Migrations.sql" ]; then
               echo "[OK] Found Migrations.sql"
@@ -198,7 +223,7 @@ jobs:
               if [ -z "$BIN" ] && [ -x /opt/mssql-tools/bin/sqlcmd ]; then BIN="/opt/mssql-tools/bin/sqlcmd"; fi
               [ -n "$BIN" ] || return 1
               echo "[INFO] Host $BIN found, applying..."
-              "$BIN" -S "${DB_HOST},${DB_PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i "$MIG"
+              "$BIN" -S "${DB_HOST},${DB_PORT:-1433}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i "$MIG"
             }
 
             run_sqlcmd_docker () {
