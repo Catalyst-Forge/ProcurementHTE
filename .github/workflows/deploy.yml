@@ -74,10 +74,17 @@ jobs:
           envs: DEPLOY_DIR,GITHUB_SHA,GITHUB_RUN_NUMBER
           script_stop: true
           script: |
-            set -e
+            set -Eeuo pipefail
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
+      
+            echo "Using DEPLOY_DIR=$DEPLOY_DIR as $(whoami)"
+            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR"
+            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/releases"
+      
             RELEASE="$DEPLOY_DIR/releases/${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
-            mkdir -p "$RELEASE"
+            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$RELEASE"
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
+
 
       - name: Upload release files
         uses: appleboy/scp-action@v0.1.7
