@@ -8,22 +8,9 @@ namespace ProcurementHTE.Core.Models
         [Key]
         public string ProfitLossId { get; set; } = Guid.NewGuid().ToString();
 
-        // Tagihan
+        // Document-level
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal TarifAwal { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal TarifAdd { get; set; }
-
-        public int KmPer25 { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal OperatorCost { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal Revenue { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal SelectedVendorFinalOffer { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
@@ -39,7 +26,10 @@ namespace ProcurementHTE.Core.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Foreign Keys
+        [Required, StringLength(450)]
         public string WorkOrderId { get; set; } = null!;
+
+        [Required, StringLength(450)]
         public string? SelectedVendorId { get; set; } = null!;
 
         [ForeignKey("WorkOrderId")]
@@ -47,5 +37,7 @@ namespace ProcurementHTE.Core.Models
 
         [ForeignKey("SelectedVendorId")]
         public Vendor SelectedVendor { get; set; } = default!;
+
+        public ICollection<ProfitLossItem> Items { get; set; } = [];
     }
 }

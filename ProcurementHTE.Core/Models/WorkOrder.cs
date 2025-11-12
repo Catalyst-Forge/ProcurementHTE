@@ -37,10 +37,10 @@ namespace ProcurementHTE.Core.Models
         public DateTime? DateLetter { get; set; }
 
         [DisplayName("From")]
-        public string? FromLocation { get; set; }
+        public string? From { get; set; }
 
         [DisplayName("To")]
-        public string? Destination { get; set; }
+        public string? To { get; set; }
 
         [DisplayName("Work Order")]
         public string? WorkOrderLetter { get; set; }
@@ -80,7 +80,7 @@ namespace ProcurementHTE.Core.Models
 
         // Foreign Keys
         public string? WoTypeId { get; set; }
-        public int? StatusId { get; set; }
+        public int StatusId { get; set; }
         public string? UserId { get; set; }
 
         [ForeignKey("WoTypeId")]
@@ -98,6 +98,7 @@ namespace ProcurementHTE.Core.Models
         [JsonIgnore]
         public User? User { get; set; }
 
+        public ICollection<WoOffer> WoOffers { get; set; } = [];
         public ICollection<WoDocuments>? WoDocuments { get; set; } = [];
         public ICollection<WoDetail>? WoDetails { get; set; } = [];
         public ICollection<VendorOffer> VendorOffers { get; set; } = [];

@@ -35,8 +35,8 @@ namespace ProcurementHTE.Core.Services {
             html = ReplaceToken(html, "ProcurementType", wo.ProcurementType.ToString());
             html = ReplaceToken(html, "WoNumLetter", wo.WoNumLetter);
             html = ReplaceToken(html, "DateLetter", wo.DateLetter?.ToString("dd MMMM yyyy"));
-            html = ReplaceToken(html, "FromLocation", wo.FromLocation);
-            html = ReplaceToken(html, "Destination", wo.Destination);
+            html = ReplaceToken(html, "From", wo.From);
+            html = ReplaceToken(html, "To", wo.To);
             html = ReplaceToken(html, "WorkOrderLetter", wo.WorkOrderLetter);
             html = ReplaceToken(html, "WBS", wo.WBS);
             html = ReplaceToken(html, "GlAccount", wo.GlAccount);
@@ -63,11 +63,11 @@ namespace ProcurementHTE.Core.Services {
             // Profit & Loss data
             var pnl = await _pnlRepo.GetLatestByWorkOrderIdAsync(wo.WorkOrderId);
             if (pnl != null) {
-                html = ReplaceToken(html, "TarifAwal", pnl.TarifAwal.ToString("N0"));
-                html = ReplaceToken(html, "TarifAdd", pnl.TarifAdd.ToString("N0"));
-                html = ReplaceToken(html, "KmPer25", pnl.KmPer25.ToString());
-                html = ReplaceToken(html, "OperatorCost", pnl.OperatorCost.ToString("N0"));
-                html = ReplaceToken(html, "Revenue", pnl.Revenue.ToString("N0"));
+                //html = ReplaceToken(html, "TarifAwal", pnl.TarifAwal.ToString("N0"));
+                //html = ReplaceToken(html, "TarifAdd", pnl.TarifAdd.ToString("N0"));
+                //html = ReplaceToken(html, "KmPer25", pnl.KmPer25.ToString());
+                //html = ReplaceToken(html, "OperatorCost", pnl.OperatorCost.ToString("N0"));
+                //html = ReplaceToken(html, "Revenue", pnl.Revenue.ToString("N0"));
                 html = ReplaceToken(html, "SelectedVendorFinalOffer", pnl.SelectedVendorFinalOffer.ToString("N0"));
                 html = ReplaceToken(html, "Profit", pnl.Profit.ToString("N0"));
                 html = ReplaceToken(html, "ProfitPercent", pnl.ProfitPercent.ToString("N2"));

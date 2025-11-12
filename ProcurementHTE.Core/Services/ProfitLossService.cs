@@ -2,6 +2,7 @@
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
+using System.Collections.Generic;
 
 namespace ProcurementHTE.Core.Services
 {
@@ -42,6 +43,9 @@ namespace ProcurementHTE.Core.Services
             var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(woId);
             var offers = await _voRepository.GetByWorkOrderAsync(woId);
 
+            var totalRevenue = pnl.Items.Sum(item => item.Revenue);
+            var totalOperatorCost = pnl.Items.Sum(item => item.OperatorCost);
+
             var selectedVendorNames = selectedRows
                 .Select(row =>
                     allVendors.FirstOrDefault(vendor => vendor.VendorId == row.VendorId)?.VendorName
@@ -49,23 +53,52 @@ namespace ProcurementHTE.Core.Services
                 )
                 .ToList();
 
-            var vendorComparisons = offers
-                .GroupBy(offer => offer.VendorId)
+            var vendorTotals = offers
+                .GroupBy(vendorOffer => vendorOffer.VendorId)
                 .Select(group =>
                 {
-                    var finalOffer = group.OrderBy(item => item.Round).Last().Price;
-                    var profit = pnl.Revenue - finalOffer;
-                    var profitPercent = pnl.Revenue > 0 ? (profit / pnl.Revenue) * 100m : 0m;
+                    var finalPerItem = group
+                        .GroupBy(vendorOffer => vendorOffer.WoOfferId)
+                        .ToDictionary(
+                            groupVendorOffer => groupVendorOffer.Key,
+                            groupVendorOffer =>
+                                groupVendorOffer
+                                    .OrderBy(vendorOffer => vendorOffer.Round)
+                                    .Last()
+                                    .Price
+                        );
+
+                    // Wajib quote semua item agar valid
+                    var requiredItemIds = pnl.Items.Select(item => item.WoOfferId).ToList();
+                    var total = requiredItemIds.Sum(id =>
+                        finalPerItem.TryGetValue(id, out var p) ? p : decimal.MaxValue
+                    );
+
+                    return new
+                    {
+                        group.Key,
+                        finalPerItem,
+                        total,
+                    };
+                })
+                .Where(x => x.total < decimal.MaxValue)
+                .ToList();
+
+            var vendorComparisons = vendorTotals
+                .Select(x =>
+                {
+                    var final = x.total;
+                    var profit = totalRevenue - final;
+                    var profitPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100m : 0m;
                     var vendorName =
-                        allVendors
-                            .FirstOrDefault(vendor => vendor.VendorId == group.Key)
-                            ?.VendorName ?? group.Key;
-                    var isSelected = pnl.SelectedVendorId == group.Key;
+                        allVendors.FirstOrDefault(vendor => vendor.VendorId == x.Key)?.VendorName
+                        ?? x.Key;
+                    var isSelected = pnl.SelectedVendorId == x.Key;
 
                     return new VendorComparisonDto
                     {
                         VendorName = vendorName,
-                        FinalOffer = finalOffer,
+                        FinalOffer = final,
                         Profit = profit,
                         ProfitPercent = profitPercent,
                         IsSelected = isSelected,
@@ -74,15 +107,32 @@ namespace ProcurementHTE.Core.Services
                 .OrderBy(row => row.FinalOffer)
                 .ToList();
 
+            var itemBreakdown = pnl
+                .Items.Select(item =>
+                {
+                    var itemName =
+                        pnl.WorkOrder?.WoOffers?.FirstOrDefault(woOffer =>
+                            woOffer.WoOfferId == item.WoOfferId
+                        )?.ItemPenawaran ?? item.WoOfferId;
+
+                    return (
+                        item.WoOfferId,
+                        ItemName: itemName,
+                        item.TarifAwal,
+                        item.TarifAdd,
+                        item.KmPer25,
+                        item.OperatorCost,
+                        item.Revenue
+                    );
+                })
+                .ToList();
+
             return new ProfitLossSummaryDto
             {
                 ProfitLossId = pnl.ProfitLossId,
                 WorkOrderId = pnl.WorkOrderId,
-                TarifAwal = pnl.TarifAwal,
-                TarifAdd = pnl.TarifAdd,
-                KmPer25 = pnl.KmPer25,
-                OperatorCost = pnl.OperatorCost,
-                Revenue = pnl.Revenue,
+                TotalOperatorCost = totalOperatorCost,
+                TotalRevenue = totalRevenue,
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
                 SelectedVendorName = vendorComparisons
                     .FirstOrDefault(vendor => vendor.IsSelected)
@@ -90,6 +140,7 @@ namespace ProcurementHTE.Core.Services
                 SelectedFinalOffer = pnl.SelectedVendorFinalOffer,
                 Profit = pnl.Profit,
                 ProfitPercent = pnl.ProfitPercent,
+                Items = itemBreakdown,
                 SelectedVendorNames = selectedVendorNames,
                 VendorComparisons = vendorComparisons,
             };
@@ -102,26 +153,48 @@ namespace ProcurementHTE.Core.Services
                 ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
 
             var offers = await _voRepository.GetByWorkOrderAsync(pnl.WorkOrderId);
+
+            // Vendor → Items (per WoOfferId) → Prices
             var vendors = offers
                 .GroupBy(offer => offer.VendorId)
-                .Select(group => new VendorOffersDto
+                .Select(group => new VendorItemOffersDto
                 {
                     VendorId = group.Key,
-                    Prices = group.OrderBy(item => item.Round).Select(item => item.Price).ToList(),
+                    Items = group
+                        .GroupBy(offer => offer.WoOfferId)
+                        .Select(gg => new VendorOfferPerItemDto
+                        {
+                            VendorId = group.Key,
+                            WoOfferId = gg.Key,
+                            Prices = gg.OrderBy(x => x.Round).Select(x => x.Price).ToList(),
+                            Letters = gg.OrderBy(offer => offer.Round).Select(vendorOffer => vendorOffer.NoLetter ?? string.Empty).ToList(),
+                        })
+                        .ToList(),
                 })
                 .ToList();
 
-            var selectedVendorIds = vendors.Select(vendor => vendor.VendorId).Distinct().ToList();
+            var storedSelections = await _pnlRepository.GetSelectedVendorsAsync(pnl.WorkOrderId);
+            var selectedVendorIds =
+                storedSelections.Count > 0
+                    ? storedSelections.Select(x => x.VendorId).Distinct().ToList()
+                    : vendors.Select(v => v.VendorId).Distinct().ToList();
+
+            var items = pnl
+                .Items.Select(item => new ProfitLossItemInputDto
+                {
+                    WoOfferId = item.WoOfferId,
+                    TarifAwal = item.TarifAwal,
+                    TarifAdd = item.TarifAdd,
+                    KmPer25 = item.KmPer25,
+                    OperatorCost = item.OperatorCost,
+                })
+                .ToList();
 
             return new ProfitLossEditDto
             {
                 ProfitLossId = pnl.ProfitLossId,
                 WorkOrderId = pnl.WorkOrderId,
-                TarifAwal = pnl.TarifAwal,
-                TarifAdd = pnl.TarifAdd,
-                KmPer25 = pnl.KmPer25,
-                OperatorCost = pnl.OperatorCost,
-                Revenue = pnl.Revenue,
+                Items = items,
                 SelectedVendorId = pnl.SelectedVendorId,
                 SelectedVendorFinalOffer = pnl.SelectedVendorFinalOffer,
                 Profit = pnl.Profit,
@@ -142,15 +215,34 @@ namespace ProcurementHTE.Core.Services
             await _pnlRepository.RemoveSelectedVendorsAsync(dto.WorkOrderId);
             await _pnlRepository.StoreSelectedVendorsAsync(dto.WorkOrderId, dto.SelectedVendorIds);
 
-            var offers = BuildVendorOffers(dto);
+            var offers = BuildVendorOffersMulti(dto.Vendors, dto.WorkOrderId);
             if (offers.Count > 0)
                 await _voRepository.StoreAllOffersAsync(offers);
 
-            var profitLoss = CalculateProfitLoss(dto, offers);
+            // Hitung item & total
+            var (opTotal, revTotal, items) = ComputeItems(dto.Items);
+            if (items.Count == 0)
+                throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
 
-            await _pnlRepository.StoreProfitLossAsync(profitLoss);
+            // Pilih vendor terbaik dari total semua item
+            var woOfferIds = items.Select(item => item.WoOfferId).ToList();
+            var (bestVendorId, bestTotal, _) = PickBestVendor(offers, woOfferIds);
 
-            return profitLoss;
+            var profit = revTotal - bestTotal;
+            var profitPct = revTotal > 0 ? (profit / revTotal) * 100m : 0m;
+
+            var pnl = new ProfitLoss
+            {
+                WorkOrderId = dto.WorkOrderId,
+                SelectedVendorId = bestVendorId,
+                SelectedVendorFinalOffer = bestTotal,
+                Profit = profit,
+                ProfitPercent = profitPct,
+                Items = items,
+            };
+
+            await _pnlRepository.StoreProfitLossAsync(pnl);
+            return pnl;
         }
 
         public async Task<ProfitLoss> EditProfitLossAsync(ProfitLossUpdateDto dto)
@@ -170,11 +262,29 @@ namespace ProcurementHTE.Core.Services
 
             await _voRepository.RemoveByWorkOrderAsync(dto.WorkOrderId);
 
-            var newOffers = BuildVendorOffersForUpdate(dto);
+            var newOffers = BuildVendorOffersMulti(dto.Vendors, dto.WorkOrderId);
             if (newOffers.Count > 0)
                 await _voRepository.StoreAllOffersAsync(newOffers);
 
-            UpdateProfitLoss(pnl, dto, newOffers);
+            // Recompute items & totals
+            var (opTotal, revTotal, items) = ComputeItems(dto.Items);
+            if (items.Count == 0)
+                throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
+
+            var woOfferIds = items.Select(item => item.WoOfferId).ToList();
+            var (bestVendorId, bestTotal, _) = PickBestVendor(newOffers, woOfferIds);
+
+            pnl.SelectedVendorId = bestVendorId;
+            pnl.SelectedVendorFinalOffer = bestTotal;
+            pnl.Profit = revTotal - bestTotal;
+            pnl.ProfitPercent = revTotal > 0 ? (pnl.Profit / revTotal) * 100m : 0m;
+            pnl.UpdatedAt = DateTime.Now;
+
+            // replace items
+            pnl.Items.Clear();
+            foreach (var item in items)
+                pnl.Items.Add(item);
+
             await _pnlRepository.UpdateProfitLossAsync(pnl);
             return pnl;
         }
@@ -187,22 +297,38 @@ namespace ProcurementHTE.Core.Services
             return await _pnlRepository.GetLatestByWorkOrderIdAsync(workOrderId);
         }
 
-        private List<VendorOffer> BuildVendorOffers(ProfitLossInputDto dto)
+        private List<VendorOffer> BuildVendorOffersMulti(
+            List<VendorItemOffersDto> input,
+            string woId
+        )
         {
             var offers = new List<VendorOffer>();
-            foreach (var vendor in dto.Vendors)
+
+            foreach (var vendor in input)
             {
-                for (int i = 0; i < vendor.Prices.Count; i++)
+                if (string.IsNullOrWhiteSpace(vendor.VendorId))
+                    continue;
+
+                foreach (var item in vendor.Items)
                 {
-                    offers.Add(
-                        new VendorOffer
-                        {
-                            WorkOrderId = dto.WorkOrderId,
-                            VendorId = vendor.VendorId,
-                            Round = i + 1,
-                            Price = vendor.Prices[i],
-                        }
-                    );
+                    if (string.IsNullOrWhiteSpace(item.WoOfferId))
+                        continue;
+
+                    var letters = item.Letters ?? new List<string>();
+                    for (int i = 0; i < (item.Prices?.Count ?? 0); i++)
+                    {
+                        offers.Add(
+                            new VendorOffer
+                            {
+                                WorkOrderId = woId,
+                                VendorId = vendor.VendorId,
+                                WoOfferId = item.WoOfferId,
+                                Round = i + 1,
+                                Price = item.Prices![i],
+                                NoLetter = letters.Count > i ? letters[i] : null,
+                            }
+                        );
+                    }
                 }
             }
 
@@ -212,86 +338,103 @@ namespace ProcurementHTE.Core.Services
         private List<VendorOffer> BuildVendorOffersForUpdate(ProfitLossUpdateDto dto)
         {
             var offers = new List<VendorOffer>();
-            foreach (var vendor in dto.Vendors)
+
+            foreach (var vendor in dto.Vendors ?? new List<VendorItemOffersDto>())
             {
-                for (int i = 0; i < vendor.Prices.Count; i++)
+                foreach (var item in vendor.Items ?? new List<VendorOfferPerItemDto>())
                 {
-                    offers.Add(
-                        new VendorOffer
-                        {
-                            WorkOrderId = dto.WorkOrderId,
-                            VendorId = vendor.VendorId,
-                            Round = i + 1,
-                            Price = vendor.Prices[i],
-                        }
-                    );
+                    var letters = item.Letters ?? new List<string>();
+                    for (int i = 0; i < (item.Prices?.Count ?? 0); i++)
+                    {
+                        offers.Add(
+                            new VendorOffer
+                            {
+                                WorkOrderId = dto.WorkOrderId,
+                                VendorId = vendor.VendorId,
+                                WoOfferId = item.WoOfferId, // ⬅️ nested
+                                Round = i + 1,
+                                Price = item.Prices![i],
+                                NoLetter = letters.Count > i ? letters[i] : null,
+                            }
+                        );
+                    }
                 }
             }
 
             return offers;
         }
 
-        private ProfitLoss CalculateProfitLoss(ProfitLossInputDto dto, List<VendorOffer> offers)
+        private (
+            decimal operatorCostTotal,
+            decimal revenueTotal,
+            List<ProfitLossItem> item
+        ) ComputeItems(List<ProfitLossItemInputDto> input)
         {
-            var operatorCost = dto.TarifAdd * dto.KmPer25;
-            var revenue = dto.TarifAwal + operatorCost;
+            var items = new List<ProfitLossItem>();
+            decimal opTotal = 0m,
+                revTotal = 0m;
 
-            var finals = offers
-                .GroupBy(offer => offer.VendorId)
-                .Select(group => group.OrderBy(offer => offer.Round).Last())
-                .ToList();
-
-            if (!finals.Any())
-                throw new InvalidOperationException("Tidak ada penawaran vendor");
-
-            var best = finals.OrderBy(final => final.Price).First();
-            var profit = revenue - best.Price;
-            var profitPercent = revenue > 0 ? (profit / revenue) * 100m : 0m;
-
-            return new ProfitLoss
+            foreach (var it in input)
             {
-                WorkOrderId = dto.WorkOrderId,
-                TarifAwal = dto.TarifAwal,
-                TarifAdd = dto.TarifAdd,
-                KmPer25 = dto.KmPer25,
-                OperatorCost = operatorCost,
-                Revenue = revenue,
-                SelectedVendorId = best.VendorId,
-                SelectedVendorFinalOffer = best.Price,
-                Profit = profit,
-                ProfitPercent = profitPercent,
-            };
+                var operatorCost = it.TarifAdd * it.KmPer25;
+                var revenue = it.TarifAwal + operatorCost;
+
+                items.Add(
+                    new ProfitLossItem
+                    {
+                        WoOfferId = it.WoOfferId,
+                        TarifAwal = it.TarifAwal,
+                        TarifAdd = it.TarifAdd,
+                        KmPer25 = it.KmPer25,
+                        OperatorCost = operatorCost,
+                        Revenue = revenue,
+                    }
+                );
+
+                opTotal += operatorCost;
+                revTotal += revenue;
+            }
+
+            return (opTotal, revTotal, items);
         }
 
-        private void UpdateProfitLoss(
-            ProfitLoss pnl,
-            ProfitLossUpdateDto dto,
-            List<VendorOffer> offers
-        )
+        private (
+            string vendorId,
+            decimal totalFinal,
+            Dictionary<string, decimal> finalPerItem
+        ) PickBestVendor(List<VendorOffer> offers, IEnumerable<string> woOfferIds)
         {
-            var operatorCost = dto.TarifAdd * dto.KmPer25;
-            var revenue = dto.TarifAwal + operatorCost;
-
-            var finals = offers
+            // final per vendor = sum(final price per item)
+            var perVendor = offers
                 .GroupBy(offer => offer.VendorId)
-                .Select(group => group.OrderBy(item => item.Round).Last())
-                .ToList();
+                .Select(group => new
+                {
+                    VendorId = group.Key,
+                    FinalPerItem = group
+                        .GroupBy(x => x.WoOfferId) // per item (WoOffer)
+                        .ToDictionary(
+                            gg => gg.Key,
+                            gg => gg.OrderBy(x => x.Round).Last().Price // final round per item
+                        ),
+                })
+                .Select(x => new
+                {
+                    x.VendorId,
+                    Total = woOfferIds.Sum(id =>
+                        x.FinalPerItem.TryGetValue(id, out var p) ? p : decimal.MaxValue
+                    ),
+                    x.FinalPerItem,
+                })
+                .Where(x => x.Total < decimal.MaxValue)
+                .OrderBy(x => x.Total)
+                .FirstOrDefault();
 
-            if (!finals.Any())
-                throw new InvalidOperationException("Tidak ada penawaran vendor untuk dihitung");
+            if (perVendor == null)
+                throw new InvalidOperationException(
+                    "Tidak ada penawaran vendor yang lengkap untuk semua item."
+                );
 
-            var best = finals.OrderBy(final => final.Price).First();
-
-            pnl.TarifAwal = dto.TarifAwal;
-            pnl.TarifAdd = dto.TarifAdd;
-            pnl.KmPer25 = dto.KmPer25;
-            pnl.OperatorCost = operatorCost;
-            pnl.Revenue = revenue;
-            pnl.SelectedVendorId = best.VendorId;
-            pnl.SelectedVendorFinalOffer = best.Price;
-            pnl.Profit = revenue - best.Price;
-            pnl.ProfitPercent = revenue > 0 ? (pnl.Profit / revenue) * 100m : 0m;
-            pnl.UpdatedAt = DateTime.Now;
+            return (perVendor.VendorId, perVendor.Total, perVendor.FinalPerItem);
         }
     }
 }

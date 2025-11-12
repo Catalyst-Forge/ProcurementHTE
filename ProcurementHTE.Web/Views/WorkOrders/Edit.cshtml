@@ -1,23 +1,31 @@
-﻿@using ProcurementHTE.Core.Models
-@model WorkOrder
-
+﻿@model ProcurementHTE.Web.Models.ViewModels.WorkOrderEditViewModel
 @{
     ViewData["Title"] = "Work Order Data Edit";
+    var woTypeName = ViewBag.SelectedWoTypeName as string ?? "Other";
 }
 
 <header class="hstack justify-content-between mb-3 border-bottom pb-2">
-    <h1 class="h3 mb-0">Edit Work Order</h1>
+    <div>
+        <h1 class="h3 mb-0">Edit Work Order</h1>
+        <p class="text-muted mb-0">
+            WO Number: <span class="fw-semibold">@Model.WoNum</span>
+            Type: <span class="fw-semibold">@woTypeName</span>
+        </p>
+    </div>
     <a class="btn btn-outline-secondary" asp-action="Index" role="button"><i class="bi bi-arrow-left"></i> Back to list</a>
 </header>
 
-<form asp-action="Edit">
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
     <div asp-validation-summary="All" class="text-danger"></div>
     <input type="hidden" asp-for="WorkOrderId" />
     <input type="hidden" asp-for="ProcurementType" />
     <input type="hidden" asp-for="WoTypeId" />
-    <input type="hidden" asp-for="UserId" />
+    @* <input type="hidden" asp-for="UserId" /> *@
     <input type="hidden" asp-for="WoNum" />
     <input type="hidden" asp-for="StatusId" />
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
@@ -70,17 +78,17 @@
             <div class="row">
                 <div class="col-12 col-sm">
                     <div class="mb-3">
-                        <label asp-for="FromLocation" class="form-label"></label>
-                        <input type="text" asp-for="FromLocation" class="form-control" />
-                        <span asp-validation-for="FromLocation" class="text-danger"></span>
+                        <label asp-for="From" class="form-label"></label>
+                        <input type="text" asp-for="From" class="form-control" />
+                        <span asp-validation-for="From" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="col-12 col-sm">
                     <div class="mb-3">
-                        <label asp-for="Destination" class="form-label"></label>
-                        <input type="text" asp-for="Destination" class="form-control" />
-                        <span asp-validation-for="Destination" class="text-danger"></span>
+                        <label asp-for="To" class="form-label"></label>
+                        <input type="text" asp-for="To" class="form-control" />
+                        <span asp-validation-for="To" class="text-danger"></span>
                     </div>
                 </div>
             </div>
@@ -101,6 +109,40 @@
                         <span asp-validation-for="GlAccount" class="text-danger"></span>
                     </div>
                 </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <legend class="card-title fw-semibold mb-0">Item Penawaran</legend>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+            </div>
+            <hr />
+
+            <div class="row g-3" id="offers-container">
+                @for (int i = 0; i < Model.Offers.Count; i++) 
+                {
+                    <div class="col-12 offer-row position-relative">
+                        <input type="hidden" name="Offers.Index" value="@i" />
+                        
+                        <div class="row g-3 mb-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Item Penawaran</label>
+                                <input class="form-control" name="Offers[@i].ItemPenawaran" value="@Model.Offers[i].ItemPenawaran" />
+                            </div>
+
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </fieldset>
     </section>
@@ -161,6 +203,50 @@
 
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <legend class="card-title fw-semibold mb-0">Work Order Details</legend>     
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-detail">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+            </div>
+            <hr />
+
+            <div class="row g-3" id="details-container">
+                @for (int i = 0; i < Model.Details?.Count; i++)
+                {
+                    <div class="col-12 detail-row position-relative">
+                        <input type="hidden" name="Details.Index" value="@i" />
+
+                        <div class="row mb-2 align-items-end">
+                            <div class="col-md-7">
+                                <label class="form-label">Item Name</label>
+                                <input class="form-control" name="Details[@i].ItemName" value="@Model.Details[i].ItemName" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Quantity</label>
+                                <input class="form-control" type="number" min="1" step="1" name="Details[@i].Quantity" value="@Model.Details[i].Quantity" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Unit</label>
+                                <input class="form-control" name="Details[@i].Unit" value="@Model.Details[i].Unit" />
+                            </div>
+
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger js-remove-detail w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
             <legend class="card-title fw-semibold"><i class="bi bi-person-check-fill text-primary me-1"></i> Signatures</legend>
             <hr />
             <div class="row gap-2">
@@ -184,9 +270,104 @@
     </div>
 </form>
 
-
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const detailsContainer = document.getElementById('details-container');
+            const btnAddDetail = document.getElementById('btn-add-detail');
+            const offersContainer = document.getElementById('offers-container');
+            const btnAddOffer = document.getElementById('btn-add-offer');
+
+            function newKey() {
+                return Math.random().toString(36).slice(2, 10);
+            }
+
+            function detailRowMarkup(key) {
+                return `
+                    <div class="col-12 detail-row position-relative">
+                        <input type="hidden" name="Details.Index" value="${key}" />
+
+                        <div class="row mb-2 align-items-end">
+                            <div class="col-md-7">
+                                <label class="form-label">Item Name</label>
+                                <input class="form-control" name="Details[${key}].ItemName" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Quantity</label>
+                                <input class="form-control" type="number" min="1" step="1" name="Details[${key}].Quantity" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label"> Unit</label>
+                                <input class="form-control" name="Details[${key}].Unit" />
+                            </div>
+
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger js-remove-detail w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function offerRowMarkup(key) {
+                return `
+                    <div class="col-12 offer-row position-relative">
+                        <input type="hidden" name="Offers.Index" value="${key}" />
+
+                        <div class="row mb-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Item Penawaran</label>
+                                <input class="form-control" name="Offers[${key}].ItemPenawaran" />
+                            </div>
+
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (btnAddDetail) {
+                btnAddDetail.addEventListener('click', function () {
+                    const key = newKey();
+                    detailsContainer.insertAdjacentHTML('beforeend', detailRowMarkup(key));
+                    if (window.jQuery && $.validator && $.validator.unobtrusive) {
+                        $.validator.unobtrusive.parse(detailsContainer);
+                    }
+                })
+            }
+
+            if (btnAddOffer) {
+                btnAddOffer.addEventListener('click', function() {
+                    const key = newKey();
+                    offersContainer.insertAdjacentHTML('beforeend', offerRowMarkup(key));
+                    if (window.jQuery && $.validator && $.validator.unobtrusive) {
+                        $.validator.unobtrusive.parse(offersContainer);
+                    }
+                })
+            }
+
+            document.addEventListener('click', function (e) {
+                const bntDetail = e.target.closest('.js-remove-detail')
+                if (btnDetail) {
+                    const row = btnDetail.closest('.detail-row')
+                    if (row) row.remove()
+                }
+
+                const btnOffer = e.target.closest('.js-remove-offer')
+                if (btnOffer) {
+                    const row = btnOffer.closest('.offer-row')
+                    if (row) row.remove()
+                }
+            })
+        })
+    </script>
 }
