@@ -293,16 +293,35 @@ jobs:
             sudo systemctl restart "$APP_SERVICE"
             sudo systemctl --no-pager --full status "$APP_SERVICE" || true
             
-      - name: Smoke check (Kestrel & curl)
+      - name: Smoke check (wait until 5159 is ready)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          username: deploy
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR
+          envs: APP_SERVICE
           script: |
             set -Eeuo pipefail
-            ss -tlnp | grep -E '(:5159)' || (echo "[ERR] Kestrel not listening on 5159"; exit 1)
-            curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
+      
+            echo "[INFO] waiting up to 60s for Kestrel :5159 ..."
+            deadline=$((SECONDS+60))
+            while [ $SECONDS -lt $deadline ]; do
+              if ss -tln | awk '{print $4}' | grep -qE '(^|:)5159$'; then
+                echo "[OK] 5159 is listening"
+                curl -sS -I -m 5 -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
+                exit 0
+              fi
+              sleep 1
+            done
+      
+            echo "[ERR] 5159 not listening after 60s. Open dotnet ports:"
+            ss -tlnp | grep -E '(:5159|dotnet)' || true
+      
+            echo "=== systemd status ==="
+            sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
+            echo "=== last 200 logs ==="
+            sudo -n journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
+            exit 1
+
