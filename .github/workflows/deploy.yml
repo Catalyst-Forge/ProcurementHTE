@@ -1,4 +1,4 @@
-name: CI & Deploy ProcurementHTE (.dll)
+name: CI & Deploy ProcurementHTE
 
 on:
   push:
@@ -15,8 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref : master
+          fetch-depth: 0        # WAJIB untuk NBGV (ambil full history & tags)
 
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
@@ -36,9 +35,9 @@ jobs:
       - name: Build & Test
         run: |
           dotnet build -c Release --no-restore
-          dotnet test -c Release --no-build --verbosity normal
+          dotnet test  -c Release --no-build --verbosity normal
 
-      # Publish framework-dependent (hasil: .dll + deps)
+      # Publish framework-dependent (.dll)
       - name: Publish (framework-dependent)
         run: |
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj \
@@ -54,16 +53,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    # Hardcode env di job (bisa diganti pakai repo/env variables kalau mau)
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}   # /var/www/ProcurementHTE
-      APP_SERVICE: ${{ vars.APP_SERVICE }} # procurementhte.service
+      DEPLOY_DIR: /var/www/ProcurementHTE
+      APP_SERVICE: procurementhte.service
+
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: app
           path: drop
 
-      - name: Create release dir
+      - name: Sanity check & create release dir (guarded)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -71,20 +72,24 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,GITHUB_SHA,GITHUB_RUN_NUMBER
+          envs: DEPLOY_DIR,APP_SERVICE,GITHUB_SHA,GITHUB_RUN_NUMBER
           script_stop: true
           script: |
             set -Eeuo pipefail
+
+            # Fallback default bila env kosong di runner
+            DEPLOY_DIR="${DEPLOY_DIR:-/var/www/ProcurementHTE}"
+            APP_SERVICE="${APP_SERVICE:-procurementhte.service}"
             : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
-      
-            echo "Using DEPLOY_DIR=$DEPLOY_DIR as $(whoami)"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR"
+            : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
+
+            echo "[INFO] Using DEPLOY_DIR=$DEPLOY_DIR as $(whoami)"
             install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/releases"
-      
+
             RELEASE="$DEPLOY_DIR/releases/${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
             install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$RELEASE"
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
-
+            echo "[INFO] Prepared release dir: $RELEASE"
 
       - name: Upload release files
         uses: appleboy/scp-action@v0.1.7
@@ -95,9 +100,9 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
           source: "drop/*"
-          target: "${{ vars.DEPLOY_DIR }}/releases/${{ github.run_number }}-${{ github.sha }}"
+          target: "${{ env.DEPLOY_DIR }}/releases/${{ github.run_number }}-${{ github.sha }}"
 
-      - name: Activate & restart service
+      - name: Activate symlink & restart service (guarded)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -108,9 +113,23 @@ jobs:
           envs: DEPLOY_DIR,APP_SERVICE,GITHUB_RUN_NUMBER,GITHUB_SHA
           script_stop: true
           script: |
-            set -e
+            set -Eeuo pipefail
+
+            DEPLOY_DIR="${DEPLOY_DIR:-/var/www/ProcurementHTE}"
+            APP_SERVICE="${APP_SERVICE:-procurementhte.service}"
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
+            : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
+
             RELEASE="$DEPLOY_DIR/releases/${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
+            test -d "$RELEASE" || { echo "[ERR] Release dir not found: $RELEASE"; exit 1; }
+
             ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
+            echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
+
             sudo systemctl daemon-reload || true
             sudo systemctl restart "$APP_SERVICE"
             sudo systemctl --no-pager --full status "$APP_SERVICE" || true
+
+            echo "[INFO] Listening ports (expect 127.0.0.1:5159)"
+            ss -tlnp | grep -E '(:5159)'
+
