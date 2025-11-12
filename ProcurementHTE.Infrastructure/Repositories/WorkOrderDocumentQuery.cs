@@ -10,7 +10,7 @@ namespace ProcurementHTE.Infrastructure.Repositories;
 public class WorkOrderDocumentQuery(AppDbContext db) : IWorkOrderDocumentQuery
 {
     private readonly AppDbContext _db = db;
-    private readonly ILogger<WorkOrderDocumentQuery>? _logger;
+    private readonly ILogger<WorkOrderDocumentQuery> _logger = NullLogger<WorkOrderDocumentQuery>.Instance;
 
     public async Task<WorkOrderRequiredDocsDto?> GetRequiredDocsAsync(string workOrderId, TimeSpan? _)
     {
