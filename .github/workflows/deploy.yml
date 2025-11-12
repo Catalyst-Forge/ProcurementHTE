@@ -69,8 +69,8 @@ jobs:
             --configuration Release \
             --framework net9.0 \
             --idempotent \
-            --output out/Migrations.sql \
-            -- --connection "$EF_CONNECTION"
+            --output out/Migrations.sql
+            
           ls -la out
 
       - name: Upload artifact
