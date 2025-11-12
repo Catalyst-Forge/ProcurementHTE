@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.IO;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using QRCoder;
-using System.IO;
 
 namespace ProcurementHTE.Core.Services;
 
@@ -58,10 +58,7 @@ public class WoDocumentService(
         if (doc == null)
             return false;
 
-        // hapus objek di MinIO (opsional: soft-delete saja)
         await _storage.DeleteAsync(_opts.Bucket, doc.ObjectKey);
-
-        // tandai di DB
         await _repo.DeleteAsync(woDocumentId);
         await _repo.SaveAsync();
         return true;
@@ -81,26 +78,30 @@ public class WoDocumentService(
                 request.UploadedByUserId
             );
 
-            // 1️⃣ Validasi WorkOrder
+            // 1) Validasi WorkOrder
             var wo =
                 await _woRepo.GetByIdAsync(request.WorkOrderId)
                 ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
 
-            // 2️⃣ Validasi DocumentType
+            // 2) Validasi DocumentType
             var docType =
                 await _docTypeRepo.GetByIdAsync(request.DocumentTypeId)
                 ?? throw new InvalidOperationException("DocumentType tidak ditemukan.");
 
-            // 3️⃣ Validasi WoTypeDocuments
+            // 3) Validasi WoTypeDocuments
+            if (string.IsNullOrWhiteSpace(wo.WoTypeId))
+                throw new InvalidOperationException("Work Order belum memiliki WoType.");
+
             var wtd =
                 await _wtdRepo.GetByWoTypeAndDocumentTypeAsync(wo.WoTypeId!, request.DocumentTypeId)
                 ?? throw new InvalidOperationException(
                     "Dokumen ini tidak terdaftar pada WoType terkait."
                 );
+
             if (!wtd.IsUploadRequired)
                 throw new InvalidOperationException("Dokumen ini tidak memerlukan upload.");
 
-            // 4️⃣ Bangun path file
+            // 4) Path object
             var now = request.NowUtc;
             var safeWoType = SlugFolderHelper.SlugFolder(wo.WoType!.TypeName);
             var safeDocType = SlugFolderHelper.SlugFolder(docType.Name);
@@ -113,7 +114,7 @@ public class WoDocumentService(
 
             _logger.LogInformation("[UploadWoDoc] ObjectKey={Key}", objectKey);
 
-            // 5️⃣ Upload ke MinIO
+            // 5) Upload ke Object Storage
             try
             {
                 await _storage.UploadAsync(
@@ -140,7 +141,7 @@ public class WoDocumentService(
                 );
             }
 
-            // 6️⃣ Simpan metadata ke DB
+            // 6) Simpan metadata
             try
             {
                 var entity = new WoDocuments
@@ -196,7 +197,7 @@ public class WoDocumentService(
                 request.WorkOrderId,
                 request.DocumentTypeId
             );
-            throw; // biar tetap muncul di controller (TempData["error"])
+            throw;
         }
     }
 
@@ -213,9 +214,7 @@ public class WoDocumentService(
         if (ttl <= TimeSpan.Zero)
             ttl = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
 
-        // Hanya ambil URL presign — tanpa menambah query lagi
-        var url = await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, ttl);
-        return url;
+        return await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, ttl);
     }
 
     public async Task<string> GetPresignedPreviewUrlAsync(
@@ -231,38 +230,68 @@ public class WoDocumentService(
         if (expiry <= TimeSpan.Zero)
             expiry = TimeSpan.FromSeconds(_opts.PresignExpirySeconds);
 
-        var url = await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, expiry);
-        return url;
+        return await _storage.GetPresignedUrlAsync(_opts.Bucket, doc.ObjectKey, expiry);
     }
 
-    public async Task<bool> CanSendApprovalAsync(string workOrderId)
+    public async Task<bool> CanSendApprovalAsync(string workOrderId, CancellationToken ct = default)
     {
-        // 1) Ambil WO
         var wo =
             await _woRepo.GetByIdAsync(workOrderId)
             ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
-
         if (string.IsNullOrWhiteSpace(wo.WoTypeId))
             throw new InvalidOperationException("Work Order belum memiliki WoType.");
 
-        // 2) Ambil semua konfigurasi dokumen untuk WoType tsb, lalu filter yang wajib upload
-        var requiredDocTypeIds = (await _wtdRepo.ListByWoTypeAsync(wo.WoTypeId))
-            .Where(x => x.IsUploadRequired)
-            .Select(x => x.DocumentTypeId)
+        // 1) Ambil semua konfigurasi untuk WoType terkait
+        var configs = await _wtdRepo.ListByWoTypeAsync(wo.WoTypeId!, ct);
+
+        // 2) Ambil hanya dokumen yang WAJIB (IsMandatory) dan PERLU APPROVAL (RequiresApproval)
+        var mustHaveDocTypeIds = configs
+            .Where(c => c.IsMandatory && c.RequiresApproval)
+            .Select(c => c.DocumentTypeId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        if (requiredDocTypeIds.Count == 0)
-            return false; // tidak ada yang wajib => tidak perlu send approval
+        // Jika tidak ada yang mandatory+requiresApproval, kirim approval dianggap tidak relevan
+        if (mustHaveDocTypeIds.Count == 0)
+        {
+            _logger.LogInformation(
+                "[CanSendApproval] WO={WO} tidak punya dokumen mandatory+approval.",
+                workOrderId
+            );
+            return false;
+        }
 
-        // 3) Ambil semua dokumen yang sudah ter-upload untuk WO ini (abaikan yang Deleted)
-        var uploaded = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
-        var uploadedDocTypeIds = uploaded
+        // 3) Lihat WoDocuments yang aktif (bukan Deleted) untuk WO ini
+        var activeDocs = (await _woDocRepo.GetByWorkOrderAsync(workOrderId))
             .Where(d => !string.Equals(d.Status, "Deleted", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var haveDocTypeIds = activeDocs
             .Select(d => d.DocumentTypeId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // 4) Valid: semua doc type yang wajib sudah ada di uploaded?
-        return requiredDocTypeIds.IsSubsetOf(uploadedDocTypeIds);
+        // 4) Semua mandatory+approval harus sudah ada (apapun statusnya: Uploaded/Generated/Pending/Approved/Rejected/Replaced, asal bukan Deleted)
+        bool allPresent = mustHaveDocTypeIds.IsSubsetOf(haveDocTypeIds);
+
+        if (!allPresent)
+        {
+            var missing = mustHaveDocTypeIds.Where(dt => !haveDocTypeIds.Contains(dt)).ToArray();
+            _logger.LogWarning(
+                "[CanSendApproval] WO={WO} belum lengkap. Missing mandatory+approval: {Count} -> {List}",
+                workOrderId,
+                missing.Length,
+                string.Join(", ", missing)
+            );
+        }
+        else
+        {
+            _logger.LogInformation(
+                "[CanSendApproval] WO={WO} siap dikirim. Total mandatory+approval={Count}",
+                workOrderId,
+                mustHaveDocTypeIds.Count
+            );
+        }
+
+        return allPresent;
     }
 
     public async Task SendApprovalAsync(
@@ -271,106 +300,240 @@ public class WoDocumentService(
         CancellationToken ct = default
     )
     {
-        if (!await CanSendApprovalAsync(workOrderId))
+        // 0) Pastikan mandatory+approval lengkap
+        if (!await CanSendApprovalAsync(workOrderId, ct))
             throw new InvalidOperationException("Dokumen wajib belum lengkap.");
 
-        var wo = await _woRepo.GetByIdAsync(workOrderId)
-                 ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
+        // 1) Ambil WO
+        var wo =
+            await _woRepo.GetByIdAsync(workOrderId)
+            ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
+        if (string.IsNullOrWhiteSpace(wo.WoTypeId))
+            throw new InvalidOperationException("Work Order belum memiliki WoType.");
 
-        var docs = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
+        // 2) Muat semua dokumen aktif (non-Deleted)
+        var allDocs = await _woDocRepo.GetByWorkOrderAsync(workOrderId);
+        var docs = allDocs
+            .Where(d => !string.Equals(d.Status, "Deleted", StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
+        // 3) Rule VP
         const decimal ThresholdVP = 500_000_000m;
         var pnl = await _pnlService.GetLatestByWorkOrderAsync(workOrderId);
-        var needVP = pnl!.SelectedVendorFinalOffer > ThresholdVP;
+        var needVP = (pnl?.SelectedVendorFinalOffer ?? 0m) > ThresholdVP;
 
-        var now = DateTime.Now;
+        _logger.LogInformation(
+            "[SendApproval] WO={WO} Docs: total={Total}, active={Active}, needVP={NeedVP}",
+            workOrderId,
+            allDocs.Count,
+            docs.Count,
+            needVP
+        );
+
+        var nowUtc = DateTime.UtcNow;
         var approvalsToInsert = new List<WoDocumentApprovals>();
 
-        foreach (var doc in docs.Where(d => d.Status != "Deleted"))
+        // === KUNCI: Proses per-DocumentTypeId, pilih champion terbaru saja ===
+        var groups = docs.GroupBy(d => d.DocumentTypeId, StringComparer.OrdinalIgnoreCase);
+        foreach (var g in groups)
         {
-            // 1) Generate payload
-            var payload =
-                $"WO={wo.WoNum};DocType={doc.DocumentTypeId};DocId={doc.WoDocumentId};ts={now:o}";
+            // ---- Pilih champion (dokumen terbaru) ----
+            var champion = g.OrderByDescending(d => d.CreatedAt).First();
 
-            // 1a) QR non-System.Drawing
-            var qrGen = new QRCodeGenerator();
-            var qrData = qrGen.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
-            var pngQr = new PngByteQRCode(qrData);
-            var qrBytes = pngQr.GetGraphic(20); // byte[] PNG
-
-            // 2) Upload PNG ke object storage
-            var baseKey = string.IsNullOrWhiteSpace(doc.ObjectKey)
-                ? $"wo/{workOrderId}/{doc.WoDocumentId}"
-                : doc.ObjectKey.Replace(".pdf", "");
-            var qrKey = $"{baseKey}_QR.png";
-
-            await using (var ms = new MemoryStream(qrBytes))
-            {
-                await _storage.UploadAsync(_opts.Bucket, qrKey, ms, ms.Length, "image/png", ct);
-            }
-
-            // 3) Update metadata dokumen
-            doc.QrText = payload;
-            doc.QrObjectKey = qrKey;
-            doc.Status = "Pending Approval";
-            await _woDocRepo.UpdateAsync(doc);
-
-            // 4) Bentuk approval chain
-            var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(
-                wo.WoTypeId!,
-                doc.DocumentTypeId
-            );
-
-            if (wtdConfig is null || !wtdConfig.RequiresApproval || wtdConfig.DocumentApprovals.Count == 0)
-                continue;
-
-            var chain = wtdConfig.DocumentApprovals
-                .OrderBy(a => a.SequenceOrder)
+            // ---- Turunkan older yang keburu Pending Approval agar tidak dobel indeks unik ----
+            var olderPendings = g.Where(x =>
+                    x.WoDocumentId != champion.WoDocumentId
+                    && string.Equals(
+                        x.Status,
+                        "Pending Approval",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
                 .ToList();
 
+            if (olderPendings.Count > 0)
+            {
+                foreach (var old in olderPendings)
+                {
+                    old.Status = "Replaced"; // atau "Superseded" sesuai konvensi kamu
+                    await _woDocRepo.UpdateAsync(old);
+                }
+                // Save dulu untuk memutus siklus dependency di batch ini
+                await _woDocRepo.SaveAsync();
+            }
+
+            // ---- Cek WTD champion ----
+            var wtdConfig = await _wtdConfigRepo.FindByWoTypeAndDocTypeAsync(
+                wo.WoTypeId!,
+                champion.DocumentTypeId
+            );
+            if (wtdConfig is null)
+            {
+                _logger.LogInformation(
+                    "[SendApproval] SKIP Doc={DocId} DT={DT} : no WTD config",
+                    champion.WoDocumentId,
+                    champion.DocumentTypeId
+                );
+                continue;
+            }
+            if (!wtdConfig.RequiresApproval)
+            {
+                _logger.LogInformation(
+                    "[SendApproval] SKIP Doc={DocId} DT={DT} : RequiresApproval=false",
+                    champion.WoDocumentId,
+                    champion.DocumentTypeId
+                );
+                continue;
+            }
+
+            // ---- Susun chain + filter VP ----
+            var chain = (wtdConfig.DocumentApprovals ?? [])
+                .OrderBy(a => a.Level)
+                .ThenBy(a => a.SequenceOrder)
+                .ToList();
+
+            var chainBefore = chain.Count;
             if (!needVP)
             {
                 chain = chain
                     .Where(a =>
-                        a.Role != null &&
-                        !string.Equals(a.Role.Name, "Vice President", StringComparison.OrdinalIgnoreCase)
+                        a.Role != null
+                        && !string.Equals(
+                            a.Role.Name,
+                            "Vice President",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                        && !a.Role.Name.Contains("vice", StringComparison.OrdinalIgnoreCase)
+                        && !a.Role.Name.Contains("vp", StringComparison.OrdinalIgnoreCase)
+                        && !a.Role.Name.Contains(
+                            "wakil presiden",
+                            StringComparison.OrdinalIgnoreCase
+                        )
                     )
-                    .OrderBy(a => a.SequenceOrder)
+                    .OrderBy(a => a.Level)
+                    .ThenBy(a => a.SequenceOrder)
                     .ToList();
             }
-
             if (chain.Count == 0)
-                continue;
-
-            var existing = await _approvalRepo.GetByWoDocumentIdAsync(doc.WoDocumentId);
-            if (existing.Any())
-                continue;
-
-            var firstStep = chain.First();
-
-            approvalsToInsert.Add(new WoDocumentApprovals
             {
-                WorkOrderId = workOrderId,
-                WoDocumentId = doc.WoDocumentId,
-                RoleId = firstStep.RoleId,
-                Level = firstStep.Level,
-                SequenceOrder = firstStep.SequenceOrder,
-                Status = "Pending",
-            });
+                _logger.LogInformation(
+                    "[SendApproval] SKIP Doc={DocId} DT={DT} : chain empty after VP filter (before={Before})",
+                    champion.WoDocumentId,
+                    champion.DocumentTypeId,
+                    chainBefore
+                );
+                continue;
+            }
+
+            // ---- Idempoten: tambah step yang belum ada saja ----
+            var existing = await _approvalRepo.GetByWoDocumentIdAsync(champion.WoDocumentId);
+            var existingKeys = existing.Select(e => (e.Level, e.SequenceOrder)).ToHashSet();
+
+            var firstLevel = chain.Min(c => c.Level);
+            var firstSeqOnFirstLevel = chain
+                .Where(c => c.Level == firstLevel)
+                .Min(c => c.SequenceOrder);
+            int addNow = 0;
+
+            foreach (var step in chain)
+            {
+                if (existingKeys.Contains((step.Level, step.SequenceOrder)))
+                    continue;
+
+                approvalsToInsert.Add(
+                    new WoDocumentApprovals
+                    {
+                        WorkOrderId = workOrderId,
+                        WoDocumentId = champion.WoDocumentId,
+                        RoleId = step.RoleId,
+                        Level = step.Level,
+                        SequenceOrder = step.SequenceOrder,
+                        Status =
+                            (step.Level == firstLevel && step.SequenceOrder == firstSeqOnFirstLevel)
+                                ? "Pending"
+                                : "Blocked",
+                    }
+                );
+                addNow++;
+            }
+
+            // ---- Pastikan QR ada ----
+            bool docChanged = false;
+            if (string.IsNullOrWhiteSpace(champion.QrObjectKey))
+            {
+                var payload =
+                    $"WO={wo.WoNum};DocType={champion.DocumentTypeId};DocId={champion.WoDocumentId};ts={nowUtc:o}";
+                var qrGen = new QRCodeGenerator();
+                var qrData = qrGen.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
+                var pngQr = new PngByteQRCode(qrData);
+                var qrBytes = pngQr.GetGraphic(20);
+
+                var baseKey = string.IsNullOrWhiteSpace(champion.ObjectKey)
+                    ? $"wo/{workOrderId}/{champion.WoDocumentId}"
+                    : champion.ObjectKey.Replace(".pdf", "", StringComparison.Ordinal);
+
+                var qrKey = $"{baseKey}_QR.png";
+                await using (var ms = new MemoryStream(qrBytes))
+                    await _storage.UploadAsync(_opts.Bucket, qrKey, ms, ms.Length, "image/png", ct);
+
+                champion.QrText = payload;
+                champion.QrObjectKey = qrKey;
+                docChanged = true;
+            }
+
+            // ---- Set status champion -> Pending Approval (hanya champion) ----
+            bool hasPending =
+                existing.Any(e =>
+                    string.Equals(e.Status, "Pending", StringComparison.OrdinalIgnoreCase)
+                )
+                || approvalsToInsert.Any(a =>
+                    a.WoDocumentId == champion.WoDocumentId
+                    && string.Equals(a.Status, "Pending", StringComparison.OrdinalIgnoreCase)
+                );
+
+            if (
+                hasPending
+                && !string.Equals(
+                    champion.Status,
+                    "Pending Approval",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                champion.Status = "Pending Approval";
+                docChanged = true;
+            }
+
+            if (docChanged)
+            {
+                await _woDocRepo.UpdateAsync(champion);
+                // Save per-group untuk mencegah siklus di batch besar
+                await _woDocRepo.SaveAsync();
+            }
 
             _logger.LogInformation(
-                "[SendApproval] WO={WorkOrderId} NeedVP={NeedVP}, Total chain={ChainCount}",
-                workOrderId,
-                needVP,
-                chain.Count
+                "[SendApproval] Doc={DocId} DT={DT} chain(before={Before}, after={After}) existing={Existing} addNow={AddNow} championStatus={Status}",
+                champion.WoDocumentId,
+                champion.DocumentTypeId,
+                chainBefore,
+                chain.Count,
+                existing.Count,
+                addNow,
+                champion.Status
             );
         }
 
+        // 4) Commit steps approval
         if (approvalsToInsert.Count > 0)
             await _approvalRepo.AddRangeAsync(approvalsToInsert);
 
-        await _woDocRepo.SaveAsync();
         await _approvalRepo.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "[SendApproval] WO={WO} DONE: insertedSteps={Inserted}",
+            workOrderId,
+            approvalsToInsert.Count
+        );
     }
 
     public async Task<string?> GetPresignedQrUrlAsync(
@@ -397,6 +560,9 @@ public class WoDocumentService(
         var wo =
             await _woRepo.GetByIdAsync(request.WorkOrderId)
             ?? throw new InvalidOperationException("Work order tidak ditemukan");
+
+        if (string.IsNullOrWhiteSpace(wo.WoTypeId))
+            throw new InvalidOperationException("Work Order belum memiliki WoType.");
 
         var wtd =
             await _wtdRepo.GetByWoTypeAndDocumentTypeAsync(wo.WoTypeId!, request.DocumentTypeId)

@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
-using System.Security.Claims;
 
 namespace ProcurementHTE.Web.Controllers;
 
@@ -15,13 +16,19 @@ public class WorkOrderDocumentsController : Controller
     private readonly ILogger<WorkOrderDocumentsController> _logger;
     private readonly IWorkOrderService _woService;
     private readonly IHttpClientFactory _http;
+    private readonly IDocumentGenerator _docGenerator;
+    private readonly IDocumentTypeRepository _docTypeRepo;
+    private readonly IApprovalService _approvalSvc;
 
     public WorkOrderDocumentsController(
         IWorkOrderDocumentQuery query,
         IWorkOrderService woService,
         IWoDocumentService docSvc,
         ILogger<WorkOrderDocumentsController> logger,
-        IHttpClientFactory http
+        IHttpClientFactory http,
+        IDocumentGenerator docGenerator,
+        IDocumentTypeRepository docTypeRepo,
+        IApprovalService approvalSvc
     )
     {
         _query = query;
@@ -29,6 +36,9 @@ public class WorkOrderDocumentsController : Controller
         _logger = logger;
         _woService = woService;
         _http = http;
+        _docGenerator = docGenerator;
+        _docTypeRepo = docTypeRepo;
+        _approvalSvc = approvalSvc;
     }
 
     // GET: /WorkOrderDocuments/Index/{workOrderId}
@@ -77,7 +87,6 @@ public class WorkOrderDocumentsController : Controller
                     }),
                 ],
             };
-
             return View(vm);
         }
         catch (Exception ex)
@@ -132,7 +141,26 @@ public class WorkOrderDocumentsController : Controller
             };
 
             var result = await _docSvc.UploadAsync(req, HttpContext.RequestAborted);
-            TempData["success"] = $"Berhasil upload “{File.FileName}”.";
+            var message = $"Berhasil upload \"{File.FileName}\".";
+
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    ok = true,
+                    message,
+                    workOrderId = WorkOrderId,
+                    documentTypeId = DocumentTypeId,
+                    document = new
+                    {
+                        id = result.WoDocumentId,
+                        name = result.FileName,
+                        size = result.Size
+                    }
+                });
+            }
+
+            TempData["success"] = message;
         }
         catch (Exception ex)
         {
@@ -143,10 +171,34 @@ public class WorkOrderDocumentsController : Controller
                 DocumentTypeId,
                 File?.FileName
             );
+
+            if (IsAjaxRequest())
+            {
+                return BadRequest(new { ok = false, error = ex.Message });
+            }
+
             TempData["error"] = ex.Message;
         }
 
         return RedirectToAction(nameof(Index), new { workOrderId = WorkOrderId });
+    }
+
+    private bool IsAjaxRequest()
+    {
+        if (Request is null) return false;
+        if (Request.Headers.TryGetValue("X-Requested-With", out var requestedWith)
+            && requestedWith == "XMLHttpRequest")
+        {
+            return true;
+        }
+
+        if (Request.Headers.TryGetValue("Accept", out var acceptHeader)
+            && acceptHeader.Any(h => h != null && h.Contains("application/json", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // GET: /WorkOrderDocuments/Download/{id}?workOrderId=WO123
@@ -323,6 +375,161 @@ public class WorkOrderDocumentsController : Controller
         {
             _logger.LogError(ex, "[WODocs] DownloadQr gagal: id={Id}", id);
             return BadRequest("Gagal mengunduh QR.");
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Generate(string workOrderId, string documentTypeId)
+    {
+        try
+        {
+            var wo = await _woService.GetWorkOrderByIdAsync(workOrderId);
+            if (wo == null)
+            {
+                TempData["error"] = "Work Order tidak ditemukan";
+                return RedirectToAction("Index", new { workOrderId });
+            }
+
+            var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
+            if (docType == null)
+            {
+                TempData["error"] = "Document Type tidak ditemukan";
+                return RedirectToAction("Index", new { workOrderId });
+            }
+
+            // Generate PDF berdasarkan nama dokumen
+            byte[] pdfBytes = docType.Name switch
+            {
+                "Memorandum" => await _docGenerator.GenerateMemorandumAsync(wo),
+                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(wo),
+                "Service Order" => await _docGenerator.GenerateServiceOrderAsync(wo),
+                "Market Survey" => await _docGenerator.GenerateMarketSurveyAsync(wo),
+                "Surat Perintah Mulai Pekerjaan (SPMP)" => await _docGenerator.GenerateSPMPAsync(
+                    wo
+                ),
+                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(wo),
+                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(wo),
+                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(wo),
+                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(wo),
+                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(wo),
+                "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(wo),
+                _ => throw new NotImplementedException(
+                    $"Template untuk '{docType.Name}' belum tersedia"
+                ),
+            };
+
+            // Simpan ke MinIO via existing service
+            var result = await _docSvc.SaveGeneratedAsync(
+                new GeneratedWoDocumentRequest
+                {
+                    WorkOrderId = workOrderId,
+                    DocumentTypeId = documentTypeId,
+                    Bytes = pdfBytes,
+                    FileName = $"{docType.Name}.pdf",
+                    ContentType = "application/pdf",
+                    Description = $"Generated from template on {DateTime.Now:dd MMM yyyy HH:mm}",
+                    CreatedAt = DateTime.UtcNow,
+                    GeneratedByUserId = User.FindFirst(
+                        System.Security.Claims.ClaimTypes.NameIdentifier
+                    )?.Value,
+                }
+            );
+
+            TempData["success"] = $"Dokumen '{docType.Name}' berhasil digenerate!";
+            _logger.LogInformation(
+                "Document generated: WO={WO}, DocType={DocType}, Size={Size}",
+                wo.WoNum,
+                docType.Name,
+                pdfBytes.Length
+            );
+
+            return RedirectToAction("Index", new { workOrderId });
+        }
+        catch (NotImplementedException ex)
+        {
+            TempData["error"] = ex.Message;
+            _logger.LogWarning(
+                ex,
+                "Template not implemented for DocumentTypeId={DocTypeId}",
+                documentTypeId
+            );
+            return RedirectToAction("Index", new { workOrderId });
+        }
+        catch (Exception ex)
+        {
+            TempData["error"] = $"Gagal generate dokumen: {ex.Message}";
+            _logger.LogError(ex, "Error generating document for WO={WO}", workOrderId);
+            return RedirectToAction("Index", new { workOrderId });
+        }
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> PreviewGenerated(string workOrderId, string documentTypeId)
+    {
+        try
+        {
+            var wo = await _woService.GetWorkOrderByIdAsync(workOrderId);
+            if (wo == null)
+                return NotFound("Work Order tidak ditemukan");
+
+            var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
+            if (docType == null)
+                return NotFound("Document Type tidak ditemukan");
+
+            byte[] pdfBytes = docType.Name switch
+            {
+                "Memorandum" => await _docGenerator.GenerateMemorandumAsync(wo),
+                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(wo),
+                "Service Order" => await _docGenerator.GenerateServiceOrderAsync(wo),
+                "Market Survey" => await _docGenerator.GenerateMarketSurveyAsync(wo),
+                "Surat Perintah Mulai Pekerjaan (SPMP)" => await _docGenerator.GenerateSPMPAsync(
+                    wo
+                ),
+                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(wo),
+                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(wo),
+                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(wo),
+                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(wo),
+                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(wo),
+                "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(wo),
+                _ => throw new NotImplementedException(
+                    $"Template untuk '{docType.Name}' belum tersedia"
+                ),
+            };
+
+            return File(pdfBytes, "application/pdf", $"{docType.Name}_Preview.pdf");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error previewing generated document");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // ✅ NEW: GET /WorkOrderDocuments/ApprovalTimeline/{woDocumentId}
+    [HttpGet("WorkOrderDocuments/ApprovalTimeline/{woDocumentId}")]
+    public async Task<IActionResult> ApprovalTimeline(string woDocumentId)
+    {
+        if (string.IsNullOrWhiteSpace(woDocumentId))
+            return BadRequest(new { ok = false, message = "woDocumentId tidak valid." });
+
+        try
+        {
+            var dto = await _approvalSvc.GetApprovalTimelineAsync(
+                woDocumentId,
+                HttpContext.RequestAborted
+            );
+            if (dto is null)
+                return NotFound(new { ok = false, message = "Dokumen tidak ditemukan." });
+
+            return Ok(new { ok = true, data = dto });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[WODocs] ApprovalTimeline gagal: doc={Doc}", woDocumentId);
+            return StatusCode(500, new { ok = false, message = "Gagal memuat timeline approval." });
         }
     }
 }

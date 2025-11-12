@@ -9,5 +9,6 @@ public record WoDocumentLiteDto(
     string ObjectKey,
     string? Description,
     string? CreatedByUserId,
+    string? CreatedByUserName,
     DateTime CreatedAt
 );

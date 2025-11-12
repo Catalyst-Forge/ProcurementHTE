@@ -40,7 +40,7 @@
         <hr />
 
         <div class="row" id="details-container">
-            <div class="col-12">
+            <div class="col-12 mb-3">
                 <label asp-for="WorkOrder.Note" class="form-label"></label>
                 <textarea asp-for="WorkOrder.Note" class="form-control" maxlength="200" rows="3"></textarea>
                 <span asp-validation-for="WorkOrder.Note" class="text-danger small"></span>
@@ -78,9 +78,9 @@
                 }
             } else {
                 var key = Guid.NewGuid().ToString("N").Substring(0, 8);
-                <div class="col-12 detail-row border rounded p-3">
+                <div class="col-12 detail-row position-relative">
                     <input type="hidden" name="Details.Index" value="@key" />
-                    <div class="row align-items-end">
+                    <div class="row g-3 mb-3 align-items-end">
                         <div class="col-md-6">
                             <label class="form-label">Item Name</label>
                             <input class="form-control" name="Details[@key].ItemName" />
@@ -93,7 +93,7 @@
                             <label class="form-label">Unit</label>
                             <input class="form-control" name="Details[@key].Unit" />
                         </div>
-                        <div class="col-md-1 d-grid">
+                        <div class="col-md-1">
                             <button type="button" class="btn btn-outline-danger js-remove-detail">
                                 <i class="bi bi-trash"></i>
                             </button>

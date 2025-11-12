@@ -33,6 +33,27 @@ app.Logger.LogInformation(
     s.SecretKey
 );
 
+// ==================== ENSURE TEMPLATES DIRECTORY EXISTS ====================
+var templatesPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Documents");
+if (!Directory.Exists(templatesPath)) {
+    Directory.CreateDirectory(templatesPath);
+    Console.WriteLine($"✓ Created templates directory: {templatesPath}");
+} else {
+    Console.WriteLine($"✓ Templates directory exists: {templatesPath}");
+
+    // List available templates
+    var templates = Directory.GetFiles(templatesPath, "*.html");
+    if (templates.Length > 0) {
+        Console.WriteLine($"  Found {templates.Length} template(s):");
+        foreach (var template in templates) {
+            Console.WriteLine($"    - {Path.GetFileName(template)}");
+        }
+    } else {
+        Console.WriteLine("  ⚠ No templates found. Please add HTML templates.");
+    }
+}
+// ===========================================================================
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

@@ -142,19 +142,19 @@ namespace ProcurementHTE.Core.Services
 
             var r = tbl.AddRow();
             r.Cells[0].AddParagraph("1 (Highbed)"); // contoh ringkas
-            r.Cells[1].AddParagraph(Rp(pnl.TarifAwal));
-            r.Cells[2].AddParagraph(Rp(pnl.TarifAdd));
-            r.Cells[3].AddParagraph((pnl.KmPer25).ToString());
-            var addVal = (pnl.KmPer25) > 0 ? (pnl.TarifAdd) * (pnl.KmPer25) : 0;
-            r.Cells[4].AddParagraph(Rp(addVal));
-            r.Cells[5].AddParagraph(Rp(pnl.Revenue));
+            //r.Cells[1].AddParagraph(Rp(pnl.TarifAwal));
+            //r.Cells[2].AddParagraph(Rp(pnl.TarifAdd));
+            //r.Cells[3].AddParagraph((pnl.KmPer25).ToString());
+            //var addVal = (pnl.KmPer25) > 0 ? (pnl.TarifAdd) * (pnl.KmPer25) : 0;
+            //r.Cells[4].AddParagraph(Rp(addVal));
+            //r.Cells[5].AddParagraph(Rp(pnl.Revenue));
 
             // total bar
             var total = tbl.AddRow();
             total.Shading.Color = Colors.WhiteSmoke;
             total.Cells[0].MergeRight = 4;
             total.Cells[0].AddParagraph("Total Tagihan");
-            total.Cells[5].AddParagraph(Rp(pnl.Revenue)).Format.Font.Bold = true;
+            //total.Cells[5].AddParagraph(Rp(pnl.Revenue)).Format.Font.Bold = true;
         }
 
         private static void AddOffersTable(Section s, IReadOnlyList<VendorOffer> offers) {
@@ -202,9 +202,9 @@ namespace ProcurementHTE.Core.Services
             tbl.AddColumn(Unit.FromMillimeter(80));
             tbl.AddColumn(Unit.FromMillimeter(100));
 
-            Row2(tbl, "Revenue (Tagihan PDC)", Rp(pnl.Revenue), shaded: true);
+            //Row2(tbl, "Revenue (Tagihan PDC)", Rp(pnl.Revenue), shaded: true);
             Row2(tbl, $"Harga Mitra Terpilih{(selectedVendor != null ? $" – {selectedVendor.VendorName}" : "")}", Rp(pnl.SelectedVendorFinalOffer));
-            Row2(tbl, "COST OPERATOR", Rp(pnl.OperatorCost));
+            //Row2(tbl, "COST OPERATOR", Rp(pnl.OperatorCost));
             var profit = pnl.Profit;
             Row2(tbl, "PROFIT", Rp(profit), shaded: true, bold: true);
 

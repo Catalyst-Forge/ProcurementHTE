@@ -7,12 +7,19 @@ using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories;
 
-public class WorkOrderDocumentQuery(AppDbContext db, ILogger<WorkOrderDocumentQuery>? logger = null)
-    : IWorkOrderDocumentQuery
+public sealed class WorkOrderDocumentQuery : IWorkOrderDocumentQuery
 {
-    private readonly AppDbContext _db = db;
-    private readonly ILogger<WorkOrderDocumentQuery> _logger =
-        logger ?? NullLogger<WorkOrderDocumentQuery>.Instance;
+    private readonly AppDbContext _db;
+    // ⬇️ init supaya tidak pernah null, sekaligus hilangkan CS0649
+    private readonly ILogger<WorkOrderDocumentQuery> _logger = NullLogger<WorkOrderDocumentQuery>.Instance;
+
+    public WorkOrderDocumentQuery(
+        AppDbContext context,
+        ILogger<WorkOrderDocumentQuery> logger)
+    {
+        _db = context;
+        _logger = logger; // DI akan override NullLogger dengan real logger
+    }
 
     public async Task<WorkOrderRequiredDocsDto?> GetRequiredDocsAsync(string workOrderId, TimeSpan? timeout)
     {
@@ -33,7 +40,6 @@ public class WorkOrderDocumentQuery(AppDbContext db, ILogger<WorkOrderDocumentQu
 
         if (wo is null) return null;
 
-        // 2) Ada konfigurasi WoTypeDocuments untuk WoTypeId ini?
         var cfgCount = await _db.WoTypesDocuments
             .AsNoTracking()
             .Where(c => c.WoTypeId == wo.WoTypeId)
