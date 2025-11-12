@@ -1,4 +1,4 @@
-name: CI & Deploy ProcurementHTE (migrate-first)
+name: CI & Deploy ProcurementHTE (.dll + EF SQL script)
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (full history)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -39,26 +39,36 @@ jobs:
           dotnet build -c Release --no-restore
           dotnet test -c Release --no-build --verbosity normal
 
-      - name: Install dotnet-ef (global)
-        run: dotnet tool install --global dotnet-ef
-
-      - name: Publish (framework-dependent)
-        env:
-          PATH: ${{ env.PATH }}:$HOME/.dotnet/tools
+      # === EF CLI: local tool, pinned 9.*, retry, clear cache ===
+      - name: Prepare EF CLI (local tool, pinned 9.*)
+        shell: bash
         run: |
-          # Publish app
-          dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj \
-            -c Release -o out
+          set -e
+          dotnet new tool-manifest --force
+          for i in 1 2 3; do
+            if dotnet tool install dotnet-ef --version 9.*; then
+              break
+            fi
+            echo "[WARN] dotnet-ef install failed (attempt $i). Clearing NuGet caches and retrying..."
+            dotnet nuget locals all --clear
+            rm -rf ~/.nuget/packages/dotnet-ef || true
+            sleep 2
+          done
+          dotnet tool list
 
-          # Generate idempotent migration script
-          export PATH="$HOME/.dotnet/tools:$PATH"
-          dotnet ef migrations script --idempotent \
+      - name: Publish (framework-dependent) + generate Migrations.sql (idempotent)
+        shell: bash
+        run: |
+          # publish web
+          dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
+
+          # generate idempotent migration script di out/Migrations.sql
+          dotnet tool run dotnet-ef migrations script --idempotent \
             -p ProcurementHTE.Infrastructure \
             -s ProcurementHTE.Web \
             -o out/Migrations.sql
 
-          # Debug list
-          ls -la out/ | sed -n '1,200p'
+          ls -la out
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -71,20 +81,31 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}        # /var/www/ProcurementHTE
-      APP_SERVICE: ${{ vars.APP_SERVICE }}      # procurementhte.service
+      # ---- Server paths & service ----
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}          # contoh: /var/www/ProcurementHTE
+      APP_SERVICE: ${{ vars.APP_SERVICE }}        # contoh: procurementhte.service
+
+      # ---- DB creds for sqlcmd (gunakan Secrets/Vars kamu) ----
+      DB_HOST: ${{ vars.DB_HOST }}                # contoh: 127.0.0.1  (atau IP host SQL kamu)
+      DB_PORT: ${{ vars.DB_PORT || '1433' }}
+      DB_USER: ${{ secrets.DB_USER }}             # contoh: sa
+      DB_PASS: ${{ secrets.DB_PASS }}             # ***** penting: pakai Secret
+      DB_NAME: ${{ vars.DB_NAME || 'ProcurementHTE' }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: app
-          path: drop
+          path: artifact
 
-      - name: Compute release name
+      - name: Compute release name (runNumber-sha7)
         shell: bash
         run: |
-          echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}" >> $GITHUB_ENV
-          echo "SHORT_SHA=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
+          echo "RDIR=/releases/${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
+          echo "Done: $RELEASE_NAME"
 
       - name: Create release dir on server
         uses: appleboy/ssh-action@v1.2.0
@@ -111,7 +132,7 @@ jobs:
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
 
-      - name: Upload release files (flat to release root)
+      - name: Upload release files (put DLL + Migrations.sql at release root)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -119,7 +140,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          source: "drop/*"   # <— penting: * supaya isinya langsung ke root release
+          source: "artifact/*"
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
 
       - name: Verify release contents (debug)
@@ -135,11 +156,14 @@ jobs:
             set -Eeuo pipefail
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             echo "[INFO] ls -la $RELEASE"
-            ls -la "$RELEASE" | sed -n '1,200p'
+            ls -la "$RELEASE"
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; exit 1; }
-            test -f "$RELEASE/Migrations.sql" || { echo "[WARN] Migrations.sql not found — will skip DB migration"; }
+            test -f "$RELEASE/Migrations.sql" || { echo "[WARN] Migrations.sql not found (no DB changes?)"; exit 0; }
+            echo "[OK] Found DLL & (maybe) Migrations.sql"
 
-      - name: Apply DB migrations (via docker mssql-tools)
+      # === Apply DB migrations via idempotent SQL ===
+      - name: Apply DB migrations (idempotent SQL)
+        if: always()
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -147,35 +171,48 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,RELEASE_NAME,MSSQL_SA_PASSWORD
+          envs: DEPLOY_DIR,RELEASE_NAME,DB_HOST,DB_PORT,DB_USER,DB_PASS,DB_NAME
           script_stop: true
           script: |
             set -Eeuo pipefail
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            MIG="$RELEASE/Migrations.sql"
 
-            if [ ! -f "$RELEASE/Migrations.sql" ]; then
-              echo "[INFO] No Migrations.sql — skipping DB migration"
-              exit 0
+            if [ ! -s "$MIG" ]; then
+              echo "[INFO] No migrations to apply (file missing or empty)"; exit 0
             fi
 
-            if ! command -v docker >/dev/null 2>&1; then
-              echo "[WARN] docker not found — skipping DB migration"
-              exit 0
+            echo "[INFO] Trying to apply migrations using sqlcmd..."
+
+            run_sqlcmd_host () {
+              local BIN=""
+              if command -v sqlcmd >/dev/null 2>&1; then BIN="sqlcmd"; fi
+              if [ -z "$BIN" ] && [ -x /opt/mssql-tools18/bin/sqlcmd ]; then BIN="/opt/mssql-tools18/bin/sqlcmd"; fi
+              if [ -z "$BIN" ] && [ -x /opt/mssql-tools/bin/sqlcmd ]; then BIN="/opt/mssql-tools/bin/sqlcmd"; fi
+              [ -n "$BIN" ] || return 1
+              echo "[INFO] Host $BIN found, applying..."
+              "$BIN" -S "${DB_HOST},${DB_PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i "$MIG"
+            }
+
+            run_sqlcmd_docker () {
+              # cari container mssql
+              CID="$(docker ps --format '{{.ID}} {{.Image}}' | grep -i 'mssql' | awk '{print $1}' | head -n1 || true)"
+              [ -n "$CID" ] || return 1
+              echo "[INFO] Using docker exec on container $CID"
+              docker cp "$MIG" "$CID:/tmp/mig.sql"
+              # tools path bisa 18 atau lama
+              if docker exec "$CID" bash -lc 'test -x /opt/mssql-tools18/bin/sqlcmd'; then
+                docker exec "$CID" /opt/mssql-tools18/bin/sqlcmd -S "127.0.0.1,1433" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+              else
+                docker exec "$CID" /opt/mssql-tools/bin/sqlcmd    -S "127.0.0.1,1433" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+              fi
+            }
+
+            if ! run_sqlcmd_host; then
+              echo "[INFO] Host sqlcmd not found; trying docker..."
+              run_sqlcmd_docker || { echo "[ERR] sqlcmd not available on host or docker"; exit 1; }
             fi
-
-            echo "[INFO] Pull mssql-tools (if needed)"
-            docker image inspect mcr.microsoft.com/mssql-tools:latest >/dev/null 2>&1 || \
-              docker pull mcr.microsoft.com/mssql-tools:latest
-
-            echo "[INFO] Applying migrations to DB ProcurementHTE on localhost:1433"
-            docker run --rm -i --network host mcr.microsoft.com/mssql-tools:latest \
-              /opt/mssql-tools/bin/sqlcmd \
-                -S 127.0.0.1,1433 \
-                -U SA -P "${MSSQL_SA_PASSWORD}" \
-                -d ProcurementHTE \
-                -b -i /dev/stdin < "$RELEASE/Migrations.sql"
-
-            echo "[INFO] Migration completed"
+            echo "[OK] DB migrations applied."
 
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
@@ -189,10 +226,12 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
             : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
-            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
 
-            test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; exit 1; }
+            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] Missing DLL in $RELEASE"; exit 1; }
 
             ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
             echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
@@ -201,8 +240,16 @@ jobs:
             sudo systemctl restart "$APP_SERVICE"
             sudo systemctl --no-pager --full status "$APP_SERVICE" || true
 
-            echo "[INFO] Listening ports (expect 127.0.0.1:5159)"
-            ss -tlnp | grep -E '(:5159)' || true
-
-            echo "[INFO] Kestrel quick healthcheck"
-            curl -I -sS -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ || true
+      - name: Smoke check (Kestrel & curl)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR
+          script: |
+            set -Eeuo pipefail
+            ss -tlnp | grep -E '(:5159)' || (echo "[ERR] Kestrel not listening on 5159"; exit 1)
+            curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
