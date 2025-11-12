@@ -1,4 +1,4 @@
-name: CI & Deploy ProcurementHTE (.dll + EF SQL script)
+name: CI & Deploy ProcurementHTE (.dll + server-side DB migrate)
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
           dotnet build -c Release --no-restore
           dotnet test -c Release --no-build --verbosity normal
 
-      # === EF CLI: local tool, pinned 9.*, retry, clear cache ===
+      # --- EF CLI sebagai local tool (stabil & pinned 9.*) ---
       - name: Prepare EF CLI (local tool, pinned 9.*)
         shell: bash
         run: |
@@ -56,23 +56,38 @@ jobs:
           done
           dotnet tool list
 
-      - name: Publish (framework-dependent) + generate Migrations.sql (idempotent)
+      # --- Publish & generate Migrations.sql (idempotent) ---
+      # Catatan: tahap ini HANYA membuat script. Eksekusinya dilakukan di server (job deploy).
+      - name: Publish (framework-dependent) + generate Migrations.sql
         shell: bash
         env:
-          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # atau vars kamu
+          ASPNETCORE_ENVIRONMENT: Production
+          ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION }}
+
+          # Dummy config agar Host (Web) tidak melempar exception saat design-time discovery
+          JwtSettings__Secret: dummy-secret-at-least-32-bytes-1234567890abcd
+          JwtSettings__Issuer: ProcurementHTE
+          JwtSettings__Audience: ProcurementHTEMobileApp
+
+          ObjectStorage__Endpoint: dummy.example
+          ObjectStorage__UseSSL: true
+          ObjectStorage__AccessKey: dummy
+          ObjectStorage__SecretKey: dummy
+          ObjectStorage__Bucket: dummy
+          ObjectStorage__Region: us-east-1
+          ObjectStorage__PresignExpirySeconds: 1800
         run: |
           # publish web
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
-      
+
           # generate idempotent migration script -> out/Migrations.sql
           dotnet tool run dotnet-ef migrations script --idempotent \
             --project ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj \
-            --startup-project ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj \
+            --startup-project ProcurementHTE.Web/ProcurementHTE.Web.csproj \
             --configuration Release \
             --framework net9.0 \
-            --output out/Migrations.sql \
-            -- --connection "$EF_CONNECTION"
-      
+            --output out/Migrations.sql
+
           ls -la out
 
       - name: Upload artifact
@@ -86,15 +101,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      # ---- Server paths & service ----
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}          # contoh: /var/www/ProcurementHTE
-      APP_SERVICE: ${{ vars.APP_SERVICE }}        # contoh: procurementhte.service
+      # Server paths & service
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}      # ex: /var/www/ProcurementHTE
+      APP_SERVICE: ${{ vars.APP_SERVICE }}    # ex: procurementhte.service
 
-      # ---- DB creds for sqlcmd (gunakan Secrets/Vars kamu) ----
-      DB_HOST: ${{ vars.DB_HOST }}                # contoh: 127.0.0.1  (atau IP host SQL kamu)
+      # DB creds for applying migrations di server
+      DB_HOST: ${{ vars.DB_HOST }}            # ex: 127.0.0.1 atau IP SQL Server
       DB_PORT: ${{ vars.DB_PORT || '1433' }}
-      DB_USER: ${{ secrets.DB_USER }}             # contoh: sa
-      DB_PASS: ${{ secrets.DB_PASS }}             # ***** penting: pakai Secret
+      DB_USER: ${{ secrets.DB_USER }}         # ex: sa
+      DB_PASS: ${{ secrets.DB_PASS }}         # keep in Secrets
       DB_NAME: ${{ vars.DB_NAME || 'ProcurementHTE' }}
     steps:
       - name: Download artifact
@@ -137,7 +152,7 @@ jobs:
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
 
-      - name: Upload release files (put DLL + Migrations.sql at release root)
+      - name: Upload release files (root of release)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -163,12 +178,14 @@ jobs:
             echo "[INFO] ls -la $RELEASE"
             ls -la "$RELEASE"
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; exit 1; }
-            test -f "$RELEASE/Migrations.sql" || { echo "[WARN] Migrations.sql not found (no DB changes?)"; exit 0; }
-            echo "[OK] Found DLL & (maybe) Migrations.sql"
+            if [ -s "$RELEASE/Migrations.sql" ]; then
+              echo "[OK] Found Migrations.sql"
+            else
+              echo "[INFO] No Migrations.sql (mungkin tidak ada perubahan schema)"; touch "$RELEASE/Migrations.sql"
+            fi
 
-      # === Apply DB migrations via idempotent SQL ===
-      - name: Apply DB migrations (idempotent SQL)
-        if: always()
+      # === APPLY DB MIGRATIONS ON SERVER (setelah publish, sebelum restart) ===
+      - name: Apply DB migrations (idempotent SQL on server)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -200,12 +217,10 @@ jobs:
             }
 
             run_sqlcmd_docker () {
-              # cari container mssql
               CID="$(docker ps --format '{{.ID}} {{.Image}}' | grep -i 'mssql' | awk '{print $1}' | head -n1 || true)"
               [ -n "$CID" ] || return 1
               echo "[INFO] Using docker exec on container $CID"
               docker cp "$MIG" "$CID:/tmp/mig.sql"
-              # tools path bisa 18 atau lama
               if docker exec "$CID" bash -lc 'test -x /opt/mssql-tools18/bin/sqlcmd'; then
                 docker exec "$CID" /opt/mssql-tools18/bin/sqlcmd -S "127.0.0.1,1433" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
               else
