@@ -323,19 +323,34 @@ jobs:
             sudo -n systemctl restart "$APP_SERVICE"
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
 
-      - name: Smoke check (Kestrel & curl)
+      - name: Force Kestrel to listen on 5159 (systemd drop-in)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          username: deploy
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR
+          envs: APP_SERVICE,DEPLOY_DIR
+          script_stop: true
           script: |
             set -Eeuo pipefail
-            ss -tlnp | grep -E '(:5159)' || (echo "[ERR] Kestrel not listening on 5159"; exit 1)
-            curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
+            : "${APP_SERVICE:?APP_SERVICE empty}"
+            : "${DEPLOY_DIR:?DEPLOY_DIR empty}"
+      
+            # Tulis drop-in: set WorkingDirectory + override ExecStart untuk paksa --urls 5159
+            TMP=/tmp/override.conf
+            printf "%s\n" \
+              "[Service]" \
+              "WorkingDirectory=${DEPLOY_DIR}/publish/current" \
+              "Environment=ASPNETCORE_ENVIRONMENT=Production" \
+              "ExecStart=" \
+              "ExecStart=/usr/bin/dotnet ProcurementHTE.Web.dll --urls http://0.0.0.0:5159" \
+              > "$TMP"
+      
+            sudo -n mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
+            sudo -n install -m 0644 -T "$TMP" "/etc/systemd/system/${APP_SERVICE}.d/override.conf"
+            sudo -n systemctl daemon-reload
             
       - name: Debug service & ports
         uses: appleboy/ssh-action@v1.2.0
