@@ -67,9 +67,10 @@ jobs:
 
             # generate idempotent migration script -> out/Migrations.sql
             # (tanpa -s supaya nggak coba baca Jwt/ObjectStorage dari Web)
-            dotnet tool run dotnet-ef migrations script --idempotent \
+            dotnet tool run dotnet-ef migrations script --no-build --idempotent \
               -p ProcurementHTE.Infrastructure \
-              -o out/Migrations.sql
+              -o out/Migrations.sql \
+              -- --connection "$DB_CONNECTION"
 
             ls -la out
 
