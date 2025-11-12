@@ -59,18 +59,19 @@ jobs:
       - name: Publish + generate Migrations.sql (idempotent)
         shell: bash
         env:
-          # Kalau AppDbContextFactory kamu perlu connection saat design-time, isi ini dengan Secrets
-          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # kalau AppDbContextFactory butuh
         run: |
           set -e
           # publish web
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
-
-          # generate script idempotent dari assembly migrations (tanpa koneksi DB)
-          dotnet tool run dotnet-ef migrations script --no-build --idempotent \
+      
+          # generate script idempotent dari assembly migrations (tanpa build ulang)
+          dotnet tool run dotnet-ef migrations script \
             -p ProcurementHTE.Infrastructure \
-            -o out/Migrations.sql
-
+            -o out/Migrations.sql \
+            -c Release \
+            --no-build
+      
           ls -la out
 
       - name: Upload artifact
