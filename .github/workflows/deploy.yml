@@ -151,8 +151,11 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          source: "artifact/*"
+          # kirim isi di dalam artifact/, bukan foldernya
+          source: "artifact/**"
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
+          strip_components: 1
+          overwrite: true
 
       - name: Verify release contents
         uses: appleboy/ssh-action@v1.2.0
