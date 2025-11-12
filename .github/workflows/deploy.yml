@@ -270,39 +270,11 @@ jobs:
             "
             echo "[OK] DB migrations applied."
 
-      - name: Force Kestrel to listen on 5159 (systemd drop-in)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: deploy
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: APP_SERVICE,DEPLOY_DIR
-          script_stop: true
-          script: |
-            set -Eeuo pipefail
-            : "${APP_SERVICE:?APP_SERVICE empty}"
-            : "${DEPLOY_DIR:?DEPLOY_DIR empty}"
-      
-            TMP=/tmp/override.conf
-            printf "%s\n" \
-              "[Service]" \
-              "WorkingDirectory=${DEPLOY_DIR}/publish/current" \
-              "Environment=ASPNETCORE_ENVIRONMENT=Production" \
-              "ExecStart=" \
-              "ExecStart=/usr/bin/dotnet ProcurementHTE.Web.dll --urls http://0.0.0.0:5159" \
-              > "$TMP"
-      
-            sudo -n mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
-            sudo -n install -m 0644 -T "$TMP" "/etc/systemd/system/${APP_SERVICE}.d/override.conf"
-            sudo -n systemctl daemon-reload
-
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: deploy
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
@@ -310,60 +282,27 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
-            : "${DEPLOY_DIR:?}"
-            : "${APP_SERVICE:?}"
-            : "${RELEASE_NAME:?}"
-      
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
+            : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
+            : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] Missing DLL in $RELEASE"; exit 1; }
-      
             ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
             echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
-      
-            sudo -n systemctl daemon-reload || true
-            sudo -n systemctl restart "$APP_SERVICE"
-            sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
-
-      - name: Debug service & ports (full)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: deploy
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: APP_SERVICE,DEPLOY_DIR
-          script: |
-            set -Eeuo pipefail
-            echo "=== systemd cat ==="
-            sudo -n systemctl cat "$APP_SERVICE" || true
-            echo "=== systemd show ==="
-            sudo -n systemctl show "$APP_SERVICE" -p FragmentPath -p DropInPaths -p ExecStart -p WorkingDirectory -p User || true
-            echo "=== publish/current ==="
-            readlink -f "$DEPLOY_DIR/publish/current" || true
-            ls -la "$DEPLOY_DIR/publish/current" || true
-            echo "=== status ==="
-            sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
-            echo "=== last 200 logs ==="
-            sudo -n journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
-            echo "=== ports ==="
-            ss -tlnp | grep -E '(:5159|:5000|:5001|dotnet)' || true
+            sudo systemctl daemon-reload || true
+            sudo systemctl restart "$APP_SERVICE"
+            sudo systemctl --no-pager --full status "$APP_SERVICE" || true
             
-      - name: Smoke check (prefer 5159)
+      - name: Smoke check (Kestrel & curl)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: deploy
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR
           script: |
             set -Eeuo pipefail
-            if ss -tlnp | grep -q ':5159'; then
-              echo "[OK] 5159 open"
-              curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
-              exit 0
-            fi
-            echo "[ERR] 5159 tertutup. Port terbuka:"
-            ss -tlnp | grep -E '(:5000|:5001|dotnet)' || true
-            exit 1
+            ss -tlnp | grep -E '(:5159)' || (echo "[ERR] Kestrel not listening on 5159"; exit 1)
+            curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
