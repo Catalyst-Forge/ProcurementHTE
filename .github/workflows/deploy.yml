@@ -176,7 +176,7 @@ jobs:
             echo "[OK] Found DLL & (maybe) Migrations.sql"
 
       # === Apply DB migrations: DOCKER-ONLY & ROBUST ===
-      - name: Apply DB migrations (Docker-only)
+      - name: Apply DB migrations (Docker-only, verbose)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -188,6 +188,8 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
+            # pastikan DB_PORT punya default tanpa bikin -u meledak
+            : "${DB_PORT:=1433}"
       
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             MIG="$RELEASE/Migrations.sql"
@@ -206,40 +208,44 @@ jobs:
               fi
             fi
       
+            # pakai nama container kamu
             CID=""
             if [ -n "${MSSQL_CONTAINER:-}" ]; then
               CID="$($DOCKER ps -q -f id="$MSSQL_CONTAINER")"
               [ -n "$CID" ] || CID="$($DOCKER ps -q -f name="$MSSQL_CONTAINER")"
             fi
-      
             if [ -z "$CID" ]; then
               echo "[ERR] No running SQL Server container found (MSSQL_CONTAINER='${MSSQL_CONTAINER:-}')."
               exit 1
             fi
+            echo "[INFO] SQL container CID: $CID (name ${MSSQL_CONTAINER:-?})"
       
-            PORT="${DB_PORT:-1433}"
-      
-            # 1) pakai sqlcmd di dalam container kalau ada
+            # 1) sqlcmd di dalam container
             if $DOCKER exec "$CID" bash -lc 'command -v /opt/mssql-tools18/bin/sqlcmd >/dev/null 2>&1 || command -v /opt/mssql-tools/bin/sqlcmd >/dev/null 2>&1 || command -v sqlcmd >/dev/null 2>&1'; then
               echo "[INFO] Found sqlcmd inside SQL container. Executing there."
               $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME -e PORT "$CID" bash -lc '
-                set -Eeuo pipefail
-                BIN=""
-                for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
-                  if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
-                done
-                "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
-              '
+              # kirim PORT eksplisit (tidak bergantung export shell)
+              $DOCKER exec \
+                -e DB_USER -e DB_PASS -e DB_NAME -e PORT="${DB_PORT}" \
+                "$CID" bash -lc '
+                  set -Eeuo pipefail
+                  BIN=""
+                  for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
+                    if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
+                  done
+                  echo "[INFO] Using sqlcmd: ${BIN}"
+                  # gunakan default di expand agar aman kalau PORT tidak ada
+                  "$BIN" -S "localhost,${PORT:-1433}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+                '
               echo "[OK] DB migrations applied (in-container)."
               exit 0
             fi
       
-            # 2) fallback: tools image, share network namespace
+            # 2) fallback tools image
             echo "[INFO] sqlcmd not found in SQL container. Using tools image mcr.microsoft.com/mssql-tools ..."
             $DOCKER run --rm --network "container:$CID" \
               -v "$RELEASE":/release:ro \
-              -e DB_USER -e DB_PASS -e DB_NAME -e PORT \
+              -e DB_USER -e DB_PASS -e DB_NAME -e PORT="${DB_PORT}" \
               mcr.microsoft.com/mssql-tools \
               bash -lc '
                 set -Eeuo pipefail
@@ -247,7 +253,8 @@ jobs:
                 for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
                   if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
                 done
-                "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /release/Migrations.sql
+                echo "[INFO] Using tools sqlcmd: ${BIN}"
+                "$BIN" -S "localhost,${PORT:-1433}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /release/Migrations.sql
               '
             echo "[OK] DB migrations applied (tools container)."
 
