@@ -101,7 +101,7 @@ jobs:
       DB_PORT: ${{ vars.DB_PORT || '1433' }}  # port internal container (default 1433)
 
       # (Opsional) kalau mau override container SQL-nya:
-      MSSQL_CONTAINER: ${{ vars.MSSQL_CONTAINER }}  # contoh: sqlserver-prod
+      MSSQL_CONTAINER: mssql-proc  # contoh: sqlserver-prod
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -188,16 +188,15 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
-
+      
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             MIG="$RELEASE/Migrations.sql"
-
+      
             if [ ! -s "$MIG" ]; then
               echo "[INFO] No migrations to apply (file missing or empty)"
               exit 0
             fi
-
-            # Resolve docker (docker atau sudo docker)
+      
             DOCKER="docker"
             if ! $DOCKER info >/dev/null 2>&1; then
               if command -v sudo >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
@@ -206,50 +205,37 @@ jobs:
                 echo "[ERR] Docker not accessible (no permission & no sudo)"; exit 1
               fi
             fi
-
-            # Tentukan SQL container (override via MSSQL_CONTAINER jika ada)
+      
             CID=""
             if [ -n "${MSSQL_CONTAINER:-}" ]; then
               CID="$($DOCKER ps -q -f id="$MSSQL_CONTAINER")"
-              if [ -z "$CID" ]; then
-                CID="$($DOCKER ps -q -f name="^${MSSQL_CONTAINER}$")"
-              fi
-            else
-              CID="$($DOCKER ps --format '{{.ID}} {{.Image}} {{.Names}}' \
-                | grep -i -E 'mssql|sqlserver|azure-sql' \
-                | awk '{print $1}' | head -n1 || true)"
+              [ -n "$CID" ] || CID="$($DOCKER ps -q -f name="$MSSQL_CONTAINER")"
             fi
-
+      
             if [ -z "$CID" ]; then
-              echo "[ERR] No running SQL Server container found."
-              echo "[HINT] Set MSSQL_CONTAINER=nama_or_id_container jika autodetect gagal."
+              echo "[ERR] No running SQL Server container found (MSSQL_CONTAINER='${MSSQL_CONTAINER:-}')."
               exit 1
             fi
-            echo "[INFO] SQL container: $CID"
-
+      
             PORT="${DB_PORT:-1433}"
-
-            # 1) Coba exec di container SQL jika sqlcmd tersedia di dalam
+      
+            # 1) pakai sqlcmd di dalam container kalau ada
             if $DOCKER exec "$CID" bash -lc 'command -v /opt/mssql-tools18/bin/sqlcmd >/dev/null 2>&1 || command -v /opt/mssql-tools/bin/sqlcmd >/dev/null 2>&1 || command -v sqlcmd >/dev/null 2>&1'; then
               echo "[INFO] Found sqlcmd inside SQL container. Executing there."
               $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
-              $DOCKER exec \
-                -e DB_USER -e DB_PASS -e DB_NAME -e PORT \
-                "$CID" bash -lc '
-                  set -Eeuo pipefail
-                  BIN=""
-                  for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
-                    if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
-                  done
-                  [ -n "$BIN" ] || { echo "[ERR] sqlcmd vanished inside container"; exit 1; }
-                  echo "[INFO] Running: $BIN -S localhost,${PORT} -d ${DB_NAME} -i /tmp/mig.sql"
-                  "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
-                '
+              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME -e PORT "$CID" bash -lc '
+                set -Eeuo pipefail
+                BIN=""
+                for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
+                  if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
+                done
+                "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+              '
               echo "[OK] DB migrations applied (in-container)."
               exit 0
             fi
-
-            # 2) Jika sqlcmd tidak ada di dalam: pakai tools image & share network container
+      
+            # 2) fallback: tools image, share network namespace
             echo "[INFO] sqlcmd not found in SQL container. Using tools image mcr.microsoft.com/mssql-tools ..."
             $DOCKER run --rm --network "container:$CID" \
               -v "$RELEASE":/release:ro \
@@ -261,12 +247,10 @@ jobs:
                 for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
                   if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
                 done
-                [ -n "$BIN" ] || { echo "[ERR] sqlcmd missing in tools image"; exit 1; }
-                echo "[INFO] Running tools sqlcmd against localhost,${PORT}"
                 "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /release/Migrations.sql
               '
-
             echo "[OK] DB migrations applied (tools container)."
+
 
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
