@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # perlu untuk tool versi & riwayat git
+          fetch-depth: 0
           ref: master
 
       - name: Setup .NET 9
@@ -38,7 +38,6 @@ jobs:
           dotnet build -c Release --no-restore
           dotnet test -c Release --no-build --verbosity normal
 
-      # Hasil publish = .dll + deps (framework-dependent)
       - name: Publish (framework-dependent)
         run: dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
 
@@ -52,23 +51,29 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    # (opsional) kalau kamu sudah set di Environments → production → Variables,
+    # ini tetap oke; kalau belum, step "Set defaults" akan isi fallback.
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}     # ex: /var/www/ProcurementHTE
-      APP_SERVICE: ${{ vars.APP_SERVICE }}   # ex: procurementhte.service
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+      APP_SERVICE: ${{ vars.APP_SERVICE }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: app
           path: drop
 
-      - name: Hitung nama rilis (RUNNUMBER-SHORTSHA)
+      - name: Set defaults & compute names
+        shell: bash
         run: |
+          set -Eeuo pipefail
+          # Fallback kalau DEPLOY_DIR / APP_SERVICE belum diisi di Environments
+          echo "DEPLOY_DIR=${DEPLOY_DIR:-/var/www/ProcurementHTE}" >> $GITHUB_ENV
+          echo "APP_SERVICE=${APP_SERVICE:-procurementhte.service}" >> $GITHUB_ENV
           echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "RDIR=${{ env.DEPLOY_DIR }}/releases/${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-        shell: bash
+          echo "[INFO] Will deploy to ${DEPLOY_DIR:-/var/www/ProcurementHTE} as release ${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
 
-      - name: Create release dir di server (guarded)
+      - name: Create release dir (server)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -93,7 +98,7 @@ jobs:
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
 
-      - name: Upload release files (SCP) ke folder yang sama
+      - name: Upload release files (SCP)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -104,7 +109,7 @@ jobs:
           source: "drop/*"
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
 
-      - name: Activate & restart service (symlink + systemctl)
+      - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -122,21 +127,16 @@ jobs:
 
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             test -d "$RELEASE" || { echo "[ERR] Release dir not found: $RELEASE"; exit 1; }
-
-            # pastikan DLL ada
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; ls -la "$RELEASE"; exit 1; }
 
-            # symlink current -> rilis ini (pastikan parent publish ada)
             install -d -m 755 "$DEPLOY_DIR/publish"
             ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
             echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
 
-            # restart service (butuh NOPASSWD di sudoers)
+            # butuh NOPASSWD di /etc/sudoers.d/procurementhte
             sudo -n systemctl daemon-reload || true
             sudo -n systemctl restart "$APP_SERVICE"
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
 
-            # optional health log
-            if command -v ss >/dev/null 2>&1; then
-              echo "[INFO] Listening ports (expect 127.0.0.1:5159)"; ss -tlnp | grep -E '(:5159)' || true
-            fi
+            # info port internal Kestrel
+            command -v ss >/dev/null 2>&1 && { echo "[INFO] Listening ports (expect 127.0.0.1:5159)"; ss -tlnp | grep -E '(:5159)' || true; }
