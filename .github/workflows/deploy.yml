@@ -58,17 +58,21 @@ jobs:
 
       - name: Publish (framework-dependent) + generate Migrations.sql (idempotent)
         shell: bash
+        env:
+            # Dipakai oleh AppDbContextFactory (opsi 3)
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}
         run: |
-          # publish web
-          dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
+            # publish web
+            dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
 
-          # generate idempotent migration script di out/Migrations.sql
-          dotnet tool run dotnet-ef migrations script --idempotent \
-            -p ProcurementHTE.Infrastructure \
-            -s ProcurementHTE.Web \
-            -o out/Migrations.sql
+            # generate idempotent migration script -> out/Migrations.sql
+            # (tanpa -s supaya nggak coba baca Jwt/ObjectStorage dari Web)
+            dotnet tool run dotnet-ef migrations script --idempotent \
+              -p ProcurementHTE.Infrastructure \
+              -o out/Migrations.sql
 
-          ls -la out
+            ls -la out
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

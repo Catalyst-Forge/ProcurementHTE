@@ -28,6 +28,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+	  <!-- Design-time tooling (tidak ikut publish) -->
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" PrivateAssets="All" />
+	  <!-- Biar factory bisa baca appsettings.json saat fallback -->
+	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
     <PackageReference Include="Minio" Version="6.0.5" />
   </ItemGroup>
 
