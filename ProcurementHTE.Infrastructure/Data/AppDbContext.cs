@@ -14,7 +14,9 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<WoTypes> WoTypes { get; set; }
         public DbSet<WoDetail> WoDetails { get; set; }
+        public DbSet<WoOffer> WoOffers { get; set; }
         public DbSet<ProfitLoss> ProfitLosses { get; set; }
+        public DbSet<ProfitLossItem> ProfitLossItems { get; set; }
         public DbSet<VendorOffer> VendorOffers { get; set; }
         public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; }
         public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
@@ -23,7 +25,6 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<WoTypeDocuments> WoTypesDocuments { get; set; }
         public DbSet<WoDocumentApprovals> WoDocumentApprovals { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -97,32 +98,50 @@ namespace ProcurementHTE.Infrastructure.Data
             // Unique
             builder.Entity<Vendor>().HasIndex(v => v.VendorCode).IsUnique();
 
-            // Relations
+            // ========== Relations ==========
             // ***** Work Order *****
+            // Relation to User
             builder
                 .Entity<WorkOrder>()
                 .HasOne(workOrder => workOrder.User)
                 .WithMany(user => user.WorkOrders)
                 .HasForeignKey(workOrder => workOrder.UserId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to User
+                .OnDelete(DeleteBehavior.NoAction);
+            // Relation to WoType
             builder
                 .Entity<WorkOrder>()
                 .HasOne(workOrder => workOrder.WoType)
                 .WithMany(woType => woType.WorkOrders)
                 .HasForeignKey(workOrder => workOrder.WoTypeId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to WoType
+                .OnDelete(DeleteBehavior.NoAction);
+            // Relation to WoDocument
             builder
                 .Entity<WorkOrder>()
                 .HasMany(workOrder => workOrder.WoDocuments)
                 .WithOne(woDocument => woDocument.WorkOrder)
                 .HasForeignKey(woDocument => woDocument.WorkOrderId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to WoDocument
+                .OnDelete(DeleteBehavior.Cascade);
+            // Relation to Vendor Offer
             builder
                 .Entity<WorkOrder>()
                 .HasMany(workOrder => workOrder.VendorOffers)
                 .WithOne(vendorOffer => vendorOffer.WorkOrder)
                 .HasForeignKey(vendorOffer => vendorOffer.WorkOrderId)
-                .OnDelete(DeleteBehavior.Cascade); // Relation to Vendor Offer
+                .OnDelete(DeleteBehavior.Cascade);
+            // Relation to Status
+            builder
+                .Entity<WorkOrder>()
+                .HasOne(workOrder => workOrder.Status)
+                .WithMany()
+                .HasForeignKey(workOrder => workOrder.StatusId)
+                .OnDelete(DeleteBehavior.NoAction);
+            // Relation to WoOffer
+            builder
+                .Entity<WorkOrder>()
+                .HasMany(workOrder => workOrder.WoOffers)
+                .WithOne(woOffer => woOffer.WorkOrder)
+                .HasForeignKey(woOffer => woOffer.WorkOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ***** WO Detail *****
             builder
@@ -144,14 +163,16 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<WoDocuments>(entity =>
             {
                 // relasi ke DocumentType (sudah ada di kode lama kamu—aku rapikan property names)
-                entity.HasOne(d => d.DocumentType)
-                      .WithMany(t => t.WoDocuments)
-                      .HasForeignKey(d => d.DocumentTypeId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(d => d.DocumentType)
+                    .WithMany(t => t.WoDocuments)
+                    .HasForeignKey(d => d.DocumentTypeId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasIndex(d => d.QrText).HasDatabaseName("IX_WoDocuments_QrText");
-                entity.HasIndex(d => new { d.WorkOrderId, d.CreatedAt })
-                      .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
+                entity
+                    .HasIndex(d => new { d.WorkOrderId, d.CreatedAt })
+                    .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
 
                 // relasi ke WorkOrder (kamu sudah mengatur di WorkOrder.WithMany(WoDocuments))
                 // indeks & constraints untuk MinIO
@@ -162,7 +183,14 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(d => d.Description).HasMaxLength(200).IsRequired(false);
 
                 // satu dokumen "status" per (WO, DocumentType) (misal menjaga 1 'Uploaded' aktif per type)
-                entity.HasIndex(d => new { d.WorkOrderId, d.DocumentTypeId, d.Status }).IsUnique();
+                entity
+                    .HasIndex(d => new
+                    {
+                        d.WorkOrderId,
+                        d.DocumentTypeId,
+                        d.Status,
+                    })
+                    .IsUnique();
             });
 
             // ***** WO Document Approval *****
@@ -171,27 +199,48 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(a => a.Status).HasMaxLength(16).HasDefaultValue("Pending");
 
                 // FK ke WorkOrders (INI WAJIB, sebelumnya belum ada di kode kamu)
-                entity.HasOne(a => a.WorkOrder)
-                      .WithMany(/* w => w.WoDocumentApprovals */) // boleh tanpa nav kalau tidak kamu tambahkan di WorkOrder
-                      .HasForeignKey(a => a.WorkOrderId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(a => a.WorkOrder)
+                    .WithMany( /* w => w.WoDocumentApprovals */
+                    ) // boleh tanpa nav kalau tidak kamu tambahkan di WorkOrder
+                    .HasForeignKey(a => a.WorkOrderId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // FK ke WoDocuments (perbaiki WithMany: gunakan koleksi Approvals di WoDocuments)
-                entity.HasOne(a => a.WoDocument)
-                      .WithMany(d => d.Approvals)
-                      .HasForeignKey(a => a.WoDocumentId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                entity
+                    .HasOne(a => a.WoDocument)
+                    .WithMany(d => d.Approvals)
+                    .HasForeignKey(a => a.WoDocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(a => a.Role)
-                      .WithMany()
-                      .HasForeignKey(a => a.RoleId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(a => a.Role)
+                    .WithMany()
+                    .HasForeignKey(a => a.RoleId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
-                entity.HasOne(a => a.Approver)
-                      .WithMany()
-                      .HasForeignKey(a => a.ApproverId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                entity
+                    .HasOne(a => a.Approver)
+                    .WithMany()
+                    .HasForeignKey(a => a.ApproverId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
+
+            // ProfitLossItem -> ProfitLoss (tetap cascade)
+            builder
+                .Entity<ProfitLossItem>()
+                .HasOne(i => i.ProfitLoss)
+                .WithMany(p => p.Items)
+                .HasForeignKey(i => i.ProfitLossId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ProfitLossItem -> WoOffer (MATIKAN cascade)
+            builder
+                .Entity<ProfitLossItem>()
+                .HasOne(i => i.WoOffer) // <— pakai nav
+                .WithMany() // atau .WithMany(o => o.ProfitLossItems) kalau ada koleksi di WoOffer
+                .HasForeignKey(i => i.WoOfferId)
+                .OnDelete(DeleteBehavior.NoAction); // atau Restrict, pilih salah satu konsisten
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

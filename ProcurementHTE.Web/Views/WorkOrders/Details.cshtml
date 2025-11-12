@@ -17,7 +17,8 @@
         "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
         "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
         _ => "bg-light text-body border"
-    };
+    };  
+    var selectedNames = pnl?.SelectedVendorNames ?? new List<string>();
 }
 
 <header class="mb-3">
@@ -87,13 +88,13 @@
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.FromLocation)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.FromLocation)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.From)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.From)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Destination)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Destination)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.To)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.To)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
@@ -111,6 +112,37 @@
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.DateRequired.ToTanggalIndonesia()</dd>
                             </dl>
 
+                        </div>
+                    </div>
+                </article>
+
+                @* Item penawaran card*@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Item Penawaran</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="table-responsive rounded-3">
+                            <table class="table table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th class="mw-100 text-nowrap text-uppercase">No</th>
+                                        <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var item in Model!.WoOffers) {
+                                        <tr>
+                                            <td class="text-nowrap">@no</td>
+                                            <td>@item.ItemPenawaran</td>
+                                        </tr>
+                                        no++;
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </article>
@@ -136,6 +168,7 @@
 
                                 <tbody>
                                     @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
+                                        no = 1;
                                         foreach (var detail in Model.WoDetails) {
                                             <tr>
                                                 <td class="text-nowrap">@no</td>
@@ -183,7 +216,7 @@
                                 <dt class="fw-semibold text-uppercase text-secondary mb-2">To</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.XS2)</dd>
                             </dl>
-                            
+
                             <dl class="col-12 mb-3">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-2">@Html.DisplayNameFor(model => model.Note)</dt>
                                 <dd class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info rounded-3 border-5">@Html.DisplayFor(model => model.Note)</dd>
@@ -297,111 +330,178 @@
                 Belum ada data Profit &amp; Loss untuk WO ini.
             </div>
 
-            <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model!.WorkOrderId" class="btn btn-success" role="button">
+            <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model!.WorkOrderId" class="btn btn-success">
                 <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
             </a>
         } else {
-            <!-- List Vendor -->
+            var items = pnl.Items;
+
+            @* VENDOR YANG DISERTAKAN *@
             <article class="card shadow-sm mb-3 rounded-4">
-                <header class="card-header fw-semibold fw-semibold bg-transparent border-bottom-0">
-                    <h2 class="card-title mb-0 h5"><i class="bi bi-building-fill text-primary me-1"></i> Vendor yang ditawarkan</h2>
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-building-fill text-primary me-1"></i>
+                        Vendor yang diikutkan
+                    </h2>
                 </header>
                 <hr class="mx-3 my-2" />
 
                 <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2">
-                        @if (ViewBag.SelectedVendorNames is List<string> names && names.Count > 0) {
-                            @foreach (var name in names) {
-                                <div class="badge border rounded-5 text-secondary fw-medium p-2">@name</div>
+                    @if (selectedNames.Any()) {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var name in selectedNames) {
+                                <span class="badge border rounded-5 text-secondary fw-medium px-3 py-2">@name</span>
                             }
-                        }
-                    </div>
+                        </div>
+                    } else {
+                        <span class="text-muted">—</span>
+                    }
                 </div>
             </article>
 
-            <!-- Tagihan PDSI -->
+            @* RINGKASAN PNL *@
             <article class="card shadow-sm mb-3 rounded-4">
-                <header class="card-header fw-semibold fw-semibold bg-transparent border-bottom-0">
-                    <h2 class="card-title mb-0 h5"><i class="bi bi-bar-chart text-primary me-1"></i> Ringkasan Profit & Loss</h2>
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-bar-chart text-primary me-1"></i>
+                        Ringkasan Profit &amp; Loss
+                    </h2>
                 </header>
                 <hr class="mx-3 my-2" />
 
                 <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="card-title mb-0 h6">Ringkasan</h3>
+                        <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
+                            Hitung Ulang
+                        </a>
+                    </div>
+
                     <div class="row g-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h3 class="card-title mb-0 h6">Tagihan PDSI</h3>
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <div class="fw-semibold">Tarif 400 km (Σ)</div>
+                            <div>@((pnl.Items?.Sum(x => x.TarifAwal) ?? 0m).ToIDR())</div>
+                        </div>
 
-                            <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary" role="button">Hitung Ulang</a>
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <div class="fw-semibold">Tarif Add (Σ)</div>
+                            <div>@((pnl.Items?.Sum(x => x.TarifAdd) ?? 0m).ToIDR())</div>
                         </div>
 
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Tarif Awal</div>
-                            <div>@pnl.TarifAwal.ToIDR()</div>
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Tarif Add</div>
-                            <div>@pnl.TarifAdd.ToIDR()</div>
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">KM per 25 Km</div>
-                            <div>@pnl.KmPer25</div>
-                        </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Cost Operator</div>
-                            <div>@pnl.OperatorCost.ToIDR()</div>
-                            <div class="small text-muted"> = Tarif Add * KM per 25 Km</div>
+                            <div>@((pnl.Items?.Sum(x => x.OperatorCost) ?? 0m).ToIDR())</div>
+                            <div class="small text-muted">= Σ(Tarif Add × KM/25 per item)</div>
                         </div>
+
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Revenue</div>
-                            <div class="fw-bold">@pnl.Revenue.ToIDR()</div>
-                            <div class="small text-muted"> = Tarif Awal + Cost Operator</div>
+                            <div class="fw-semibold">Total Revenue</div>
+                            <div class="fw-bold">@((pnl.Items?.Sum(x => x.Revenue) ?? 0m).ToIDR())</div>
                         </div>
+
                         <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Best Vendor</div>
                             <div class="text-success fw-semibold">@pnl.SelectedVendorName</div>
                         </div>
+
                         <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Final Offer</div>
                             <div>@pnl.SelectedFinalOffer.ToIDR()</div>
+                            <div class="small text-muted">(Σ harga round terakhir tiap item)</div>
                         </div>
+
                         <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Profit</div>
-                            <div class="fw-bold text-success">@pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())</div>
-                            <div class="small text-muted"> = Revenue − Best Offer</div>
+                            <div class="fw-bold text-success">
+                                @pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())
+                            </div>
+                            <div class="small text-muted">= Revenue − Final Offer</div>
                         </div>
                     </div>
                 </div>
             </article>
 
-            <!-- Penawaran Vendor -->
+            @* RINCIAN ITEM (PER-WOOFFER) *@
             <article class="card shadow-sm mb-3 rounded-4">
-                <header class="card-header fw-semibold fw-semibold bg-transparent border-bottom-0">
-                    <h2 class="card-title mb-0 h5"><i class="bi bi-award text-primary me-1"></i> Perbandingan Vendor (Vendor yang Memberi Penawaran)</h2>
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-list-ul text-primary me-1"></i>
+                        Rincian Item (Revenue Builder)
+                    </h2>
                 </header>
                 <hr class="mx-3 my-2" />
 
                 <div class="card-body">
                     <div class="table-responsive rounded-3">
-                        <table class="table align-middle">
-                            <thead class="table-light">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-info">
                                 <tr>
-                                    <th class="text-uppercase text-nowrap">Vendor</th>
-                                    <th class="text-uppercase text-nowrap">Final Offer</th>
-                                    <th class="text-uppercase text-nowrap">Profit</th>
-                                    <th class="text-uppercase text-nowrap">Profit %</th>
-                                    <th class="text-center text-nowrap">Result</th>
+                                    <th>Item</th>
+                                    <th class="text-end">Tarif 400 km</th>
+                                    <th class="text-end">Tarif Add</th>
+                                    <th class="text-end">KM/25</th>
+                                    <th class="text-end">Operator Cost</th>
+                                    <th class="text-end">Revenue</th>
                                 </tr>
                             </thead>
+                            <tbody>
+                                @foreach (var it in items) {
+                                    <tr>
+                                        <td>@it.ItemName</td>
+                                        <td class="text-end">@it.TarifAwal.ToIDR()</td>
+                                        <td class="text-end">@it.TarifAdd.ToIDR()</td>
+                                        <td class="text-end">@it.KmPer25</td>
+                                        <td class="text-end">@it.OperatorCost.ToIDR()</td>
+                                        <td class="text-end fw-semibold">@it.Revenue.ToIDR()</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <th class="text-end" colspan="5">Total</th>
+                                    <th class="text-end fw-bold">@items.Sum(x => x.Revenue).ToIDR()</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
 
+                <div class="small text-muted px-3 pb-2">
+                    Operator Cost per item = <em>Tarif Add × KM/25</em>, Revenue per item = <em>Tarif 400 km + Operator Cost</em>.
+                </div>
+            </article>
+
+
+            @* PERBANDINGAN VENDOR *@
+            <article class="card shadow-sm mb-3 rounded-4">
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-award text-primary me-1"></i>
+                        Perbandingan Vendor
+                    </h2>
+                </header>
+                <hr class="mx-3 my-2" />
+                <div class="card-body">
+                    <div class="table-responsive rounded-3">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th class="text-end">Final Offer</th>
+                                    <th class="text-end">Profit</th>
+                                    <th class="text-end">Profit %</th>
+                                    <th class="text-center">Result</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 @foreach (var row in pnl.Rows) {
                                     <tr class="@(row.IsSelected ? "table-success" : "")">
-                                        <td class="text-nowrap">@row.VendorName</td>
-                                        <td class="text-nowrap">@row.FinalOffer.ToIDR()</td>
-                                        <td class="text-nowrap">@row.Profit.ToIDR()</td>
-                                        <td class="text-nowrap">@row.ProfitPercent.ToPersen()</td>
+                                        <td>@row.VendorName</td>
+                                        <td class="text-end">@row.FinalOffer.ToIDR()</td>
+                                        <td class="text-end">@row.Profit.ToIDR()</td>
+                                        <td class="text-end">@row.ProfitPercent.ToPersen()</td>
                                         <td class="text-center">
-                                            @if (row.IsSelected == true) {
+                                            @if (row.IsSelected) {
                                                 <span class="badge text-bg-success">Terpilih</span>
                                             }
                                         </td>
@@ -410,10 +510,10 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    <div class="small text-muted">
-                        Best offer dipilih otomatis sebagai harga terendah.
-                    </div>
+                <div class="small text-muted px-3 pb-2">
+                    Best offer dipilih otomatis dari vendor dengan harga total paling rendah (Σ harga round terakhir setiap item).
                 </div>
             </article>
         }

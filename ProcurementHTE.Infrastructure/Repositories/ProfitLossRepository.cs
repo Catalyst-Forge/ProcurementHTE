@@ -16,14 +16,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public Task<ProfitLoss?> GetByIdAsync(string profitLossId)
         {
             return _context
-                .ProfitLosses.Include(pnl => pnl.WorkOrder)
-                .FirstOrDefaultAsync(pnl => pnl.ProfitLossId == profitLossId);
+                .ProfitLosses.Include(p => p.Items)
+                .Include(p => p.WorkOrder)
+                .ThenInclude(wo => wo.WoOffers)
+                .FirstOrDefaultAsync(p => p.ProfitLossId == profitLossId);
         }
 
         public async Task<ProfitLoss?> GetByWorkOrderAsync(string woId)
         {
             return await _context
-                .ProfitLosses.AsNoTracking()
+                .ProfitLosses.Include(p => p.Items)
+                .Include(p => p.WorkOrder)
+                .ThenInclude(wo => wo.WoOffers)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.WorkOrderId == woId);
         }
 
@@ -51,20 +56,23 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var end = start.AddMonths(1);
 
             return await _context
-                .ProfitLosses.Where(pnl => pnl.CreatedAt >= start && pnl.CreatedAt < end)
-                .SumAsync(pnl => pnl.Revenue);
+                .ProfitLossItems.Where(item =>
+                    item.ProfitLoss.CreatedAt >= start && item.ProfitLoss.CreatedAt < end
+                )
+                .SumAsync(item => item.Revenue);
         }
 
         public async Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year)
         {
             return await _context
-                .ProfitLosses.Where(pnl => pnl.CreatedAt.Year == year)
-                .GroupBy(pnl => pnl.CreatedAt.Month)
-                .Select(g => new RevenuePerMonthDto
+                .ProfitLossItems.Where(item => item.ProfitLoss.CreatedAt.Year == year)
+                .GroupBy(item => item.ProfitLoss.CreatedAt.Month)
+                .Select(group => new RevenuePerMonthDto
                 {
-                    Month = g.Key,
-                    Total = g.Sum(pnl => pnl.Revenue),
+                    Month = group.Key,
+                    Total = group.Sum(item => item.Revenue),
                 })
+                .OrderBy(revenue => revenue.Month)
                 .ToListAsync();
         }
 
@@ -88,19 +96,22 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public Task UpdateProfitLossAsync(ProfitLoss profitLoss)
+        {
+            _context.ProfitLosses.Update(profitLoss);
+            return _context.SaveChangesAsync();
+        }
+
         public async Task RemoveSelectedVendorsAsync(string woId)
         {
             var olds = await _context
                 .ProfitLossSelectedVendors.Where(item => item.WorkOrderId == woId)
                 .ToListAsync();
             if (olds.Count > 0)
+            {
                 _context.RemoveRange(olds);
-        }
-
-        public Task UpdateProfitLossAsync(ProfitLoss profitLoss)
-        {
-            _context.ProfitLosses.Update(profitLoss);
-            return Task.CompletedTask;
+                await _context.SaveChangesAsync(); // ⬅️ tambahkan save agar bersih benar
+            }
         }
     }
 }
