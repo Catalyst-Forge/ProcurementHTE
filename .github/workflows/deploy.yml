@@ -270,7 +270,7 @@ jobs:
             "
             echo "[OK] DB migrations applied."
 
-      - name: Ensure Kestrel binds to 5159 (systemd override)
+      - name: Force Kestrel to listen on 5159 (systemd drop-in)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -290,7 +290,8 @@ jobs:
               "[Service]" \
               "WorkingDirectory=${DEPLOY_DIR}/publish/current" \
               "Environment=ASPNETCORE_ENVIRONMENT=Production" \
-              "Environment=ASPNETCORE_URLS=http://0.0.0.0:5159" \
+              "ExecStart=" \
+              "ExecStart=/usr/bin/dotnet ProcurementHTE.Web.dll --urls http://0.0.0.0:5159" \
               > "$TMP"
       
             sudo -n mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
@@ -323,7 +324,7 @@ jobs:
             sudo -n systemctl restart "$APP_SERVICE"
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
 
-      - name: Force Kestrel to listen on 5159 (systemd drop-in)
+      - name: Debug service & ports (full)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -332,27 +333,23 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
           envs: APP_SERVICE,DEPLOY_DIR
-          script_stop: true
           script: |
             set -Eeuo pipefail
-            : "${APP_SERVICE:?APP_SERVICE empty}"
-            : "${DEPLOY_DIR:?DEPLOY_DIR empty}"
-      
-            # Tulis drop-in: set WorkingDirectory + override ExecStart untuk paksa --urls 5159
-            TMP=/tmp/override.conf
-            printf "%s\n" \
-              "[Service]" \
-              "WorkingDirectory=${DEPLOY_DIR}/publish/current" \
-              "Environment=ASPNETCORE_ENVIRONMENT=Production" \
-              "ExecStart=" \
-              "ExecStart=/usr/bin/dotnet ProcurementHTE.Web.dll --urls http://0.0.0.0:5159" \
-              > "$TMP"
-      
-            sudo -n mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
-            sudo -n install -m 0644 -T "$TMP" "/etc/systemd/system/${APP_SERVICE}.d/override.conf"
-            sudo -n systemctl daemon-reload
+            echo "=== systemd cat ==="
+            sudo -n systemctl cat "$APP_SERVICE" || true
+            echo "=== systemd show ==="
+            sudo -n systemctl show "$APP_SERVICE" -p FragmentPath -p DropInPaths -p ExecStart -p WorkingDirectory -p User || true
+            echo "=== publish/current ==="
+            readlink -f "$DEPLOY_DIR/publish/current" || true
+            ls -la "$DEPLOY_DIR/publish/current" || true
+            echo "=== status ==="
+            sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
+            echo "=== last 200 logs ==="
+            sudo -n journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
+            echo "=== ports ==="
+            ss -tlnp | grep -E '(:5159|:5000|:5001|dotnet)' || true
             
-      - name: Debug service & ports
+      - name: Smoke check (prefer 5159)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -360,9 +357,13 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: APP_SERVICE
           script: |
             set -Eeuo pipefail
-            sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
-            sudo -n journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
-            ss -tlnp | grep -E '(:5159|dotnet)' || true
+            if ss -tlnp | grep -q ':5159'; then
+              echo "[OK] 5159 open"
+              curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
+              exit 0
+            fi
+            echo "[ERR] 5159 tertutup. Port terbuka:"
+            ss -tlnp | grep -E '(:5000|:5001|dotnet)' || true
+            exit 1
