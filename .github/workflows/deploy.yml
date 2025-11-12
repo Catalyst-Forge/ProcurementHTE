@@ -13,6 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Penting utk Nerdbank.GitVersioning: perlu full history
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,10 +37,14 @@ jobs:
       - name: Build & Test
         run: |
           dotnet build -c Release --no-restore
-          dotnet test -c Release --no-build --verbosity normal
+          dotnet test  -c Release --no-build --verbosity normal
 
+      # Publish framework-dependent (hasil: .dll + deps)
       - name: Publish (framework-dependent)
-        run: dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
+        run: |
+          dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
+          # Guard: pastikan DLL ada
+          test -f out/ProcurementHTE.Web.dll
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -51,27 +56,24 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
-    # (opsional) kalau kamu sudah set di Environments → production → Variables,
-    # ini tetap oke; kalau belum, step "Set defaults" akan isi fallback.
-    env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
-      APP_SERVICE: ${{ vars.APP_SERVICE }}
+    # Boleh isi vars di Settings → Environments → production
+    # tapi kita sediakan default di step "Compute names & defaults"
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: app
           path: drop
 
-      - name: Set defaults & compute names
+      # Hitung RELEASE_NAME konsisten (runNumber-shortSha) + set default DEPLOY_DIR & APP_SERVICE
+      - name: Compute names & defaults
         shell: bash
         run: |
-          set -Eeuo pipefail
-          # Fallback kalau DEPLOY_DIR / APP_SERVICE belum diisi di Environments
           echo "DEPLOY_DIR=${DEPLOY_DIR:-/var/www/ProcurementHTE}" >> $GITHUB_ENV
           echo "APP_SERVICE=${APP_SERVICE:-procurementhte.service}" >> $GITHUB_ENV
           echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "[INFO] Will deploy to ${DEPLOY_DIR:-/var/www/ProcurementHTE} as release ${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          echo "[LOCAL] Artifact list:"
+          ls -la drop | sed -n '1,120p'
 
       - name: Create release dir (server)
         uses: appleboy/ssh-action@v1.2.0
@@ -85,18 +87,12 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
-            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
-            : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
-
-            echo "[INFO] DEPLOY_DIR=$DEPLOY_DIR, RELEASE_NAME=$RELEASE_NAME"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/releases"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/publish"
-
-            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$RELEASE"
-            echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
-            echo "[INFO] Release path: $RELEASE"
+            : "${DEPLOY_DIR:?}"; : "${RELEASE_NAME:?}"
+            echo "[INFO] DEPLOY_DIR=$DEPLOY_DIR RELEASE_NAME=$RELEASE_NAME"
+            install -d -m 755 "$DEPLOY_DIR" "$DEPLOY_DIR/releases" "$DEPLOY_DIR/publish"
+            install -d -m 755 "$DEPLOY_DIR/releases/$RELEASE_NAME"
+            echo "$DEPLOY_DIR/releases/$RELEASE_NAME" > "$DEPLOY_DIR/.release_path"
+            echo "[INFO] Release path: $(cat "$DEPLOY_DIR/.release_path")"
 
       - name: Upload release files (SCP)
         uses: appleboy/scp-action@v0.1.7
@@ -108,6 +104,26 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           source: "drop/*"
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
+
+      - name: Verify release contents (server)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR,RELEASE_NAME
+          script: |
+            set -Eeuo pipefail
+            R="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            echo "[INFO] Listing $R"
+            ls -la "$R" | sed -n '1,200p'
+            test -f "$R/ProcurementHTE.Web.dll" || {
+              echo "[ERR] DLL not found in $R"
+              find "$R" -maxdepth 2 -name 'ProcurementHTE.Web.dll' -print
+              exit 1
+            }
 
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
@@ -121,22 +137,17 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
-            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
-            : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
-            : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
+            : "${DEPLOY_DIR:?}"; : "${APP_SERVICE:?}"; : "${RELEASE_NAME:?}"
+            R="$DEPLOY_DIR/releases/$RELEASE_NAME"
 
-            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            test -d "$RELEASE" || { echo "[ERR] Release dir not found: $RELEASE"; exit 1; }
-            test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; ls -la "$RELEASE"; exit 1; }
-
-            install -d -m 755 "$DEPLOY_DIR/publish"
-            ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
+            # Symlink atomic -> current
+            ln -sfn "$R" "$DEPLOY_DIR/publish/current"
             echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
 
-            # butuh NOPASSWD di /etc/sudoers.d/procurementhte
+            # Restart service (sudoers deploy sdh di-set NOPASSWD)
             sudo -n systemctl daemon-reload || true
             sudo -n systemctl restart "$APP_SERVICE"
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
 
-            # info port internal Kestrel
-            command -v ss >/dev/null 2>&1 && { echo "[INFO] Listening ports (expect 127.0.0.1:5159)"; ss -tlnp | grep -E '(:5159)' || true; }
+            echo "[INFO] Listening ports (expect 127.0.0.1:5159)"
+            ss -tlnp | grep -E '(:5159)' || true
