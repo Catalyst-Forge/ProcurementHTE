@@ -13,7 +13,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Penting utk Nerdbank.GitVersioning: perlu full history
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -39,7 +38,6 @@ jobs:
           dotnet build -c Release --no-restore
           dotnet test  -c Release --no-build --verbosity normal
 
-      # Publish framework-dependent (hasil: .dll + deps)
       - name: Publish (framework-dependent)
         run: |
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
@@ -56,15 +54,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
-    # Boleh isi vars di Settings → Environments → production
-    # tapi kita sediakan default di step "Compute names & defaults"
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: app
           path: drop
 
-      # Hitung RELEASE_NAME konsisten (runNumber-shortSha) + set default DEPLOY_DIR & APP_SERVICE
       - name: Compute names & defaults
         shell: bash
         run: |
@@ -72,8 +67,7 @@ jobs:
           echo "APP_SERVICE=${APP_SERVICE:-procurementhte.service}" >> $GITHUB_ENV
           echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "[LOCAL] Artifact list:"
-          ls -la drop | sed -n '1,120p'
+          echo "[LOCAL] Artifact list:" && ls -la drop | sed -n '1,200p'
 
       - name: Create release dir (server)
         uses: appleboy/ssh-action@v1.2.0
@@ -102,8 +96,32 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          source: "drop/*"
+          source: "drop/**"
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
+          # NOTE: kita sengaja tidak pakai strip_components agar kompatibel lintas versi
+
+      # 🔧 Flatten jika scp menaruh isi ke subfolder "drop/"
+      - name: Flatten release folder (server)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR,RELEASE_NAME
+          script_stop: true
+          script: |
+            set -Eeuo pipefail
+            R="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            if [ -d "$R/drop" ]; then
+              echo "[INFO] Found nested '$R/drop' — flattening to '$R'"
+              shopt -s dotglob nullglob
+              mv "$R/drop"/* "$R"/ || true
+              rmdir "$R/drop" || true
+            fi
+            echo "[INFO] Contents after flatten:"
+            ls -la "$R" | sed -n '1,200p'
 
       - name: Verify release contents (server)
         uses: appleboy/ssh-action@v1.2.0
@@ -117,8 +135,6 @@ jobs:
           script: |
             set -Eeuo pipefail
             R="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            echo "[INFO] Listing $R"
-            ls -la "$R" | sed -n '1,200p'
             test -f "$R/ProcurementHTE.Web.dll" || {
               echo "[ERR] DLL not found in $R"
               find "$R" -maxdepth 2 -name 'ProcurementHTE.Web.dll' -print
@@ -140,11 +156,9 @@ jobs:
             : "${DEPLOY_DIR:?}"; : "${APP_SERVICE:?}"; : "${RELEASE_NAME:?}"
             R="$DEPLOY_DIR/releases/$RELEASE_NAME"
 
-            # Symlink atomic -> current
             ln -sfn "$R" "$DEPLOY_DIR/publish/current"
             echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
 
-            # Restart service (sudoers deploy sdh di-set NOPASSWD)
             sudo -n systemctl daemon-reload || true
             sudo -n systemctl restart "$APP_SERVICE"
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
