@@ -12,9 +12,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      # dipakai oleh DesignTimeDbContextFactory (Opsi 3)
-      EF_CONNECTION: ${{ secrets.DB_CONNECTION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,9 +37,9 @@ jobs:
       - name: Build & Test
         run: |
           dotnet build -c Release --no-restore
-          dotnet test  -c Release --no-build --verbosity normal
+          dotnet test -c Release --no-build --verbosity normal
 
-      # EF CLI: local tool (pinned 9.*) + retry & clear cache
+      # EF CLI sebagai local tool (pinned 9.*) dgn retry
       - name: Prepare EF CLI (local tool, pinned 9.*)
         shell: bash
         run: |
@@ -59,20 +56,20 @@ jobs:
           done
           dotnet tool list
 
-      - name: Publish web + generate Migrations.sql (idempotent)
+      - name: Publish + generate Migrations.sql (idempotent)
         shell: bash
+        env:
+          # Kalau AppDbContextFactory kamu perlu connection saat design-time, isi ini dengan Secrets
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}
         run: |
+          set -e
           # publish web
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
 
-          # generate idempotent migration script ke out/Migrations.sql
-          # memakai DesignTimeDbContextFactory (starter = Infrastructure)
-          dotnet tool run dotnet-ef migrations script --idempotent \
-            --project ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj \
-            --startup-project ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj \
-            --configuration Release \
-            --framework net9.0 \
-            --output out/Migrations.sql
+          # generate script idempotent dari assembly migrations (tanpa koneksi DB)
+          dotnet tool run dotnet-ef migrations script --no-build --idempotent \
+            -p ProcurementHTE.Infrastructure \
+            -o out/Migrations.sql
 
           ls -la out
 
@@ -87,15 +84,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      # gunakan Secrets agar tidak kosong
-      DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}      # contoh: /var/www/ProcurementHTE
-      APP_SERVICE: ${{ secrets.APP_SERVICE }}    # contoh: procurementhte.service
+      # ---- Server paths & service ----
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}      # contoh: /var/www/ProcurementHTE
+      APP_SERVICE: ${{ vars.APP_SERVICE }}    # contoh: procurementhte.service
 
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}            # default 1433 di-handle di script
-      DB_USER: ${{ secrets.DB_USER }}
+      # ---- DB creds (dipakai dalam sqlcmd) ----
+      DB_USER: ${{ secrets.DB_USER }}         # contoh: sa
       DB_PASS: ${{ secrets.DB_PASS }}
-      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_NAME: ${{ vars.DB_NAME || 'ProcurementHTE' }}
+      DB_PORT: ${{ vars.DB_PORT || '1433' }}  # port internal container (default 1433)
+
+      # (Opsional) kalau mau override container SQL-nya:
+      MSSQL_CONTAINER: ${{ vars.MSSQL_CONTAINER }}  # contoh: sqlserver-prod
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -111,12 +111,6 @@ jobs:
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "RDIR=/releases/${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "Done: $RELEASE_NAME"
-
-      - name: Debug vars
-        run: |
-          echo "DEPLOY_DIR=${{ env.DEPLOY_DIR }}"
-          echo "APP_SERVICE=${{ env.APP_SERVICE }}"
-          echo "RELEASE_NAME=${{ env.RELEASE_NAME }}"
 
       - name: Create release dir on server
         uses: appleboy/ssh-action@v1.2.0
@@ -143,8 +137,7 @@ jobs:
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
 
-      # ⬇️ kirim ISI folder artifact (bukan foldernya)
-      - name: Upload release files (contents only)
+      - name: Upload release files (DLL + Migrations.sql)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -152,29 +145,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          source: "artifact/."
-          target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}/"
-
-      # ⬇️ antisipasi kalau action tetap membuat subfolder artifact/
-      - name: Flatten release (remove artifact/ if created)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,RELEASE_NAME
-          script: |
-            set -Eeuo pipefail
-            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            if [ -d "$RELEASE/artifact" ]; then
-              shopt -s dotglob
-              mv "$RELEASE/artifact/"* "$RELEASE"/
-              rmdir "$RELEASE/artifact" || true
-            fi
-            echo "[INFO] Final contents of $RELEASE"
-            ls -la "$RELEASE"
+          source: "artifact/*"
+          target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
 
       - name: Verify release contents
         uses: appleboy/ssh-action@v1.2.0
@@ -188,14 +160,14 @@ jobs:
           script: |
             set -Eeuo pipefail
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            echo "[INFO] ls -la $RELEASE"
+            ls -la "$RELEASE"
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; exit 1; }
-            if [ -f "$RELEASE/Migrations.sql" ]; then
-              echo "[OK] Found Migrations.sql"
-            else
-              echo "[WARN] Migrations.sql not found (mungkin tidak ada perubahan DB?)"
-            fi
+            test -f "$RELEASE/Migrations.sql" || echo "[WARN] Migrations.sql not found (no DB changes?)"
+            echo "[OK] Found DLL & (maybe) Migrations.sql"
 
-      - name: Apply DB migrations (idempotent SQL)
+      # === Apply DB migrations: DOCKER-ONLY & ROBUST ===
+      - name: Apply DB migrations (Docker-only)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -203,46 +175,89 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,RELEASE_NAME,DB_HOST,DB_PORT,DB_USER,DB_PASS,DB_NAME
+          envs: DEPLOY_DIR,RELEASE_NAME,DB_USER,DB_PASS,DB_NAME,DB_PORT,MSSQL_CONTAINER
           script_stop: true
           script: |
             set -Eeuo pipefail
+
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             MIG="$RELEASE/Migrations.sql"
 
             if [ ! -s "$MIG" ]; then
-              echo "[INFO] No migrations to apply (file missing or empty)"; exit 0
+              echo "[INFO] No migrations to apply (file missing or empty)"
+              exit 0
             fi
 
-            echo "[INFO] Trying to apply migrations using sqlcmd..."
-
-            run_sqlcmd_host () {
-              local BIN=""
-              if command -v sqlcmd >/dev/null 2>&1; then BIN="sqlcmd"; fi
-              if [ -z "$BIN" ] && [ -x /opt/mssql-tools18/bin/sqlcmd ]; then BIN="/opt/mssql-tools18/bin/sqlcmd"; fi
-              if [ -z "$BIN" ] && [ -x /opt/mssql-tools/bin/sqlcmd ]; then BIN="/opt/mssql-tools/bin/sqlcmd"; fi
-              [ -n "$BIN" ] || return 1
-              echo "[INFO] Host $BIN found, applying..."
-              "$BIN" -S "${DB_HOST},${DB_PORT:-1433}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i "$MIG"
-            }
-
-            run_sqlcmd_docker () {
-              CID="$(docker ps --format '{{.ID}} {{.Image}}' | grep -i 'mssql' | awk '{print $1}' | head -n1 || true)"
-              [ -n "$CID" ] || return 1
-              echo "[INFO] Using docker exec on container $CID"
-              docker cp "$MIG" "$CID:/tmp/mig.sql"
-              if docker exec "$CID" bash -lc 'test -x /opt/mssql-tools18/bin/sqlcmd'; then
-                docker exec "$CID" /opt/mssql-tools18/bin/sqlcmd -S "127.0.0.1,1433" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+            # Resolve docker (docker atau sudo docker)
+            DOCKER="docker"
+            if ! $DOCKER info >/dev/null 2>&1; then
+              if command -v sudo >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
+                DOCKER="sudo docker"
               else
-                docker exec "$CID" /opt/mssql-tools/bin/sqlcmd    -S "127.0.0.1,1433" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+                echo "[ERR] Docker not accessible (no permission & no sudo)"; exit 1
               fi
-            }
-
-            if ! run_sqlcmd_host; then
-              echo "[INFO] Host sqlcmd not found; trying docker..."
-              run_sqlcmd_docker || { echo "[ERR] sqlcmd not available on host or docker"; exit 1; }
             fi
-            echo "[OK] DB migrations applied."
+
+            # Tentukan SQL container (override via MSSQL_CONTAINER jika ada)
+            CID=""
+            if [ -n "${MSSQL_CONTAINER:-}" ]; then
+              CID="$($DOCKER ps -q -f id="$MSSQL_CONTAINER")"
+              if [ -z "$CID" ]; then
+                CID="$($DOCKER ps -q -f name="^${MSSQL_CONTAINER}$")"
+              fi
+            else
+              CID="$($DOCKER ps --format '{{.ID}} {{.Image}} {{.Names}}' \
+                | grep -i -E 'mssql|sqlserver|azure-sql' \
+                | awk '{print $1}' | head -n1 || true)"
+            fi
+
+            if [ -z "$CID" ]; then
+              echo "[ERR] No running SQL Server container found."
+              echo "[HINT] Set MSSQL_CONTAINER=nama_or_id_container jika autodetect gagal."
+              exit 1
+            fi
+            echo "[INFO] SQL container: $CID"
+
+            PORT="${DB_PORT:-1433}"
+
+            # 1) Coba exec di container SQL jika sqlcmd tersedia di dalam
+            if $DOCKER exec "$CID" bash -lc 'command -v /opt/mssql-tools18/bin/sqlcmd >/dev/null 2>&1 || command -v /opt/mssql-tools/bin/sqlcmd >/dev/null 2>&1 || command -v sqlcmd >/dev/null 2>&1'; then
+              echo "[INFO] Found sqlcmd inside SQL container. Executing there."
+              $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
+              $DOCKER exec \
+                -e DB_USER -e DB_PASS -e DB_NAME -e PORT \
+                "$CID" bash -lc '
+                  set -Eeuo pipefail
+                  BIN=""
+                  for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
+                    if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
+                  done
+                  [ -n "$BIN" ] || { echo "[ERR] sqlcmd vanished inside container"; exit 1; }
+                  echo "[INFO] Running: $BIN -S localhost,${PORT} -d ${DB_NAME} -i /tmp/mig.sql"
+                  "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /tmp/mig.sql
+                '
+              echo "[OK] DB migrations applied (in-container)."
+              exit 0
+            fi
+
+            # 2) Jika sqlcmd tidak ada di dalam: pakai tools image & share network container
+            echo "[INFO] sqlcmd not found in SQL container. Using tools image mcr.microsoft.com/mssql-tools ..."
+            $DOCKER run --rm --network "container:$CID" \
+              -v "$RELEASE":/release:ro \
+              -e DB_USER -e DB_PASS -e DB_NAME -e PORT \
+              mcr.microsoft.com/mssql-tools \
+              bash -lc '
+                set -Eeuo pipefail
+                BIN=""
+                for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
+                  if command -v "$b" >/dev/null 2>&1; then BIN="$b"; break; fi
+                done
+                [ -n "$BIN" ] || { echo "[ERR] sqlcmd missing in tools image"; exit 1; }
+                echo "[INFO] Running tools sqlcmd against localhost,${PORT}"
+                "$BIN" -S "localhost,${PORT}" -U "${DB_USER}" -P "${DB_PASS}" -d "${DB_NAME}" -C -b -i /release/Migrations.sql
+              '
+
+            echo "[OK] DB migrations applied (tools container)."
 
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
