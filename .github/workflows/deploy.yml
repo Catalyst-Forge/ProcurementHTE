@@ -278,18 +278,31 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: APP_SERVICE,DEPLOY_DIR
+          envs: APP_SERVICE,DEPLOY_DIR,SUDO_PASS
           script_stop: true
           script: |
             set -Eeuo pipefail
-            sudo mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
-            sudo tee "/etc/systemd/system/${APP_SERVICE}.d/override.conf" >/dev/null <<CONF
+      
+            as_root() {
+              if [ "$(id -u)" -eq 0 ]; then "$@"; return; fi
+              if sudo -n true 2>/dev/null; then
+                sudo "$@"
+              else
+                [ -n "${SUDO_PASS:-}" ] || { echo "[ERR] Need sudo but SUDO_PASS not set"; exit 1; }
+                printf '%s\n' "$SUDO_PASS" | sudo -S "$@"
+              fi
+            }
+      
+            as_root mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
+      
+            cat <<CONF | as_root tee "/etc/systemd/system/${APP_SERVICE}.d/override.conf" >/dev/null
             [Service]
             WorkingDirectory=${DEPLOY_DIR}/publish/current
             Environment=ASPNETCORE_ENVIRONMENT=Production
             Environment=ASPNETCORE_URLS=http://0.0.0.0:5159
             CONF
-            sudo systemctl daemon-reload
+      
+            as_root systemctl daemon-reload
 
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
@@ -299,23 +312,35 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,APP_SERVICE,RELEASE_NAME
+          envs: DEPLOY_DIR,APP_SERVICE,RELEASE_NAME,SUDO_PASS
           script_stop: true
           script: |
             set -Eeuo pipefail
+      
+            as_root() {
+              if [ "$(id -u)" -eq 0 ]; then "$@"; return; fi
+              if sudo -n true 2>/dev/null; then
+                sudo "$@"
+              else
+                [ -n "${SUDO_PASS:-}" ] || { echo "[ERR] Need sudo but SUDO_PASS not set"; exit 1; }
+                printf '%s\n' "$SUDO_PASS" | sudo -S "$@"
+              fi
+            }
+      
             : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
             : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
             : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
-
+      
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] Missing DLL in $RELEASE"; exit 1; }
-
+      
+            # symlink tetap tanpa sudo jika DEPLOY_DIR milik user ini; kalau perlu, ubah ke as_root ln -sfn
             ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
             echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
-
-            sudo systemctl daemon-reload || true
-            sudo systemctl restart "$APP_SERVICE"
-            sudo systemctl --no-pager --full status "$APP_SERVICE" || true
+      
+            as_root systemctl daemon-reload || true
+            as_root systemctl restart "$APP_SERVICE"
+            as_root systemctl --no-pager --full status "$APP_SERVICE" || true
 
       - name: Smoke check (Kestrel & curl)
         uses: appleboy/ssh-action@v1.2.0
@@ -339,9 +364,23 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: APP_SERVICE,DEPLOY_DIR
+          envs: APP_SERVICE,SUDO_PASS
           script: |
             set -Eeuo pipefail
-            sudo systemctl --no-pager --full status "$APP_SERVICE" || true
-            sudo journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
+      
+            as_root() {
+              if [ "$(id -u)" -eq 0 ]; then "$@"; return; fi
+              if sudo -n true 2>/dev/null; then
+                sudo "$@"
+              else
+                [ -n "${SUDO_PASS:-}" ] || { echo "[ERR] Need sudo but SUDO_PASS not set"; exit 1; }
+                printf '%s\n' "$SUDO_PASS" | sudo -S "$@"
+              fi
+            }
+      
+            echo "=== systemd status ==="
+            as_root systemctl --no-pager --full status "$APP_SERVICE" || true
+            echo "=== journalctl (last 200) ==="
+            as_root journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
+            echo "=== ports (dotnet & 5159) ==="
             ss -tlnp | grep -E '(:5159|dotnet)' || true
