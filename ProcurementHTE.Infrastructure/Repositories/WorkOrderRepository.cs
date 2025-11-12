@@ -220,28 +220,35 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
         }
 
-        public async Task UpdateWorkOrderAsync(WorkOrder wo)
-        {
-            try
-            {
-                //_context.WorkOrders.Update(wo);
-                _context.Entry(wo).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                throw new KeyNotFoundException(
-                    $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan"
-                );
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Data telah diubah oleh user lain. Silakan refresh dan coba lagi",
-                    ex
-                );
-            }
-        }
+public async Task UpdateWorkOrderAsync(WorkOrder wo)
+{
+    try
+    {
+        _context.Entry(wo).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException ex)
+    {
+        // Bedakan: record hilang vs bentrok concurrency (rowversion/diedit orang lain)
+        var exists = await _context.WorkOrders
+            .AsNoTracking()
+            .AnyAsync(x => x.WorkOrderId == wo.WorkOrderId);
+
+        if (!exists)
+            throw new KeyNotFoundException(
+                $"Work Order dengan ID {wo.WorkOrderId} tidak ditemukan", ex);
+
+        throw new InvalidOperationException(
+            "Data telah diubah oleh user lain. Silakan refresh dan coba lagi.", ex);
+    }
+    catch (Exception ex)
+    {
+        // Kalau mau, log dulu ex di sini
+        throw new InvalidOperationException(
+            "Terjadi kesalahan saat menyimpan Work Order.", ex);
+    }
+}
+
 
         public async Task DropWorkOrderAsync(WorkOrder wo)
         {
