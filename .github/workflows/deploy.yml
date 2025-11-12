@@ -270,6 +270,27 @@ jobs:
             "
             echo "[OK] DB migrations applied."
 
+      - name: Ensure Kestrel binds to 5159 (systemd override)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: APP_SERVICE,DEPLOY_DIR
+          script_stop: true
+          script: |
+            set -Eeuo pipefail
+            sudo mkdir -p "/etc/systemd/system/${APP_SERVICE}.d"
+            sudo tee "/etc/systemd/system/${APP_SERVICE}.d/override.conf" >/dev/null <<CONF
+            [Service]
+            WorkingDirectory=${DEPLOY_DIR}/publish/current
+            Environment=ASPNETCORE_ENVIRONMENT=Production
+            Environment=ASPNETCORE_URLS=http://0.0.0.0:5159
+            CONF
+            sudo systemctl daemon-reload
+
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -309,3 +330,18 @@ jobs:
             set -Eeuo pipefail
             ss -tlnp | grep -E '(:5159)' || (echo "[ERR] Kestrel not listening on 5159"; exit 1)
             curl -sS -I -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
+            
+      - name: Debug service & ports
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: APP_SERVICE,DEPLOY_DIR
+          script: |
+            set -Eeuo pipefail
+            sudo systemctl --no-pager --full status "$APP_SERVICE" || true
+            sudo journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
+            ss -tlnp | grep -E '(:5159|dotnet)' || true
