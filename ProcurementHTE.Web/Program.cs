@@ -4,15 +4,24 @@ using Microsoft.Extensions.Options;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Storage;
 using ProcurementHTE.Web.Extensions;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/var/www/ProcurementHTE/keys"));
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddHttpClient("MinioProxy");
 var app = builder.Build();
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions {
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    KnownProxies = { IPAddress.Parse("127.0.0.1") }   // Nginx lokal
+});
 // Nanti Hapus ini setelah yakin konfigurasi Object Storage benar
 var s = app.Services.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
 app.Logger.LogInformation(
