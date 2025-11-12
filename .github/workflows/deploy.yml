@@ -59,18 +59,23 @@ jobs:
       - name: Publish + generate Migrations.sql (idempotent)
         shell: bash
         env:
-          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # kalau AppDbContextFactory butuh
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # kalau AppDbContextFactory perlu, tetap ada
         run: |
           set -e
-          # publish web
+      
+          # 1) Publish Web (biar DLL siap di out/)
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
       
-          # generate script idempotent dari assembly migrations (tanpa build ulang)
+          # 2) Paksa build Release utk Infrastructure (ini yang bikin deps.json Release pasti ada)
+          dotnet build ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj -c Release --no-restore
+      
+          # 3) Generate script idempotent (pakai Release, framework net9.0, dan startup=Infrastructure)
           dotnet tool run dotnet-ef migrations script \
-            -p ProcurementHTE.Infrastructure \
-            -o out/Migrations.sql \
-            -c Release \
-            --no-build
+            --project ProcurementHTE.Infrastructure \
+            --startup-project ProcurementHTE.Infrastructure \
+            --configuration Release \
+            --framework net9.0 \
+            --output out/Migrations.sql
       
           ls -la out
 
