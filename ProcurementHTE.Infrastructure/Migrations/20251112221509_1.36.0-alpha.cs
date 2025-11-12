@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateFreshMigration : Migration
+    public partial class _1360alpha : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -84,6 +84,25 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ProfitLossSelectedVendors", x => x.ProfitLossSelectedVendorId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Token = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    DeviceId = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Revoked = table.Column<bool>(type: "bit", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -291,8 +310,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     ProcurementType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     WoNumLetter = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateLetter = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    FromLocation = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Destination = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    From = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    To = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     WorkOrderLetter = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     WBS = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     GlAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -308,7 +327,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     WoTypeId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    StatusId = table.Column<int>(type: "int", nullable: true),
+                    StatusId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
@@ -368,18 +387,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 columns: table => new
                 {
                     ProfitLossId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TarifAwal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TarifAdd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    KmPer25 = table.Column<int>(type: "int", nullable: false),
-                    OperatorCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Revenue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SelectedVendorFinalOffer = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Profit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ProfitPercent = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    SelectedVendorId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    SelectedVendorId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -388,40 +402,14 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         name: "FK_ProfitLosses_Vendors_SelectedVendorId",
                         column: x => x.SelectedVendorId,
                         principalTable: "Vendors",
-                        principalColumn: "VendorId");
+                        principalColumn: "VendorId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ProfitLosses_WorkOrders_WorkOrderId",
                         column: x => x.WorkOrderId,
                         principalTable: "WorkOrders",
                         principalColumn: "WorkOrderId",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "VendorOffers",
-                columns: table => new
-                {
-                    VendorOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Round = table.Column<int>(type: "int", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    VendorId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_VendorOffers", x => x.VendorOfferId);
-                    table.ForeignKey(
-                        name: "FK_VendorOffers_Vendors_VendorId",
-                        column: x => x.VendorId,
-                        principalTable: "Vendors",
-                        principalColumn: "VendorId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_VendorOffers_WorkOrders_WorkOrderId",
-                        column: x => x.WorkOrderId,
-                        principalTable: "WorkOrders",
-                        principalColumn: "WorkOrderId");
                 });
 
             migrationBuilder.CreateTable(
@@ -477,7 +465,27 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         name: "FK_WoDocuments_WorkOrders_WorkOrderId",
                         column: x => x.WorkOrderId,
                         principalTable: "WorkOrders",
-                        principalColumn: "WorkOrderId");
+                        principalColumn: "WorkOrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WoOffers",
+                columns: table => new
+                {
+                    WoOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ItemPenawaran = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WoOffers", x => x.WoOfferId);
+                    table.ForeignKey(
+                        name: "FK_WoOffers_WorkOrders_WorkOrderId",
+                        column: x => x.WorkOrderId,
+                        principalTable: "WorkOrders",
+                        principalColumn: "WorkOrderId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -548,6 +556,70 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         principalColumn: "WorkOrderId");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ProfitLossItems",
+                columns: table => new
+                {
+                    ProfitLossItemId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TarifAwal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TarifAdd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    KmPer25 = table.Column<int>(type: "int", nullable: false),
+                    OperatorCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Revenue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ProfitLossId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    WoOfferId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfitLossItems", x => x.ProfitLossItemId);
+                    table.ForeignKey(
+                        name: "FK_ProfitLossItems_ProfitLosses_ProfitLossId",
+                        column: x => x.ProfitLossId,
+                        principalTable: "ProfitLosses",
+                        principalColumn: "ProfitLossId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProfitLossItems_WoOffers_WoOfferId",
+                        column: x => x.WoOfferId,
+                        principalTable: "WoOffers",
+                        principalColumn: "WoOfferId");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VendorOffers",
+                columns: table => new
+                {
+                    VendorOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Round = table.Column<int>(type: "int", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    NoLetter = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    WorkOrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WoOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    VendorId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VendorOffers", x => x.VendorOfferId);
+                    table.ForeignKey(
+                        name: "FK_VendorOffers_Vendors_VendorId",
+                        column: x => x.VendorId,
+                        principalTable: "Vendors",
+                        principalColumn: "VendorId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VendorOffers_WoOffers_WoOfferId",
+                        column: x => x.WoOfferId,
+                        principalTable: "WoOffers",
+                        principalColumn: "WoOfferId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VendorOffers_WorkOrders_WorkOrderId",
+                        column: x => x.WorkOrderId,
+                        principalTable: "WorkOrders",
+                        principalColumn: "WorkOrderId");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -608,6 +680,16 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "WorkOrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProfitLossItems_ProfitLossId",
+                table: "ProfitLossItems",
+                column: "ProfitLossId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfitLossItems_WoOfferId",
+                table: "ProfitLossItems",
+                column: "WoOfferId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserRole_RoleId",
                 table: "UserRole",
                 column: "RoleId");
@@ -616,6 +698,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "IX_VendorOffers_VendorId",
                 table: "VendorOffers",
                 column: "VendorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VendorOffers_WoOfferId",
+                table: "VendorOffers",
+                column: "WoOfferId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VendorOffers_WorkOrderId",
@@ -634,24 +721,26 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "WorkOrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WoDocApprovals_Role_Status",
+                table: "WoDocumentApprovals",
+                columns: new[] { "RoleId", "Status" })
+                .Annotation("SqlServer:Include", new[] { "WoDocumentId", "WorkOrderId", "Level", "SequenceOrder" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WoDocumentApprovals_ApproverId",
                 table: "WoDocumentApprovals",
                 column: "ApproverId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WoDocumentApprovals_RoleId",
-                table: "WoDocumentApprovals",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WoDocumentApprovals_WoDocumentId",
-                table: "WoDocumentApprovals",
-                column: "WoDocumentId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_WoDocumentApprovals_WorkOrderId",
                 table: "WoDocumentApprovals",
                 column: "WorkOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_WoDocApprovals_Doc_Level_Seq",
+                table: "WoDocumentApprovals",
+                columns: new[] { "WoDocumentId", "Level", "SequenceOrder" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WoDocuments_DocumentTypeId",
@@ -673,6 +762,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 table: "WoDocuments",
                 columns: new[] { "WorkOrderId", "DocumentTypeId", "Status" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WoOffers_WorkOrderId",
+                table: "WoOffers",
+                column: "WorkOrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkOrders_StatusId",
@@ -724,10 +818,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "DocumentApprovals");
 
             migrationBuilder.DropTable(
-                name: "ProfitLosses");
+                name: "ProfitLossItems");
 
             migrationBuilder.DropTable(
                 name: "ProfitLossSelectedVendors");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "Tenders");
@@ -748,13 +845,19 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "WoTypesDocuments");
 
             migrationBuilder.DropTable(
-                name: "Vendors");
+                name: "ProfitLosses");
+
+            migrationBuilder.DropTable(
+                name: "WoOffers");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "WoDocuments");
+
+            migrationBuilder.DropTable(
+                name: "Vendors");
 
             migrationBuilder.DropTable(
                 name: "DocumentTypes");

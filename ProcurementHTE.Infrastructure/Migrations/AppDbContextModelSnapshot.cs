@@ -185,38 +185,26 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("KmPer25")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("OperatorCost")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<decimal>("Profit")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("ProfitPercent")
                         .HasColumnType("decimal(18, 2)");
 
-                    b.Property<decimal>("Revenue")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<decimal>("SelectedVendorFinalOffer")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("SelectedVendorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("TarifAdd")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("TarifAwal")
-                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("WorkOrderId")
                         .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ProfitLossId");
@@ -226,6 +214,45 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasIndex("WorkOrderId");
 
                     b.ToTable("ProfitLosses");
+                });
+
+            modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLossItem", b =>
+                {
+                    b.Property<string>("ProfitLossItemId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("KmPer25")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("OperatorCost")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("ProfitLossId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("Revenue")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("TarifAdd")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("TarifAwal")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("WoOfferId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ProfitLossItemId");
+
+                    b.HasIndex("ProfitLossId");
+
+                    b.HasIndex("WoOfferId");
+
+                    b.ToTable("ProfitLossItems");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLossSelectedVendor", b =>
@@ -543,6 +570,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("NoLetter")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18, 2)");
 
@@ -553,6 +584,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("WoOfferId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("WorkOrderId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -560,6 +595,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasKey("VendorOfferId");
 
                     b.HasIndex("VendorId");
+
+                    b.HasIndex("WoOfferId");
 
                     b.HasIndex("WorkOrderId");
 
@@ -637,11 +674,16 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("ApproverId");
 
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("WoDocumentId");
-
                     b.HasIndex("WorkOrderId");
+
+                    b.HasIndex("RoleId", "Status")
+                        .HasDatabaseName("IX_WoDocApprovals_Role_Status");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("RoleId", "Status"), new[] { "WoDocumentId", "WorkOrderId", "Level", "SequenceOrder" });
+
+                    b.HasIndex("WoDocumentId", "Level", "SequenceOrder")
+                        .IsUnique()
+                        .HasDatabaseName("UX_WoDocApprovals_Doc_Level_Seq");
 
                     b.ToTable("WoDocumentApprovals");
                 });
@@ -730,6 +772,26 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.ToTable("WoDocuments");
                 });
 
+            modelBuilder.Entity("ProcurementHTE.Core.Models.WoOffer", b =>
+                {
+                    b.Property<string>("WoOfferId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ItemPenawaran")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WorkOrderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("WoOfferId");
+
+                    b.HasIndex("WorkOrderId");
+
+                    b.ToTable("WoOffers");
+                });
+
             modelBuilder.Entity("ProcurementHTE.Core.Models.WoTypeDocuments", b =>
                 {
                     b.Property<string>("WoTypeDocumentId")
@@ -814,13 +876,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Destination")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FileWorkOrder")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FromLocation")
+                    b.Property<string>("From")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("GlAccount")
@@ -837,8 +896,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("Requester")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("StatusId")
+                    b.Property<int>("StatusId")
                         .HasColumnType("int");
+
+                    b.Property<string>("To")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -966,7 +1028,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 {
                     b.HasOne("ProcurementHTE.Core.Models.Vendor", "SelectedVendor")
                         .WithMany()
-                        .HasForeignKey("SelectedVendorId");
+                        .HasForeignKey("SelectedVendorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("ProcurementHTE.Core.Models.WorkOrder", "WorkOrder")
                         .WithMany()
@@ -977,6 +1041,25 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("SelectedVendor");
 
                     b.Navigation("WorkOrder");
+                });
+
+            modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLossItem", b =>
+                {
+                    b.HasOne("ProcurementHTE.Core.Models.ProfitLoss", "ProfitLoss")
+                        .WithMany("Items")
+                        .HasForeignKey("ProfitLossId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProcurementHTE.Core.Models.WoOffer", "WoOffer")
+                        .WithMany()
+                        .HasForeignKey("WoOfferId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ProfitLoss");
+
+                    b.Navigation("WoOffer");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.UserRole", b =>
@@ -1006,6 +1089,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ProcurementHTE.Core.Models.WoOffer", "WoOffer")
+                        .WithMany()
+                        .HasForeignKey("WoOfferId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ProcurementHTE.Core.Models.WorkOrder", "WorkOrder")
                         .WithMany("VendorOffers")
                         .HasForeignKey("WorkOrderId")
@@ -1013,6 +1102,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Vendor");
+
+                    b.Navigation("WoOffer");
 
                     b.Navigation("WorkOrder");
                 });
@@ -1073,10 +1164,21 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasOne("ProcurementHTE.Core.Models.WorkOrder", "WorkOrder")
                         .WithMany("WoDocuments")
                         .HasForeignKey("WorkOrderId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("DocumentType");
+
+                    b.Navigation("WorkOrder");
+                });
+
+            modelBuilder.Entity("ProcurementHTE.Core.Models.WoOffer", b =>
+                {
+                    b.HasOne("ProcurementHTE.Core.Models.WorkOrder", "WorkOrder")
+                        .WithMany("WoOffers")
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("WorkOrder");
                 });
@@ -1104,7 +1206,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 {
                     b.HasOne("ProcurementHTE.Core.Models.Status", "Status")
                         .WithMany()
-                        .HasForeignKey("StatusId");
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("ProcurementHTE.Core.Models.User", "User")
                         .WithMany("WorkOrders")
@@ -1128,6 +1232,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("WoDocuments");
 
                     b.Navigation("WoTypeDocuments");
+                });
+
+            modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLoss", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.User", b =>
@@ -1164,6 +1273,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("WoDetails");
 
                     b.Navigation("WoDocuments");
+
+                    b.Navigation("WoOffers");
                 });
 #pragma warning restore 612, 618
         }
