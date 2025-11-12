@@ -59,19 +59,18 @@ jobs:
       - name: Publish (framework-dependent) + generate Migrations.sql (idempotent)
         shell: bash
         env:
-          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # atau pakai secrets EF_CONNECTION
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # atau vars kamu
         run: |
           # publish web
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
       
-          # build Infrastructure sekali supaya pasti ada output Release
-          dotnet build ProcurementHTE.Infrastructure -c Release --no-restore
-      
           # generate idempotent migration script -> out/Migrations.sql
-          dotnet tool run dotnet-ef migrations script --no-build --idempotent \
-            -p ProcurementHTE.Infrastructure \
-            -c Release \
-            -o out/Migrations.sql \
+          dotnet tool run dotnet-ef migrations script --idempotent \
+            --project ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj \
+            --startup-project ProcurementHTE.Infrastructure/ProcurementHTE.Infrastructure.csproj \
+            --configuration Release \
+            --framework net9.0 \
+            --output out/Migrations.sql \
             -- --connection "$EF_CONNECTION"
       
           ls -la out
