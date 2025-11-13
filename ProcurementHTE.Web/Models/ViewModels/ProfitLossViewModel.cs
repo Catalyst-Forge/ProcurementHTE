@@ -47,8 +47,8 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal TarifAdd { get; set; }
 
         [DisplayName("KM per 25 km")]
-        [Range(0, int.MaxValue)]
-        public int KmPer25 { get; set; }
+        [Range(0, float.MaxValue)]
+        public decimal KmPer25 { get; set; }
 
         [DisplayName("Biaya Operator (Item)")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]

@@ -16,8 +16,9 @@ namespace ProcurementHTE.Core.Models
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAdd { get; set; }
 
-        [Range(0, 10000)]
-        public int KmPer25 { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal KmPer25 { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
