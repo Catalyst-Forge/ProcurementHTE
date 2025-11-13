@@ -24,26 +24,41 @@
             <legend class="card-title fw-semibold">Work Order Information</legend>
             <hr />
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label asp-for="WorkOrder.ProcurementType" class="form-label"></label>
                     <select asp-for="WorkOrder.ProcurementType" class="form-select" asp-items="Html.GetEnumSelectList<ProcurementHTE.Core.Models.ProcurementType>()">
+                      <option value="" selected disabled>Pilih Jenis Tipe Pengadaan</option>
                     </select>
+                    <span class="text-danger" asp-validation-for="WorkOrder.ProcurementType"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label asp-for="WorkOrder.WoNumLetter" class="form-label"></label>
+                  <input type="text" class="form-control" asp-for="WorkOrder.WoNumLetter" />
+                  <span class="text-danger" asp-validation-for="WorkOrder.WoNumLetter"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="WorkOrder.WorkOrderLetter" class="form-label"></label>
+                    <input type="text" class="form-control" asp-for="WorkOrder.WorkOrderLetter" />
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="WorkOrder.DateLetter" class="form-label"></label>
-                    <input type="date" class="form-control" asp-for="WorkOrder.DateLetter" />
+                    <input type="date" class="form-control" asp-for="WorkOrder.DateLetter" value="" />
+                    <span class="text-danger" asp-validation-for="WorkOrder.DateLetter"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="WorkOrder.DateRequired" class="form-label"></label>
+                    <input type="date" class="form-control" asp-for="WorkOrder.DateRequired" value="" />
+                    <span class="text-danger" asp-validation-for="WorkOrder.DateRequired"></span>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="WorkOrder.From" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.From" />
+                    <span class="text-danger" asp-validation-for="WorkOrder.From"></span>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="WorkOrder.To" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.To" />
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="WorkOrder.WorkOrderLetter" class="form-label"></label>
-                    <input type="text" class="form-control" asp-for="WorkOrder.WorkOrderLetter" />
+                    <span class="text-danger" asp-validation-for="WorkOrder.To"></span>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="WorkOrder.WBS" class="form-label"></label>
@@ -52,10 +67,7 @@
                 <div class="col-md-6 mb-3">
                     <label asp-for="WorkOrder.GlAccount" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.GlAccount" />
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="WorkOrder.DateRequired" class="form-label"></label>
-                    <input type="date" class="form-control" asp-for="WorkOrder.DateRequired" />
+                    <span class="text-danger" asp-validation-for="WorkOrder.GlAccount"></span>
                 </div>
             </div>
         </fieldset>
@@ -76,8 +88,16 @@
             <input type="hidden" name="Offers.Index" value="${key}" />
             <div class="mb-3 d-flex gap-3 align-items-end">
               <div class="w-100">
-                <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
-                <input class="form-control" name="Offers[${key}].ItemPenawaran" placeholder="Enter item penawaran" />
+                <div class="row">
+                  <div class="col-md-6">
+                    <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                    <input class="form-control" name="Offers[${key}].ItemPenawaran" placeholder="Enter item penawaran" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Qty <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" />
+                  </div>
+                </div>
               </div>
               <div>
                 <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
@@ -98,10 +118,12 @@
                 <div class="col-12 col-md-6 mb-3">
                     <label asp-for="WorkOrder.Requester" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.Requester" />
-                </div>
+                    <span class="text-danger" asp-validation-for="WorkOrder.Requester"></span>
+                </div>                    
                 <div class="col-12 col-md-6 mb-3">
                     <label asp-for="WorkOrder.Approved" class="form-label"></label>
                     <input type="text" class="form-control" asp-for="WorkOrder.Approved" />
+                    <span class="text-danger" asp-validation-for="WorkOrder.Approved"></span>
                 </div>
             </div>
         </fieldset>
@@ -177,8 +199,16 @@
                   <input type="hidden" name="Offers.Index" value="${key}" />
                   <div class="mb-3 d-flex gap-3 align-items-end">
                     <div class="w-100">
-                      <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
-                      <input class="form-control" name="Offers[${key}].ItemPenawaran" placeholder="Enter item penawaran" />
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                          <input class="form-control" asp-for="Offers[${key}].ItemPenawaran" placeholder="Enter item penawaran" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Qty <span class="text-danger">*</span></label>
+                          <input type="number" class="form-control" />
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <button type="button" class="btn btn-outline-danger js-remove-offer w-100">

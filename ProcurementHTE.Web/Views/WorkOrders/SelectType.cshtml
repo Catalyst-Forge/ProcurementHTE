@@ -3,8 +3,11 @@
     ViewData["Title"] = "Select Work Order Type";
 }
 
-<h2 class="mb-4">Select Work Order Type</h2>
 
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Select Work Order Type</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
+</header>
 @if (!Model.Any())
 {
     <div class="alert alert-warning">Belum ada tipe Work Order yang tersedia.</div>

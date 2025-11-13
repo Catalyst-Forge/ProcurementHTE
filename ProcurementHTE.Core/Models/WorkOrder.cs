@@ -17,42 +17,57 @@ namespace ProcurementHTE.Core.Models
         public string WorkOrderId { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
-        [DisplayName("WO No.")]
-        public string? WoNum { get; set; }
+        public string WoNum { get; set; } = null!;
 
-        [DisplayName("Description")]
+        [DisplayName("Deskripsi")]
         public string? Description { get; set; }
 
-        [DisplayName("Note")]
+        [DisplayName("Catatan")]
         [MaxLength(1000)]
         public string? Note { get; set; }
 
-        [DisplayName("Procurement Type")]
+        [Required(ErrorMessage = "Jenis pengadaan harus dipilih")]
+        [DisplayName("Jenis Pengadaan")]
         public ProcurementType ProcurementType { get; set; }
 
-        public string? WoNumLetter { get; set; }
+        [Required(ErrorMessage = "Kolom Work Order No. harus diisi")]
+        [DisplayName("W.O. No.")]
+        public string WoNumLetter { get; set; } = null!;
 
-        [DisplayName("Date Letter")]
+        [Required(ErrorMessage = "Tanggal Surat harus dipilih")]
+        [DisplayName("Tanggal Surat")]
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
-        public DateTime? DateLetter { get; set; }
+        public DateTime DateLetter { get; set; }
 
-        [DisplayName("From")]
-        public string? From { get; set; }
+        [Required(ErrorMessage = "Kolom Dari harus diisi")]
+        [DisplayName("Dari")]
+        public string From { get; set; } = null!;
 
-        [DisplayName("To")]
-        public string? To { get; set; }
+        [Required(ErrorMessage = "Kolom Kepada harus diisi")]
+        [DisplayName("Kepada")]
+        public string To { get; set; } = null!;
 
-        [DisplayName("Work Order")]
+        [DisplayName("Perintah Kerja")]
         public string? WorkOrderLetter { get; set; }
 
         public string? WBS { get; set; }
 
+        [Required(ErrorMessage = "Kolom GL Account harus diisi")]
         [DisplayName("GL Account")]
-        public string? GlAccount { get; set; }
+        public string GlAccount { get; set; } = null!;
 
-        [DisplayName("Date Required")]
+        [Required(ErrorMessage = "Tanggal Diperlukan harus dipilih")]
+        [DisplayName("Tanggal Diperlukan")]
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
-        public DateTime? DateRequired { get; set; }
+        public DateTime DateRequired { get; set; }
+
+        [Required(ErrorMessage = "Kolom Bagian Peminta harus diisi")]
+        [DisplayName("Bagian Peminta")]
+        public string Requester { get; set; } = null!;
+
+        [Required(ErrorMessage = "Kolom Disetujui oleh harus diisi")]
+        [DisplayName("Disetujui oleh")]
+        public string Approved { get; set; } = null!;
 
         public string? XS1 { get; set; }
 
@@ -64,11 +79,6 @@ namespace ProcurementHTE.Core.Models
 
         public string? FileWorkOrder { get; set; }
 
-        public string? Requester { get; set; }
-
-        public string? Approved { get; set; }
-
-        [DisplayName("Created At")]
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
@@ -84,17 +94,14 @@ namespace ProcurementHTE.Core.Models
         public string? UserId { get; set; }
 
         [ForeignKey("WoTypeId")]
-        [DisplayName("Type")]
         [JsonIgnore]
         public WoTypes? WoType { get; set; }
 
         [ForeignKey("StatusId")]
-        [DisplayName("Status")]
         [JsonIgnore]
         public Status? Status { get; set; }
 
         [ForeignKey("UserId")]
-        [DisplayName("Created By")]
         [JsonIgnore]
         public User? User { get; set; }
 

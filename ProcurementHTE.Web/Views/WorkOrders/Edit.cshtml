@@ -42,7 +42,7 @@
 
                 <div class="col-12 col-sm-auto col-md-4">
                     <div class="mb-3">
-                        <label asp-for="WoNumLetter" class="form-label">Work Order Number Letter</label>
+                        <label asp-for="WoNumLetter" class="form-label"></label>
                         <input type="text" asp-for="WoNumLetter" class="form-control" />
                         <span asp-validation-for="WoNumLetter" class="text-danger"></span>
                     </div>
@@ -118,7 +118,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <legend class="card-title fw-semibold mb-0">Item Penawaran</legend>
                 <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
-                    <i class="bi bi-plus-circle"></i>
+                    <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
             <hr />
@@ -129,13 +129,21 @@
                     <div class="col-12 offer-row position-relative">
                         <input type="hidden" name="Offers.Index" value="@i" />
                         
-                        <div class="row g-3 mb-3 align-items-end">
-                            <div class="col-md-4">
-                                <label class="form-label">Item Penawaran</label>
-                                <input class="form-control" name="Offers[@i].ItemPenawaran" value="@Model.Offers[i].ItemPenawaran" />
+                        <div class="mb-1 d-flex gap-3 align-items-end">
+                            <div class="w-100">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                        <input class="form-control" name="Offers[@i].ItemPenawaran" value="@Model.Offers[i].ItemPenawaran" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Qty <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" />
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="col-md-1">
+                            <div>
                                 <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -206,7 +214,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <legend class="card-title fw-semibold mb-0">Work Order Details</legend>     
                 <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-detail">
-                    <i class="bi bi-plus-circle"></i>
+                    <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
             <hr />
@@ -217,23 +225,27 @@
                     <div class="col-12 detail-row position-relative">
                         <input type="hidden" name="Details.Index" value="@i" />
 
-                        <div class="row mb-2 align-items-end">
-                            <div class="col-md-7">
-                                <label class="form-label">Item Name</label>
-                                <input class="form-control" name="Details[@i].ItemName" value="@Model.Details[i].ItemName" />
+                        <div class="mb-1 d-flex gap-3 align-items-end">
+                            <div class="w-100">
+                                <div class="row g-3">
+                                    <div class="col-md-10">
+                                        <label class="form-label">Item Name</label>
+                                        <input class="form-control" name="Details[@i].ItemName" value="@Model.Details[i].ItemName" />
+                                    </div>
+
+                                    <div class="col-md-1">
+                                        <label class="form-label">Quantity</label>
+                                        <input class="form-control text-end" type="number" min="1" step="1" name="Details[@i].Quantity" value="@Model.Details[i].Quantity" />
+                                    </div>
+
+                                    <div class="col-md-1">
+                                        <label class="form-label">Unit</label>
+                                        <input class="form-control" name="Details[@i].Unit" value="@Model.Details[i].Unit" />
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="form-label">Quantity</label>
-                                <input class="form-control" type="number" min="1" step="1" name="Details[@i].Quantity" value="@Model.Details[i].Quantity" />
-                            </div>
-
-                            <div class="col-md-2">
-                                <label class="form-label">Unit</label>
-                                <input class="form-control" name="Details[@i].Unit" value="@Model.Details[i].Unit" />
-                            </div>
-
-                            <div class="col-md-1">
+                            <div>
                                 <button type="button" class="btn btn-outline-danger js-remove-detail w-100">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -289,17 +301,17 @@
                         <input type="hidden" name="Details.Index" value="${key}" />
 
                         <div class="row mb-2 align-items-end">
-                            <div class="col-md-7">
+                            <div class="col-md-10">
                                 <label class="form-label">Item Name</label>
                                 <input class="form-control" name="Details[${key}].ItemName" />
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-md-1">
                                 <label class="form-label">Quantity</label>
                                 <input class="form-control" type="number" min="1" step="1" name="Details[${key}].Quantity" />
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-md-1">
                                 <label class="form-label"> Unit</label>
                                 <input class="form-control" name="Details[${key}].Unit" />
                             </div>
@@ -319,13 +331,21 @@
                     <div class="col-12 offer-row position-relative">
                         <input type="hidden" name="Offers.Index" value="${key}" />
 
-                        <div class="row mb-2 align-items-end">
-                            <div class="col-md-4">
-                                <label class="form-label">Item Penawaran</label>
-                                <input class="form-control" name="Offers[${key}].ItemPenawaran" />
+                        <div class="mb-3 d-flex gap-3 align-items-end">
+                            <div class="w-100">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Item Penawaran</label>
+                                        <input class="form-control" name="Offers[${key}].ItemPenawaran" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Qty <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" />
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="col-md-1">
+                            <div>
                                 <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
                                     <i class="bi bi-trash"></i>
                                 </button>
