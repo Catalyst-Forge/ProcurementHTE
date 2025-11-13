@@ -563,7 +563,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     ProfitLossItemId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     TarifAwal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TarifAdd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    KmPer25 = table.Column<int>(type: "int", nullable: false),
+                    KmPer25 = table.Column<int>(type: "decimal(18,2)", nullable: false),
                     OperatorCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Revenue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ProfitLossId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),

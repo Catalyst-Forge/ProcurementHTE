@@ -222,7 +222,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("KmPer25")
-                        .HasColumnType("int");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("OperatorCost")
                         .HasColumnType("decimal(18, 2)");
