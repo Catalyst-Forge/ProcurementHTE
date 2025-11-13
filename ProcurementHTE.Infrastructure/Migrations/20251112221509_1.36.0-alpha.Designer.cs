@@ -224,8 +224,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("ProfitLossItemId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("KmPer25")
-                        .HasColumnType("int");
+                    b.Property<decimal>("KmPer25")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("OperatorCost")
                         .HasColumnType("decimal(18, 2)");

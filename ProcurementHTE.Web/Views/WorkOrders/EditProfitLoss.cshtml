@@ -219,9 +219,10 @@
                                                    name="Items[@i].KmPer25"
                                                    data-km
                                                    type="number"
-                                                   inputmode="numeric"
+                                                   inputmode="decimal"
+                                                   step="0.01"
                                                    min="0"
-                                                   value="@items[i].KmPer25" />
+                                                   value="@(Model.Items![i].KmPer25)" />
                                         </td>
 
                                         <td class="text-end">
