@@ -7,7 +7,6 @@ namespace ProcurementHTE.Web.Models.ViewModels
     public class WorkOrderCreateViewModel
     {
         public WorkOrder WorkOrder { get; set; } = new();
-
         public List<WoDetail> Details { get; set; } = [];
         public List<WoOffer> Offers { get; set; } = [];
     }
@@ -18,56 +17,52 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public string WorkOrderId { get; set; } = default!;
 
         [DisplayName("WO Number")]
-        public string? WoNum { get; set; }
+        public string WoNum { get; set; } = default!;
 
-        [DisplayName("Description")]
+        [DisplayName("Deskripsi")]
         public string? Description { get; set; }
 
-        [DisplayName("Note")]
+        [DisplayName("Catatan")]
         [MaxLength(1000)]
         public string? Note { get; set; }
 
-
-        [Required(ErrorMessage = "Tipe Work Order harus dipilih")]
-        [DisplayName("Work Order Type")]
-        public string? WoTypeId { get; set; }
+        public string WoTypeId { get; set; } = default!;
 
         public ProcurementType ProcurementType { get; set; }
 
+        [DisplayName("W.O. No.")]
+        public string WoNumLetter { get; set; } = default!;
 
-        [DisplayName("WO Letter Number")]
-        public string? WoNumLetter { get; set; }
-
-        [DisplayName("Date Letter")]
+        [Required]
+        [DisplayName("Tanggal Surat")]
         [DataType(DataType.Date)]
-        public DateTime? DateLetter { get; set; }
+        public DateTime DateLetter { get; set; }
 
-        [DisplayName("From")]
-        public string? From { get; set; }
-
-        [DisplayName("To")]
-        public string? To { get; set; }
-
-        [DisplayName("Work Order Letter")]
+        [DisplayName("Perintah Kerja")]
         public string? WorkOrderLetter { get; set; }
+
+        [Required]
+        [DisplayName("Tanggal Diperlukan")]
+        [DataType(DataType.Date)]
+        public DateTime DateRequired { get; set; }
+
+        [DisplayName("Dari")]
+        public string From { get; set; } = default!;
+
+        [DisplayName("Kepada")]
+        public string To { get; set; } = default!;
 
         [DisplayName("WBS")]
         public string? WBS { get; set; }
 
         [DisplayName("GL Account")]
-        public string? GlAccount { get; set; }
+        public string GlAccount { get; set; } = default!;
 
-        [DisplayName("Date Required")]
-        [DataType(DataType.Date)]
-        public DateTime? DateRequired { get; set; }
+        [DisplayName("Bagian Peminta")]
+        public string Requester { get; set; } = default!;
 
-
-        [DisplayName("Requester")]
-        public string? Requester { get; set; }
-
-        [DisplayName("Approved By")]
-        public string? Approved { get; set; }
-
+        [DisplayName("Disetujui oleh")]
+        public string Approved { get; set; } = default!;
 
         public string? XS1 { get; set; }
         public string? XS2 { get; set; }

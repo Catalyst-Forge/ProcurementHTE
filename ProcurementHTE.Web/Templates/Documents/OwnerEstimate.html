@@ -1,0 +1,202 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <title>Owner Estimate - WO {{WoNum}}</title>
+    <style>
+        body {
+            margin: 20px 25px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        h1, h2, h3, h4, h5 {
+            margin: 0;
+            padding: 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .fw-bold {
+            font-weight: 600;
+        }
+
+        .small {
+            font-size: 10px;
+        }
+
+        .mt-1 {
+            margin-top: 4px;
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
+
+        .mt-3 {
+            margin-top: 12px;
+        }
+
+        .mt-4 {
+            margin-top: 16px;
+        }
+
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            vertical-align: top;
+            padding: 4px 6px;
+        }
+
+        .bordered th,
+        .bordered td {
+            border: 1px solid #000;
+        }
+
+        .header-line {
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 9px;
+            color: #666;
+        }
+
+        .sign-table td {
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .sign-name {
+            margin-top: 40px;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .sign-role {
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-line text-center">
+        <h2 class="fw-bold">OWNER ESTIMATE</h2>
+        <div class="small mt-1">Work Order: <strong>{{WoNum}}</strong></div>
+        <div class="small mt-1">{{Description}}</div>
+    </div>
+
+    <table>
+        <tr>
+            <td style="width:18%;">OE No.</td>
+            <td style="width:2%;">:</td>
+            <td>OE-001/HTE/{{CurrentYear}}</td>
+            <td style="width:18%;">Tanggal</td>
+            <td style="width:2%;">:</td>
+            <td>{{CurrentDate}}</td>
+        </tr>
+        <tr>
+            <td>Proyek</td>
+            <td>:</td>
+            <td colspan="4">{{Description}}</td>
+        </tr>
+        <tr>
+            <td>Kepada</td>
+            <td>:</td>
+            <td>Bagian Pengadaan</td>
+            <td>Lokasi</td>
+            <td>:</td>
+            <td>Workshop Sunter PDSI</td>
+        </tr>
+        <tr>
+            <td>Tgl diperlukan</td>
+            <td>:</td>
+            <td>{{DateRequired}}</td>
+            <td>Requester</td>
+            <td>:</td>
+            <td>{{Requester}}</td>
+        </tr>
+    </table>
+
+    <div class="mt-3 mb-1 fw-bold">Rincian Owner Estimate</div>
+    <table class="bordered">
+        <thead>
+            <tr>
+                <th style="width:5%;">No</th>
+                <th style="width:45%;">Uraian</th>
+                <th style="width:10%;">Qty</th>
+                <th style="width:10%;">Satuan</th>
+                <th style="width:15%;" class="text-right">Harga</th>
+                <th style="width:15%;" class="text-right">Jumlah</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">1</td>
+                <td>Pengangkutan sesuai Work Order {{WoNum}}</td>
+                <td class="text-center">1</td>
+                <td class="text-center">Lot</td>
+                <td class="text-right">{{Revenue}}</td>
+                <td class="text-right">{{Revenue}}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-right fw-bold">TOTAL</td>
+                <td class="text-right fw-bold">{{Revenue}}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="small mt-2">
+        Terbilang: <em>dua puluh dua juta tiga ratus ribu rupiah</em>
+        <!-- sementara static -->
+    </div>
+
+    <div class="mt-3 small">
+        Catatan: Nilai OE di atas disusun berdasarkan estimasi biaya internal dan
+        penawaran mitra yang sejenis.
+    </div>
+
+    <table class="mt-4 sign-table">
+        <tr>
+            <td style="width:50%;">Diajukan oleh</td>
+            <td style="width:50%;">Disetujui oleh</td>
+        </tr>
+        <tr>
+            <td class="small">Assistant Manager HTE</td>
+            <td class="small">Manager Transport &amp; Logistic</td>
+        </tr>
+        <tr>
+            <td class="sign-name">Bagas Aulia</td>
+            <td class="sign-name">Arfinal Diputra</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        OE ini digenerate otomatis berdasarkan data Work Order dan perhitungan P&amp;L.
+    </div>
+
+</body>
+</html>

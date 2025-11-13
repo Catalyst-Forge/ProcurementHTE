@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.Design;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Interfaces;
@@ -18,7 +16,7 @@ namespace ProcurementHTE.Web.Controllers
         IVendorService vendorService,
         IProfitLossService pnlService,
         IVendorOfferService voService,
-        IPdfGenerator pdfGenerator,
+        IDocumentGenerator documentGenerator,
         IDocumentTypeService docTypeService,
         IWoDocumentService woDocService,
         ILogger<WorkOrdersController> logger
@@ -28,7 +26,7 @@ namespace ProcurementHTE.Web.Controllers
         private readonly IVendorService _vendorService = vendorService;
         private readonly IProfitLossService _pnlService = pnlService;
         private readonly IVendorOfferService _voService = voService;
-        private readonly IPdfGenerator _pdfGenerator = pdfGenerator;
+        private readonly IDocumentGenerator _documentGenerator = documentGenerator;
         private readonly IDocumentTypeService _docTypeService = docTypeService;
         private readonly IWoDocumentService _woDocService = woDocService;
         private readonly ILogger<WorkOrdersController> _logger = logger;
@@ -281,7 +279,7 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error loading Work Order for edit, ID: {id}");
+                _logger.LogError(ex, "Error loading Work Order for edit, ID: {id}", id);
                 TempData["ErrorMessage"] = $"Gagal memuat data untuk diedit: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
@@ -345,14 +343,14 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning(ex, $"WorkOrder not found for edit, ID: {id}");
+                _logger.LogWarning(ex, "WorkOrder not found for edit, ID: {id}", id);
                 TempData["ErrorMessage"] = ex.Message;
                 ModelState.AddModelError("", ex.Message);
                 return NotFound();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error updating WorkOrder, ID: {id}");
+                _logger.LogError(ex, "Error updating WorkOrder, ID: {id}", id);
                 ModelState.AddModelError(
                     "",
                     $"Terjadi kesalahan saat mengupdate data: {ex.Message}"
@@ -380,7 +378,7 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error loading Work Order for delete, ID: {id}");
+                _logger.LogError(ex, "Error loading Work Order for delete, ID: {id}", id);
                 TempData["ErrorMessage"] = $"Gagal memuat data untuk delete: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
@@ -522,23 +520,11 @@ namespace ProcurementHTE.Web.Controllers
                 var dto = MapToDto(viewModel, selectedVendors);
                 var pnl = await _pnlService.SaveInputAndCalculateAsync(dto);
 
-                var wo = await _woService.GetWorkOrderByIdAsync(dto.WorkOrderId)!;
-                var offers = await _voService.GetByWorkOrderAsync(pnl.WorkOrderId);
-                Vendor? bestVendor = null;
+                var wo =
+                    await _woService.GetWorkOrderByIdAsync(dto.WorkOrderId)
+                    ?? throw new KeyNotFoundException("Work Order tidak ditemukan");
 
-                if (!string.IsNullOrWhiteSpace(pnl.SelectedVendorId))
-                {
-                    bestVendor = (await _vendorService.GetAllVendorsAsync()).FirstOrDefault(
-                        vendor => vendor.VendorId == pnl.SelectedVendorId
-                    );
-                }
-
-                var pdfBytes = await _pdfGenerator.GenerateProfitLossPdfAsync(
-                    pnl,
-                    wo!,
-                    bestVendor,
-                    offers
-                );
+                var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(wo);
 
                 var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
                     page: 1,
@@ -562,7 +548,7 @@ namespace ProcurementHTE.Web.Controllers
                 {
                     WorkOrderId = dto.WorkOrderId,
                     DocumentTypeId = pnlDocTypeId,
-                    FileName = $"Profit_Loss_{wo!.WoNum}.pdf",
+                    FileName = $"Profit_Loss_{wo.WoNum}.pdf",
                     ContentType = "application/pdf",
                     Bytes = pdfBytes,
                     Description = "Profit & Loss auto-generated",
@@ -572,15 +558,10 @@ namespace ProcurementHTE.Web.Controllers
 
                 var saveResult = await _woDocService.SaveGeneratedAsync(generateReq);
 
-                TempData["Success"] =
+                TempData["SuccessMessage"] =
                     "Profit & Loss berhasil dibuat & generate dokumen telah berhasil";
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation error in CreateProfitLoss");
-                ModelState.AddModelError("", ex.Message);
+                return RedirectToAction(nameof(Details), new { id = dto.WorkOrderId });
             }
             catch (Exception ex)
             {
@@ -594,6 +575,20 @@ namespace ProcurementHTE.Web.Controllers
 
             await RepopulateVendorChoices(viewModel);
             return View("CreateProfitLoss", viewModel);
+        }
+
+        private static bool IsWkhtmltoxMissing(Exception ex)
+        {
+            if (ex is DllNotFoundException)
+                return true;
+
+            if (
+                !string.IsNullOrWhiteSpace(ex.Message)
+                && ex.Message.Contains("libwkhtmltox", StringComparison.OrdinalIgnoreCase)
+            )
+                return true;
+
+            return ex.InnerException != null && IsWkhtmltoxMissing(ex.InnerException);
         }
 
         // GET: /WorkOrders/EditPnL/5
@@ -776,7 +771,7 @@ namespace ProcurementHTE.Web.Controllers
         }
 
         // WorkOrdersController.cs
-        private ProfitLossSummaryViewModel MapToViewModel(ProfitLossSummaryDto dto)
+        private static ProfitLossSummaryViewModel MapToViewModel(ProfitLossSummaryDto dto)
         {
             return new ProfitLossSummaryViewModel
             {
@@ -803,7 +798,7 @@ namespace ProcurementHTE.Web.Controllers
             };
         }
 
-        private ProfitLossInputDto MapToDto(
+        private static ProfitLossInputDto MapToDto(
             ProfitLossInputViewModel vm,
             List<string> selectedVendors
         )
@@ -820,7 +815,10 @@ namespace ProcurementHTE.Web.Controllers
                 .ToList();
 
             // langsung baca bentuk nested dari VM
-            var allowedVendors = new HashSet<string>(selectedVendors, StringComparer.OrdinalIgnoreCase);
+            var allowedVendors = new HashSet<string>(
+                selectedVendors,
+                StringComparer.OrdinalIgnoreCase
+            );
             var vendorItemOffers = BuildVendorOfferDtos(vm.Vendors, allowedVendors);
 
             return new ProfitLossInputDto
@@ -834,7 +832,7 @@ namespace ProcurementHTE.Web.Controllers
 
         private static List<VendorItemOffersDto> BuildVendorOfferDtos(
             IEnumerable<VendorItemOfferInputVm>? vendorInputs,
-            ISet<string>? allowedVendorIds
+            HashSet<string>? allowedVendorIds
         )
         {
             var result = new List<VendorItemOffersDto>();
@@ -887,13 +885,7 @@ namespace ProcurementHTE.Web.Controllers
 
                 if (dtoItems.Count > 0)
                 {
-                    result.Add(
-                        new VendorItemOffersDto
-                        {
-                            VendorId = vendorId,
-                            Items = dtoItems,
-                        }
-                    );
+                    result.Add(new VendorItemOffersDto { VendorId = vendorId, Items = dtoItems });
                 }
             }
 

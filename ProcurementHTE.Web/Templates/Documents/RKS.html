@@ -1,0 +1,188 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <title>Rencana Kerja &amp; Syarat-Syarat - WO {{WoNum}}</title>
+    <style>
+        body {
+            margin: 20px 25px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 10.5px;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3, h4, h5 {
+            margin: 0;
+            padding: 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .fw-bold {
+            font-weight: 600;
+        }
+
+        .small {
+            font-size: 10px;
+        }
+
+        .mt-1 {
+            margin-top: 4px;
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
+
+        .mt-3 {
+            margin-top: 12px;
+        }
+
+        .mt-4 {
+            margin-top: 16px;
+        }
+
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+
+        p {
+            margin: 0 0 6px 0;
+            text-align: justify;
+        }
+
+        .section-title {
+            margin-top: 10px;
+            margin-bottom: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .sign-table td {
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .sign-name {
+            margin-top: 40px;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .sign-role {
+            margin-top: 2px;
+        }
+
+        ol {
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center">
+        <h2 class="fw-bold">RENCANA KERJA &amp; SYARAT-SYARAT (RKS)</h2>
+        <div class="small mt-1">PENGADAAN JASA PENGANGKUTAN</div>
+        <div class="small mt-1">Work Order: <strong>{{WoNum}}</strong></div>
+    </div>
+
+    <div class="section-title">I. Pendahuluan</div>
+    <p>
+        Rencana Kerja dan Syarat-Syarat (RKS) ini disusun sebagai acuan pelaksanaan
+        pekerjaan pengangkutan sehubungan dengan Work Order
+        <strong>{{WoNum}}</strong>
+        dengan judul pekerjaan:
+        <strong>{{Description}}</strong>.
+    </p>
+
+    <div class="section-title">II. Lingkup Pekerjaan</div>
+    <p>
+        Lingkup pekerjaan meliputi penyediaan sarana angkutan beserta awak, termasuk
+        bahan bakar dan biaya penunjang lainnya, untuk kegiatan pengangkutan dari
+        lokasi awal hingga lokasi tujuan sebagaimana tercantum dalam Work Order.
+    </p>
+    <ol>
+        <li>Penyediaan unit kendaraan beserta sopir.</li>
+        <li>Pengaturan jadwal dan rute perjalanan.</li>
+        <li>Kepatuhan terhadap ketentuan HSSE yang berlaku.</li>
+    </ol>
+
+    <div class="section-title">III. Periode Pelaksanaan</div>
+    <p>
+        Pekerjaan dilaksanakan dalam jangka waktu <strong>5 (lima) hari kalender</strong>
+        terhitung sejak tanggal ditetapkan dalam Work Order. Untuk keperluan uji coba
+        sistem, periode ini ditetapkan secara statis:
+        <strong>01 Juli 2025 s.d 05 Juli 2025</strong>.
+    </p>
+
+    <div class="section-title">IV. Nilai Kontrak</div>
+    <p>
+        Nilai kontrak pekerjaan ini adalah sebesar:
+        <strong>{{SelectedVendorFinalOffer}}</strong>
+        (dua puluh dua juta tiga ratus ribu rupiah), yang merupakan nilai
+        penawaran final dari mitra:
+        <strong>{{SelectedVendorName}}</strong>.
+    </p>
+
+    <div class="section-title">V. Ketentuan Umum</div>
+    <p>
+        Ketentuan umum berikut disusun secara ringkas untuk keperluan template:
+    </p>
+    <ol>
+        <li>
+            Pihak kedua wajib melaksanakan pekerjaan sesuai ketentuan HSSE dan standar
+            operasi yang berlaku di lingkungan PDC.
+        </li>
+        <li>
+            Setiap keterlambatan yang disebabkan kelalaian pihak kedua dapat dikenakan
+            denda sesuai ketentuan kontrak.
+        </li>
+        <li>
+            Semua pajak dan biaya lain yang timbul akibat pelaksanaan pekerjaan ini
+            ditanggung sesuai kesepakatan dalam kontrak.
+        </li>
+    </ol>
+
+    <div class="section-title">VI. Penutup</div>
+    <p>
+        Dengan ditandatanganinya RKS ini, para pihak menyatakan telah membaca,
+        memahami, dan menyetujui seluruh isi dokumen sebagai bagian yang tidak terpisahkan
+        dari kontrak pengadaan jasa pengangkutan.
+    </p>
+
+    <div class="mt-3 text-right small">
+        Jakarta, {{CurrentDate}}
+    </div>
+
+    <table class="mt-3 sign-table">
+        <tr>
+            <td style="width:50%;">PIHAK PERTAMA</td>
+            <td style="width:50%;">PIHAK KEDUA</td>
+        </tr>
+        <tr>
+            <td class="small">PT PDC (Persero)</td>
+            <td class="small">{{SelectedVendorName}}</td>
+        </tr>
+        <tr>
+            <td class="sign-name">Arfinal Diputra</td>
+            <td class="sign-name">Nama Direktur Mitra</td>
+        </tr>
+        <tr>
+            <td class="sign-role small">Manager Transport &amp; Logistic</td>
+            <td class="sign-role small">Direktur</td>
+        </tr>
+    </table>
+
+</body>
+</html>

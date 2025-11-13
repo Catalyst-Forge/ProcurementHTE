@@ -1,0 +1,195 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <title>Memorandum - WO {{WoNum}}</title>
+    <style>
+        body {
+            margin: 20px 30px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3, h4, h5 {
+            margin: 0;
+            padding: 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .fw-bold {
+            font-weight: 600;
+        }
+
+        .small {
+            font-size: 10px;
+        }
+
+        .mt-1 {
+            margin-top: 4px;
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
+
+        .mt-3 {
+            margin-top: 12px;
+        }
+
+        .mt-4 {
+            margin-top: 16px;
+        }
+
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+
+        .mb-3 {
+            margin-bottom: 12px;
+        }
+
+        .mb-4 {
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            vertical-align: top;
+            padding: 2px 4px;
+        }
+
+        .header-title {
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+
+        .memobody {
+            margin-top: 10px;
+            text-align: justify;
+        }
+
+        .footer {
+            margin-top: 26px;
+            font-size: 9px;
+            color: #666;
+        }
+
+        .sign {
+            margin-top: 40px;
+        }
+
+        .sign-name {
+            margin-top: 40px;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .sign-role {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-title text-center">
+        <h2 class="fw-bold">MEMORANDUM</h2>
+    </div>
+
+    <table>
+        <tr>
+            <td style="width:15%;">Kota, Tanggal</td>
+            <td style="width:2%;">:</td>
+            <td>Jakarta, {{CurrentDate}}</td>
+        </tr>
+        <tr>
+            <td>No.</td>
+            <td>:</td>
+            <td>2416/PDC-1110/2025-S0</td>
+        </tr>
+        <tr>
+            <td>Kepada</td>
+            <td>:</td>
+            <td>Manager Transport &amp; Logistic</td>
+        </tr>
+        <tr>
+            <td>Dari</td>
+            <td>:</td>
+            <td>Assistant Manager HTE</td>
+        </tr>
+        <tr>
+            <td>Perihal</td>
+            <td>:</td>
+            <td>
+                Pengadaan Jasa Pengangkutan untuk Work Order
+                <strong>{{WoNum}}</strong>
+            </td>
+        </tr>
+    </table>
+
+    <div class="memobody">
+        <p>
+            Sehubungan dengan rencana pelaksanaan pekerjaan:
+            <strong>{{Description}}</strong>,
+            bersama ini kami mengajukan permohonan persetujuan pengadaan jasa pengangkutan
+            kepada mitra kerja.
+        </p>
+
+        <p>
+            Adapun dokumen pendukung yang telah disusun dan dilampirkan sebagai bahan
+            pertimbangan adalah sebagai berikut:
+        </p>
+
+        <ol>
+            <li>Owner Estimate (OE)</li>
+            <li>Bill of Quantity (BoQ)</li>
+            <li>Risk Assessment (RA)</li>
+            <li>Rencana Kerja &amp; Syarat-syarat (RKS)</li>
+            <li>Referensi penawaran harga mitra</li>
+        </ol>
+
+        <p>
+            Berdasarkan hasil evaluasi penawaran terhadap beberapa mitra kerja,
+            kami mengusulkan untuk menunjuk:
+            <strong>{{SelectedVendorName}}</strong>
+            sebagai penyedia jasa dengan nilai penawaran:
+            <strong>{{SelectedVendorFinalOffer}}</strong>.
+        </p>
+
+        <p>
+            Demikian kami sampaikan, atas persetujuan dan arahannya kami ucapkan terima kasih.
+        </p>
+    </div>
+
+    <div class="sign text-right">
+        <div>Hormat kami,</div>
+        <div class="sign-name">Arfinal Diputra</div>
+        <div class="sign-role">Manager Transport &amp; Logistic</div>
+    </div>
+
+    <div class="footer">
+        Dokumen ini digenerate otomatis dari sistem berdasarkan data Work Order &amp; Profit &amp; Loss.
+    </div>
+</body>
+</html>

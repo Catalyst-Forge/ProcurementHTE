@@ -1,0 +1,131 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <title>Bill of Quantity - WO {{WoNum}}</title>
+    <style>
+        body {
+            margin: 20px 25px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        h1, h2, h3, h4, h5 {
+            margin: 0;
+            padding: 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .fw-bold {
+            font-weight: 600;
+        }
+
+        .small {
+            font-size: 10px;
+        }
+
+        .mt-1 {
+            margin-top: 4px;
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
+
+        .mt-3 {
+            margin-top: 12px;
+        }
+
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            vertical-align: top;
+            padding: 4px 6px;
+        }
+
+        .bordered th,
+        .bordered td {
+            border: 1px solid #000;
+        }
+
+        .header-line {
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            margin-top: 18px;
+            font-size: 9px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-line text-center">
+        <h2 class="fw-bold">BILL OF QUANTITY (BoQ)</h2>
+        <div class="small mt-1">Work Order: <strong>{{WoNum}}</strong></div>
+        <div class="small mt-1">{{Description}}</div>
+    </div>
+
+    <table class="bordered">
+        <thead>
+            <tr>
+                <th style="width:5%;">No</th>
+                <th style="width:55%;">Deskripsi</th>
+                <th style="width:10%;">Unit</th>
+                <th style="width:10%;">Qty</th>
+                <th style="width:10%;">Tarif</th>
+                <th style="width:10%;">Jumlah</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- sementara 1 baris static -->
+            <tr>
+                <td class="text-center">1</td>
+                <td>Pengangkutan sesuai WO {{WoNum}}</td>
+                <td class="text-center">Unit</td>
+                <td class="text-center">1</td>
+                <td class="text-right">{{Revenue}}</td>
+                <td class="text-right">{{Revenue}}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-right fw-bold">Total Tagihan</td>
+                <td class="text-right fw-bold">{{Revenue}}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="small mt-2">
+        Referensi penawaran harga: PT Contoh Logistik – SP.25.06.193/SBL/MKT
+        <!-- sementara static -->
+    </div>
+    <div class="small">
+        Periode pekerjaan: 01 Juli 2025 s.d 05 Juli 2025
+        <!-- sementara static -->
+    </div>
+
+    <div class="footer">
+        Dokumen BoQ ini digenerate otomatis dari sistem untuk keperluan internal.
+    </div>
+
+</body>
+</html>

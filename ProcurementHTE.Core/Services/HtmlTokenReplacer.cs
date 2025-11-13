@@ -1,30 +1,39 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Globalization;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using System.Text;
 
-namespace ProcurementHTE.Core.Services {
-    public class HtmlTokenReplacer : IHtmlTokenReplacer {
+namespace ProcurementHTE.Core.Services
+{
+    public class HtmlTokenReplacer : IHtmlTokenReplacer
+    {
+        private static readonly CultureInfo Id = new("id-ID");
         private readonly IWorkOrderRepository _woRepo;
         private readonly IProfitLossRepository _pnlRepo;
         private readonly IVendorRepository _vendorRepo;
-        private readonly ILogger<HtmlTokenReplacer> _logger;
 
         public HtmlTokenReplacer(
             IWorkOrderRepository woRepo,
             IProfitLossRepository pnlRepo,
-            IVendorRepository vendorRepo,
-            ILogger<HtmlTokenReplacer> logger) {
+            IVendorRepository vendorRepo
+        )
+        {
             _woRepo = woRepo;
             _pnlRepo = pnlRepo;
             _vendorRepo = vendorRepo;
-            _logger = logger;
         }
 
-        public async Task<string> ReplaceTokensAsync(string template, WorkOrder workOrder, CancellationToken ct = default) {
+        public async Task<string> ReplaceTokensAsync(
+            string template,
+            WorkOrder workOrder,
+            CancellationToken ct = default
+        )
+        {
             // Load full WorkOrder dengan relasi
-            var wo = await _woRepo.GetByIdAsync(workOrder.WorkOrderId)
-                     ?? throw new InvalidOperationException("Work Order tidak ditemukan");
+            var wo =
+                await _woRepo.GetByIdAsync(workOrder.WorkOrderId)
+                ?? throw new InvalidOperationException("Work Order tidak ditemukan");
 
             var html = template;
 
@@ -34,13 +43,13 @@ namespace ProcurementHTE.Core.Services {
             html = ReplaceToken(html, "Note", wo.Note);
             html = ReplaceToken(html, "ProcurementType", wo.ProcurementType.ToString());
             html = ReplaceToken(html, "WoNumLetter", wo.WoNumLetter);
-            html = ReplaceToken(html, "DateLetter", wo.DateLetter?.ToString("dd MMMM yyyy"));
+            html = ReplaceToken(html, "DateLetter", wo.DateLetter.ToString("dd MMMM yyyy"));
             html = ReplaceToken(html, "From", wo.From);
             html = ReplaceToken(html, "To", wo.To);
             html = ReplaceToken(html, "WorkOrderLetter", wo.WorkOrderLetter);
             html = ReplaceToken(html, "WBS", wo.WBS);
             html = ReplaceToken(html, "GlAccount", wo.GlAccount);
-            html = ReplaceToken(html, "DateRequired", wo.DateRequired?.ToString("dd MMMM yyyy"));
+            html = ReplaceToken(html, "DateRequired", wo.DateRequired.ToString("dd MMMM yyyy"));
             html = ReplaceToken(html, "Requester", wo.Requester);
             html = ReplaceToken(html, "Approved", wo.Approved);
             html = ReplaceToken(html, "CreatedAt", wo.CreatedAt.ToString("dd MMMM yyyy"));
@@ -53,29 +62,50 @@ namespace ProcurementHTE.Core.Services {
             html = ReplaceToken(html, "UserName", wo.User?.UserName);
 
             // WoDetails - Generate table rows
-            if (wo.WoDetails != null && wo.WoDetails.Any()) {
+            if (wo.WoDetails != null && wo.WoDetails.Count != 0)
+            {
                 var detailsHtml = GenerateDetailsTable(wo.WoDetails);
                 html = html.Replace("{{WoDetailsTable}}", detailsHtml);
-            } else {
-                html = html.Replace("{{WoDetailsTable}}", "<tr><td colspan='4' class='text-center'>Tidak ada detail</td></tr>");
+            }
+            else
+            {
+                html = html.Replace(
+                    "{{WoDetailsTable}}",
+                    "<tr><td colspan='4' class='text-center'>Tidak ada detail</td></tr>"
+                );
             }
 
             // Profit & Loss data
             var pnl = await _pnlRepo.GetLatestByWorkOrderIdAsync(wo.WorkOrderId);
-            if (pnl != null) {
-                //html = ReplaceToken(html, "TarifAwal", pnl.TarifAwal.ToString("N0"));
-                //html = ReplaceToken(html, "TarifAdd", pnl.TarifAdd.ToString("N0"));
-                //html = ReplaceToken(html, "KmPer25", pnl.KmPer25.ToString());
-                //html = ReplaceToken(html, "OperatorCost", pnl.OperatorCost.ToString("N0"));
-                //html = ReplaceToken(html, "Revenue", pnl.Revenue.ToString("N0"));
-                html = ReplaceToken(html, "SelectedVendorFinalOffer", pnl.SelectedVendorFinalOffer.ToString("N0"));
-                html = ReplaceToken(html, "Profit", pnl.Profit.ToString("N0"));
-                html = ReplaceToken(html, "ProfitPercent", pnl.ProfitPercent.ToString("N2"));
+            if (pnl != null)
+            {
+                var items = pnl.Items ?? new List<ProfitLossItem>();
 
-                // Selected Vendor
-                if (!string.IsNullOrEmpty(pnl.SelectedVendorId)) {
+                string FormatDecimal(decimal value, string format = "N0") =>
+                    value.ToString(format, Id);
+
+                string FormatInt(int value) => value.ToString("N0", Id);
+
+                decimal Sum(Func<ProfitLossItem, decimal> selector) => items.Sum(selector);
+
+                html = ReplaceToken(html, "TarifAwal", FormatDecimal(Sum(i => i.TarifAwal)));
+                html = ReplaceToken(html, "TarifAdd", FormatDecimal(Sum(i => i.TarifAdd)));
+                html = ReplaceToken(html, "KmPer25", FormatInt(items.Sum(i => i.KmPer25)));
+                html = ReplaceToken(html, "OperatorCost", FormatDecimal(Sum(i => i.OperatorCost)));
+                html = ReplaceToken(html, "Revenue", FormatDecimal(Sum(i => i.Revenue)));
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorFinalOffer",
+                    FormatDecimal(pnl.SelectedVendorFinalOffer)
+                );
+                html = ReplaceToken(html, "Profit", FormatDecimal(pnl.Profit));
+                html = ReplaceToken(html, "ProfitPercent", pnl.ProfitPercent.ToString("N2", Id));
+
+                if (!string.IsNullOrEmpty(pnl.SelectedVendorId))
+                {
                     var vendor = await _vendorRepo.GetByIdAsync(pnl.SelectedVendorId);
-                    if (vendor != null) {
+                    if (vendor != null)
+                    {
                         html = ReplaceToken(html, "SelectedVendorName", vendor.VendorName);
                         html = ReplaceToken(html, "SelectedVendorNPWP", vendor.NPWP);
                         html = ReplaceToken(html, "SelectedVendorAddress", vendor.Address);
@@ -83,26 +113,68 @@ namespace ProcurementHTE.Core.Services {
                         html = ReplaceToken(html, "SelectedVendorProvince", vendor.Province);
                         html = ReplaceToken(html, "SelectedVendorEmail", vendor.Email);
                     }
+                    else
+                    {
+                        html = ReplaceToken(html, "SelectedVendorName", "-");
+                        html = ReplaceToken(html, "SelectedVendorNPWP", "-");
+                        html = ReplaceToken(html, "SelectedVendorAddress", "-");
+                        html = ReplaceToken(html, "SelectedVendorCity", "-");
+                        html = ReplaceToken(html, "SelectedVendorProvince", "-");
+                        html = ReplaceToken(html, "SelectedVendorEmail", "-");
+                    }
                 }
+                else
+                {
+                    html = ReplaceToken(html, "SelectedVendorName", "-");
+                    html = ReplaceToken(html, "SelectedVendorNPWP", "-");
+                    html = ReplaceToken(html, "SelectedVendorAddress", "-");
+                    html = ReplaceToken(html, "SelectedVendorCity", "-");
+                    html = ReplaceToken(html, "SelectedVendorProvince", "-");
+                    html = ReplaceToken(html, "SelectedVendorEmail", "-");
+                }
+            }
+            else
+            {
+                html = ReplaceToken(html, "TarifAwal", "-");
+                html = ReplaceToken(html, "TarifAdd", "-");
+                html = ReplaceToken(html, "KmPer25", "-");
+                html = ReplaceToken(html, "OperatorCost", "-");
+                html = ReplaceToken(html, "Revenue", "-");
+                html = ReplaceToken(html, "SelectedVendorFinalOffer", "-");
+                html = ReplaceToken(html, "Profit", "-");
+                html = ReplaceToken(html, "ProfitPercent", "-");
+                html = ReplaceToken(html, "SelectedVendorName", "-");
+                html = ReplaceToken(html, "SelectedVendorNPWP", "-");
+                html = ReplaceToken(html, "SelectedVendorAddress", "-");
+                html = ReplaceToken(html, "SelectedVendorCity", "-");
+                html = ReplaceToken(html, "SelectedVendorProvince", "-");
+                html = ReplaceToken(html, "SelectedVendorEmail", "-");
             }
 
             // Current date/time untuk footer
             html = ReplaceToken(html, "CurrentDate", DateTime.Now.ToString("dd MMMM yyyy"));
-            html = ReplaceToken(html, "CurrentDateTime", DateTime.Now.ToString("dd MMMM yyyy HH:mm"));
+            html = ReplaceToken(
+                html,
+                "CurrentDateTime",
+                DateTime.Now.ToString("dd MMMM yyyy HH:mm")
+            );
             html = ReplaceToken(html, "CurrentYear", DateTime.Now.Year.ToString());
 
             return html;
         }
 
-        private string ReplaceToken(string html, string tokenName, string? value) {
+        private static string ReplaceToken(string html, string tokenName, string? value)
+        {
             return html.Replace($"{{{{{tokenName}}}}}", value ?? "-");
         }
 
-        private string GenerateDetailsTable(ICollection<WoDetail> details) {
+        private static string GenerateDetailsTable(ICollection<WoDetail> details)
+        {
             var sb = new StringBuilder();
             var no = 1;
 
-            foreach (var detail in details) {
+            foreach (var detail in details)
+            {
                 sb.AppendLine("<tr>");
                 sb.AppendLine($"  <td class='text-center'>{no++}</td>");
                 sb.AppendLine($"  <td>{detail.ItemName ?? "-"}</td>");

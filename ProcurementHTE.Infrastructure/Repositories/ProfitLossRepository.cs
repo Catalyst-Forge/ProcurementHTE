@@ -44,6 +44,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return await _context
                 .ProfitLosses.AsNoTracking()
+                .Include(p => p.Items)
                 .Where(p => p.WorkOrderId == workOrderId)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync();
