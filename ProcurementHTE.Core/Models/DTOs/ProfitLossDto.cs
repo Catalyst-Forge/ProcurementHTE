@@ -13,8 +13,8 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAdd { get; set; }
 
-        [Range(0, 1000)]
-        public int KmPer25 { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal KmPer25 { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal OperatorCost { get; set; }
@@ -127,7 +127,7 @@ namespace ProcurementHTE.Core.Models.DTOs
             string ItemName,
             decimal TarifAwal,
             decimal TarifAdd,
-            int KmPer25,
+            decimal KmPer25,
             decimal OperatorCost,
             decimal Revenue
         )> Items { get; set; } = [];
