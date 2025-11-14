@@ -5,10 +5,10 @@ namespace ProcurementHTE.Core.Interfaces
     public interface IVendorOfferRepository
     {
         // Get Data
-        Task<IReadOnlyList<VendorOffer>> GetByWorkOrderAsync(string woId);
+        Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string woId);
 
         // Transaction DB>
         Task StoreAllOffersAsync(IEnumerable<VendorOffer> offers);
-        Task RemoveByWorkOrderAsync(string woId);
+        Task RemoveByProcurementAsync(string woId);
     }
 }

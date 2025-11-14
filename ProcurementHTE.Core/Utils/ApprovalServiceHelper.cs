@@ -36,8 +36,8 @@ namespace ProcurementHTE.Core.Utils
                 Message = isRejected
                     ? "Dokumen sudah ditolak (Rejected), tidak ada approval PENDING."
                     : "Dokumen ini tidak memiliki approval PENDING.",
-                WorkOrderId = gate.WorkOrderId,
-                WoDocumentId = gate.WoDocumentId,
+                ProcurementId = gate.ProcurementId,
+                ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = null,
                 CurrentGateSequence = null,
@@ -45,9 +45,9 @@ namespace ProcurementHTE.Core.Utils
                 YourRoles = new(),
             };
 
-            if (isRejected && !string.IsNullOrWhiteSpace(gate.WoDocumentId))
+            if (isRejected && !string.IsNullOrWhiteSpace(gate.ProcDocumentId))
             {
-                var info = await repo.GetLastRejectionInfoAsync(gate.WoDocumentId, ct);
+                var info = await repo.GetLastRejectionInfoAsync(gate.ProcDocumentId, ct);
                 if (info != null)
                 {
                     res.RejectedByUserId = info.RejectedByUserId;
@@ -69,15 +69,15 @@ namespace ProcurementHTE.Core.Utils
             IEnumerable<string> userRoleNames,
             CancellationToken ct)
         {
-            var last = await repo.GetLastApprovalByUserOnDocumentAsync(currentUser.Id, gate.WoDocumentId!, ct);
+            var last = await repo.GetLastApprovalByUserOnDocumentAsync(currentUser.Id, gate.ProcDocumentId!, ct);
 
             return new ApprovalUpdateResult
             {
                 Ok = false,
                 Reason = "NotYourTurn",
                 Message = "Bukan giliran role Anda untuk approve.",
-                WorkOrderId = gate.WorkOrderId,
-                WoDocumentId = gate.WoDocumentId,
+                ProcurementId = gate.ProcurementId,
+                ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
                 CurrentGateSequence = gate.SequenceOrder,
@@ -116,8 +116,8 @@ namespace ProcurementHTE.Core.Utils
                     Ok = false,
                     Reason = "InvalidGateConfig",
                     Message = "Role pada gate tidak ditemukan di sistem (periksa RoleId/RoleName).",
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     DocStatus = gate.DocStatus,
                     CurrentGateLevel = gate.Level,
                     CurrentGateSequence = gate.SequenceOrder,
@@ -135,8 +135,8 @@ namespace ProcurementHTE.Core.Utils
                     Ok = false,
                     Reason = "NoEligibleApprover",
                     Message = "Tidak ada user yang memiliki role yang diminta pada gate ini.",
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     DocStatus = gate.DocStatus,
                     CurrentGateLevel = gate.Level,
                     CurrentGateSequence = gate.SequenceOrder,
@@ -146,7 +146,7 @@ namespace ProcurementHTE.Core.Utils
             }
 
             // 3) role user ada di chain dokumen ini?
-            var chain = await repo.GetDocumentApprovalChainAsync(gate.WoDocumentId!, ct);
+            var chain = await repo.GetDocumentApprovalChainAsync(gate.ProcDocumentId!, ct);
 
             var appearsInDoc = chain.Any(c =>
                 !string.IsNullOrWhiteSpace(c.RoleName) &&
@@ -165,8 +165,8 @@ namespace ProcurementHTE.Core.Utils
                 Ok = false,
                 Reason = "RoleNotInGate",
                 Message = "Role Anda tidak terdaftar dalam rules approval pada dokumen ini.",
-                WorkOrderId = gate.WorkOrderId,
-                WoDocumentId = gate.WoDocumentId,
+                ProcurementId = gate.ProcurementId,
+                ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
                 CurrentGateSequence = gate.SequenceOrder,

@@ -369,3 +369,4 @@ FodyWeavers.xsd
 /docker-compose.minio.yml
 /mc-init.sh
 /minio-policy.json
+.dotnet-tools

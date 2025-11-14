@@ -4,33 +4,33 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IDocumentGenerator
     {
-        Task<byte[]> GenerateMemorandumAsync(WorkOrder workOrder, CancellationToken ct = default);
+        Task<byte[]> GenerateMemorandumAsync(Procurement procurement, CancellationToken ct = default);
         Task<byte[]> GeneratePermintaanPekerjaanAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         );
-        Task<byte[]> GenerateServiceOrderAsync(WorkOrder workOrder, CancellationToken ct = default);
-        Task<byte[]> GenerateMarketSurveyAsync(WorkOrder workOrder, CancellationToken ct = default);
-        Task<byte[]> GenerateSPMPAsync(WorkOrder workOrder, CancellationToken ct = default);
+        Task<byte[]> GenerateServiceOrderAsync(Procurement procurement, CancellationToken ct = default);
+        Task<byte[]> GenerateMarketSurveyAsync(Procurement procurement, CancellationToken ct = default);
+        Task<byte[]> GenerateSPMPAsync(Procurement procurement, CancellationToken ct = default);
         Task<byte[]> GenerateSuratPenawaranHargaAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         );
         Task<byte[]> GenerateSuratNegosiasiHargaAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         );
-        Task<byte[]> GenerateRKSAsync(WorkOrder workOrder, CancellationToken ct = default);
+        Task<byte[]> GenerateRKSAsync(Procurement procurement, CancellationToken ct = default);
         Task<byte[]> GenerateRiskAssessmentAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         );
         Task<byte[]> GenerateOwnerEstimateAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         );
-        Task<byte[]> GenerateBOQAsync(WorkOrder workOrder, CancellationToken ct = default);
-        Task<byte[]> GenerateProfitLossAsync(WorkOrder workOrder, CancellationToken ct = default);
+        Task<byte[]> GenerateBOQAsync(Procurement procurement, CancellationToken ct = default);
+        Task<byte[]> GenerateProfitLossAsync(Procurement procurement, CancellationToken ct = default);
 
         // Generic method untuk custom templates
         Task<byte[]> GenerateFromTemplateAsync(

@@ -2,6 +2,6 @@
 
 namespace ProcurementHTE.Core.Interfaces {
     public interface IPdfGenerator {
-        Task<byte[]> GenerateProfitLossPdfAsync(ProfitLoss pnl, WorkOrder wo, Vendor? selectedVendor, IReadOnlyList<VendorOffer> offers);
+        Task<byte[]> GenerateProfitLossPdfAsync(ProfitLoss pnl, Procurement wo, Vendor? selectedVendor, IReadOnlyList<VendorOffer> offers);
     }
 }

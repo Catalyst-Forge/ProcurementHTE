@@ -27,15 +27,15 @@
 //        }
 
 //        [HttpGet]
-//        public async Task<IActionResult> Create(string workOrderId)
+//        public async Task<IActionResult> Create(string procurementId)
 //        {
-//            if (string.IsNullOrWhiteSpace(workOrderId))
+//            if (string.IsNullOrWhiteSpace(procurementId))
 //                return BadRequest("Work Order wajib diisi");
 
 //            var vendorList = await _vendorService.GetAllVendorsAsync();
 //            var vm = new ProfitLossInputViewModel
 //            {
-//                WorkOrderId = workOrderId,
+//                ProcurementId = procurementId,
 //                VendorChoices = vendorList
 //                    .Select(vendor => new VendorChoiceViewModel
 //                    {
@@ -93,7 +93,7 @@
 
 //            var dto = new ProfitLossInputDto
 //            {
-//                WorkOrderId = vm.WorkOrderId,
+//                ProcurementId = vm.ProcurementId,
 //                TarifAwal = vm.TarifAwal,
 //                TarifAdd = vm.TarifAdd,
 //                KmPer25 = vm.KmPer25,
@@ -104,22 +104,22 @@
 //            await _profitLossService.SaveInputAndCalculateAsync(dto);
 //            TempData["Success"] = "Profit & Loss berhasil dihitung";
 
-//            return RedirectToAction(nameof(Details), new { workOrderId = vm.WorkOrderId });
+//            return RedirectToAction(nameof(Details), new { procurementId = vm.ProcurementId });
 //        }
 
 //        [HttpGet]
-//        public async Task<IActionResult> Details(string workOrderId)
+//        public async Task<IActionResult> Details(string procurementId)
 //        {
-//            var pl = await _profitLossService.GetByWorkOrderAsync(workOrderId);
+//            var pl = await _profitLossService.GetByProcurementAsync(procurementId);
 //            if (pl == null)
-//                return RedirectToAction(nameof(Create), new { workOrderId });
+//                return RedirectToAction(nameof(Create), new { procurementId });
 
 //            var allVendors = await _vendorService.GetAllVendorsAsync() ?? new List<Vendor>();
 //            var selectedRows =
-//                await _profitLossService.GetSelectedVendorsAsync(workOrderId)
+//                await _profitLossService.GetSelectedVendorsAsync(procurementId)
 //                ?? new List<ProfitLossSelectedVendor>();
 //            var offers =
-//                await _voService.GetByWorkOrderAsync(workOrderId) ?? new List<VendorOffer>();
+//                await _voService.GetByProcurementAsync(procurementId) ?? new List<VendorOffer>();
 
 //            var selectedNames = selectedRows
 //                .Select(names =>
@@ -149,7 +149,7 @@
 //            var vm = new ProfitLossSummaryViewModel
 //            {
 //                ProfitLossId = pl.ProfitLossId,
-//                WorkOrderId = pl.WorkOrderId,
+//                ProcurementId = pl.ProcurementId,
 //                TarifAwal = pl.TarifAwal,
 //                TarifAdd = pl.TarifAdd,
 //                KmPer25 = pl.KmPer25,
@@ -180,7 +180,7 @@
 //            var vm = new ProfitLossEditViewModel
 //            {
 //                ProfitLossId = dto.ProfitLossId,
-//                WorkOrderId = dto.WorkOrderId,
+//                ProcurementId = dto.ProcurementId,
 //                TarifAwal = dto.TarifAwal,
 //                TarifAdd = dto.TarifAdd,
 //                KmPer25 = dto.KmPer25,
@@ -226,7 +226,7 @@
 //            var update = new ProfitLossUpdateDto
 //            {
 //                ProfitLossId = vm.ProfitLossId,
-//                WorkOrderId = vm.WorkOrderId,
+//                ProcurementId = vm.ProcurementId,
 //                TarifAwal = vm.TarifAwal,
 //                TarifAdd = vm.TarifAdd,
 //                KmPer25 = vm.KmPer25,
@@ -249,7 +249,7 @@
 //            return RedirectToAction(
 //                nameof(Index),
 //                "ProfitLoss",
-//                new { workOrderId = vm.WorkOrderId }
+//                new { procurementId = vm.ProcurementId }
 //            );
 //        }
 //    }

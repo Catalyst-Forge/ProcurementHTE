@@ -1,0 +1,535 @@
+using System.Security.Claims;
+using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using ProcurementHTE.Core.Interfaces;
+using ProcurementHTE.Core.Models.DTOs;
+using ProcurementHTE.Web.Models.ViewModels;
+
+namespace ProcurementHTE.Web.Controllers;
+
+[Authorize]
+public class ProcurementDocumentsController : Controller
+{
+    private readonly IProcurementDocumentQuery _query;
+    private readonly IProcDocumentService _docSvc;
+    private readonly ILogger<ProcurementDocumentsController> _logger;
+    private readonly IProcurementService _procurementService;
+    private readonly IHttpClientFactory _http;
+    private readonly IDocumentGenerator _docGenerator;
+    private readonly IDocumentTypeRepository _docTypeRepo;
+    private readonly IApprovalService _approvalSvc;
+
+    public ProcurementDocumentsController(
+        IProcurementDocumentQuery query,
+        IProcurementService procurementService,
+        IProcDocumentService docSvc,
+        ILogger<ProcurementDocumentsController> logger,
+        IHttpClientFactory http,
+        IDocumentGenerator docGenerator,
+        IDocumentTypeRepository docTypeRepo,
+        IApprovalService approvalSvc
+    )
+    {
+        _query = query;
+        _docSvc = docSvc;
+        _logger = logger;
+        _procurementService = procurementService;
+        _http = http;
+        _docGenerator = docGenerator;
+        _docTypeRepo = docTypeRepo;
+        _approvalSvc = approvalSvc;
+    }
+
+    // GET: /ProcurementDocuments/Index/{procurementId}
+    [HttpGet("ProcurementDocuments/Index/{procurementId}")]
+    public async Task<IActionResult> Index(string procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+        {
+            _logger.LogWarning("[ProcDocs] Index without procurementId.");
+            return BadRequest("Parameter procurementId tidak valid.");
+        }
+
+        try
+        {
+            var dto = await _query.GetRequiredDocsAsync(procurementId, TimeSpan.FromMinutes(30));
+            if (dto is null)
+            {
+                _logger.LogInformation("[ProcDocs] Procurement {Procurement} tidak ditemukan.", procurementId);
+                return NotFound("Procurement tidak ditemukan.");
+            }
+
+            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            ViewBag.ProcNum = procurement?.ProcNum ?? "-";
+            var vm = new ProcurementRequiredDocsVm
+            {
+                ProcurementId = dto.ProcurementId,
+                JobTypeId = dto.JobTypeId,
+                Items =
+                [
+                    .. dto.Items.Select(x => new RequiredDocItemDto
+                    {
+                        JobTypeDocumentId = x.JobTypeDocumentId,
+                        Sequence = x.Sequence,
+                        DocumentTypeId = x.DocumentTypeId,
+                        DocumentTypeName = x.DocumentTypeName,
+                        IsMandatory = x.IsMandatory,
+                        IsUploadRequired = x.IsUploadRequired,
+                        IsGenerated = x.IsGenerated,
+                        RequiresApproval = x.RequiresApproval,
+                        Note = x.Note,
+                        Uploaded = x.Uploaded,
+                        ProcDocumentId = x.ProcDocumentId,
+                        FileName = x.FileName,
+                        Size = x.Size,
+                        Status = x.Status,
+                    }),
+                ],
+            };
+            return View(vm);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] Error load Index for Procurement={Procurement}.", procurementId);
+            TempData["error"] = "Gagal memuat daftar dokumen.";
+            return RedirectToAction("Error", "Home");
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 25L * 1024 * 1024)]
+    [RequestSizeLimit(25L * 1024 * 1024)]
+    public async Task<IActionResult> Upload(
+        string ProcurementId,
+        string DocumentTypeId,
+        IFormFile File,
+        string? Description
+    )
+    {
+        if (string.IsNullOrWhiteSpace(ProcurementId) || string.IsNullOrWhiteSpace(DocumentTypeId))
+        {
+            TempData["error"] = "Parameter tidak lengkap.";
+            return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
+        }
+
+        if (File is null || File.Length == 0)
+        {
+            TempData["error"] = "File belum dipilih.";
+            return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
+        }
+
+        // opsional: enforce PDF
+        var contentType = (File.ContentType ?? "").ToLowerInvariant();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        try
+        {
+            await using var stream = File.OpenReadStream();
+            var req = new UploadProcDocumentRequest
+            {
+                ProcurementId = ProcurementId,
+                DocumentTypeId = DocumentTypeId,
+                Content = stream,
+                Size = File.Length,
+                FileName = File.FileName,
+                ContentType = contentType,
+                Description = Description,
+                UploadedByUserId = userId,
+                NowUtc = DateTime.UtcNow,
+            };
+
+            var result = await _docSvc.UploadAsync(req, HttpContext.RequestAborted);
+            var message = $"Berhasil upload \"{File.FileName}\".";
+
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    ok = true,
+                    message,
+                    procurementId = ProcurementId,
+                    documentTypeId = DocumentTypeId,
+                    document = new
+                    {
+                        id = result.ProcDocumentId,
+                        name = result.FileName,
+                        size = result.Size
+                    }
+                });
+            }
+
+            TempData["success"] = message;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[ProcDocs] Upload gagal: Procurement={Procurement}, DocType={DT}, File={FN}",
+                ProcurementId,
+                DocumentTypeId,
+                File?.FileName
+            );
+
+            if (IsAjaxRequest())
+            {
+                return BadRequest(new { ok = false, error = ex.Message });
+            }
+
+            TempData["error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
+    }
+
+    private bool IsAjaxRequest()
+    {
+        if (Request is null) return false;
+        if (Request.Headers.TryGetValue("X-Requested-With", out var requestedWith)
+            && requestedWith == "XMLHttpRequest")
+        {
+            return true;
+        }
+
+        if (Request.Headers.TryGetValue("Accept", out var acceptHeader)
+            && acceptHeader.Any(h => h != null && h.Contains("application/json", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // GET: /ProcurementDocuments/Download/{id}?procurementId=WO123
+    [HttpGet("ProcurementDocuments/Download/{id}")]
+    public async Task<IActionResult> Download(string id, string? procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
+
+        try
+        {
+            var doc = await _docSvc.GetByIdAsync(id);
+            if (doc is null)
+                return NotFound();
+
+            var url = await _docSvc.GetPresignedDownloadUrlAsync(
+                id,
+                TimeSpan.FromMinutes(30),
+                HttpContext.RequestAborted
+            );
+
+            var client = _http.CreateClient("MinioProxy");
+            var resp = await client.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead,
+                HttpContext.RequestAborted
+            );
+
+            resp.EnsureSuccessStatusCode();
+
+            var stream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
+
+            // Kembalikan stream langsung; browser akan "Save As" karena header dari File() di bawah
+            var contentType = string.IsNullOrWhiteSpace(doc.ContentType)
+                ? "application/octet-stream"
+                : doc.ContentType;
+
+            // enableRangeProcessing true kalau mau dukung resume/dll
+            return File(
+                stream,
+                contentType,
+                fileDownloadName: doc.FileName,
+                enableRangeProcessing: true
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] Download gagal: id={Id}", id);
+            TempData["error"] = "Gagal mengunduh dokumen.";
+            return RedirectToAction(nameof(Index), new { procurementId });
+        }
+    }
+
+    // GET: /ProcurementDocuments/Preview/{id}?procurementId=WO123
+    [HttpGet("ProcurementDocuments/PreviewUrl/{id}")]
+    public async Task<IActionResult> PreviewUrl(string id, string? procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
+        try
+        {
+            var url = await _docSvc.GetPresignedPreviewUrlAsync(
+                id,
+                TimeSpan.FromMinutes(15),
+                HttpContext.RequestAborted
+            );
+            return Json(new { ok = true, url });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] PreviewUrl gagal: id={Id}", id);
+            return Json(new { ok = false, error = "Gagal membuat link preview." });
+        }
+    }
+
+    // POST: /ProcurementDocuments/Delete/{id}
+    [HttpPost("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete([FromForm] string id, [FromForm] string procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
+
+        try
+        {
+            var ok = await _docSvc.DeleteAsync(id);
+            TempData[ok ? "success" : "error"] = ok
+                ? "Dokumen dihapus."
+                : "Dokumen tidak ditemukan.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] Delete gagal: id={Id}", id);
+            TempData["error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { procurementId });
+    }
+
+    // POST: /ProcurementDocuments/SendApproval
+    [HttpPost("SendApproval")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendApproval([FromForm] string procurementId)
+    {
+        try
+        {
+            var userId = User?.Identity?.Name ?? "-";
+            var ok = await _docSvc.CanSendApprovalAsync(procurementId);
+            if (!ok)
+            {
+                TempData["error"] = "Dokumen wajib belum lengkap.";
+                return RedirectToAction(nameof(Index), new { procurementId });
+            }
+
+            await _docSvc.SendApprovalAsync(procurementId, userId, HttpContext.RequestAborted);
+            TempData["success"] =
+                "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] SendApproval gagal untuk Procurement={Procurement}", procurementId);
+            TempData["error"] = "Gagal mengirim approval.";
+        }
+
+        return RedirectToAction(nameof(Index), new { procurementId });
+    }
+
+    [HttpGet("ProcurementDocuments/QrUrl/{id}")]
+    public async Task<IActionResult> QrUrl(string id)
+    {
+        try
+        {
+            var url = await _docSvc.GetPresignedQrUrlAsync(
+                id,
+                TimeSpan.FromMinutes(15),
+                HttpContext.RequestAborted
+            );
+            return Json(new { ok = url != null, url });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] QrUrl gagal: id={Id}", id);
+            return Json(new { ok = false, error = "Gagal membuat link QR." });
+        }
+    }
+
+    [HttpGet("ProcurementDocuments/DownloadQr/{id}")]
+    public async Task<IActionResult> DownloadQr(string id)
+    {
+        try
+        {
+            var doc = await _docSvc.GetByIdAsync(id);
+            if (doc is null || string.IsNullOrWhiteSpace(doc.QrObjectKey))
+                return NotFound();
+
+            var url = await _docSvc.GetPresignedQrUrlAsync(
+                id,
+                TimeSpan.FromMinutes(30),
+                HttpContext.RequestAborted
+            );
+
+            var client = _http.CreateClient("MinioProxy"); // sama seperti download file
+            var resp = await client.GetAsync(
+                url!,
+                HttpCompletionOption.ResponseHeadersRead,
+                HttpContext.RequestAborted
+            );
+            resp.EnsureSuccessStatusCode();
+
+            var stream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
+            return File(stream, "image/png", fileDownloadName: Path.GetFileName(doc.QrObjectKey));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] DownloadQr gagal: id={Id}", id);
+            return BadRequest("Gagal mengunduh QR.");
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Generate(string procurementId, string documentTypeId)
+    {
+        try
+        {
+            var procurementEntity = await _procurementService.GetProcurementByIdAsync(procurementId);
+            if (procurementEntity == null)
+            {
+                TempData["error"] = "Procurement tidak ditemukan";
+                return RedirectToAction("Index", new { procurementId });
+            }
+
+            var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
+            if (docType == null)
+            {
+                TempData["error"] = "Document Type tidak ditemukan";
+                return RedirectToAction("Index", new { procurementId });
+            }
+
+            // Generate PDF berdasarkan nama dokumen
+            byte[] pdfBytes = docType.Name switch
+            {
+                "Memorandum" => await _docGenerator.GenerateMemorandumAsync(procurementEntity),
+                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(procurementEntity),
+                "Service Order" => await _docGenerator.GenerateServiceOrderAsync(procurementEntity),
+                "Market Survey" => await _docGenerator.GenerateMarketSurveyAsync(procurementEntity),
+                "Surat Perintah Mulai Pekerjaan (SPMP)" => await _docGenerator.GenerateSPMPAsync(
+                    procurementEntity
+                ),
+                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(procurementEntity),
+                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(procurementEntity),
+                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(procurementEntity),
+                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(procurementEntity),
+                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(procurementEntity),
+                "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurementEntity),
+                _ => throw new NotImplementedException(
+                    $"Template untuk '{docType.Name}' belum tersedia"
+                ),
+            };
+
+            // Simpan ke MinIO via existing service
+            var result = await _docSvc.SaveGeneratedAsync(
+                new GeneratedProcDocumentRequest
+                {
+                    ProcurementId = procurementId,
+                    DocumentTypeId = documentTypeId,
+                    Bytes = pdfBytes,
+                    FileName = $"{docType.Name}.pdf",
+                    ContentType = "application/pdf",
+                    Description = $"Generated from template on {DateTime.Now:dd MMM yyyy HH:mm}",
+                    CreatedAt = DateTime.UtcNow,
+                    GeneratedByUserId = User.FindFirst(
+                        System.Security.Claims.ClaimTypes.NameIdentifier
+                    )?.Value,
+                }
+            );
+
+            TempData["success"] = $"Dokumen '{docType.Name}' berhasil digenerate!";
+            _logger.LogInformation(
+                "Document generated: Procurement={Procurement}, DocType={DocType}, Size={Size}",
+                procurementEntity.ProcNum,
+                docType.Name,
+                pdfBytes.Length
+            );
+
+            return RedirectToAction("Index", new { procurementId });
+        }
+        catch (NotImplementedException ex)
+        {
+            TempData["error"] = ex.Message;
+            _logger.LogWarning(
+                ex,
+                "Template not implemented for DocumentTypeId={DocTypeId}",
+                documentTypeId
+            );
+            return RedirectToAction("Index", new { procurementId });
+        }
+        catch (Exception ex)
+        {
+            TempData["error"] = $"Gagal generate dokumen: {ex.Message}";
+            _logger.LogError(ex, "Error generating document for Procurement={Procurement}", procurementId);
+            return RedirectToAction("Index", new { procurementId });
+        }
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> PreviewGenerated(string procurementId, string documentTypeId)
+    {
+        try
+        {
+            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            if (procurement == null)
+                return NotFound("Procurement tidak ditemukan");
+
+            var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
+            if (docType == null)
+                return NotFound("Document Type tidak ditemukan");
+
+            byte[] pdfBytes = docType.Name switch
+            {
+                "Memorandum" => await _docGenerator.GenerateMemorandumAsync(procurement),
+                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(procurement),
+                "Service Order" => await _docGenerator.GenerateServiceOrderAsync(procurement),
+                "Market Survey" => await _docGenerator.GenerateMarketSurveyAsync(procurement),
+                "Surat Perintah Mulai Pekerjaan (SPMP)" => await _docGenerator.GenerateSPMPAsync(
+                    procurement
+                ),
+                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(procurement),
+                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(procurement),
+                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(procurement),
+                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(procurement),
+                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(procurement),
+                "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurement),
+                _ => throw new NotImplementedException(
+                    $"Template untuk '{docType.Name}' belum tersedia"
+                ),
+            };
+
+            return File(pdfBytes, "application/pdf", $"{docType.Name}_Preview.pdf");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error previewing generated document");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // ? NEW: GET /ProcurementDocuments/ApprovalTimeline/{procDocumentId}
+    [HttpGet("ProcurementDocuments/ApprovalTimeline/{procDocumentId}")]
+    public async Task<IActionResult> ApprovalTimeline(string procDocumentId)
+    {
+        if (string.IsNullOrWhiteSpace(procDocumentId))
+            return BadRequest(new { ok = false, message = "procDocumentId tidak valid." });
+
+        try
+        {
+            var dto = await _approvalSvc.GetApprovalTimelineAsync(
+                procDocumentId,
+                HttpContext.RequestAborted
+            );
+            if (dto is null)
+                return NotFound(new { ok = false, message = "Dokumen tidak ditemukan." });
+
+            return Ok(new { ok = true, data = dto });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ProcDocs] ApprovalTimeline gagal: doc={Doc}", procDocumentId);
+            return StatusCode(500, new { ok = false, message = "Gagal memuat timeline approval." });
+        }
+    }
+}

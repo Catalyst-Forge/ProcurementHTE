@@ -7,7 +7,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
     public class ProfitLossInputViewModel
     {
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         [DisplayName("Daftar Item P&L")]
         [MinLength(1)]
@@ -21,13 +21,13 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [DisplayName("Vendor yang disertakan")]
         public List<string> SelectedVendorIds { get; set; } = [];
 
-        public List<WoOfferLiteVm> WoItems { get; set; } = [];
+        public List<ProcOfferLiteVm> OfferItems { get; set; } = [];
     }
 
-    public class WoOfferLiteVm
+    public class ProcOfferLiteVm
     {
         [Required, StringLength(450)]
-        public string WoOfferId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
 
         [Required]
         public string ItemPenawaran { get; set; } = null!;
@@ -36,7 +36,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
     public class ItemTariffInputVm
     {
         [Required, StringLength(450)]
-        public string WoOfferId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
 
         [DisplayName("Tarif 400 km")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -67,7 +67,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
     public class VendorOfferPerItemInputVm
     {
         [Required, StringLength(450)]
-        public string WoOfferId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
 
         [MinLength(0)]
         public List<decimal> Prices { get; set; } = [];
@@ -99,9 +99,9 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public string ProfitLossId { get; set; } = null!;
 
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
-        public string? WoNum { get; set; }
+        public string? ProcNum { get; set; }
 
         public decimal TotalOperatorCost { get; set; }
         public decimal TotalRevenue { get; set; }
@@ -115,7 +115,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal ProfitPercent { get; set; }
 
         public List<(
-            string WoOfferId,
+            string ProcOfferId,
             string ItemName,
             decimal TarifAwal,
             decimal TarifAdd,

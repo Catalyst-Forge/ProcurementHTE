@@ -1,12 +1,12 @@
-﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Authorization
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
 @inject IAuthorizationService AuthZ
 @model Vendor
 @{
     ViewData["Title"] = "Vendor Details";
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
         "inactive" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
@@ -38,7 +38,7 @@
 </header>
 <hr />
 
-<div class="d-grid gap-md-3 wo-content">
+<div class="d-grid gap-md-3 proc-content">
     <div>
         @* Company Info *@
         <article class="card shadow-sm mb-3 rounded-4">

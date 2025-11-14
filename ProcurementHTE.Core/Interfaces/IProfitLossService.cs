@@ -6,11 +6,11 @@ namespace ProcurementHTE.Core.Interfaces
     public interface IProfitLossService
     {
         // Get Data
-        Task<ProfitLoss?> GetByWorkOrderAsync(string woId);
+        Task<ProfitLoss?> GetByProcurementAsync(string woId);
         Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId);
-        Task<ProfitLossSummaryDto> GetSummaryByWorkOrderAsync(string woId);
+        Task<ProfitLossSummaryDto> GetSummaryByProcurementAsync(string woId);
         Task<ProfitLossEditDto> GetEditDataAsync(string profitLossId);
-        Task<ProfitLoss?> GetLatestByWorkOrderAsync(string workOrderId);
+        Task<ProfitLoss?> GetLatestByProcurementAsync(string procurementId);
         Task<decimal> GetTotalRevenueThisMonthAsync();
 
         // Transaction DB

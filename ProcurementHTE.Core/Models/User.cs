@@ -28,6 +28,6 @@ namespace ProcurementHTE.Core.Models
 
         public string? FullName { get; private set; }
 
-        public ICollection<WorkOrder> WorkOrders { get; set; } = null!;
+        public ICollection<Procurement> Procurements { get; set; } = [];
     }
 }

@@ -9,12 +9,12 @@ namespace ProcurementHTE.Core.Services
     public class HtmlTokenReplacer : IHtmlTokenReplacer
     {
         private static readonly CultureInfo Id = new("id-ID");
-        private readonly IWorkOrderRepository _woRepo;
+        private readonly IProcurementRepository _woRepo;
         private readonly IProfitLossRepository _pnlRepo;
         private readonly IVendorRepository _vendorRepo;
 
         public HtmlTokenReplacer(
-            IWorkOrderRepository woRepo,
+            IProcurementRepository woRepo,
             IProfitLossRepository pnlRepo,
             IVendorRepository vendorRepo
         )
@@ -26,66 +26,84 @@ namespace ProcurementHTE.Core.Services
 
         public async Task<string> ReplaceTokensAsync(
             string template,
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
-            // Load full WorkOrder dengan relasi
+            // Load full Procurement dengan relasi
             var wo =
-                await _woRepo.GetByIdAsync(workOrder.WorkOrderId)
-                ?? throw new InvalidOperationException("Work Order tidak ditemukan");
+                await _woRepo.GetByIdAsync(procurement.ProcurementId)
+                ?? throw new InvalidOperationException("Procurement tidak ditemukan");
 
             var html = template;
 
-            // Basic WorkOrder fields
-            html = ReplaceToken(html, "WoNum", wo.WoNum);
-            html = ReplaceToken(html, "Description", wo.Description);
+            string FormatDate(DateTime? value) => value?.ToString("dd MMMM yyyy", Id) ?? "-";
+            string FormatDecimal(decimal? value, string format = "N0") =>
+                value.HasValue ? value.Value.ToString(format, Id) : "-";
+            string GetUserName(User? user) =>
+                user?.FullName ?? user?.UserName ?? user?.Email ?? "-";
+
+            var jobTypeName = wo.JobTypeConfig?.TypeName ?? wo.JobType ?? "-";
+
+            // Basic Procurement fields (reuse legacy token names for compatibility)
+            html = ReplaceToken(html, "ProcNum", wo.ProcNum);
+            html = ReplaceToken(html, "Description", wo.JobName);
             html = ReplaceToken(html, "Note", wo.Note);
-            html = ReplaceToken(html, "ProcurementType", wo.ProcurementType.ToString());
-            html = ReplaceToken(html, "WoNumLetter", wo.WoNumLetter);
-            html = ReplaceToken(html, "DateLetter", wo.DateLetter.ToString("dd MMMM yyyy"));
-            html = ReplaceToken(html, "From", wo.From);
-            html = ReplaceToken(html, "To", wo.To);
-            html = ReplaceToken(html, "WorkOrderLetter", wo.WorkOrderLetter);
-            html = ReplaceToken(html, "WBS", wo.WBS);
-            html = ReplaceToken(html, "GlAccount", wo.GlAccount);
-            html = ReplaceToken(html, "DateRequired", wo.DateRequired.ToString("dd MMMM yyyy"));
-            html = ReplaceToken(html, "Requester", wo.Requester);
-            html = ReplaceToken(html, "Approved", wo.Approved);
-            html = ReplaceToken(html, "CreatedAt", wo.CreatedAt.ToString("dd MMMM yyyy"));
-            html = ReplaceToken(html, "UpdatedAt", wo.UpdatedAt?.ToString("dd MMMM yyyy"));
-            html = ReplaceToken(html, "CompletedAt", wo.CompletedAt?.ToString("dd MMMM yyyy"));
+            html = ReplaceToken(html, "ProcurementType", jobTypeName);
+            html = ReplaceToken(html, "SpkNumber", wo.SpkNumber);
+            html = ReplaceToken(html, "DateLetter", FormatDate(wo.StartDate));
+            html = ReplaceToken(html, "From", GetUserName(wo.PicOpsUser));
+            html = ReplaceToken(html, "To", GetUserName(wo.ManagerSignerUser));
+            html = ReplaceToken(html, "ProcurementLetter", wo.LtcName);
+            html = ReplaceToken(html, "WBS", wo.ProjectCode);
+            html = ReplaceToken(html, "GlAccount", wo.ContractType);
+            html = ReplaceToken(html, "DateRequired", FormatDate(wo.EndDate));
+            html = ReplaceToken(html, "Requester", GetUserName(wo.User));
+            html = ReplaceToken(html, "Approved", GetUserName(wo.ManagerSignerUser));
+            html = ReplaceToken(html, "CreatedAt", FormatDate(wo.CreatedAt));
+            html = ReplaceToken(html, "UpdatedAt", FormatDate(wo.UpdatedAt));
+            html = ReplaceToken(html, "CompletedAt", FormatDate(wo.CompletedAt));
+
+            // Additional new fields
+            html = ReplaceToken(html, "ProjectRegion", wo.ProjectRegion);
+            html = ReplaceToken(html, "DistanceKm", FormatDecimal(wo.DistanceKm, "N2"));
+            html = ReplaceToken(html, "AccrualAmount", FormatDecimal(wo.AccrualAmount));
+            html = ReplaceToken(html, "RealizationAmount", FormatDecimal(wo.RealizationAmount));
+            html = ReplaceToken(html, "PotentialAccrualDate", FormatDate(wo.PotentialAccrualDate));
+            html = ReplaceToken(html, "SpmpNumber", wo.SpmpNumber);
+            html = ReplaceToken(html, "MemoNumber", wo.MemoNumber);
+            html = ReplaceToken(html, "OeNumber", wo.OeNumber);
+            html = ReplaceToken(html, "SelectedVendorName", wo.SelectedVendorName);
+            html = ReplaceToken(html, "VendorSphNumber", wo.VendorSphNumber);
+            html = ReplaceToken(html, "RaNumber", wo.RaNumber);
+            html = ReplaceToken(html, "LtcName", wo.LtcName);
 
             // Relations
-            html = ReplaceToken(html, "WoTypeName", wo.WoType?.TypeName);
+            html = ReplaceToken(html, "JobTypeName", jobTypeName);
             html = ReplaceToken(html, "StatusName", wo.Status?.StatusName);
             html = ReplaceToken(html, "UserName", wo.User?.UserName);
 
-            // WoDetails - Generate table rows
-            if (wo.WoDetails != null && wo.WoDetails.Count != 0)
+            // ProcDetails - Generate table rows
+            if (wo.ProcDetails != null && wo.ProcDetails.Count != 0)
             {
-                var detailsHtml = GenerateDetailsTable(wo.WoDetails);
-                html = html.Replace("{{WoDetailsTable}}", detailsHtml);
+                var detailsHtml = GenerateDetailsTable(wo.ProcDetails);
+                html = html.Replace("{{ProcDetailsTable}}", detailsHtml);
             }
             else
             {
                 html = html.Replace(
-                    "{{WoDetailsTable}}",
+                    "{{ProcDetailsTable}}",
                     "<tr><td colspan='4' class='text-center'>Tidak ada detail</td></tr>"
                 );
             }
 
             // Profit & Loss data
-            var pnl = await _pnlRepo.GetLatestByWorkOrderIdAsync(wo.WorkOrderId);
+            var pnl = await _pnlRepo.GetLatestByProcurementIdAsync(wo.ProcurementId);
             if (pnl != null)
             {
                 var items = pnl.Items ?? new List<ProfitLossItem>();
 
-                string FormatDecimal(decimal value, string format = "N0") =>
-                    value.ToString(format, Id);
-
                 string FormatInt(int value) => value.ToString("N0", Id);
-
                 decimal Sum(Func<ProfitLossItem, decimal> selector) => items.Sum(selector);
 
                 html = ReplaceToken(html, "TarifAwal", FormatDecimal(Sum(i => i.TarifAwal)));
@@ -168,7 +186,7 @@ namespace ProcurementHTE.Core.Services
             return html.Replace($"{{{{{tokenName}}}}}", value ?? "-");
         }
 
-        private static string GenerateDetailsTable(ICollection<WoDetail> details)
+        private static string GenerateDetailsTable(ICollection<ProcDetail> details)
         {
             var sb = new StringBuilder();
             var no = 1;

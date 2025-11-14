@@ -4,6 +4,6 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IVendorOfferService
     {
-        Task<IReadOnlyList<VendorOffer>> GetByWorkOrderAsync(string workOrderId);
+        Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string procurementId);
     }
 }

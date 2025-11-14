@@ -2,7 +2,7 @@
 {
     public sealed class UpdateByApprovalIdRequest
     {
-        public string? WoDocumentApprovalId { get; set; }
+        public string? ProcDocumentApprovalId { get; set; }
         public string? Action { get; set; }   // "approve" | "reject"
         public string? Note { get; set; }
     }

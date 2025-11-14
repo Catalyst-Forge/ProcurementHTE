@@ -5,7 +5,7 @@ namespace ProcurementHTE.Core.Models.DTOs
     public class ProfitLossItemInputDto
     {
         [Required, StringLength(450)]
-        public string WoOfferId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAwal { get; set; }
@@ -26,7 +26,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string VendorId { get; set; } = null!;
 
         [Required, StringLength(450)]
-        public string WoOfferId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
 
         [MinLength(0)]
         public List<decimal> Prices { get; set; } = [];
@@ -38,7 +38,7 @@ namespace ProcurementHTE.Core.Models.DTOs
     public class ProfitLossInputDto
     {
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -63,7 +63,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string ProfitLossId { get; set; } = null!;
 
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -89,7 +89,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string ProfitLossId { get; set; } = null!;
 
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -107,7 +107,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string ProfitLossId { get; set; } = null!;
 
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         public decimal TotalOperatorCost { get; set; }
         public decimal TotalRevenue { get; set; }
@@ -123,7 +123,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal ProfitPercent { get; set; }
 
         public List<(
-            string WoOfferId,
+            string ProcOfferId,
             string ItemName,
             decimal TarifAwal,
             decimal TarifAdd,

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
@@ -62,10 +62,10 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Admin",
-                Permissions.WO.Read,
-                Permissions.WO.Create,
-                Permissions.WO.Edit,
-                Permissions.WO.Delete,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
+                Permissions.Procurement.Delete,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Create,
                 Permissions.Vendor.Edit,
@@ -77,7 +77,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Vice President",
-                Permissions.WO.Read,
+                Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
@@ -85,9 +85,9 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Assistant Manager HTE",
-                Permissions.WO.Read,
-                Permissions.WO.Create,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload,
@@ -96,7 +96,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Manager Transport & Logistic",
-                Permissions.WO.Read,
+                Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
@@ -104,17 +104,17 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "HTE",
-                Permissions.WO.Read,
-                Permissions.WO.Create,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload
             );
 
             await AddPermissions(
                 "Analyst HTE & LTS",
-                Permissions.WO.Read,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Edit,
                 Permissions.Doc.Read
@@ -122,7 +122,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "HSE",
-                Permissions.WO.Read,
+                Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
@@ -130,8 +130,8 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Supply Chain Management",
-                Permissions.WO.Read,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Create,
                 Permissions.Vendor.Edit,

@@ -7,9 +7,9 @@ namespace ProcurementHTE.Core.Interfaces
     {
         // Get Data
         Task<ProfitLoss?> GetByIdAsync(string profitLossId);
-        Task<ProfitLoss?> GetByWorkOrderAsync(string woId);
+        Task<ProfitLoss?> GetByProcurementAsync(string woId);
         Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId);
-        Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId);
+        Task<ProfitLoss?> GetLatestByProcurementIdAsync(string procurementId);
         Task<decimal> GetTotalRevenueThisMonthAsync();
         Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year);
 

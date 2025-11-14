@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -10,7 +10,7 @@ namespace ProcurementHTE.Core.Services
         private readonly ITemplateProvider _templateProvider;
         private readonly IHtmlTokenReplacer _tokenReplacer;
         private readonly ILogger<DocumentGenerator> _logger;
-        private readonly IWorkOrderRepository _woRepository;
+        private readonly IProcurementRepository _ProcurementRepository;
         private readonly IProfitLossRepository _pnlRepository;
         private readonly IVendorRepository _vendorRepository;
 
@@ -18,7 +18,7 @@ namespace ProcurementHTE.Core.Services
             ITemplateProvider templateProvider,
             IHtmlTokenReplacer tokenReplacer,
             ILogger<DocumentGenerator> logger,
-            IWorkOrderRepository woRepository,
+            IProcurementRepository ProcurementRepository,
             IProfitLossRepository pnlRepository,
             IVendorRepository vendorRepository
         )
@@ -26,23 +26,23 @@ namespace ProcurementHTE.Core.Services
             _templateProvider = templateProvider;
             _tokenReplacer = tokenReplacer;
             _logger = logger;
-            _woRepository = woRepository;
+            _ProcurementRepository = ProcurementRepository;
             _pnlRepository = pnlRepository;
             _vendorRepository = vendorRepository;
         }
 
         public async Task<byte[]> GenerateProfitLossAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             _logger.LogInformation(
-                "Generating Profit & Loss (Playwright) for WO: {WoNum}",
-                workOrder.WoNum
+                "Generating Profit & Loss (Playwright) for Procurement: {ProcNum}",
+                procurement.ProcNum
             );
 
             var template = await _templateProvider.GetTemplateAsync("ProfitLoss", ct);
-            var html = await _tokenReplacer.ReplaceTokensAsync(template, workOrder, ct);
+            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct);
             var pdf = await HtmlToPdfAsync(html, "Profit & Loss", ct);
 
             _logger.LogInformation("PDF P&L generated, size={Size} bytes", pdf.Length);
@@ -51,42 +51,42 @@ namespace ProcurementHTE.Core.Services
         }
 
         public async Task<byte[]> GenerateMemorandumAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
-            return await GenerateByTemplateAsync("Memorandum", "Memorandum", workOrder, ct);
+            return await GenerateByTemplateAsync("Memorandum", "Memorandum", procurement, ct);
         }
 
         public async Task<byte[]> GeneratePermintaanPekerjaanAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             return await GenerateByTemplateAsync(
                 "PermintaanPekerjaan",
                 "Permintaan Pekerjaan",
-                workOrder,
+                procurement,
                 ct
             );
         }
 
         public async Task<byte[]> GenerateServiceOrderAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
-            return await GenerateByTemplateAsync("ServiceOrder", "Service Order", workOrder, ct);
+            return await GenerateByTemplateAsync("ServiceOrder", "Service Order", procurement, ct);
         }
 
         public async Task<byte[]> GenerateMarketSurveyAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             var template = await _templateProvider.GetTemplateAsync("MarketSurvey", ct);
-            var html = await _tokenReplacer.ReplaceTokensAsync(template, workOrder, ct);
-            var pnl = await _pnlRepository.GetLatestByWorkOrderIdAsync(workOrder.WorkOrderId);
+            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct);
+            var pnl = await _pnlRepository.GetLatestByProcurementIdAsync(procurement.ProcurementId);
             if (pnl != null && !string.IsNullOrWhiteSpace(pnl.SelectedVendorId))
             {
                 var selectedVendor = await _vendorRepository.GetByIdAsync(pnl.SelectedVendorId);
@@ -101,84 +101,84 @@ namespace ProcurementHTE.Core.Services
         }
 
         public async Task<byte[]> GenerateSPMPAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             return await GenerateByTemplateAsync(
                 "SPMP",
                 "Surat Perintah Mulai Pekerjaan",
-                workOrder,
+                procurement,
                 ct
             );
         }
 
         public async Task<byte[]> GenerateSuratPenawaranHargaAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             return await GenerateByTemplateAsync(
                 "SuratPenawaranHarga",
                 "Surat Penawaran Harga",
-                workOrder,
+                procurement,
                 ct
             );
         }
 
         public async Task<byte[]> GenerateSuratNegosiasiHargaAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             return await GenerateByTemplateAsync(
                 "SuratNegosiasiHarga",
                 "Surat Negosiasi Harga",
-                workOrder,
+                procurement,
                 ct
             );
         }
 
         public async Task<byte[]> GenerateRKSAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             return await GenerateByTemplateAsync(
                 "RKS",
                 "Rencana Kerja dan Syarat-Syarat",
-                workOrder,
+                procurement,
                 ct
             );
         }
 
         public async Task<byte[]> GenerateRiskAssessmentAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
             return await GenerateByTemplateAsync(
                 "RiskAssessment",
                 "Risk Assessment",
-                workOrder,
+                procurement,
                 ct
             );
         }
 
         public async Task<byte[]> GenerateOwnerEstimateAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
-            return await GenerateByTemplateAsync("OwnerEstimate", "Owner Estimate", workOrder, ct);
+            return await GenerateByTemplateAsync("OwnerEstimate", "Owner Estimate", procurement, ct);
         }
 
         public async Task<byte[]> GenerateBOQAsync(
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         )
         {
-            return await GenerateByTemplateAsync("BOQ", "Bill of Quantity", workOrder, ct);
+            return await GenerateByTemplateAsync("BOQ", "Bill of Quantity", procurement, ct);
         }
 
         public async Task<byte[]> GenerateFromTemplateAsync(
@@ -192,9 +192,9 @@ namespace ProcurementHTE.Core.Services
             var template = await _templateProvider.GetTemplateAsync(templateName, ct);
             string html;
 
-            if (model is WorkOrder woModel)
+            if (model is Procurement ProcurementModel)
             {
-                html = await _tokenReplacer.ReplaceTokensAsync(template, woModel, ct);
+                html = await _tokenReplacer.ReplaceTokensAsync(template, ProcurementModel, ct);
             }
             else
             {
@@ -216,12 +216,12 @@ namespace ProcurementHTE.Core.Services
         private async Task<byte[]> GenerateByTemplateAsync(
             string templateKey,
             string title,
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct
         )
         {
             var template = await _templateProvider.GetTemplateAsync(templateKey, ct);
-            var html = await _tokenReplacer.ReplaceTokensAsync(template, workOrder, ct);
+            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct);
 
             return await HtmlToPdfAsync(html, title, ct);
         }

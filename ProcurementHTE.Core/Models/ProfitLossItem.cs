@@ -32,13 +32,13 @@ namespace ProcurementHTE.Core.Models
         public string ProfitLossId { get; set; } = null!;
 
         [Required, StringLength(450)]
-        public string WoOfferId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
 
         [ForeignKey("ProfitLossId")]
         public ProfitLoss ProfitLoss { get; set; } = default!;
 
-        [ForeignKey("WoOfferId")]
-        public WoOffer WoOffer { get; set; } = default!;
+        [ForeignKey("ProcOfferId")]
+        public ProcOffer ProcOffer { get; set; } = default!;
     }
 
 }

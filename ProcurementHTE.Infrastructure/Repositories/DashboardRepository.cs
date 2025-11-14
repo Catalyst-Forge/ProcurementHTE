@@ -14,29 +14,29 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<List<RecentActivityDto>> GetRecentActivitiesAsync(int take = 10)
         {
-            var wo = await _context
-                .WorkOrders.AsNoTracking()
-                .OrderByDescending(wo => wo.CreatedAt)
+            var procurements = await _context
+                .Procurements.AsNoTracking()
+                .OrderByDescending(p => p.CreatedAt)
                 .Take(50)
-                .Select(wo => new RecentActivityDto
+                .Select(p => new RecentActivityDto
                 {
-                    Time = wo.CreatedAt,
-                    User = wo.User != null ? wo.User.FullName : "Unknown",
-                    Action = $"Created Work Order {wo.WoNum}",
-                    Description = wo.Description,
+                    Time = p.CreatedAt,
+                    User = p.User != null ? p.User.FullName : "Unknown",
+                    Action = $"Created Procurement {p.ProcNum}",
+                    Description = p.JobName ?? p.Note,
                 })
                 .ToListAsync();
 
             var docs = await _context
-                .WoDocuments.AsNoTracking()
+                .ProcDocuments.AsNoTracking()
                 .OrderByDescending(doc => doc.CreatedAt)
                 .Take(50)
                 .Select(doc => new RecentActivityDto
                 {
                     Time = doc.CreatedAt,
-                    User = doc.WorkOrder.User != null ? doc.WorkOrder.User.FullName : "Unknown",
+                    User = doc.Procurement.User != null ? doc.Procurement.User.FullName : "Unknown",
                     Action = $"Uploaded Document {doc.FileName}",
-                    Description = $"For Work Order {doc.WorkOrder!.WoNum}" + " Upload Document",
+                    Description = $"For Procurement {doc.Procurement!.ProcNum} Upload Document",
                 })
                 .ToListAsync();
 
@@ -47,14 +47,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Select(pnl => new RecentActivityDto
                 {
                     Time = pnl.CreatedAt,
-                    User = pnl.WorkOrder.User != null ? pnl.WorkOrder.User.FullName : "Unknown",
-                    Action = $"Created Profit & Loss Record",
-                    Description =
-                        $"For Work Order {pnl.WorkOrder!.WoNum}" + " Create Profit & Loss Record",
+                    User = pnl.Procurement.User != null ? pnl.Procurement.User.FullName : "Unknown",
+                    Action = "Created Profit & Loss Record",
+                    Description = $"For Procurement {pnl.Procurement!.ProcNum} Create Profit & Loss Record",
                 })
                 .ToListAsync();
 
-            return wo.Concat(docs)
+            return procurements.Concat(docs)
                 .Concat(pnl)
                 .OrderByDescending(activity => activity.Time)
                 .Take(take)
@@ -64,7 +63,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync()
         {
             return await _context
-                .WoDocumentApprovals.Where(a => a.Status == "Pending").GroupBy(d => d.Status)
+                .ProcDocumentApprovals.Where(a => a.Status == "Pending").GroupBy(d => d.Status)
                 .Select(g => new ApprovalStatusCountDto { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
         }

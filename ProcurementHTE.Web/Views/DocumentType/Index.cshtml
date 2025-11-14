@@ -4,11 +4,11 @@
 @{
     ViewData["Title"] = "Document Type Data";
     var currentSearch = Context.Request.Query["search"].ToString();
-    var currentFields = (Context.Request.Query["fields"].ToString() ?? "WoNum,Description")
+    var currentFields = (Context.Request.Query["fields"].ToString() ?? "ProcNum,Description")
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
     var columns = new (string Key, string Label)[] {
-        ("WoNum","WO No."),
+        ("ProcNum","Procurement No."),
         ("Description","Description"),
         ("Status","Status"),
     };

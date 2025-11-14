@@ -4,7 +4,7 @@
     {
         public string? RoleId { get; set; }
         public string? RoleName { get; set; }
-        public string? WoDocumentApprovalId { get; set; }
+        public string? ProcDocumentApprovalId { get; set; }
         public int? Level { get; set; }
         public int? SequenceOrder { get; set; }
 

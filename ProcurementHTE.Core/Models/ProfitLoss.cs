@@ -27,13 +27,13 @@ namespace ProcurementHTE.Core.Models
 
         // Foreign Keys
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         [Required, StringLength(450)]
         public string? SelectedVendorId { get; set; } = null!;
 
-        [ForeignKey("WorkOrderId")]
-        public WorkOrder WorkOrder { get; set; } = default!;
+        [ForeignKey("ProcurementId")]
+        public Procurement Procurement { get; set; } = default!;
 
         [ForeignKey("SelectedVendorId")]
         public Vendor SelectedVendor { get; set; } = default!;

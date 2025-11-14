@@ -1,4 +1,4 @@
-ï»¿using MigraDocCore.DocumentObjectModel;
+using MigraDocCore.DocumentObjectModel;
 using MigraDocCore.DocumentObjectModel.Tables;
 using MigraDocCore.DocumentObjectModel.Shapes;
 using MigraDocCore.Rendering;
@@ -15,7 +15,7 @@ namespace ProcurementHTE.Core.Services
 
         public Task<byte[]> GenerateProfitLossPdfAsync(
             ProfitLoss pnl,
-            WorkOrder wo,
+            Procurement Procurement,
             Vendor? selectedVendor,
             IReadOnlyList<VendorOffer> offers
         )
@@ -32,7 +32,7 @@ namespace ProcurementHTE.Core.Services
             section.PageSetup.RightMargin = Unit.FromMillimeter(15);
 
             // ======= HEADER =======
-            AddHeader(section, wo, pnl);
+            AddHeader(section, Procurement, pnl);
 
             // ======= TABEL VENDOR TERPILIH / PESERTA =======
             AddVendorsTable(section, offers, selectedVendor);
@@ -59,8 +59,8 @@ namespace ProcurementHTE.Core.Services
             return Task.FromResult(ms.ToArray());
         }
 
-        private static void AddHeader(Section s, WorkOrder wo, ProfitLoss pnl) {
-            var title = s.AddParagraph($"Pengangkutan / P&L â€” WO {wo.WoNum}");
+        private static void AddHeader(Section s, Procurement Procurement, ProfitLoss pnl) {
+            var title = s.AddParagraph($"Pengangkutan / P&L — Procurement {Procurement.ProcNum}");
             title.Style = "Heading1";
             title.Format.SpaceAfter = Unit.FromMillimeter(2);
 
@@ -82,9 +82,9 @@ namespace ProcurementHTE.Core.Services
                 r.Cells[1].AddParagraph(value);
             }
 
-            Row("No WO", wo.WoNum ?? "-");
-            Row("Tanggal WO", (wo.CreatedAt).ToString("dd/MM/yyyy", Id) ?? "-");
-            Row("Status Pekerjaan", wo.Status?.StatusName ?? "-");
+            Row("No Procurement", Procurement.ProcNum ?? "-");
+            Row("Tanggal Procurement", (Procurement.CreatedAt).ToString("dd/MM/yyyy", Id) ?? "-");
+            Row("Status Pekerjaan", Procurement.Status?.StatusName ?? "-");
             Row("Tanggal P&L", pnl.CreatedAt.ToString("dd/MM/yyyy", Id));
         }
 
@@ -203,7 +203,7 @@ namespace ProcurementHTE.Core.Services
             tbl.AddColumn(Unit.FromMillimeter(100));
 
             //Row2(tbl, "Revenue (Tagihan PDC)", Rp(pnl.Revenue), shaded: true);
-            Row2(tbl, $"Harga Mitra Terpilih{(selectedVendor != null ? $" â€“ {selectedVendor.VendorName}" : "")}", Rp(pnl.SelectedVendorFinalOffer));
+            Row2(tbl, $"Harga Mitra Terpilih{(selectedVendor != null ? $" – {selectedVendor.VendorName}" : "")}", Rp(pnl.SelectedVendorFinalOffer));
             //Row2(tbl, "COST OPERATOR", Rp(pnl.OperatorCost));
             var profit = pnl.Profit;
             Row2(tbl, "PROFIT", Rp(profit), shaded: true, bold: true);

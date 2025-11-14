@@ -1,4 +1,4 @@
-ï»¿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Authorization
 @using ProcurementHTE.Core.Common
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
@@ -6,9 +6,9 @@
 @inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Vendors";
-    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.WO.Create);
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Create);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
@@ -97,13 +97,13 @@
                         <td>
                             <div class="fw-semibold">
                                 @v.VendorName
-                                <span class="text-body-secondary"> Â· </span>
+                                <span class="text-body-secondary"> · </span>
                                 <a asp-action="Details" asp-route-id="@v.VendorId" class="link-primary text-decoration-none">@v.VendorCode</a>
                             </div>
 
                             <div class="small text-body-secondary">
                                 <a href="mailto:@v.Email" class="text-decoration-none">@v.Email</a>
-                                <span class="mx-1">â€¢</span>
+                                <span class="mx-1">•</span>
                                 NPWP @MaskNpwp(v.NPWP)
                             </div>
                         </td>

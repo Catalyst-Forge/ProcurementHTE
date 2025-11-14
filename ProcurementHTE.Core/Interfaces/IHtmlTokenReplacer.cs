@@ -6,7 +6,7 @@ namespace ProcurementHTE.Core.Interfaces
     {
         Task<string> ReplaceTokensAsync(
             string template,
-            WorkOrder workOrder,
+            Procurement procurement,
             CancellationToken ct = default
         );
     }

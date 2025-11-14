@@ -1,274 +1,295 @@
-﻿using System.Reflection.Emit;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Infrastructure.Data
+namespace ProcurementHTE.Infrastructure.Data;
+
+public class AppDbContext : IdentityDbContext<User, Role, string>
 {
-    public class AppDbContext(DbContextOptions<AppDbContext> options)
-        : IdentityDbContext<User, Role, string>(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+    public DbSet<Status> Statuses { get; set; } = null!;
+    public DbSet<Procurement> Procurements { get; set; } = null!;
+    public DbSet<JobTypes> JobTypes { get; set; } = null!;
+    public DbSet<JobTypeDocuments> JobTypeDocuments { get; set; } = null!;
+    public DbSet<ProcDetail> ProcDetails { get; set; } = null!;
+    public DbSet<ProcOffer> ProcOffers { get; set; } = null!;
+    public DbSet<ProcDocuments> ProcDocuments { get; set; } = null!;
+    public DbSet<ProcDocumentApprovals> ProcDocumentApprovals { get; set; } = null!;
+    public DbSet<Vendor> Vendors { get; set; } = null!;
+    public DbSet<VendorOffer> VendorOffers { get; set; } = null!;
+    public DbSet<ProfitLoss> ProfitLosses { get; set; } = null!;
+    public DbSet<ProfitLossItem> ProfitLossItems { get; set; } = null!;
+    public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; } = null!;
+    public DbSet<DocumentApprovals> DocumentApprovals { get; set; } = null!;
+    public DbSet<DocumentType> DocumentTypes { get; set; } = null!;
+    public DbSet<Tender> Tenders { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        public DbSet<Status> Statuses { get; set; }
-        public DbSet<WorkOrder> WorkOrders { get; set; }
-        public DbSet<Tender> Tenders { get; set; }
-        public DbSet<Vendor> Vendors { get; set; }
-        public DbSet<WoTypes> WoTypes { get; set; }
-        public DbSet<WoDetail> WoDetails { get; set; }
-        public DbSet<WoOffer> WoOffers { get; set; }
-        public DbSet<ProfitLoss> ProfitLosses { get; set; }
-        public DbSet<ProfitLossItem> ProfitLossItems { get; set; }
-        public DbSet<VendorOffer> VendorOffers { get; set; }
-        public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; }
-        public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
-        public DbSet<DocumentType> DocumentTypes { get; set; }
-        public DbSet<WoDocuments> WoDocuments { get; set; }
-        public DbSet<WoTypeDocuments> WoTypesDocuments { get; set; }
-        public DbSet<WoDocumentApprovals> WoDocumentApprovals { get; set; }
-        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        base.OnModelCreating(builder);
 
-        protected override void OnModelCreating(ModelBuilder builder)
+        builder
+            .Entity<User>()
+            .Property(u => u.FullName)
+            .HasComputedColumnSql("CONCAT([FirstName], ' ', [LastName])");
+
+        builder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+
+        ConfigureProcurement(builder);
+        ConfigureVendors(builder);
+        ConfigureDocuments(builder);
+        ConfigureProfitLoss(builder);
+        ConfigureJobTypeDocuments(builder);
+    }
+
+    private static void ConfigureProcurement(ModelBuilder builder)
+    {
+        builder.Entity<Procurement>(entity =>
         {
-            base.OnModelCreating(builder);
+            entity.HasKey(p => p.ProcurementId);
+            entity.Property(p => p.ProcNum).IsRequired();
+            entity.HasIndex(p => p.ProcNum).IsUnique().HasDatabaseName("AK_Procurements_ProcNum");
+            entity
+                .HasIndex(p => new { p.UserId, p.CreatedAt })
+                .HasDatabaseName("IX_Procurements_UserId_CreatedAt")
+                .IsDescending(false, true);
 
-            // Concat Fullname for User
-            builder
-                .Entity<User>()
-                .Property(u => u.FullName)
-                .HasComputedColumnSql("CONCAT([FirstName], ' ', [LastName])");
+            entity.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
 
-            // Composite Keys
-            builder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+        builder.Entity<JobTypes>()
+            .Property(j => j.JobTypeId)
+            .ValueGeneratedOnAdd();
 
-            builder.Entity<WorkOrder>(entity =>
-            {
-                entity.HasKey(x => x.WorkOrderId);
-                entity.Property(x => x.WoNum).IsRequired();
-                entity
-                    .HasIndex(w => new { w.UserId, w.CreatedAt })
-                    .HasDatabaseName("IX_WorkOrders_UserId_CreatedAt")
-                    .IsDescending(false, true);
+        builder.Entity<Procurement>()
+            .Property(p => p.ProcurementId)
+            .ValueGeneratedOnAdd();
 
-                entity
-                    .HasIndex(w => new { w.UserId, w.CreatedAt })
-                    .HasDatabaseName("IX_WorkOrders_UserId_CreatedAt_Covering")
-                    .IncludeProperties(w => new
-                    {
-                        w.WoNum,
-                        w.Description,
-                        w.StatusId,
-                    });
-                entity.HasAlternateKey(w => w.WoNum).HasName("AK_WorkOrders_WoNum");
-            });
+        builder.Entity<Procurement>()
+            .HasOne(p => p.Status)
+            .WithMany()
+            .HasForeignKey(p => p.StatusId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Vendor>(entity =>
-            {
-                entity.HasKey(x => x.VendorId);
-                entity.Property(x => x.VendorCode).IsRequired();
-            });
+        builder.Entity<Procurement>()
+            .HasOne(p => p.User)
+            .WithMany(u => u.Procurements)
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // Generate Id
-            builder.Entity<WorkOrder>().Property(wo => wo.WorkOrderId).ValueGeneratedOnAdd();
-            builder.Entity<Tender>().Property(t => t.TenderId).ValueGeneratedOnAdd();
-            builder.Entity<Vendor>().Property(v => v.VendorId).ValueGeneratedOnAdd();
-            builder
-                .Entity<DocumentApprovals>()
-                .Property(da => da.DocumentApprovalId)
-                .ValueGeneratedOnAdd();
-            builder.Entity<DocumentType>().Property(dt => dt.DocumentTypeId).ValueGeneratedOnAdd();
-            builder.Entity<ProfitLoss>().Property(pnl => pnl.ProfitLossId).ValueGeneratedOnAdd();
-            builder.Entity<VendorOffer>().Property(vo => vo.VendorOfferId).ValueGeneratedOnAdd();
-            builder.Entity<WoDetail>().Property(wod => wod.WoDetailId).ValueGeneratedOnAdd();
-            builder
-                .Entity<WoDocumentApprovals>()
-                .Property(woda => woda.WoDocumentApprovalId)
-                .ValueGeneratedOnAdd();
-            builder
-                .Entity<WoDocuments>()
-                .Property(wodoc => wodoc.WoDocumentId)
-                .ValueGeneratedOnAdd();
-            builder
-                .Entity<WoTypeDocuments>()
-                .Property(wtd => wtd.WoTypeDocumentId)
-                .ValueGeneratedOnAdd();
-            builder.Entity<WoTypes>().Property(wot => wot.WoTypeId).ValueGeneratedOnAdd();
+        builder.Entity<Procurement>()
+            .HasOne(p => p.JobTypeConfig)
+            .WithMany(j => j.Procurements)
+            .HasForeignKey(p => p.JobTypeId)
+            .OnDelete(DeleteBehavior.SetNull);
 
-            // Enum to string
-            builder.Entity<WorkOrder>().Property(p => p.ProcurementType).HasConversion<string>();
+        builder.Entity<Procurement>()
+            .HasOne(p => p.PicOpsUser)
+            .WithMany()
+            .HasForeignKey(p => p.PicOpsUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // Unique
-            builder.Entity<Vendor>().HasIndex(v => v.VendorCode).IsUnique();
+        builder.Entity<Procurement>()
+            .HasOne(p => p.AnalystHteSignerUser)
+            .WithMany()
+            .HasForeignKey(p => p.AnalystHteSignerUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== Relations ==========
-            // ***** Work Order *****
-            // Relation to User
-            builder
-                .Entity<WorkOrder>()
-                .HasOne(workOrder => workOrder.User)
-                .WithMany(user => user.WorkOrders)
-                .HasForeignKey(workOrder => workOrder.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
-            // Relation to WoType
-            builder
-                .Entity<WorkOrder>()
-                .HasOne(workOrder => workOrder.WoType)
-                .WithMany(woType => woType.WorkOrders)
-                .HasForeignKey(workOrder => workOrder.WoTypeId)
-                .OnDelete(DeleteBehavior.NoAction);
-            // Relation to WoDocument
-            builder
-                .Entity<WorkOrder>()
-                .HasMany(workOrder => workOrder.WoDocuments)
-                .WithOne(woDocument => woDocument.WorkOrder)
-                .HasForeignKey(woDocument => woDocument.WorkOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
-            // Relation to Vendor Offer
-            builder
-                .Entity<WorkOrder>()
-                .HasMany(workOrder => workOrder.VendorOffers)
-                .WithOne(vendorOffer => vendorOffer.WorkOrder)
-                .HasForeignKey(vendorOffer => vendorOffer.WorkOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
-            // Relation to Status
-            builder
-                .Entity<WorkOrder>()
-                .HasOne(workOrder => workOrder.Status)
-                .WithMany()
-                .HasForeignKey(workOrder => workOrder.StatusId)
-                .OnDelete(DeleteBehavior.NoAction);
-            // Relation to WoOffer
-            builder
-                .Entity<WorkOrder>()
-                .HasMany(workOrder => workOrder.WoOffers)
-                .WithOne(woOffer => woOffer.WorkOrder)
-                .HasForeignKey(woOffer => woOffer.WorkOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<Procurement>()
+            .HasOne(p => p.AssistantManagerSignerUser)
+            .WithMany()
+            .HasForeignKey(p => p.AssistantManagerSignerUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // ***** WO Detail *****
-            builder
-                .Entity<WoDetail>()
-                .HasOne(woDetail => woDetail.WorkOrder)
-                .WithMany(workOrder => workOrder.WoDetails)
-                .HasForeignKey(woDetail => woDetail.WorkOrderId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to WorkOrder
+        builder.Entity<Procurement>()
+            .HasOne(p => p.ManagerSignerUser)
+            .WithMany()
+            .HasForeignKey(p => p.ManagerSignerUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // ***** Vendor Offer *****
-            builder
-                .Entity<VendorOffer>()
-                .HasOne(vendorOffer => vendorOffer.WorkOrder)
-                .WithMany(workOrder => workOrder.VendorOffers)
-                .HasForeignKey(vendorOffer => vendorOffer.WorkOrderId)
-                .OnDelete(DeleteBehavior.NoAction); // Relation to WorkOrder
+        builder.Entity<ProcDetail>()
+            .Property(d => d.ProcDetailId)
+            .ValueGeneratedOnAdd();
 
-            // ***** WO Document *****
-            builder.Entity<WoDocuments>(entity =>
-            {
-                // relasi ke DocumentType (sudah ada di kode lama kamu—aku rapikan property names)
-                entity
-                    .HasOne(d => d.DocumentType)
-                    .WithMany(t => t.WoDocuments)
-                    .HasForeignKey(d => d.DocumentTypeId)
-                    .OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<ProcDetail>()
+            .HasOne(d => d.Procurement)
+            .WithMany(p => p.ProcDetails)
+            .HasForeignKey(d => d.ProcurementId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(d => d.QrText).HasDatabaseName("IX_WoDocuments_QrText");
-                entity
-                    .HasIndex(d => new { d.WorkOrderId, d.CreatedAt })
-                    .HasDatabaseName("IX_WoDocuments_WorkOrderId_CreatedAt");
+        builder.Entity<ProcDetail>()
+            .HasOne(d => d.Vendor)
+            .WithMany()
+            .HasForeignKey(d => d.VendorId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-                // relasi ke WorkOrder (kamu sudah mengatur di WorkOrder.WithMany(WoDocuments))
-                // indeks & constraints untuk MinIO
-                entity.Property(d => d.FileName).HasMaxLength(300).IsRequired();
-                entity.Property(d => d.ObjectKey).HasMaxLength(600).IsRequired();
-                entity.Property(d => d.ContentType).HasMaxLength(150).IsRequired();
-                entity.Property(d => d.Status).HasMaxLength(16).HasDefaultValue("Uploaded");
-                entity.Property(d => d.Description).HasMaxLength(200).IsRequired(false);
+        builder.Entity<ProcOffer>()
+            .Property(o => o.ProcOfferId)
+            .ValueGeneratedOnAdd();
 
-                // satu dokumen "status" per (WO, DocumentType) (misal menjaga 1 'Uploaded' aktif per type)
-                entity
-                    .HasIndex(d => new
-                    {
-                        d.WorkOrderId,
-                        d.DocumentTypeId,
-                        d.Status,
-                    })
-                    .IsUnique();
-            });
+        builder.Entity<ProcOffer>()
+            .HasOne(o => o.Procurement)
+            .WithMany(p => p.ProcOffers)
+            .HasForeignKey(o => o.ProcurementId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
 
-            // ***** WO Document Approval *****
-            builder.Entity<WoDocumentApprovals>(entity =>
-            {
-                entity.Property(a => a.Status).HasMaxLength(16).HasDefaultValue("Pending");
-
-                // FK ke WorkOrders (INI WAJIB, sebelumnya belum ada di kode kamu)
-                entity
-                    .HasOne(a => a.WorkOrder)
-                    .WithMany( /* w => w.WoDocumentApprovals */
-                    ) // boleh tanpa nav kalau tidak kamu tambahkan di WorkOrder
-                    .HasForeignKey(a => a.WorkOrderId)
-                    .OnDelete(DeleteBehavior.NoAction);
-
-                // FK ke WoDocuments (perbaiki WithMany: gunakan koleksi Approvals di WoDocuments)
-                entity
-                    .HasOne(a => a.WoDocument)
-                    .WithMany(d => d.Approvals)
-                    .HasForeignKey(a => a.WoDocumentId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity
-                    .HasOne(a => a.Role)
-                    .WithMany()
-                    .HasForeignKey(a => a.RoleId)
-                    .OnDelete(DeleteBehavior.NoAction);
-
-                entity
-                    .HasOne(a => a.Approver)
-                    .WithMany()
-                    .HasForeignKey(a => a.ApproverId)
-                    .OnDelete(DeleteBehavior.NoAction);
-
-                entity
-                    .HasIndex(a => new
-                    {
-                        a.WoDocumentId,
-                        a.Level,
-                        a.SequenceOrder,
-                    })
-                    .IsUnique()
-                    .HasDatabaseName("UX_WoDocApprovals_Doc_Level_Seq");
-
-                // 2) Index untuk inbox approver (Role + Status)
-                // IncludeProperties akan dibuat sebagai INCLUDE index (SQL Server)
-                entity
-                    .HasIndex(a => new { a.RoleId, a.Status })
-                    .HasDatabaseName("IX_WoDocApprovals_Role_Status")
-                    .IncludeProperties(a => new
-                    {
-                        a.WoDocumentId,
-                        a.WorkOrderId,
-                        a.Level,
-                        a.SequenceOrder,
-                    });
-            });
-
-            // ProfitLossItem -> ProfitLoss (tetap cascade)
-            builder
-                .Entity<ProfitLossItem>()
-                .HasOne(i => i.ProfitLoss)
-                .WithMany(p => p.Items)
-                .HasForeignKey(i => i.ProfitLossId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // ProfitLossItem -> WoOffer (MATIKAN cascade)
-            builder
-                .Entity<ProfitLossItem>()
-                .HasOne(i => i.WoOffer) // <— pakai nav
-                .WithMany() // atau .WithMany(o => o.ProfitLossItems) kalau ada koleksi di WoOffer
-                .HasForeignKey(i => i.WoOfferId)
-                .OnDelete(DeleteBehavior.NoAction); // atau Restrict, pilih salah satu konsisten
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    private static void ConfigureVendors(ModelBuilder builder)
+    {
+        builder.Entity<Vendor>(entity =>
         {
-            base.OnConfiguring(optionsBuilder);
-        }
+            entity.HasKey(v => v.VendorId);
+            entity.Property(v => v.VendorCode).IsRequired();
+            entity.HasIndex(v => v.VendorCode).IsUnique();
+        });
+
+        builder.Entity<Vendor>()
+            .Property(v => v.VendorId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<VendorOffer>()
+            .Property(vo => vo.VendorOfferId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<VendorOffer>()
+            .HasOne(vo => vo.Procurement)
+            .WithMany(p => p.VendorOffers)
+            .HasForeignKey(vo => vo.ProcurementId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<VendorOffer>()
+            .HasOne(vo => vo.ProcOffer)
+            .WithMany()
+            .HasForeignKey(vo => vo.ProcOfferId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<VendorOffer>()
+            .HasOne(vo => vo.Vendor)
+            .WithMany(v => v.VendorOffers)
+            .HasForeignKey(vo => vo.VendorId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private static void ConfigureDocuments(ModelBuilder builder)
+    {
+        builder.Entity<DocumentType>()
+            .Property(d => d.DocumentTypeId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<ProcDocuments>()
+            .Property(d => d.ProcDocumentId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<ProcDocuments>()
+            .HasOne(d => d.Procurement)
+            .WithMany(p => p.ProcDocuments)
+            .HasForeignKey(d => d.ProcurementId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ProcDocuments>()
+            .HasOne(d => d.DocumentType)
+            .WithMany(dt => dt.ProcDocuments)
+            .HasForeignKey(d => d.DocumentTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ProcDocumentApprovals>()
+            .Property(a => a.ProcDocumentApprovalId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<ProcDocumentApprovals>()
+            .HasOne(a => a.Procurement)
+            .WithMany(p => p.DocumentApprovals)
+            .HasForeignKey(a => a.ProcurementId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ProcDocumentApprovals>()
+            .HasOne(a => a.ProcDocument)
+            .WithMany(d => d.Approvals)
+            .HasForeignKey(a => a.ProcDocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ProcDocumentApprovals>()
+            .HasOne(a => a.Role)
+            .WithMany()
+            .HasForeignKey(a => a.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ProcDocumentApprovals>()
+            .HasOne(a => a.Approver)
+            .WithMany()
+            .HasForeignKey(a => a.ApproverId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureProfitLoss(ModelBuilder builder)
+    {
+        builder.Entity<ProfitLoss>()
+            .Property(p => p.ProfitLossId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<ProfitLoss>()
+            .HasOne(pl => pl.Procurement)
+            .WithMany(p => p.ProfitLosses)
+            .HasForeignKey(pl => pl.ProcurementId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ProfitLoss>()
+            .HasOne(pl => pl.SelectedVendor)
+            .WithMany()
+            .HasForeignKey(pl => pl.SelectedVendorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ProfitLossItem>()
+            .Property(i => i.ProfitLossItemId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<ProfitLossItem>()
+            .HasOne(i => i.ProfitLoss)
+            .WithMany(pl => pl.Items)
+            .HasForeignKey(i => i.ProfitLossId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ProfitLossItem>()
+            .HasOne(i => i.ProcOffer)
+            .WithMany()
+            .HasForeignKey(i => i.ProcOfferId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private static void ConfigureJobTypeDocuments(ModelBuilder builder)
+    {
+        builder.Entity<JobTypeDocuments>()
+            .Property(j => j.JobTypeDocumentId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<JobTypeDocuments>()
+            .HasOne(j => j.JobType)
+            .WithMany(jt => jt.JobTypeDocuments)
+            .HasForeignKey(j => j.JobTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<JobTypeDocuments>()
+            .HasOne(j => j.DocumentType)
+            .WithMany(dt => dt.JobTypeDocuments)
+            .HasForeignKey(j => j.DocumentTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<DocumentApprovals>()
+            .Property(da => da.DocumentApprovalId)
+            .ValueGeneratedOnAdd();
+
+        builder.Entity<DocumentApprovals>()
+            .HasOne(da => da.JobTypeDocument)
+            .WithMany(j => j.DocumentApprovals)
+            .HasForeignKey(da => da.JobTypeDocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<DocumentApprovals>()
+            .HasOne(da => da.Role)
+            .WithMany()
+            .HasForeignKey(da => da.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

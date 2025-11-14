@@ -46,20 +46,20 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             if (user is null) return Unauthorized(new { ok = false, message = "Unauthenticated" });
 
             ApprovalUpdateResult result =
-                await _svc.UpdateStatusByApprovalIdAsync(req.WoDocumentApprovalId ?? "", req.Action ?? "", req.Note, user, ct);
+                await _svc.UpdateStatusByApprovalIdAsync(req.ProcDocumentApprovalId ?? "", req.Action ?? "", req.Note, user, ct);
 
             return Ok(result);
         }
 
         [HttpPost("update-status-by-document-id")]
-        public async Task<IActionResult> UpdateStatusByDocumentId([FromBody] UpdateByWoDocumentIdRequest req, CancellationToken ct)
+        public async Task<IActionResult> UpdateStatusByDocumentId([FromBody] UpdateByProcDocumentIdRequest req, CancellationToken ct)
         {
             if (req is null) return BadRequest(new { ok = false, message = "Body tidak boleh kosong." });
 
             var user = await _userMgr.GetUserAsync(User);
             if (user is null) return Unauthorized(new { ok = false, message = "Unauthenticated" });
 
-            var result = await _svc.UpdateStatusByDocumentIdAsync(req.WoDocumentId ?? "", req.Action ?? "", req.Note, user, ct);
+            var result = await _svc.UpdateStatusByDocumentIdAsync(req.ProcDocumentId ?? "", req.Action ?? "", req.Note, user, ct);
             return Ok(result);
         }
     }

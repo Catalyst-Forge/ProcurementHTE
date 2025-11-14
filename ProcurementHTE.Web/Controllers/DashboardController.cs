@@ -12,19 +12,19 @@ namespace ProcurementHTE.Web.Controllers
     [Authorize]
     public class DashboardController : Controller
     {
-        private readonly IWorkOrderService _woService;
+        private readonly IProcurementService _procurementService;
         private readonly UserManager<User> _userManager;
         private readonly IProfitLossService _pnlService;
         private readonly IDashboardService _dashboardService;
 
         public DashboardController(
-            IWorkOrderService woService,
+            IProcurementService procurementService,
             UserManager<User> userManager,
             IProfitLossService pnlService,
             IDashboardService dashboardService
         )
         {
-            _woService = woService;
+            _procurementService = procurementService;
             _userManager = userManager;
             _pnlService = pnlService;
             _dashboardService = dashboardService;
@@ -40,34 +40,34 @@ namespace ProcurementHTE.Web.Controllers
 
             var totalUsers = _userManager.Users.Count();
             var activeUsers = _userManager.Users.Count(user => user.IsActive);
-            var recentWo = await _woService.GetMyRecentWorkOrderAsync(userId, 5, ct);
+            var recentProcurements = await _procurementService.GetMyRecentProcurementAsync(userId, 5, ct);
             var totalRevenueThisMonth = await _pnlService.GetTotalRevenueThisMonthAsync();
             var activities = await _dashboardService.GetRecentActivitiesAsync(5);
-            var woByStatus = await _dashboardService.GetWoStatusCountsAsync();
+            var procurementsByStatus = await _dashboardService.GetProcurementStatusCountsAsync();
             var revenuePerMonth = await _dashboardService.GetRevenuePerMonthAsync(
                 DateTime.Now.Year
             );
             var approvalStatus = await _dashboardService.GetApprovalStatusCountsAsync();
 
-            ViewBag.TotalWo = await _woService.CountAllWoAsync(ct);
+            ViewBag.TotalProcurements = await _procurementService.CountAllProcurementsAsync(ct);
             ViewBag.TotalUsers = totalUsers;
             ViewBag.ActiveUsers = activeUsers;
             ViewBag.TotalRevenueThisMonth = totalRevenueThisMonth;
             ViewBag.RecentActivities = activities;
-            ViewBag.WoByStatus = woByStatus;
+            ViewBag.ProcurementsByStatus = procurementsByStatus;
             ViewBag.RevenuePerMonth = revenuePerMonth;
             ViewBag.ApprovalStatus = approvalStatus;
 
-            var woViewModel = recentWo.Select(item => new DashboardWoViewModel
+            var procurementViewModels = recentProcurements.Select(item => new DashboardProcurementViewModel
             {
-                WoNum = item.WoNum!,
-                Description = item.Description,
-                ProcurementType = item.ProcurementType,
-                StatusName = item.Status?.StatusName!,
+                ProcNum = item.ProcNum ?? "-",
+                JobName = item.JobName ?? item.Note,
+                JobTypeName = item.JobType ?? item.JobTypeConfig?.TypeName,
+                StatusName = item.Status?.StatusName ?? "-",
                 CreatedAt = item.CreatedAt,
             });
 
-            return View(woViewModel);
+            return View(procurementViewModels);
         }
     }
 }

@@ -14,9 +14,9 @@ namespace ProcurementHTE.Infrastructure.Data
 
             // jalankan tiap seeder (urutan penting)
             await RoleUserSeeder.SeedAsync(userManager, roleManager, db);
-            await WoTypeSeeder.SeedAsync(db, roleManager);
-            await WoTypeMovingMobilizationSeeder.SeedAsync(db, roleManager);
-            await WorkOrderSeeder.SeedAsync(db);
+            await JobTypeSeeder.SeedAsync(db, roleManager);
+            await JobTypeMovingMobilizationSeeder.SeedAsync(db, roleManager);
+            await ProcurementSeeder.SeedAsync(db);
         }
     }
 }

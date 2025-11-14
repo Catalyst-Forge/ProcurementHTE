@@ -13,12 +13,12 @@ namespace ProcurementHTE.Core.Services
     public class ApprovalService : IApprovalService
     {
         private readonly IApprovalRepository _approvalRepository;
-        private readonly IWorkOrderService _woService;
+        private readonly IProcurementService _woService;
         private readonly ILogger<ApprovalService> _logger;
 
         public ApprovalService(
             IApprovalRepository approvalRepository,
-            IWorkOrderService woService,
+            IProcurementService woService,
             ILogger<ApprovalService> logger)
         {
             _approvalRepository = approvalRepository;
@@ -27,14 +27,14 @@ namespace ProcurementHTE.Core.Services
         }
 
         // ===== existing =====
-        public Task<IReadOnlyList<WoDocumentApprovals>> GetPendingApprovalsForUserAsync(User user)
+        public Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(User user)
             => _approvalRepository.GetPendingApprovalsForUserAsync(user);
 
         public async Task ApproveAsync(string approvalId, string approverUserId)
         {
             var result = await _approvalRepository.ApproveAsync(approvalId, approverUserId);
             if (result.AllDocsApproved)
-                await _woService.MarkAsCompletedAsync(result.WorkOrderId);
+                await _woService.MarkAsCompletedAsync(result.ProcurementId);
         }
 
         public Task RejectAsync(string approvalId, string approverUserId, string? note)
@@ -43,8 +43,8 @@ namespace ProcurementHTE.Core.Services
         public Task<GateInfoDto?> GetCurrentPendingGateByQrAsync(string qrText, CancellationToken ct = default)
             => _approvalRepository.GetCurrentPendingGateByQrAsync(qrText, ct);
 
-        public Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(string woDocumentApprovalId, CancellationToken ct = default)
-            => _approvalRepository.GetCurrentPendingGateByApprovalIdAsync(woDocumentApprovalId, ct);
+        public Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(string procDocumentApprovalId, CancellationToken ct = default)
+            => _approvalRepository.GetCurrentPendingGateByApprovalIdAsync(procDocumentApprovalId, ct);
 
         // ===== NEW: high-level =====
         public async Task<ApprovalUpdateResult> UpdateStatusByQrAsync(
@@ -72,7 +72,7 @@ namespace ProcurementHTE.Core.Services
             if (roleHit == null)
                 return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
 
-            var approvalId = roleHit.WoDocumentApprovalId!;
+            var approvalId = roleHit.ProcDocumentApprovalId!;
             try
             {
                 if (normalized == "approve")
@@ -85,8 +85,8 @@ namespace ProcurementHTE.Core.Services
                     Ok = true,
                     Action = normalized,
                     ApprovalId = approvalId,
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     When = DateTime.UtcNow
                 };
             }
@@ -105,7 +105,7 @@ namespace ProcurementHTE.Core.Services
             string approvalId, string action, string? note, User currentUser, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(approvalId))
-                return Fail("InvalidAction", "WoDocumentApprovalId wajib diisi.");
+                return Fail("InvalidAction", "ProcDocumentApprovalId wajib diisi.");
 
             if (!NormalizeAction(action, out var normalized))
                 return Fail("InvalidAction", "Action harus 'approve' atau 'reject'.");
@@ -117,7 +117,7 @@ namespace ProcurementHTE.Core.Services
             if (gate.RequiredRoles.Count == 0)
                 return await BuildFinalStateResponseAsync(_approvalRepository, gate, ct);
 
-            var gateTarget = gate.RequiredRoles.FirstOrDefault(r => r.WoDocumentApprovalId == approvalId);
+            var gateTarget = gate.RequiredRoles.FirstOrDefault(r => r.ProcDocumentApprovalId == approvalId);
             if (gateTarget == null)
             {
                 return new ApprovalUpdateResult
@@ -125,8 +125,8 @@ namespace ProcurementHTE.Core.Services
                     Ok = false,
                     Reason = "Blocked",
                     Message = "Approval masih terblokir oleh step sebelumnya.",
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     CurrentGateLevel = gate.Level,
                     CurrentGateSequence = gate.SequenceOrder,
                     RequiredRoles = gate.RequiredRoles
@@ -175,15 +175,15 @@ namespace ProcurementHTE.Core.Services
         }
 
         public async Task<ApprovalUpdateResult> UpdateStatusByDocumentIdAsync(
-            string woDocumentId, string action, string? note, User currentUser, CancellationToken ct = default)
+            string procDocumentId, string action, string? note, User currentUser, CancellationToken ct = default)
         {
-            if (string.IsNullOrWhiteSpace(woDocumentId))
-                return Fail("InvalidAction", "WoDocumentId wajib diisi.");
+            if (string.IsNullOrWhiteSpace(procDocumentId))
+                return Fail("InvalidAction", "ProcDocumentId wajib diisi.");
 
             if (!NormalizeAction(action, out var normalized))
                 return Fail("InvalidAction", "Action harus 'approve' atau 'reject'.");
 
-            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(woDocumentId, ct);
+            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(procDocumentId, ct);
             if (gate == null)
                 return Fail("DocumentNotFound", "Dokumen tidak ditemukan.");
 
@@ -199,7 +199,7 @@ namespace ProcurementHTE.Core.Services
             if (roleHit == null)
                 return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
 
-            var approvalId = roleHit.WoDocumentApprovalId!;
+            var approvalId = roleHit.ProcDocumentApprovalId!;
             try
             {
                 if (normalized == "approve")
@@ -212,8 +212,8 @@ namespace ProcurementHTE.Core.Services
                     Ok = true,
                     Action = normalized,
                     ApprovalId = approvalId,
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     When = DateTime.UtcNow
                 };
             }
@@ -223,23 +223,23 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdateStatusByDocumentIdAsync gagal untuk DocId={DocId}", woDocumentId);
+                _logger.LogError(ex, "UpdateStatusByDocumentIdAsync gagal untuk DocId={DocId}", procDocumentId);
                 return Fail("Error", ex.Message);
             }
         }
 
         // ApprovalService.cs (tambahkan method ringkas)
-        public async Task<ApprovalTimelineDto?> GetApprovalTimelineAsync(string woDocumentId, CancellationToken ct = default)
+        public async Task<ApprovalTimelineDto?> GetApprovalTimelineAsync(string procDocumentId, CancellationToken ct = default)
         {
-            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(woDocumentId, ct);
+            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(procDocumentId, ct);
             if (gate == null) return null;
 
-            var chain = await _approvalRepository.GetDocumentApprovalChainAsync(woDocumentId, ct);
+            var chain = await _approvalRepository.GetDocumentApprovalChainAsync(procDocumentId, ct);
 
             return new ApprovalTimelineDto
             {
-                WorkOrderId = gate.WorkOrderId!,
-                WoDocumentId = gate.WoDocumentId!,
+                ProcurementId = gate.ProcurementId!,
+                ProcDocumentId = gate.ProcDocumentId!,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
                 CurrentGateSequence = gate.SequenceOrder,

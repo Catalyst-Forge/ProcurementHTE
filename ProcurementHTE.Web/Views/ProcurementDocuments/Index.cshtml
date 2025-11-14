@@ -1,0 +1,1578 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementRequiredDocsVm
+@{
+    ViewData["Title"] = "Dokumen Procurement";
+
+    var totalDocs = Model.Items?.Count() ?? 0;
+    var requiredDocs = Model.Items?.Count(x => x.IsUploadRequired || x.IsGenerated) ?? 0;
+    var generateDocs = Model.Items?.Count(x => x.IsGenerated) ?? 0;
+    var isRequiredApprovals = Model.Items?.Count(x => x.RequiresApproval) ?? 0;
+    var isMandatoryDocs = Model.Items?.Count(x => x.IsMandatory) ?? 0;
+    var requiresApprovalDocs = Model.Items?.Where(x => x.RequiresApproval).ToList()
+        ?? new List<ProcurementHTE.Core.Models.DTOs.RequiredDocItemDto>();
+    var pendingApprovalDocs = requiresApprovalDocs
+        .Where(x => !string.Equals(x.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+    var completedDocs = Model.Items?.Count(x => x.IsUploadRequired && x.Uploaded) ?? 0;
+    var remainingDocs = Math.Max(requiredDocs - completedDocs, 0);
+    var progressPercent = requiredDocs > 0 ? completedDocs * 100 / requiredDocs : 0;
+    var canSendApproval = Model.Items?.Where(x => x.IsUploadRequired).All(x => x.Uploaded) ?? false;
+    var hasPendingApproval = Model.Items?.Any(x => string.Equals(x.Status, "Pending Approval", StringComparison.OrdinalIgnoreCase)) ?? false;
+    var showSendApprovalButton = canSendApproval && !hasPendingApproval;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h4 class="mb-1 fw-bold">
+                        <i class="bi bi-folder2-open text-primary me-2"></i>Dokumen Procurement
+                    </h4>
+                    <span class="badge bg-light text-dark border">@ViewBag.ProcNum</span>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (showSendApprovalButton)
+                    {
+                        <form asp-controller="ProcurementDocuments" asp-action="SendApproval" method="post" class="m-0" id="sendApprovalForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sendApprovalModal">
+                                <i class="bi bi-send-check me-1"></i> Send Approval
+                            </button>
+                        </form>
+                    }
+                    else if (hasPendingApproval)
+                    {
+                        <button type="button" class="btn btn-success" disabled>
+                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Approval
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-secondary" disabled
+                                title="Lengkapi semua dokumen wajib terlebih dahulu">
+                            <i class="bi bi-send me-1"></i> Send Approval
+                        </button>
+                    }
+
+                    <a class="btn btn-outline-secondary" href="javascript:history.back()">
+                        <i class="bi bi-arrow-left me-1"></i> Kembali
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="row align-items-center g-4">
+                        @* <div class="col-lg-8">
+                            <h6 class="mb-3 fw-semibold">
+                                <i class="bi bi-bar-chart-line text-primary me-2"></i>Progress Upload Dokumen
+                            </h6>
+                            <div class="progress" style="height: 12px;">
+                                <div id="procProgressBar"
+                                     class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                     role="progressbar"
+                                     style="@($"width:{progressPercent}%")"
+                                     aria-valuenow="@progressPercent"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100"
+                                     data-required="@requiredDocs"
+                                     data-completed="@completedDocs">
+                                    @progressPercent%
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block" id="progressInfo">
+                                <i class="bi bi-info-circle me-1"></i>
+                                @completedDocs dari @requiredDocs dokumen wajib telah dipenuhi
+                            </small>
+                        </div> *@
+                        <div class="col-lg-12">
+                            <div class="row text-center g-3">
+                                <div class="col-4">
+                                    <div class="p-3 bg-success-subtle rounded">
+                                        <div class="fs-3 fw-bold text-success" id="completedCount">@completedDocs</div>
+                                        <small class="text-muted">Completed</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 bg-warning-subtle rounded">
+                                        <div class="fs-3 fw-bold text-warning-emphasis" id="remainingCount">@remainingDocs</div>
+                                        <small class="text-muted">Remaining</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 bg-warning-subtle rounded">
+                                        <div class="fs-3 fw-bold text-warning-emphasis">@generateDocs</div>
+                                        <small class="text-muted">Generated</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 bg-warning-subtle rounded">
+                                        <div class="fs-3 fw-bold text-warning-emphasis">@isMandatoryDocs</div>
+                                        <small class="text-muted">Mandatory</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 bg-warning-subtle rounded">
+                                        <div class="fs-3 fw-bold text-warning-emphasis">@isRequiredApprovals</div>
+                                        <small class="text-muted">Approvals</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 bg-info-subtle rounded">
+                                        <div class="fs-3 fw-bold text-info">@totalDocs</div>
+                                        <small class="text-muted">Total</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (showSendApprovalButton)
+    {
+        <div class="modal fade" id="sendApprovalModal" tabindex="-1" aria-labelledby="sendApprovalModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="sendApprovalModalLabel">
+                            <i class="bi bi-check2-square text-primary me-2"></i>Validasi Dokumen
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Pastikan seluruh data berikut sudah sesuai sebelum mengirim approval:</p>
+                        <div class="mb-3">
+                            <div class="fw-semibold small mb-2">Checklist Dokumen:</div>
+                            <ul id="pendingUploadList" class="list-group small"></ul>
+                        </div>
+                        <div class="fw-semibold small mb-2">Ringkasan:</div>
+                        <ul class="list-group small mb-3">
+                            <li class="list-group-item d-flex justify-content-between">
+                                Dokumen wajib terpenuhi
+                                <span class="fw-semibold">@completedDocs / @requiredDocs</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                Dokumen mandatory
+                                <span>@isMandatoryDocs</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                Dokumen generated
+                                <span>@generateDocs</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                Dokumen butuh approval
+                                <span>@isRequiredApprovals</span>
+                            </li>
+                        </ul>
+                        @if (pendingApprovalDocs.Any())
+                        {
+                            <div class="alert alert-info small mb-0">
+                                <div class="fw-semibold mb-1">
+                                    <i class="bi bi-info-circle me-1"></i>Dokumen menunggu approval lanjutan:
+                                </div>
+                                <ul class="ps-3 mb-0">
+                                    @foreach (var doc in pendingApprovalDocs.Take(4))
+                                    {
+                                        <li>@doc.DocumentTypeName (@(doc.Status ?? "Pending"))</li>
+                                    }
+                                    @if (pendingApprovalDocs.Count > 4)
+                                    {
+                                        <li>+ @(pendingApprovalDocs.Count - 4) lainnya</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-arrow-left me-1"></i> Kembali
+                        </button>
+                        <button type="button" class="btn btn-primary" id="confirmSendApprovalBtn">
+                            <i class="bi bi-check-circle me-1"></i> Konfirmasi Kirim
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Documents Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:50px;" class="ps-4">#</th>
+                                    <th>Dokumen</th>
+                                    <th class="text-center" style="width:360px;">Status</th>
+                                    <th class="text-end pe-4" style="width:400px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Items == null || !Model.Items.Any())
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-5">
+                                            <i class="bi bi-folder-x fs-1 d-block mb-3 text-secondary"></i>
+                                            <p class="mb-0">Belum ada konfigurasi dokumen</p>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    var rowIndex = 0;
+                                    foreach (var item in Model.Items.OrderBy(x => x.Sequence))
+                                    {
+                                        rowIndex++;
+                                        var status = !string.IsNullOrWhiteSpace(item.Status)
+                                        ? item.Status
+                                        : (item.Uploaded ? "Uploaded" : (item.IsMandatory ? "Required" : "Optional"));
+
+                                        var isPending = string.Equals(status, "Pending Approval", StringComparison.OrdinalIgnoreCase);
+                                        var isUploaded = item.Uploaded && !isPending;
+
+                                        <tr
+                                            data-doc-id="@item.ProcDocumentId"
+                                            data-row-index="@rowIndex"
+                                            data-doc-title="@item.DocumentTypeName"
+                                            data-uploaded="@item.Uploaded.ToString().ToLowerInvariant()"
+                                            data-mandatory="@item.IsMandatory.ToString().ToLowerInvariant()"
+                                            data-generated="@item.IsGenerated.ToString().ToLowerInvariant()"
+                                            data-upload-required="@item.IsUploadRequired.ToString().ToLowerInvariant()"
+                                            data-requires-approval="@item.RequiresApproval.ToString().ToLowerInvariant()">
+                                            <td class="text-muted ps-4 fw-semibold">@rowIndex</td>
+
+                                            @* <!-- Document Info --> *@
+                                            <td>
+                                                <div class="d-flex align-items-start gap-3">
+                                                    <div class="pt-1">
+                                                        @if (isPending)
+                                                        {
+                                                            <i class="bi bi-hourglass-split text-warning fs-4" title="Pending Approval"></i>
+                                                        }
+                                                        else if (item.Uploaded)
+                                                        {
+                                                            <i class="bi bi-file-earmark-check-fill text-success fs-4" title="Uploaded"></i>
+                                                        }
+                                                        else if (item.IsUploadRequired)
+                                                        {
+                                                            <i class="bi bi-file-earmark-medical-fill text-warning fs-4" title="Required"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-file-earmark text-secondary fs-4" title="Optional"></i>
+                                                        }
+                                                    </div>
+
+                                                    <div class="flex-grow-1">
+                                                        <div class="fw-semibold mb-1">
+                                                            @item.DocumentTypeName
+                                                        </div>
+                                                        <div class="doc-attribute-badges d-flex flex-wrap gap-1 mb-1">
+                                                            @if (item.IsMandatory)
+                                                            {
+                                                                <span class="badge badge-mandatory"><i class="bi bi-exclamation-triangle me-1"></i>Mandatory</span>
+                                                            }
+                                                            @if (item.IsUploadRequired)
+                                                            {
+                                                                <span class="badge badge-upload"><i class="bi bi-upload me-1"></i>Upload</span>
+                                                            }
+                                                            @if (item.IsGenerated)
+                                                            {
+                                                                <span class="badge badge-generated"><i class="bi bi-gear me-1"></i>Generated</span>
+                                                            }
+                                                            @if (item.RequiresApproval)
+                                                            {
+                                                                <span class="badge badge-approval"><i class="bi bi-person-check me-1"></i>Approval</span>
+                                                            }
+                                                            @if (item.Uploaded)
+                                                            {
+                                                                <span class="badge badge-complete"><i class="bi bi-check2 me-1"></i>Uploaded</span>
+                                                            }
+                                                        </div>
+
+                                                        @if (item.Uploaded && !string.IsNullOrEmpty(item.FileName))
+                                                        {
+                                                            <div class="small text-muted mb-1">
+                                                                <i class="bi bi-paperclip me-1"></i>@item.FileName
+                                                                @if (item.Size.HasValue)
+                                                                {
+                                                                    var sizeKB = item.Size.Value / 1024.0;
+                                                                    var sizeMB = sizeKB / 1024.0;
+                                                                    var sizeStr = sizeMB >= 1 ? $"{sizeMB:F2} MB" : $"{sizeKB:F2} KB";
+                                                                    <span class="text-muted">• @sizeStr</span>
+                                                                }
+                                                            </div>
+                                                        }
+
+                                                        @if (!string.IsNullOrWhiteSpace(item.Note))
+                                                        {
+                                                            <div class="small text-muted">
+                                                                <i class="bi bi-info-circle me-1"></i>@item.Note
+                                                            </div>
+                                                        }
+
+                                                        @if (isPending && !string.IsNullOrEmpty(item.ProcDocumentId))
+                                                        {
+                                                            <div class="small mt-2" id="next-@item.ProcDocumentId">
+                                                                <span class="badge bg-light text-dark border">
+                                                                    <i class="bi bi-person-check me-1"></i>Next approver: <em class="text-muted">—</em>
+                                                                </span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            @* <!-- Status Badge --> *@
+                                            <td class="text-center" data-status-row="@rowIndex">
+                                                @switch (status)
+                                                {
+                                                    case "Pending Approval":
+                                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2">
+                                                            <i class="bi bi-hourglass-split"></i> Pending
+                                                        </span>
+                                                        break;
+                                                    case "Uploaded":
+                                                        <span class="badge rounded-pill bg-success bg-opacity-25 text-success px-3 py-2">
+                                                            <i class="bi bi-check-lg"></i> Uploaded
+                                                        </span>
+                                                        break;
+                                                    case "Required":
+                                                        <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis px-3 py-2">
+                                                            <i class="bi bi-exclamation-lg"></i> Required
+                                                        </span>
+                                                        break;
+                                                    case "Optional":
+                                                        <span class="badge rounded-pill bg-secondary px-3 py-2">Optional</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis px-3 py-2">@status</span>
+                                                        break;
+                                                }
+                                            </td>
+
+                                            @* <!-- Actions --> *@
+                                            <td class="pe-4" data-actions-row="@rowIndex">
+                                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                                    @* Upload Form *@
+                                                    @if (!item.Uploaded && item.IsUploadRequired && !item.IsGenerated)
+                                                    {
+                                                        <form class="d-inline-flex gap-2 align-items-center flex-wrap upload-form"
+                                                              asp-controller="ProcurementDocuments"
+                                                              asp-action="Upload"
+                                                              method="post"
+                                                              enctype="multipart/form-data"
+                                                              data-row="@rowIndex"
+                                                              data-upload-form="true">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="ProcurementId" value="@Model.ProcurementId" />
+                                                            <input type="hidden" name="DocumentTypeId" value="@item.DocumentTypeId" />
+
+                                                            <div class="upload-input-stack" data-row="@rowIndex">
+                                                                <label class="upload-dropzone mb-1" data-row="@rowIndex" tabindex="0">
+                                                                    <div class="d-flex flex-column">
+                                                                        <span class="fw-semibold">
+                                                                            <i class="bi bi-cloud-arrow-up me-1"></i> Drop / Pilih File (PDF)
+                                                                        </span>
+                                                                        <small class="text-muted">Maksimal 10MB</small>
+                                                                    </div>
+                                                                    <input class="d-none file-input"
+                                                                           type="file"
+                                                                           name="File"
+                                                                           accept="application/pdf"
+                                                                           required
+                                                                           data-row="@rowIndex" />
+                                                                </label>
+                                                                <div class="selected-file small text-muted" data-row="@rowIndex">
+                                                                    <i class="bi bi-info-circle me-1"></i>Belum ada file terpilih
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="d-flex flex-column">
+                                                                <button class="btn btn-sm btn-primary upload-btn"
+                                                                        type="submit"
+                                                                        disabled
+                                                                        data-row="@rowIndex">
+                                                                    <i class="bi bi-upload"></i> Upload
+                                                                </button>
+                                                                <div class="upload-feedback small text-muted mt-1" data-row="@rowIndex"></div>
+                                                            </div>
+                                                        </form>
+                                                    }
+
+                                                    @* Dokumen yang digenerate (Memorandum, OE, BOQ, RKS, dll) *@
+                                                    @if (item.IsGenerated) {
+                                                        <div>
+                                                            <form asp-controller="ProcurementDocuments" asp-action="Generate" method="post" class="d-inline">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                                                                <input type="hidden" name="documentTypeId" value="@item.DocumentTypeId" />
+
+                                                                <button type="submit" class="btn btn-sm btn-success">
+                                                                    <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                                                                    @(item.Uploaded ? "Regenerate" : "Generate")
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    }
+
+                                                    @* Uploaded Document Actions *@
+                                                    @if (isUploaded && !string.IsNullOrEmpty(item.ProcDocumentId))
+                                                    {
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                    data-doc-id="@item.ProcDocumentId"
+                                                                    data-doc-name="@item.DocumentTypeName"
+                                                                    data-file-name="@item.FileName">
+                                                                <i class="bi bi-eye"></i> Preview
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-primary btn-download"
+                                                                    data-doc-id="@item.ProcDocumentId"
+                                                                    data-file-name="@item.FileName">
+                                                                <i class="bi bi-download"></i> Download
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger btn-delete"
+                                                                    data-doc-id="@item.ProcDocumentId"
+                                                                    data-doc-name="@item.DocumentTypeName"
+                                                                    data-file-name="@item.FileName"
+                                                                    data-procurement-id="@Model.ProcurementId">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    }
+
+                                                    @* Pending Approval Actions *@
+                                                    @if (isPending && !string.IsNullOrEmpty(item.ProcDocumentId))
+                                                    {
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                    data-doc-id="@item.ProcDocumentId"
+                                                                    data-doc-name="@item.DocumentTypeName"
+                                                                    data-file-name="@item.FileName">
+                                                                <i class="bi bi-eye"></i>
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-primary btn-download"
+                                                                    data-doc-id="@item.ProcDocumentId"
+                                                                    data-file-name="@item.FileName">
+                                                                <i class="bi bi-download"></i>
+                                                            </button>
+                                                        </div>
+
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-success btn-show-qr"
+                                                                    data-doc-id="@item.ProcDocumentId"
+                                                                    title="Tampilkan QR Code">
+                                                                <i class="bi bi-qr-code"></i>
+                                                            </button>
+                                                            <a class="btn btn-sm btn-outline-success"
+                                                               asp-controller="ProcurementDocuments"
+                                                               asp-action="DownloadQr"
+                                                               asp-route-id="@item.ProcDocumentId"
+                                                               title="Download QR PNG">
+                                                                <i class="bi bi-download"></i>
+                                                            </a>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-success btn-print-qr"
+                                                                    title="Print QR Code">
+                                                                <i class="bi bi-printer"></i>
+                                                            </button>
+                                                        </div>
+
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-dark btn-timeline"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                data-doc-name="@item.DocumentTypeName">
+                                                            <i class="bi bi-diagram-3"></i> Timeline
+                                                        </button>
+                                                    }
+
+                                                    @* @if (!item.Uploaded && !item.IsUploadRequired)
+                                                    {
+                                                        <span class="text-muted small fst-italic">—</span>
+                                                    } *@
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PDF Preview Modal -->
+<div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title" id="previewModalTitle">Preview Dokumen</h5>
+                    <small class="text-muted" id="previewFileName"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="pdfLoadingContainer" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Memuat dokumen...</p>
+                </div>
+                <div id="pdfErrorContainer" class="text-center py-5 d-none">
+                    <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+                    <p class="text-muted">Gagal memuat dokumen. Silakan coba lagi.</p>
+                </div>
+                <iframe id="pdfPreviewFrame"
+                        style="width: 100%; height: 75vh; border: none; display: none;"
+                        title="PDF Preview">
+                </iframe>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="downloadFromPreview">
+                    <i class="bi bi-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="qrImg" src="" class="img-fluid border rounded mb-3" alt="QR Code">
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <a id="btnDownloadQr" class="btn btn-outline-primary" download>
+                    <i class="bi bi-download"></i> Download
+                </a>
+                <button type="button" class="btn btn-outline-secondary" id="btnPrintQr">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Timeline Modal -->
+<div class="modal fade" id="approvalTimelineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <div>
+                    <h5 class="modal-title"><i class="bi bi-diagram-3 me-2"></i>Approval Timeline</h5>
+                    <small class="text-muted" id="approvalDocName"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div id="approvalLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-3 text-muted">Memuat approval...</p>
+            </div>
+
+            <div id="approvalError" class="text-center py-5 d-none">
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+                <p class="text-muted">Gagal memuat timeline approval.</p>
+            </div>
+
+            <div class="modal-body pt-0 d-none" id="approvalTimelineBody">
+                <div class="mb-3">
+                    <span id="docStatusBadge" class="badge rounded-pill bg-secondary">Status: —</span>
+                    <span id="currentGateBadge" class="badge rounded-pill bg-light text-dark border ms-1 d-none"></span>
+                </div>
+
+                <ul id="approvalStepper" class="timeline list-unstyled m-0"></ul>
+
+                <div class="mt-3" id="nextApproverWrap" style="display:none;">
+                    <span class="text-muted me-2">Next approver:</span>
+                    <span id="nextApproverChips"></span>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Delete Form -->
+<form id="deleteForm" method="post" asp-controller="ProcurementDocuments" asp-action="Delete" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="deleteDocId" />
+    <input type="hidden" name="procurementId" id="deleteProcurementId" />
+</form>
+
+@section Scripts {    
+    <script>
+        // ===== Global state =====
+        let currentPreviewUrl = null;
+        let currentDownloadDocId = null;
+        let currentQrImageSrc = null;
+        const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+
+        // ===== Toast util =====
+        function showToast(icon, title, text = '', timer = 4000) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon, title, text,
+                showConfirmButton: false,
+                timer, timerProgressBar: true,
+                didOpen: t => {
+                    t.addEventListener('mouseenter', Swal.stopTimer);
+                    t.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+        }
+
+        // ===== DOM Ready =====
+        document.addEventListener('DOMContentLoaded', () => {
+            // TempData toasts
+            @if (TempData["success"] is string successMsg)
+            {
+                    <text>showToast('success', 'Berhasil!', '@Html.Raw(System.Text.Json.JsonEncodedText.Encode(successMsg))');</text>
+            }
+            @if (TempData["error"] is string errorMsg)
+            {
+                    <text>showToast('error', 'Error!', '@Html.Raw(System.Text.Json.JsonEncodedText.Encode(errorMsg))', 5000);</text>
+            }
+
+            initPreviewHandlers();          // preview dokumen existing (pakai PreviewUrl)
+            initGeneratePreviewHandlers();  // preview template (PreviewGeneratedUrl -> fallback)
+            initDownloadHandlers();         // tombol download per-row
+            initDeleteHandlers();           // hapus dokumen
+            initFileInputHandlers();        // validasi input file
+            initUploadFormHandlers();       // UX upload
+            initQrHandlers();               // QR show/print
+            initTimelineHandlers();         // approval timeline
+            initSendApprovalModal();        // modal send approval
+
+            // Download dari modal preview (hanya untuk dokumen existing)
+            document.getElementById('downloadFromPreview')?.addEventListener('click', () => {
+                if (!currentDownloadDocId) {
+                    showToast('info', 'Belum bisa di-download', 'Generate atau upload dulu dokumennya.', 3000);
+                    return;
+                }
+                const btn = document.querySelector(`.btn-download[data-doc-id="${currentDownloadDocId}"]`);
+                if (btn) btn.click();
+            });
+        });
+
+        // ===== Helper buka modal + load iframe =====
+        function openPdfModal(title, fileName, url, hasRealFile) {
+            const modal = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
+            const iframe = document.getElementById('pdfPreviewFrame');
+            const loading = document.getElementById('pdfLoadingContainer');
+            const errorBox = document.getElementById('pdfErrorContainer');
+            const downloadBtn = document.getElementById('downloadFromPreview');
+
+            document.getElementById('previewModalTitle').textContent = title || 'Preview Dokumen';
+            document.getElementById('previewFileName').textContent = fileName || '';
+
+            // tombol download hanya tampil kalau dokumen fisik ada (bukan preview template)
+            if (hasRealFile) downloadBtn.classList.remove('d-none');
+            else downloadBtn.classList.add('d-none');
+
+            // reset state
+            iframe.style.display = 'none';
+            iframe.src = 'about:blank';
+            loading.classList.remove('d-none');
+            errorBox.classList.add('d-none');
+
+            modal.show();
+
+            try {
+                iframe.src = url;
+                iframe.onload = () => {
+                    loading.classList.add('d-none');
+                    iframe.style.display = 'block';
+                };
+                iframe.onerror = () => {
+                    loading.classList.add('d-none');
+                    errorBox.classList.remove('d-none');
+                };
+            } catch (err) {
+                console.error('Preview error:', err);
+                loading.classList.add('d-none');
+                errorBox.classList.remove('d-none');
+                showToast('error', 'Gagal memuat preview', err.message, 3000);
+            }
+        }
+
+        /* ===================== Preview dokumen EXISTING ===================== */
+        function initPreviewHandlers() {
+            document.querySelectorAll('.btn-preview').forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName || 'Preview Dokumen';
+                    const fileName = this.dataset.fileName || '';
+
+                    currentDownloadDocId = docId;
+                    currentPreviewUrl = null;
+
+                    // Pola yang sudah jalan: minta signed URL dari server
+                    try {
+                        const res = await fetch(`/ProcurementDocuments/PreviewUrl/${encodeURIComponent(docId)}?procurementId=@Model.ProcurementId`);
+                        const data = await res.json();
+                        if (!data?.ok || !data?.url) throw new Error(data?.error || 'URL preview tidak tersedia');
+
+                        currentPreviewUrl = data.url;
+                        openPdfModal(docName, fileName, data.url, /*hasRealFile*/ true);
+                    } catch (err) {
+                        console.error('Preview(existing) error:', err);
+                        showToast('error', 'Gagal memuat preview', err.message, 3500);
+                    }
+                });
+            });
+        }
+
+        /* ===================== Preview TEMPLATE (GENERATED) ===================== */
+        function initGeneratePreviewHandlers() {
+            document.querySelectorAll('.btn-preview-generate').forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const procurementId = this.dataset.procurementId;
+                    const docTypeId = this.dataset.docTypeId;
+                    const docName = this.dataset.docName || 'Preview Template';
+
+                    if (!procurementId || !docTypeId) {
+                        showToast('error', 'Data tidak lengkap', 'procurementId / documentTypeId kosong.', 3500);
+                        return;
+                    }
+
+                    currentDownloadDocId = null; // belum ada file fisik
+                    currentPreviewUrl = null;
+
+                    // 1) Coba endpoint JSON signed URL (jika kamu sediakan)
+                    try {
+                        const urlJson = `/ProcurementDocuments/PreviewGeneratedUrl?procurementId=${encodeURIComponent(procurementId)}&documentTypeId=${encodeURIComponent(docTypeId)}`;
+                        const res = await fetch(urlJson);
+                        // Jika endpoint tidak ada / bukan JSON, ini bisa throw
+                        if (res.ok) {
+                            const data = await res.json().catch(() => null);
+                            if (data?.ok && data?.url) {
+                                currentPreviewUrl = data.url;
+                                openPdfModal(`Preview Template — ${docName}`, '', data.url, /*hasRealFile*/ false);
+                                return;
+                            }
+                        }
+                        // 2) Fallback ke endpoint stream langsung (iframe memuat langsung dari server)
+                        const fallbackUrl = `/ProcurementDocuments/PreviewGenerated?procurementId=${encodeURIComponent(procurementId)}&documentTypeId=${encodeURIComponent(docTypeId)}`;
+                        openPdfModal(`Preview Template — ${docName}`, '', fallbackUrl, /*hasRealFile*/ false);
+                    } catch (err) {
+                        console.error('Preview(template) error:', err);
+                        showToast('error', 'Gagal memuat preview template', err.message, 3500);
+                    }
+                });
+            });
+        }
+
+        /* ===================== Download (per-row) ===================== */
+        function initDownloadHandlers() {
+            document.querySelectorAll('.btn-download').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const docId = this.dataset.docId;
+                    const fileName = this.dataset.fileName;
+
+                    showToast('info', 'Memproses download...', '', 1500);
+                    try {
+                        const url = `/ProcurementDocuments/Download/${encodeURIComponent(docId)}?procurementId=@Model.ProcurementId`;
+                        const a = document.createElement('a');
+                        a.href = url;
+                        if (fileName) a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => showToast('success', 'Download dimulai', fileName || '', 2500), 400);
+                    } catch (e) {
+                        console.error('Download error:', e);
+                        showToast('error', 'Gagal mendownload', e.message, 3000);
+                    }
+                });
+            });
+        }
+
+        /* ===================== Delete ===================== */
+        function initDeleteHandlers() {
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName;
+                    const fileName = this.dataset.fileName;
+                    const procurementId = this.dataset.procurementId;
+
+                    Swal.fire({
+                        title: 'Konfirmasi Hapus Dokumen',
+                        html: `<div class="text-start">
+                                <p class="mb-2">Apakah Anda yakin ingin menghapus dokumen ini?</p>
+                                <div class="alert alert-warning mb-0">
+                                    <strong>${docName || '—'}</strong><br><small class="text-muted">${fileName || ''}</small>
+                                </div>
+                            </div>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-trash me-1"></i> Ya, Hapus',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        focusCancel: true
+                    }).then((r) => {
+                        if (r.isConfirmed) {
+                            document.getElementById('deleteDocId').value = docId;
+                            document.getElementById('deleteProcurementId').value = procurementId;
+                            document.getElementById('deleteForm').submit();
+                        }
+                    });
+                });
+            });
+        }
+
+        /* ===================== File Upload ===================== */
+        function initFileInputHandlers() {
+            document.querySelectorAll('.file-input').forEach(input => {
+                input.addEventListener('change', function () {
+                    const row = this.dataset.row;
+                    const file = this.files?.[0];
+                    if (file) {
+                        handleFileSelection(row, file, this);
+                    } else {
+                        resetFileSelection(row);
+                    }
+                });
+            });
+            initDropzoneHandlers();
+        }
+
+        function markUploadSuccess(row, payload) {
+            const rowEl = document.querySelector(`tr[data-row-index="${row}"]`);
+            const dropzone = document.querySelector(`.upload-dropzone[data-row="${row}"]`);
+            const fileInput = document.querySelector(`.file-input[data-row="${row}"]`);
+            const label = document.querySelector(`.selected-file[data-row="${row}"]`);
+            const statusCell = document.querySelector(`td[data-status-row="${row}"]`);
+            const actionsCell = document.querySelector(`td[data-actions-row="${row}"]`);
+
+            if (dropzone) {
+                dropzone.classList.add('disabled');
+                dropzone.setAttribute('aria-disabled', 'true');
+            }
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.disabled = true;
+            }
+            if (label) {
+                label.classList.remove('text-muted');
+                label.classList.add('text-success');
+                const fileName = payload?.document?.name || 'Dokumen berhasil diunggah';
+                label.innerHTML = `<i class="bi bi-file-earmark-check me-1"></i>${fileName}`;
+            }
+            if (statusCell) {
+                statusCell.innerHTML = `<span class="badge rounded-pill bg-success px-3 py-2">
+                                            <i class="bi bi-check-lg"></i> Uploaded
+                                        </span>`;
+            }
+            if (actionsCell) {
+                actionsCell.classList.add('opacity-75');
+            }
+            if (rowEl) {
+                const icon = rowEl.querySelector('.pt-1 i');
+                if (icon) {
+                    icon.className = 'bi bi-file-earmark-check-fill text-success fs-4';
+                    icon.setAttribute('title', 'Uploaded');
+                }
+            }
+        }
+
+        function updateProgressIndicators(deltaCompleted) {
+            const bar = document.getElementById('procProgressBar');
+            if (!bar) return;
+            const required = Number(bar.dataset.required || 0);
+            const currentCompleted = Number(bar.dataset.completed || 0);
+            const nextCompleted = Math.min(required, currentCompleted + deltaCompleted);
+
+            bar.dataset.completed = nextCompleted;
+            const percent = required > 0 ? Math.min(Math.round((nextCompleted * 100) / required), 100) : 0;
+            bar.style.width = `${percent}%`;
+            bar.setAttribute('aria-valuenow', percent);
+            bar.textContent = `${percent}%`;
+
+            const completedLabel = document.getElementById('completedCount');
+            const remainingLabel = document.getElementById('remainingCount');
+            const progressInfo = document.getElementById('progressInfo');
+
+            if (completedLabel) completedLabel.textContent = nextCompleted;
+            if (remainingLabel) remainingLabel.textContent = Math.max(required - nextCompleted, 0);
+            if (progressInfo) {
+                progressInfo.innerHTML = `<i class="bi bi-info-circle me-1"></i>${nextCompleted} dari ${required} dokumen wajib telah dipenuhi`;
+            }
+        }
+
+        function initDropzoneHandlers() {
+            document.querySelectorAll('.upload-dropzone').forEach(zone => {
+                const row = zone.dataset.row;
+                const input = zone.querySelector('.file-input');
+                if (!input) return;
+
+                const prevent = (evt) => {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                };
+
+                ['dragenter', 'dragover'].forEach(evt => {
+                    zone.addEventListener(evt, e => {
+                        prevent(e);
+                        if (zone.classList.contains('disabled')) return;
+                        zone.classList.add('drag-over');
+                    });
+                });
+
+                ['dragleave', 'dragend', 'drop'].forEach(evt => {
+                    zone.addEventListener(evt, e => {
+                        prevent(e);
+                        zone.classList.remove('drag-over');
+                    });
+                });
+
+                zone.addEventListener('drop', e => {
+                    if (zone.classList.contains('disabled')) return;
+                    const files = Array.from(e.dataTransfer?.files || []).filter(Boolean);
+                    if (!files.length) return;
+                    assignFileToInput(input, files[0], e.dataTransfer?.files);
+                    handleFileSelection(row, files[0], input);
+                });
+
+                zone.addEventListener('keydown', e => {
+                    if (zone.classList.contains('disabled')) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        input.click();
+                    }
+                });
+            });
+        }
+
+        function handleFileSelection(row, file, input) {
+            if (!file) {
+                resetFileSelection(row);
+                return;
+            }
+
+            if (!isPdfFile(file)) {
+                showToast('warning', 'Format tidak didukung', 'Hanya file PDF yang diperbolehkan.', 4000);
+                input.value = '';
+                resetFileSelection(row);
+                return;
+            }
+
+            if (file.size > MAX_UPLOAD_SIZE) {
+                showToast('warning', 'File terlalu besar', 'Ukuran maksimal 10MB.', 4000);
+                input.value = '';
+                resetFileSelection(row);
+                return;
+            }
+
+            const label = document.querySelector(`.selected-file[data-row="${row}"]`);
+            if (label) {
+                label.classList.remove('text-muted', 'text-success');
+                label.innerHTML = `<i class="bi bi-file-earmark-pdf text-danger me-1"></i>${file.name}`;
+            }
+
+            const uploadBtn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+            if (uploadBtn) uploadBtn.disabled = false;
+        }
+
+        function assignFileToInput(input, file, fallbackFileList) {
+            if (!input || !file) return;
+            try {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                input.files = dt.files;
+            } catch {
+                if (fallbackFileList) {
+                    try {
+                        input.files = fallbackFileList;
+                    } catch {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        function resetFileSelection(row) {
+            const label = document.querySelector(`.selected-file[data-row="${row}"]`);
+            if (label) {
+                label.classList.remove('text-success');
+                label.classList.add('text-muted');
+                label.innerHTML = '<i class="bi bi-info-circle me-1"></i>Belum ada file terpilih';
+            }
+            const uploadBtn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+            if (uploadBtn) uploadBtn.disabled = true;
+        }
+
+        function isPdfFile(file) {
+            if (!file) return false;
+            const fileName = (file.name || '').toLowerCase();
+            const contentType = (file.type || '').toLowerCase();
+            return contentType === 'application/pdf' || fileName.endsWith('.pdf');
+        }
+
+        function initUploadFormHandlers() {
+            document.querySelectorAll('form[data-upload-form="true"]').forEach(form => {
+                form.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const row = this.dataset.row;
+                    const fileInput = this.querySelector('.file-input');
+                    const submitBtn = this.querySelector('.upload-btn');
+                    const feedback = document.querySelector(`.upload-feedback[data-row="${row}"]`);
+
+                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                        showToast('warning', 'File belum dipilih', 'Pilih atau drag & drop dokumen terlebih dahulu.');
+                        return;
+                    }
+
+                    const originalHtml = submitBtn.innerHTML;
+                    let uploadSucceeded = false;
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
+                    if (feedback) {
+                        feedback.classList.remove('text-danger', 'text-success');
+                        feedback.classList.add('text-muted');
+                        feedback.textContent = 'Mengunggah dokumen...';
+                    }
+
+                    try {
+                        const response = await fetch(this.action, {
+                            method: this.method || 'POST',
+                            body: new FormData(this),
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        let payload = null;
+                        const contentType = response.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            payload = await response.json();
+                        }
+
+                        if (!response.ok || (payload && payload.ok === false)) {
+                            throw new Error(payload?.error || 'Gagal mengupload dokumen.');
+                        }
+
+                        uploadSucceeded = true;
+                        markUploadSuccess(row, payload);
+                        updateProgressIndicators(1);
+                        showToast('success', 'Upload berhasil', payload?.message || 'Dokumen berhasil diunggah.');
+                    } catch (err) {
+                        console.error('Upload error:', err);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalHtml;
+                        if (feedback) {
+                            feedback.classList.remove('text-muted', 'text-success');
+                            feedback.classList.add('text-danger');
+                            feedback.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>${err.message || 'Upload gagal.'}`;
+                        }
+                        showToast('error', 'Upload gagal', err.message || 'Terjadi kesalahan.', 5000);
+                        return;
+                    }
+
+                    if (uploadSucceeded) {
+                        submitBtn.innerHTML = '<i class="bi bi-check2"></i> Uploaded';
+                        if (feedback) {
+                            feedback.classList.remove('text-muted', 'text-danger');
+                            feedback.classList.add('text-success');
+                            feedback.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Upload berhasil. Refresh halaman untuk aksi lanjutan.';
+                        }
+                    }
+                });
+            });
+        }
+
+        /* ===================== QR Code ===================== */
+        function initQrHandlers() {
+            document.querySelectorAll('.btn-show-qr').forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const docId = this.dataset.docId;
+                    await showQrCode(docId);
+                });
+            });
+            document.getElementById('btnPrintQr')?.addEventListener('click', printQrCode);
+        }
+
+        async function showQrCode(docId) {
+            try {
+                const response = await fetch(`/ProcurementDocuments/QrUrl/${encodeURIComponent(docId)}`);
+                const data = await response.json();
+                if (!data.ok || !data.url) throw new Error(data.error || 'Gagal membangun URL QR');
+
+                currentQrImageSrc = data.url;
+                document.getElementById('qrImg').src = data.url;
+                document.getElementById('btnDownloadQr').href = `/ProcurementDocuments/DownloadQr/${encodeURIComponent(docId)}`;
+
+                new bootstrap.Modal(document.getElementById('qrModal')).show();
+            } catch (error) {
+                console.error('QR error:', error);
+                showToast('error', 'Gagal memuat QR', error.message, 3000);
+            }
+        }
+
+        function printQrCode() {
+            if (!currentQrImageSrc) return;
+            const w = window.open('', '_blank', 'width=600,height=600');
+            const doc = w.document;
+            doc.title = 'Print QR Code';
+            if (!doc.head) doc.documentElement.appendChild(doc.createElement('head'));
+            const style = doc.createElement('style');
+            style.textContent = 'html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center}img{max-width:90%;max-height:90%}';
+            doc.head.appendChild(style);
+            doc.body.innerHTML = '';
+            const img = doc.createElement('img');
+            img.id = 'qrToPrint';
+            img.alt = 'QR Code';
+            img.src = currentQrImageSrc;
+            doc.body.appendChild(img);
+            img.onload = function () { w.focus(); w.print(); };
+        }
+
+        /* ===================== Approval Timeline ===================== */
+        function initTimelineHandlers() {
+            document.querySelectorAll('.btn-timeline').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName || '';
+                    openTimelineModal(docId, docName);
+                });
+            });
+        }
+
+        function initSendApprovalModal() {
+            const form = document.getElementById('sendApprovalForm');
+            const modalEl = document.getElementById('sendApprovalModal');
+            const confirmBtn = document.getElementById('confirmSendApprovalBtn');
+            if (!form || !modalEl || !confirmBtn) return;
+
+            modalEl.addEventListener('show.bs.modal', () => {
+                const list = document.getElementById('pendingUploadList');
+                if (!list) return;
+                list.innerHTML = '';
+                const pending = Array.from(document.querySelectorAll('tr[data-row-index]'))
+                    .filter(row => row.dataset.uploadRequired === 'true' && row.dataset.uploaded !== 'true')
+                    .map(row => row.dataset.docTitle || 'Dokumen tanpa nama');
+
+                if (pending.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item text-success';
+                    li.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Semua dokumen wajib sudah lengkap.';
+                    list.appendChild(li);
+                } else {
+                    pending.slice(0, 5).forEach(name => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item text-danger';
+                        li.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>${escapeHtml(name)}`;
+                        list.appendChild(li);
+                    });
+                    if (pending.length > 5) {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item text-muted';
+                        li.textContent = `+ ${pending.length - 5} dokumen lainnya belum lengkap`;
+                        list.appendChild(li);
+                    }
+                }
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Konfirmasi Kirim';
+            });
+
+            confirmBtn.addEventListener('click', () => {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
+                form.submit();
+            });
+        }
+
+        function normalizeTimelinePayload(raw) {
+            const d = raw || {};
+            const norm = {
+                procurementId: d.ProcurementId ?? d.procurementId ?? null,
+                procDocumentId: d.ProcDocumentId ?? d.procDocumentId ?? null,
+                docStatus: d.DocStatus ?? d.docStatus ?? null,
+                currentGateLevel: d.CurrentGateLevel ?? d.currentGateLevel ?? null,
+                currentGateSequence: d.CurrentGateSequence ?? d.currentGateSequence ?? null,
+                requiredRoles: Array.isArray(d.RequiredRoles) ? d.RequiredRoles : (Array.isArray(d.requiredRoles) ? d.requiredRoles : []),
+                steps: Array.isArray(d.Steps) ? d.Steps : (Array.isArray(d.steps) ? d.steps : [])
+            };
+
+            // Normalisasi isi Steps ke camelCase
+            norm.steps = norm.steps.map(s => ({
+                procDocumentApprovalId: s.ProcDocumentApprovalId ?? s.procDocumentApprovalId ?? null,
+                level: s.Level ?? s.level ?? 0,
+                sequenceOrder: s.SequenceOrder ?? s.sequenceOrder ?? 0,
+                roleId: s.RoleId ?? s.roleId ?? null,
+                roleName: s.RoleName ?? s.roleName ?? null,
+                status: s.Status ?? s.status ?? null,
+                approverUserId: s.ApproverUserId ?? s.approverUserId ?? null,
+                approverFullName: s.ApproverFullName ?? s.approverFullName ?? null,
+                approvedAt: s.ApprovedAt ?? s.approvedAt ?? null,
+                note: s.Note ?? s.note ?? null
+            }));
+
+            // Normalisasi RequiredRoles (chips “Next approver”)
+            norm.requiredRoles = norm.requiredRoles.map(r => ({
+                roleId: r.RoleId ?? r.roleId ?? null,
+                roleName: r.RoleName ?? r.roleName ?? null,
+                procDocumentApprovalId: r.ProcDocumentApprovalId ?? r.procDocumentApprovalId ?? null,
+                level: r.Level ?? r.level ?? null,
+                sequenceOrder: r.SequenceOrder ?? r.sequenceOrder ?? null,
+                status: r.Status ?? r.status ?? null,
+                note: r.Note ?? r.note ?? null,
+                approverId: r.ApproverId ?? r.approverId ?? null,
+                approverFullName: r.ApproverFullName ?? r.approverFullName ?? null,
+                approvedAt: r.ApprovedAt ?? r.approvedAt ?? null
+            }));
+
+            return norm;
+        }
+
+        function openTimelineModal(docId, docName) {
+            document.getElementById('approvalDocName').textContent = docName || '';
+            document.getElementById('approvalLoading').classList.remove('d-none');
+            document.getElementById('approvalError').classList.add('d-none');
+            document.getElementById('approvalTimelineBody').classList.add('d-none');
+
+            const modal = new bootstrap.Modal(document.getElementById('approvalTimelineModal'));
+            modal.show();
+
+            fetch(`/ProcurementDocuments/ApprovalTimeline/${encodeURIComponent(docId)}`)
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(payload => {
+                    if (!payload?.ok || !payload?.data) throw new Error(payload?.message || 'Bad payload');
+                    const data = normalizeTimelinePayload(payload.data);
+                    renderTimeline(data, docId);
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('approvalLoading').classList.add('d-none');
+                    document.getElementById('approvalError').classList.remove('d-none');
+                });
+        }
+
+        function renderTimeline(data, docIdForInline) {
+            const body = document.getElementById('approvalTimelineBody');
+            const stepper = document.getElementById('approvalStepper');
+            const loading = document.getElementById('approvalLoading');
+            const nextWrap = document.getElementById('nextApproverWrap');
+            const nextChips = document.getElementById('nextApproverChips');
+            const docStatusBadge = document.getElementById('docStatusBadge');
+            const currentGateBadge = document.getElementById('currentGateBadge');
+
+            stepper.innerHTML = '';
+            nextChips.innerHTML = '';
+            nextWrap.style.display = 'none';
+            currentGateBadge.classList.add('d-none');
+
+            // Status badge dokumen
+            const text = data?.docStatus || '—';
+            let cls = 'bg-secondary';
+            const lower = (text || '').toLowerCase();
+            if (lower.includes('pending')) cls = 'bg-warning text-dark';
+            if (lower.includes('approved')) cls = 'bg-success';
+            if (lower.includes('reject')) cls = 'bg-danger';
+            if (lower.includes('generated') || lower.includes('uploaded')) cls = 'bg-info';
+            if (lower.includes('replaced') || lower.includes('deleted')) cls = 'bg-secondary';
+
+            docStatusBadge.className = 'badge rounded-pill ' + cls;
+            docStatusBadge.textContent = 'Status: ' + text;
+
+            // Gate indicator
+            if (data?.currentGateLevel && data?.currentGateSequence) {
+                currentGateBadge.classList.remove('d-none');
+                currentGateBadge.textContent = `Gate: L${data.currentGateLevel}.S${data.currentGateSequence}`;
+            }
+
+            // Steps
+            const steps = Array.isArray(data?.steps) ? data.steps.slice() : [];
+            steps.sort((a, b) => (a.level - b.level) || (a.sequenceOrder - b.sequenceOrder));
+
+            if (steps.length === 0) {
+                loading.classList.add('d-none');
+                document.getElementById('approvalError')?.classList.add('d-none');
+                body.classList.remove('d-none');
+                stepper.innerHTML = `<li class="timeline-item">
+                    <div class="d-flex">
+                        <div class="timeline-icon text-secondary"><i class="bi bi-lock"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Belum ada data approval</div>
+                            <div class="small text-muted">Pastikan flow sudah tergenerate & API mengembalikan steps.</div>
+                        </div>
+                    </div>
+                </li>`;
+                return;
+            }
+
+            steps.forEach(s => {
+                const status = (s.status || '').toLowerCase();
+                let icon = 'lock', color = 'secondary', badgeTextColor = '';
+                if (status === 'approved') { icon = 'check2-circle'; color = 'success'; }
+                else if (status === 'rejected') { icon = 'x-circle'; color = 'danger'; }
+                else if (status === 'pending') { icon = 'hourglass-split'; color = 'warning'; badgeTextColor = 'text-dark'; }
+                else if (status === 'blocked') { icon = 'lock'; color = 'secondary'; }
+
+                const approvedAtText = s.approvedAt ? ` • <i class="bi bi-clock-history"></i> ${new Date(s.approvedAt).toLocaleString()}` : '';
+                const approverText = s.approverFullName ? `<i class="bi bi-person-badge"></i> ${s.approverFullName}` : '';
+                const noteText = s.note ? ` • <i class="bi bi-chat-text"></i> ${escapeHtml(s.note)}` : '';
+
+                const li = document.createElement('li');
+                li.className = 'timeline-item';
+                li.innerHTML = `
+                    <div class="d-flex">
+                        <div class="timeline-icon text-${color}">
+                            <i class="bi bi-${icon}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                <span class="badge bg-light text-dark border">L${s.level}.S${s.sequenceOrder}</span>
+                                <span class="fw-semibold">${s.roleName ?? '—'}</span>
+                                <span class="badge rounded-pill bg-${color} ${badgeTextColor} text-capitalize">${s.status ?? '—'}</span>
+                            </div>
+                            <div class="small text-muted">
+                                ${approverText}${approvedAtText}${noteText}
+                            </div>
+                        </div>
+                    </div>`;
+                stepper.appendChild(li);
+            });
+
+            // Next approvers
+            if (Array.isArray(data?.requiredRoles) && data.requiredRoles.length > 0) {
+                nextWrap.style.display = '';
+                data.requiredRoles.forEach(r => {
+                    const span = document.createElement('span');
+                    span.className = 'badge rounded-pill bg-light text-dark border me-1';
+                    span.textContent = r.roleName || '—';
+                    nextChips.appendChild(span);
+                });
+
+                // Update inline hint di row tabel (jika ada)
+                const inline = document.getElementById('next-' + (data.procDocumentId || docIdForInline));
+                if (inline) {
+                    inline.innerHTML = '<span class="badge bg-light text-dark border"><i class="bi bi-person-check me-1"></i>Next: ';
+                    data.requiredRoles.forEach((r, idx) => {
+                        if (idx > 0) inline.innerHTML += ', ';
+                        inline.innerHTML += r.roleName || '—';
+                    });
+                    inline.innerHTML += '</span>';
+                }
+            }
+
+            loading.classList.add('d-none');
+            document.getElementById('approvalError')?.classList.add('d-none');
+            body.classList.remove('d-none');
+        }
+        function escapeHtml(s) {
+            if (!s) return '';
+            return s.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+        }
+    </script>
+}
+
+@section HeadScripts {
+    <style>
+        .card {
+            transition: box-shadow 0.3s ease;
+        }
+
+            .card:hover {
+                box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+            }
+
+        .modal-xl {
+            max-width: 95%;
+        }
+
+        .btn-sm {
+            font-size: 0.8125rem;
+            padding: 0.25rem 0.625rem;
+        }
+
+        .upload-input-stack {
+            min-width: 230px;
+        }
+
+        .upload-dropzone {
+            border: 1px dashed var(--bs-border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            background-color: #fff;
+            transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .upload-dropzone.drag-over {
+            border-color: var(--bs-primary);
+            background-color: rgba(var(--bs-primary-rgb), 0.05);
+            box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), 0.2);
+        }
+
+        .upload-dropzone.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .upload-feedback {
+            min-height: 1.2rem;
+        }
+
+        .progress-bar {
+            transition: width 0.6s ease;
+        }
+
+        .doc-attribute-badges .badge {
+            font-size: 0.7rem;
+        }
+
+        .badge-mandatory {
+            border-color: rgba(220, 53, 69, 0.4);
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.08);
+        }
+
+        .badge-upload {
+            border-color: rgba(13, 110, 253, 0.35);
+            color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.08);
+        }
+
+        .badge-generated {
+            border-color: rgba(32, 201, 151, 0.4);
+            color: #20c997;
+            background-color: rgba(32, 201, 151, 0.1);
+        }
+
+        .badge-approval {
+            border-color: rgba(255, 193, 7, 0.5);
+            color: #664d03;
+            background-color: rgba(255, 193, 7, 0.15);
+        }
+
+        .badge-complete {
+            border-color: rgba(25, 135, 84, 0.5);
+            color: #198754;
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+
+        .badge {
+            font-weight: 500;
+        }
+
+        /* Timeline vertical stepper */
+        .timeline {
+            position: relative;
+            padding-left: 2.5rem;
+        }
+
+            .timeline::before {
+                content: "";
+                position: absolute;
+                left: 16px;
+                top: 8px;
+                bottom: 8px;
+                width: 2px;
+                background: linear-gradient(to bottom, var(--bs-border-color) 0%, var(--bs-border-color) 100%);
+            }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+            .timeline-item:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+        .timeline-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--bs-border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            z-index: 1;
+        }
+
+            .timeline-icon i {
+                font-size: 1.1rem;
+            }
+
+            .timeline-icon.text-success {
+                border-color: var(--bs-success);
+                background: rgba(25, 135, 84, 0.1);
+            }
+
+            .timeline-icon.text-danger {
+                border-color: var(--bs-danger);
+                background: rgba(220, 53, 69, 0.1);
+            }
+
+            .timeline-icon.text-warning {
+                border-color: var(--bs-warning);
+                background: rgba(255, 193, 7, 0.1);
+            }
+
+        .modal-xl {
+            max-width: 98%;
+        }
+
+        .spinner-border {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+}
+

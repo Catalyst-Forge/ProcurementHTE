@@ -5,7 +5,7 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IApprovalService
     {
-        Task<IReadOnlyList<WoDocumentApprovals>> GetPendingApprovalsForUserAsync(User user);
+        Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(User user);
         Task ApproveAsync(string approvalId, string approverUserId);
         Task RejectAsync(string approvalId, string approverUserId, string? note);
         Task<GateInfoDto?> GetCurrentPendingGateByQrAsync(
@@ -13,7 +13,7 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
         Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(
-            string woDocumentApprovalId,
+            string procDocumentApprovalId,
             CancellationToken ct = default
         );
         Task<ApprovalUpdateResult> UpdateStatusByQrAsync(
@@ -31,7 +31,7 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
         Task<ApprovalUpdateResult> UpdateStatusByDocumentIdAsync(
-            string woDocumentId,
+            string procDocumentId,
             string action,
             string? note,
             User currentUser,
@@ -40,7 +40,7 @@ namespace ProcurementHTE.Core.Interfaces
 
         // IApprovalService.cs
         Task<ApprovalTimelineDto?> GetApprovalTimelineAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         );
     }

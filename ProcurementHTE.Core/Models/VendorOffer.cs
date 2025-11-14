@@ -21,15 +21,15 @@ namespace ProcurementHTE.Core.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Foreign Keys
-        public string WorkOrderId { get; set; } = null!;
-        public string WoOfferId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
+        public string ProcOfferId { get; set; } = null!;
         public string VendorId { get; set; } = null!;
 
-        [ForeignKey("WorkOrderId")]
-        public WorkOrder WorkOrder { get; set; } = default!;
+        [ForeignKey("ProcurementId")]
+        public Procurement Procurement { get; set; } = default!;
 
-        [ForeignKey("WoOfferId")]
-        public WoOffer WoOffer { get; set; } = default!;
+        [ForeignKey("ProcOfferId")]
+        public ProcOffer ProcOffer { get; set; } = default!;
 
         [ForeignKey("VendorId")]
         public Vendor Vendor { get; set; } = default!;

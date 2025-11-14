@@ -9,19 +9,19 @@ namespace ProcurementHTE.Core.Interfaces
     public interface IApprovalRepository
     {
         // ===== EXISTING (contoh, biarkan yang lama tetap ada) =====
-        Task<(bool AllDocsApproved, string WorkOrderId)> ApproveAsync(
+        Task<(bool AllDocsApproved, string ProcurementId)> ApproveAsync(
             string approvalId,
             string approverUserId
         );
         Task RejectAsync(string approvalId, string approverUserId, string? note);
-        Task<IReadOnlyList<WoDocumentApprovals>> GetPendingApprovalsForUserAsync(User user);
+        Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(User user);
 
         Task<GateInfoDto?> GetCurrentPendingGateByQrAsync(
             string qrText,
             CancellationToken ct = default
         );
         Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(
-            string woDocumentApprovalId,
+            string procDocumentApprovalId,
             CancellationToken ct = default
         );
 
@@ -35,9 +35,9 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
 
-        Task<WoDocumentApprovals?> GetLastApprovalByUserOnDocumentAsync(
+        Task<ProcDocumentApprovals?> GetLastApprovalByUserOnDocumentAsync(
             string userId,
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         );
 
@@ -56,16 +56,16 @@ namespace ProcurementHTE.Core.Interfaces
         );
 
         Task<IReadOnlyList<ApprovalStepDto>> GetDocumentApprovalChainAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         );
 
         Task<GateInfoDto?> GetCurrentPendingGateByDocumentIdAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         );
         Task<RejectionInfoDto?> GetLastRejectionInfoAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         );
     }

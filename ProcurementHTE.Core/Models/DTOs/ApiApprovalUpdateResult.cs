@@ -7,8 +7,8 @@
         public string? Message { get; set; }
         public string? Action { get; set; }     // "approve" | "reject"
         public string? ApprovalId { get; set; }
-        public string? WorkOrderId { get; set; }
-        public string? WoDocumentId { get; set; }
+        public string? ProcurementId { get; set; }
+        public string? ProcDocumentId { get; set; }
         public string? DocStatus { get; set; }
         public int? CurrentGateLevel { get; set; }
         public int? CurrentGateSequence { get; set; }

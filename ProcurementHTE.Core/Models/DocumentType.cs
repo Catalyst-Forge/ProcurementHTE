@@ -11,7 +11,7 @@ namespace ProcurementHTE.Core.Models
 
         public string Description { get; set; } = null!;
 
-        public ICollection<WoDocuments> WoDocuments { get; set; } = [];
-        public ICollection<WoTypeDocuments> WoTypeDocuments { get; set; } = [];
+        public ICollection<ProcDocuments> ProcDocuments { get; set; } = [];
+        public ICollection<JobTypeDocuments> JobTypeDocuments { get; set; } = [];
     }
 }

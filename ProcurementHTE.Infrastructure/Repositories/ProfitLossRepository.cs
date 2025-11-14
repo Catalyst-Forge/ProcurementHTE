@@ -17,35 +17,35 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return _context
                 .ProfitLosses.Include(p => p.Items)
-                .Include(p => p.WorkOrder)
-                .ThenInclude(wo => wo.WoOffers)
+                .Include(p => p.Procurement)
+                .ThenInclude(wo => wo.ProcOffers)
                 .FirstOrDefaultAsync(p => p.ProfitLossId == profitLossId);
         }
 
-        public async Task<ProfitLoss?> GetByWorkOrderAsync(string woId)
+        public async Task<ProfitLoss?> GetByProcurementAsync(string woId)
         {
             return await _context
                 .ProfitLosses.Include(p => p.Items)
-                .Include(p => p.WorkOrder)
-                .ThenInclude(wo => wo.WoOffers)
+                .Include(p => p.Procurement)
+                .ThenInclude(wo => wo.ProcOffers)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.WorkOrderId == woId);
+                .FirstOrDefaultAsync(p => p.ProcurementId == woId);
         }
 
-        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string workOrderId)
+        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string procurementId)
         {
             return _context
-                .ProfitLossSelectedVendors.Where(x => x.WorkOrderId == workOrderId)
+                .ProfitLossSelectedVendors.Where(x => x.ProcurementId == procurementId)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<ProfitLoss?> GetLatestByWorkOrderIdAsync(string workOrderId)
+        public async Task<ProfitLoss?> GetLatestByProcurementIdAsync(string procurementId)
         {
             return await _context
                 .ProfitLosses.AsNoTracking()
                 .Include(p => p.Items)
-                .Where(p => p.WorkOrderId == workOrderId)
+                .Where(p => p.ProcurementId == procurementId)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync();
         }
@@ -89,7 +89,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Distinct()
                 .Select(vendor => new ProfitLossSelectedVendor
                 {
-                    WorkOrderId = woId,
+                    ProcurementId = woId,
                     VendorId = vendor,
                 });
 
@@ -106,7 +106,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task RemoveSelectedVendorsAsync(string woId)
         {
             var olds = await _context
-                .ProfitLossSelectedVendors.Where(item => item.WorkOrderId == woId)
+                .ProfitLossSelectedVendors.Where(item => item.ProcurementId == woId)
                 .ToListAsync();
             if (olds.Count > 0)
             {

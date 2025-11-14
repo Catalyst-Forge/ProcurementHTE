@@ -92,7 +92,7 @@
 </div>
 
 <div class="hstack justify-content-between border rounded-3 my-2 p-2">
-    <span>Showing 1-10 of @ViewData["TotalWo"] entries</span>
+    <span>Showing 1-10 of @(ViewData["TotalProcurements"] ?? 0) entries</span>
     <nav aria-label="Page navigation example">
         <ul class="pagination mb-0 gap-1">
             <li class="page-item">
