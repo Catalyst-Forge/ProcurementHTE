@@ -10,8 +10,10 @@ public class ProcOffer
 
     [Required]
     public string ItemPenawaran { get; set; } = null!;
+
     [Required]
     public int Qty { get; set; }
+
     [Required]
     public string Unit { get; set; } = null!;
 

@@ -1,4 +1,4 @@
-@model ProcurementHTE.Web.Models.ViewModels.WorkOrderCreateViewModel
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementCreateViewModel
 
 <section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
@@ -6,9 +6,9 @@
         <hr />
         <div class="row">
             <div class="col-12 col-md-4">
-                <label asp-for="WorkOrder.XS2" class="form-label">Jumlah SPOT</label>
-                <input asp-for="WorkOrder.XS2" type="number" class="form-control" />
-                <span asp-validation-for="WorkOrder.XS2" class="text-danger small"></span>
+                <label asp-for="Procurement.Note" class="form-label">Jumlah SPOT</label>
+                <input asp-for="Procurement.Note" type="number" class="form-control" />
+                <span asp-validation-for="Procurement.Note" class="text-danger small"></span>
             </div>
         </div>
     </fieldset>

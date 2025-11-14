@@ -2,6 +2,7 @@
 @using ProcurementHTE.Core.Common
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
+@using System.Linq
 @model PagedResult<Procurement>
 @inject IAuthorizationService AuthZ
 @{
@@ -29,6 +30,7 @@
         ("Status","Status"),
     };
     var pageSize = Model.PageSize;
+    Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
@@ -74,42 +76,84 @@
 </form>
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover mobile-table">
+    <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
-            <tr>
-                <th class="border-end">Procurement No.</th>
-                <th class="border-end">Job Type</th>
+            <tr class="align-middle">
                 <th class="border-end">Job Name</th>
-                <th class="border-end">Status</th>
                 <th class="border-end">Start Date</th>
+                <th class="border-end">Job Type</th>
+                <th class="border-end text-end">Revenue</th>
+                <th class="border-end text-end">Cost</th>
+                <th class="border-end text-end">Profit %</th>
+                <th class="border-end">Vendor</th>
+                <th class="border-end">Project Region</th>
+                <th class="border-end text-center">PIC Ops</th>
+                <th class="border-end text-center">Analyst</th>
+                <th class="border-end text-center">Asst. Manager</th>
+                <th class="border-end text-center">Manager</th>
+                <th class="text-center">Tracking</th>
                 <th class="text-center">Action</th>
+
             </tr>
         </thead>
 
         <tbody>
-            @if (!Model.Items.Any() || Model == null) {
+            @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="8" class="text-center text-muted">No Procurement data found</td>
+                    <td colspan="13" class="text-center text-muted">No Procurement data found</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
+                    var revenue = item.AccrualAmount;
+                    var cost = item.RealizationAmount;
+                    var profitPercent = "-";
+                    if (revenue.HasValue && cost.HasValue && revenue.Value != 0)
+                    {
+                        var pct = (revenue.Value - cost.Value) / revenue.Value * 100m;
+                        profitPercent = pct.ToString("0.##");
+                    }
+                    var vendorName = item.VendorOffers?.FirstOrDefault()?.Vendor?.VendorName ?? item.ProcOffers?.FirstOrDefault()?.ItemPenawaran ?? "-";
+                    var region = item.ProjectRegion.ToString();
+
                     <tr>
-                        <td class="d-flex d-sm-table-cell" data-label="Procurement No.">
-                            @Html.DisplayFor(modelItem => item.ProcNum)
-                        </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Job Type">
-                            @(item.JobTypeConfig?.TypeName ?? item.JobType ?? "-")
-                        </td>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
-                            @Html.DisplayFor(modelItem => item.JobName)
-                        </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Status">
-                            <span class="badge @BadgeClass(item.Status?.StatusName ?? "")">
-                                @(item.Status?.StatusName ?? "-")
-                            </span>
+                            @item.JobName
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Start Date">
-                            @(item.StartDate?.ToString("dd MMM yyyy") ?? "-")
+                            @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Job Type">
+                            @(item.JobType?.TypeName ?? "-")
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Revenue">
+                            @formatMoney(revenue)
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Cost">
+                            @formatMoney(cost)
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Profit %">
+                            @profitPercent
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Vendor">
+                            @vendorName
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Project Region">
+                            @(!string.IsNullOrWhiteSpace(region) ? region : "-")
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="PIC Ops">
+                            -
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Analyst">
+                            -
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Asst. Manager">
+                            -
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Manager">
+                            -
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Tracking">
+                            -
                         </td>
                         <td class="text-md-center d-flex d-sm-table-cell" data-label="Action">
                             <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
@@ -136,37 +180,37 @@
 
 @section Scripts {
     <script>
-  (function () {
-    const form = document.getElementById('filterForm');
-    const searchBox = document.getElementById('searchBox');
-    const fieldsHidden = document.getElementById('fieldsHidden');
-    const pageHidden = document.getElementById('pageHidden');
-    const pageSizeHidden = document.getElementById('pageSizeHidden');
+        (function () {
+            const form = document.getElementById('filterForm');
+            const searchBox = document.getElementById('searchBox');
+            const fieldsHidden = document.getElementById('fieldsHidden');
+            const pageHidden = document.getElementById('pageHidden');
+            const pageSizeHidden = document.getElementById('pageSizeHidden');
 
-    // Apply: ambil kolom tercentang, reset page ke 1, submit
-    document.getElementById('btnApplyFilter').addEventListener('click', function () {
-      const cols = Array.from(document.querySelectorAll('.filter-col:checked')).map(c => c.value);
-      fieldsHidden.value = cols.join(',');
-      pageHidden.value = 1;
-      form.submit();
-    });
+            // Apply: ambil kolom tercentang, reset page ke 1, submit
+            document.getElementById('btnApplyFilter').addEventListener('click', function () {
+                const cols = Array.from(document.querySelectorAll('.filter-col:checked')).map(c => c.value);
+                fieldsHidden.value = cols.join(',');
+                pageHidden.value = 1;
+                form.submit();
+            });
 
-    // Enter di search langsung submit (page reset ke 1)
-    searchBox.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        pageHidden.value = 1;
-        form.submit();
-      }
-    });
+            // Enter di search langsung submit (page reset ke 1)
+            searchBox.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    pageHidden.value = 1;
+                    form.submit();
+                }
+            });
 
-    // Refresh: hapus search & kolom, reset page ke 1 & submit
-    document.getElementById('btnRefresh').addEventListener('click', function () {
-      searchBox.value = '';
-      fieldsHidden.value = ''; // pakai default di Controller kalau kosong
-      pageHidden.value = 1;
-      form.submit();
-    });
-  })();
-</script>
+            // Refresh: hapus search & kolom, reset page ke 1 & submit
+            document.getElementById('btnRefresh').addEventListener('click', function () {
+                searchBox.value = '';
+                fieldsHidden.value = ''; // pakai default di Controller kalau kosong
+                pageHidden.value = 1;
+                form.submit();
+            });
+        })();
+    </script>
 }

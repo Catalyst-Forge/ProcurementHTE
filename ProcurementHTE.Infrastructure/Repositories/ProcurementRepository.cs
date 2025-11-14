@@ -20,7 +20,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         #region Query Methods
 
-        public async Task<Core.Common.PagedResult<Procurement>> GetAllAsync(int page, int pageSize, string? search, ISet<string> fields, CancellationToken ct)
+        public async Task<Core.Common.PagedResult<Procurement>> GetAllAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
         {
             var query = BuildBaseQuery();
 
@@ -38,29 +44,32 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<Procurement?> GetByIdAsync(string id)
         {
             return await _context
-                .Procurements
-                .Include(p => p.ProcOffers)
-                .Include(p => p.Status)
-                .Include(p => p.JobTypeConfig)
-                .Include(p => p.User)
-                .Include(p => p.ProcDetails)
-                .FirstOrDefaultAsync(t => t.ProcurementId == id);
+                .Procurements.Include(procurement => procurement.ProcOffers)
+                .Include(procurement => procurement.Status)
+                .Include(procurement => procurement.JobType)
+                .Include(procurement => procurement.User)
+                .Include(procurement => procurement.ProcDetails)
+                .FirstOrDefaultAsync(procurement => procurement.ProcurementId == id);
         }
 
         public async Task<Procurement?> GetWithSelectedOfferAsync(string id)
         {
             return await _context
-                .Procurements.Include(wo => wo.VendorOffers)
-                .ThenInclude(vo => vo.Vendor)
-                .FirstOrDefaultAsync(wo => wo.ProcurementId == id);
+                .Procurements.Include(procurement => procurement.VendorOffers)
+                .ThenInclude(vendorOffer => vendorOffer.Vendor)
+                .FirstOrDefaultAsync(procurement => procurement.ProcurementId == id);
         }
 
-        public async Task<IReadOnlyList<Procurement>> GetRecentByUserAsync(string userId, int limit, CancellationToken ct)
+        public async Task<IReadOnlyList<Procurement>> GetRecentByUserAsync(
+            string userId,
+            int limit,
+            CancellationToken ct
+        )
         {
             return await _context
-                .Procurements.Where(wo => wo.UserId == userId)
-                .OrderByDescending(wo => wo.CreatedAt)
-                .Include(wo => wo.Status)
+                .Procurements.Where(procurement => procurement.UserId == userId)
+                .OrderByDescending(procurement => procurement.CreatedAt)
+                .Include(procurement => procurement.Status)
                 .AsNoTracking()
                 .Take(limit)
                 .ToListAsync(ct);
@@ -75,7 +84,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return await _context
                 .Procurements.GroupBy(wo => wo.Status!.StatusName)
-                .Select(group => new ProcurementStatusCountDto { Status = group.Key, Count = group.Count() })
+                .Select(group => new ProcurementStatusCountDto
+                {
+                    Status = group.Key,
+                    Count = group.Count(),
+                })
                 .ToListAsync();
         }
 
@@ -88,22 +101,27 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var normalized = name.Trim();
             return await _context
                 .Statuses.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.StatusName != null && EF.Functions.Like(s.StatusName, normalized));
+                .FirstOrDefaultAsync(status =>
+                    status.StatusName != null && EF.Functions.Like(status.StatusName, normalized)
+                );
         }
 
         public Task<List<Status>> GetStatusesAsync()
         {
-            return _context.Statuses.AsNoTracking().OrderBy(s => s.StatusName).ToListAsync();
+            return _context
+                .Statuses.AsNoTracking()
+                .OrderBy(status => status.StatusName)
+                .ToListAsync();
         }
 
         public Task<JobTypes?> GetJobTypeByIdAsync(string id)
         {
-            return _context.JobTypes.FirstOrDefaultAsync(wt => wt.JobTypeId == id);
+            return _context.JobTypes.FirstOrDefaultAsync(job => job.JobTypeId == id);
         }
 
         public Task<List<JobTypes>> GetJobTypesAsync()
         {
-            return _context.JobTypes.OrderBy(wt => wt.TypeName).ToListAsync();
+            return _context.JobTypes.OrderBy(job => job.TypeName).ToListAsync();
         }
 
         #endregion
@@ -111,7 +129,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         #region Command Methods
 
         public async Task StoreProcurementWithDetailsAsync(
-            Procurement wo,
+            Procurement procurement,
             List<ProcDetail> details,
             List<ProcOffer> offers
         )
@@ -125,12 +143,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
                 try
                 {
-                    wo.ProcNum = await GenerateNextProcNumAsync();
+                    procurement.ProcNum = await GenerateNextProcNumAsync();
 
-                    AssignProcurementIdToDetails(wo.ProcurementId, validDetails);
-                    AssignProcurementIdToOffers(wo.ProcurementId, validOffers);
+                    AssignProcurementIdToDetails(procurement.ProcurementId, validDetails);
+                    AssignProcurementIdToOffers(procurement.ProcurementId, validOffers);
 
-                    await _context.Procurements.AddAsync(wo);
+                    await _context.Procurements.AddAsync(procurement);
 
                     if (validDetails.Count != 0)
                         await _context.ProcDetails.AddRangeAsync(validDetails);
@@ -161,22 +179,24 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
         }
 
-        public async Task UpdateProcurementAsync(Procurement wo)
+        public async Task UpdateProcurementAsync(Procurement procurement)
         {
             try
             {
-                _context.Entry(wo).State = EntityState.Modified;
+                _context.Entry(procurement).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                var exists = await _context.Procurements.AsNoTracking().AnyAsync(wo =>
-                    wo.ProcurementId == wo.ProcurementId
-                );
+                var exists = await _context
+                    .Procurements.AsNoTracking()
+                    .AnyAsync(procurement =>
+                        procurement.ProcurementId == procurement.ProcurementId
+                    );
 
                 if (!exists)
                     throw new KeyNotFoundException(
-                        $"Procurement dengan ID {wo.ProcurementId} tidak ditemukan"
+                        $"Procurement dengan ID {procurement.ProcurementId} tidak ditemukan"
                     );
 
                 throw new InvalidOperationException(
@@ -186,7 +206,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         }
 
         public async Task UpdateProcurementWithDetailsAsync(
-            Procurement wo,
+            Procurement procurement,
             List<ProcDetail> details,
             List<ProcOffer> offers
         )
@@ -195,14 +215,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             try
             {
-                _context.Entry(wo).State = EntityState.Modified;
+                _context.Entry(procurement).State = EntityState.Modified;
 
                 var existingDetails = await _context
-                    .ProcDetails.Where(d => d.ProcurementId == wo.ProcurementId)
+                    .ProcDetails.Where(detail => detail.ProcurementId == procurement.ProcurementId)
                     .ToListAsync();
 
                 var existingOffers = await _context
-                    .ProcOffers.Where(o => o.ProcurementId == wo.ProcurementId)
+                    .ProcOffers.Where(offer => offer.ProcurementId == procurement.ProcurementId)
                     .ToListAsync();
 
                 if (existingDetails.Count != 0)
@@ -214,8 +234,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 var validDetails = FilterValidDetails(details);
                 var validOffers = FilterValidOffers(offers);
 
-                AssignProcurementIdToDetails(wo.ProcurementId, validDetails);
-                AssignProcurementIdToOffers(wo.ProcurementId, validOffers);
+                AssignProcurementIdToDetails(procurement.ProcurementId, validDetails);
+                AssignProcurementIdToOffers(procurement.ProcurementId, validOffers);
 
                 if (validDetails.Count != 0)
                     await _context.ProcDetails.AddRangeAsync(validDetails);
@@ -233,13 +253,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
         }
 
-        public async Task DropProcurementAsync(Procurement wo)
+        public async Task DropProcurementAsync(Procurement procurement)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                _context.Procurements.Remove(wo);
+                _context.Procurements.Remove(procurement);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -257,12 +277,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
         private IQueryable<Procurement> BuildBaseQuery()
         {
             return _context
-                .Procurements
-                .Include(p => p.ProcOffers)
-                .Include(p => p.Status)
-                .Include(p => p.JobTypeConfig)
-                .Include(p => p.User)
-                .Include(p => p.ProcDetails)
+                .Procurements.Include(procurement => procurement.ProcOffers)
+                .Include(procurement => procurement.Status)
+                .Include(procurement => procurement.JobType)
+                .Include(procurement => procurement.User)
+                .Include(procurement => procurement.ProcDetails)
                 .AsNoTracking();
         }
 
@@ -301,20 +320,36 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             bool byProcNum = fields.Contains("ProcNum", StringComparer.OrdinalIgnoreCase);
             bool byJobName = fields.Contains("JobName", StringComparer.OrdinalIgnoreCase);
-            bool byJobType = fields.Contains("JobType", StringComparer.OrdinalIgnoreCase);
             bool byProjectCode = fields.Contains("ProjectCode", StringComparer.OrdinalIgnoreCase);
-            bool bySelectedVendor = fields.Contains("SelectedVendorName", StringComparer.OrdinalIgnoreCase);
+            bool bySelectedVendor = fields.Contains(
+                "SelectedVendorName",
+                StringComparer.OrdinalIgnoreCase
+            );
             bool byStatus = fields.Contains("Status", StringComparer.OrdinalIgnoreCase);
 
             var like = $"%{searchTerm}%";
 
-            return query.Where(p =>
-                (byProcNum && p.ProcNum != null && EF.Functions.Like(p.ProcNum, like)) ||
-                (byJobName && p.JobName != null && EF.Functions.Like(p.JobName, like)) ||
-                (byJobType && p.JobType != null && EF.Functions.Like(p.JobType, like)) ||
-                (byProjectCode && p.ProjectCode != null && EF.Functions.Like(p.ProjectCode, like)) ||
-                (bySelectedVendor && p.SelectedVendorName != null && EF.Functions.Like(p.SelectedVendorName, like)) ||
-                (byStatus && p.Status != null && EF.Functions.Like(p.Status.StatusName, like))
+            return query.Where(procurement =>
+                (
+                    byProcNum
+                    && procurement.ProcNum != null
+                    && EF.Functions.Like(procurement.ProcNum, like)
+                )
+                || (
+                    byJobName
+                    && procurement.JobName != null
+                    && EF.Functions.Like(procurement.JobName, like)
+                )
+                || (
+                    byProjectCode
+                    && procurement.ProjectCode != null
+                    && EF.Functions.Like(procurement.ProjectCode, like)
+                )
+                || (
+                    byStatus
+                    && procurement.Status != null
+                    && EF.Functions.Like(procurement.Status.StatusName, like)
+                )
             );
         }
 
@@ -327,9 +362,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
         private async Task<string?> GetLastProcNumAsync(string prefix)
         {
             return await _context
-                .Procurements.Where(w => w.ProcNum!.StartsWith(prefix))
-                .OrderByDescending(w => w.ProcNum)
-                .Select(w => w.ProcNum)
+                .Procurements.Where(procurement => procurement.ProcNum!.StartsWith(prefix))
+                .OrderByDescending(procurement => procurement.ProcNum)
+                .Select(procurement => procurement.ProcNum)
                 .FirstOrDefaultAsync();
         }
 
@@ -351,13 +386,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToList();
         }
 
-        private static void AssignProcurementIdToDetails(string procurementId, List<ProcDetail> details)
+        private static void AssignProcurementIdToDetails(
+            string procurementId,
+            List<ProcDetail> details
+        )
         {
             foreach (var detail in details)
                 detail.ProcurementId = procurementId;
         }
 
-        private static void AssignProcurementIdToOffers(string procurementId, List<ProcOffer> offers)
+        private static void AssignProcurementIdToOffers(
+            string procurementId,
+            List<ProcOffer> offers
+        )
         {
             foreach (var offer in offers)
                 offer.ProcurementId = procurementId;

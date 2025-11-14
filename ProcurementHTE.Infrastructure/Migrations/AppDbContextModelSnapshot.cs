@@ -255,8 +255,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal?>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<string>("Unit")
                         .HasMaxLength(50)
@@ -437,39 +437,34 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<decimal?>("AccrualAmount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("AnalystHteSignerUserId")
+                    b.Property<string>("AnalystHteUserId")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("AssistantManagerSignerUserId")
+                    b.Property<string>("AssistantManagerUserId")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ContractType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("ContractType")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<decimal?>("DistanceKm")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime?>("EndDate")
+                    b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("JobName")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("JobType")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("JobTypeId")
                         .HasColumnType("nvarchar(450)");
@@ -482,7 +477,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("ManagerSignerUserId")
+                    b.Property<string>("ManagerUserId")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -499,6 +495,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PicOpsUserId")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -514,9 +511,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("ProjectRegion")
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                    b.Property<int>("ProjectRegion")
+                        .HasColumnType("int");
 
                     b.Property<string>("RaNumber")
                         .HasMaxLength(100)
@@ -524,10 +520,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<decimal?>("RealizationAmount")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SelectedVendorName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("SpkNumber")
                         .HasMaxLength(100)
@@ -537,7 +529,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime?>("StartDate")
+                    b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("StatusId")
@@ -549,21 +541,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("VendorSphNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("ProcurementId");
 
-                    b.HasIndex("AnalystHteSignerUserId");
-
-                    b.HasIndex("AssistantManagerSignerUserId");
-
                     b.HasIndex("JobTypeId");
-
-                    b.HasIndex("ManagerSignerUserId");
-
-                    b.HasIndex("PicOpsUserId");
 
                     b.HasIndex("ProcNum")
                         .IsUnique()
@@ -1178,30 +1158,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Procurement", b =>
                 {
-                    b.HasOne("ProcurementHTE.Core.Models.User", "AnalystHteSignerUser")
-                        .WithMany()
-                        .HasForeignKey("AnalystHteSignerUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ProcurementHTE.Core.Models.User", "AssistantManagerSignerUser")
-                        .WithMany()
-                        .HasForeignKey("AssistantManagerSignerUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ProcurementHTE.Core.Models.JobTypes", "JobTypeConfig")
+                    b.HasOne("ProcurementHTE.Core.Models.JobTypes", "JobType")
                         .WithMany("Procurements")
                         .HasForeignKey("JobTypeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ProcurementHTE.Core.Models.User", "ManagerSignerUser")
-                        .WithMany()
-                        .HasForeignKey("ManagerSignerUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ProcurementHTE.Core.Models.User", "PicOpsUser")
-                        .WithMany()
-                        .HasForeignKey("PicOpsUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ProcurementHTE.Core.Models.Status", "Status")
                         .WithMany()
@@ -1214,15 +1174,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("AnalystHteSignerUser");
-
-                    b.Navigation("AssistantManagerSignerUser");
-
-                    b.Navigation("JobTypeConfig");
-
-                    b.Navigation("ManagerSignerUser");
-
-                    b.Navigation("PicOpsUser");
+                    b.Navigation("JobType");
 
                     b.Navigation("Status");
 

@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Enums;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,89 +11,97 @@ public class Procurement
     public string ProcurementId { get; set; } = Guid.NewGuid().ToString();
 
     [Required, MaxLength(100)]
-    [DisplayName("No. Procurement")]
+    [DisplayName("Procurement No.")]
     public string ProcNum { get; set; } = null!;
 
     [MaxLength(100)]
-    [DisplayName("No. SPK")]
+    [DisplayName("SPK No.")]
     public string? SpkNumber { get; set; }
-
-    [MaxLength(32)]
-    [DisplayName("Jenis Pekerjaan")]
-    public string? JobType { get; set; }
 
     [MaxLength(255)]
     public string? JobTypeOther { get; set; }
 
-    [MaxLength(100)]
-    public string? ContractType { get; set; }
+    [Required]
+    [DisplayName("Contract Type")]
+    public ContractType ContractType { get; set; }
 
+    [Required]
     [MaxLength(255)]
-    [DisplayName("Nama Pekerjaan")]
-    public string? JobName { get; set; }
+    [DisplayName("Job Name")]
+    public string JobName { get; set; } = null!;
 
-    [DisplayName("Tanggal Mulai")]
-    public DateTime? StartDate { get; set; }
+    [Required]
+    [DisplayName("Start Date")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    public DateTime StartDate { get; set; }
 
-    [DisplayName("Tanggal Selesai")]
-    public DateTime? EndDate { get; set; }
+    [Required]
+    [DisplayName("End Date")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    public DateTime EndDate { get; set; }
 
-    [MaxLength(16)]
-    public string? ProjectRegion { get; set; }
-
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal? DistanceKm { get; set; }
+    [Required]
+    [DisplayName("Project Region")]
+    public ProjectRegion ProjectRegion { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
+    [DisplayName("Accrual Amount")]
     public decimal? AccrualAmount { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
+    [DisplayName("Realization Amount")]
     public decimal? RealizationAmount { get; set; }
 
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Potential Accrual Date")]
     public DateTime? PotentialAccrualDate { get; set; }
 
     [MaxLength(100)]
+    [DisplayName("SPMP Number")]
     public string? SpmpNumber { get; set; }
 
     [MaxLength(100)]
+    [DisplayName("Memo Number")]
     public string? MemoNumber { get; set; }
 
     [MaxLength(100)]
+    [DisplayName("OE Number")]
     public string? OeNumber { get; set; }
 
-    [MaxLength(255)]
-    public string? SelectedVendorName { get; set; }
-
     [MaxLength(100)]
-    public string? VendorSphNumber { get; set; }
-
-    [MaxLength(100)]
+    [DisplayName("RA Number")]
     public string? RaNumber { get; set; }
 
     [MaxLength(64)]
+    [DisplayName("Project Code")]
     public string? ProjectCode { get; set; }
 
     [MaxLength(255)]
+    [DisplayName("LTC Name")]
     public string? LtcName { get; set; }
 
     [MaxLength(1000)]
     public string? Note { get; set; }
 
-    public string? JobTypeId { get; set; }
-    public int StatusId { get; set; }
-    public string? UserId { get; set; }
-
+    [Required]
     [MaxLength(450)]
-    public string? PicOpsUserId { get; set; }
+    [DisplayName("PIC User")]
+    public string PicOpsUserId { get; set; } = null!;
 
+    [Required]
     [MaxLength(450)]
-    public string? AnalystHteSignerUserId { get; set; }
+    [DisplayName("Analyst HTE User")]
+    public string AnalystHteUserId { get; set; } = null!;
 
+    [Required]
     [MaxLength(450)]
-    public string? AssistantManagerSignerUserId { get; set; }
+    [DisplayName("Assistant Manager User")]
+    public string AssistantManagerUserId { get; set; } = null!;
 
+    [Required]
     [MaxLength(450)]
-    public string? ManagerSignerUserId { get; set; }
+    [DisplayName("Manager User")]
+    public string ManagerUserId { get; set; } = null!;
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -103,26 +112,20 @@ public class Procurement
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime? CompletedAt { get; set; }
 
+    // Foreign Key
+    public string? JobTypeId { get; set; }
+    public int StatusId { get; set; }
+    public string? UserId { get; set; }
+
+    // Nav
     [ForeignKey(nameof(JobTypeId))]
-    public JobTypes? JobTypeConfig { get; set; }
+    public JobTypes? JobType { get; set; }
 
     [ForeignKey(nameof(StatusId))]
     public Status? Status { get; set; }
 
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
-
-    [ForeignKey(nameof(PicOpsUserId))]
-    public User? PicOpsUser { get; set; }
-
-    [ForeignKey(nameof(AnalystHteSignerUserId))]
-    public User? AnalystHteSignerUser { get; set; }
-
-    [ForeignKey(nameof(AssistantManagerSignerUserId))]
-    public User? AssistantManagerSignerUser { get; set; }
-
-    [ForeignKey(nameof(ManagerSignerUserId))]
-    public User? ManagerSignerUser { get; set; }
 
     public ICollection<ProcOffer> ProcOffers { get; set; } = [];
     public ICollection<ProcDocuments>? ProcDocuments { get; set; } = [];

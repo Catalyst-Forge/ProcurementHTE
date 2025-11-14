@@ -13,9 +13,8 @@ public class ProcDetail
     [DisplayName("Nama Unit")]
     public string? ItemName { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    [DisplayName("Qty")]
-    public decimal? Quantity { get; set; }
+    [DisplayName("Quantity")]
+    public int? Quantity { get; set; }
 
     [MaxLength(50)]
     public string? Unit { get; set; }

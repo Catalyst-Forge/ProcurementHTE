@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Interfaces;
@@ -19,7 +21,8 @@ namespace ProcurementHTE.Web.Controllers
         IDocumentGenerator documentGenerator,
         IDocumentTypeService docTypeService,
         IProcDocumentService procDocService,
-        ILogger<ProcurementsController> logger
+        ILogger<ProcurementsController> logger,
+        UserManager<User> userManager
     ) : Controller
     {
         private readonly IProcurementService _procurementService = procurementService;
@@ -30,6 +33,7 @@ namespace ProcurementHTE.Web.Controllers
         private readonly IDocumentTypeService _docTypeService = docTypeService;
         private readonly IProcDocumentService _procDocService = procDocService;
         private readonly ILogger<ProcurementsController> _logger = logger;
+        private readonly UserManager<User> _userManager = userManager;
 
         #region CRUD Operations
 
@@ -140,9 +144,10 @@ namespace ProcurementHTE.Web.Controllers
             var createWoVM = new ProcurementCreateViewModel
             {
                 Procurement = new Procurement { JobTypeId = jobTypeId },
-                Details = new List<ProcDetail>(),
-                Offers = new List<ProcOffer>(),
+                Details = [],
+                Offers = [],
             };
+            await PopulateCreateUserSelectListsAsync(createWoVM);
             ViewBag.CreatePartial = ResolveCreatePartialByName(jobType.TypeName);
             return View("CreateByType", createWoVM);
         }
@@ -241,14 +246,14 @@ namespace ProcurementHTE.Web.Controllers
 
             try
             {
-                var (jobTypes, statuses) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+                var (jobTypes, statuses) =
+                    await _procurementService.GetRelatedEntitiesForProcurementAsync();
 
                 var viewModel = new ProcurementEditViewModel
                 {
                     ProcurementId = procurement.ProcurementId,
                     ProcNum = procurement.ProcNum,
                     JobTypeId = procurement.JobTypeId,
-                    JobType = procurement.JobType,
                     JobTypeOther = procurement.JobTypeOther,
                     ContractType = procurement.ContractType,
                     JobName = procurement.JobName,
@@ -256,31 +261,27 @@ namespace ProcurementHTE.Web.Controllers
                     StartDate = procurement.StartDate,
                     EndDate = procurement.EndDate,
                     ProjectRegion = procurement.ProjectRegion,
-                    DistanceKm = procurement.DistanceKm,
                     AccrualAmount = procurement.AccrualAmount,
                     RealizationAmount = procurement.RealizationAmount,
                     PotentialAccrualDate = procurement.PotentialAccrualDate,
                     SpmpNumber = procurement.SpmpNumber,
                     MemoNumber = procurement.MemoNumber,
                     OeNumber = procurement.OeNumber,
-                    SelectedVendorName = procurement.SelectedVendorName,
-                    VendorSphNumber = procurement.VendorSphNumber,
                     RaNumber = procurement.RaNumber,
                     ProjectCode = procurement.ProjectCode,
                     LtcName = procurement.LtcName,
                     Note = procurement.Note,
                     StatusId = procurement.StatusId,
                     PicOpsUserId = procurement.PicOpsUserId,
-                    AnalystHteSignerUserId = procurement.AnalystHteSignerUserId,
-                    AssistantManagerSignerUserId = procurement.AssistantManagerSignerUserId,
-                    ManagerSignerUserId = procurement.ManagerSignerUserId,
-                    Details = procurement.ProcDetails?.ToList() ?? new List<ProcDetail>(),
-                    Offers = procurement.ProcOffers?.ToList() ?? new List<ProcOffer>(),
-                    //JobTypes = jobTypes,
-                    //Statuses = statuses,
+                    AnalystHteUserId = procurement.AnalystHteUserId,
+                    AssistantManagerUserId = procurement.AssistantManagerUserId,
+                    ManagerUserId = procurement.ManagerUserId,
+                    Details = procurement.ProcDetails?.ToList() ?? [],
+                    Offers = procurement.ProcOffers?.ToList() ?? [],
                 };
+                await PopulateEditUserSelectListsAsync(viewModel);
 
-                var jobTypeName = procurement.JobTypeConfig?.TypeName ?? procurement.JobType ?? "Other";
+                var jobTypeName = procurement.JobType?.TypeName ?? "Other";
                 ViewBag.SelectedJobTypeName = jobTypeName;
                 ViewBag.CreatePartial = ResolveCreatePartialByName(jobTypeName);
 
@@ -316,44 +317,40 @@ namespace ProcurementHTE.Web.Controllers
 
             try
             {
-var procurement = new Procurement {
-    ProcurementId = editViewModel.ProcurementId,
-    ProcNum = editViewModel.ProcNum,
-    JobTypeId = editViewModel.JobTypeId,
-    JobType = editViewModel.JobType,
-    JobTypeOther = editViewModel.JobTypeOther,
-    ContractType = editViewModel.ContractType,
-    JobName = editViewModel.JobName,
-    StartDate = editViewModel.StartDate,
-    EndDate = editViewModel.EndDate,
-    ProjectRegion = editViewModel.ProjectRegion,
-    DistanceKm = editViewModel.DistanceKm,
-    AccrualAmount = editViewModel.AccrualAmount,
-    RealizationAmount = editViewModel.RealizationAmount,
-    PotentialAccrualDate = editViewModel.PotentialAccrualDate,
-    SpkNumber = editViewModel.SpkNumber,
-    SpmpNumber = editViewModel.SpmpNumber,
-    MemoNumber = editViewModel.MemoNumber,
-    OeNumber = editViewModel.OeNumber,
-    SelectedVendorName = editViewModel.SelectedVendorName,
-    VendorSphNumber = editViewModel.VendorSphNumber,
-    RaNumber = editViewModel.RaNumber,
-    ProjectCode = editViewModel.ProjectCode,
-    LtcName = editViewModel.LtcName,
-    Note = editViewModel.Note,
-    PicOpsUserId = editViewModel.PicOpsUserId,
-    AnalystHteSignerUserId = editViewModel.AnalystHteSignerUserId,
-    AssistantManagerSignerUserId = editViewModel.AssistantManagerSignerUserId,
-    ManagerSignerUserId = editViewModel.ManagerSignerUserId,
-    StatusId = editViewModel.StatusId
-};
-
+                var procurement = new Procurement
+                {
+                    ProcurementId = editViewModel.ProcurementId,
+                    ProcNum = editViewModel.ProcNum,
+                    JobTypeId = editViewModel.JobTypeId,
+                    JobTypeOther = editViewModel.JobTypeOther,
+                    ContractType = editViewModel.ContractType,
+                    JobName = editViewModel.JobName!,
+                    StartDate = editViewModel.StartDate,
+                    EndDate = editViewModel.EndDate,
+                    ProjectRegion = editViewModel.ProjectRegion,
+                    AccrualAmount = editViewModel.AccrualAmount,
+                    RealizationAmount = editViewModel.RealizationAmount,
+                    PotentialAccrualDate = editViewModel.PotentialAccrualDate,
+                    SpkNumber = editViewModel.SpkNumber,
+                    SpmpNumber = editViewModel.SpmpNumber,
+                    MemoNumber = editViewModel.MemoNumber,
+                    OeNumber = editViewModel.OeNumber,
+                    RaNumber = editViewModel.RaNumber,
+                    ProjectCode = editViewModel.ProjectCode,
+                    LtcName = editViewModel.LtcName,
+                    Note = editViewModel.Note,
+                    PicOpsUserId = editViewModel.PicOpsUserId!,
+                    AnalystHteUserId = editViewModel.AnalystHteUserId!,
+                    AssistantManagerUserId = editViewModel.AssistantManagerUserId!,
+                    ManagerUserId = editViewModel.ManagerUserId!,
+                    StatusId = editViewModel.StatusId,
+                };
 
                 await _procurementService.EditProcurementAsync(
                     procurement,
                     id,
-                    editViewModel.Details ?? new List<ProcDetail>(),
-                    editViewModel.Offers ?? new List<ProcOffer>()
+                    editViewModel.Details ?? [],
+                    editViewModel.Offers ?? []
                 );
                 TempData["SuccessMessage"] = "Procurement berhasil diupdate!";
 
@@ -668,12 +665,12 @@ var procurement = new Procurement {
                         .Select(v => new VendorItemOfferInputVm
                         {
                             VendorId = v.VendorId,
-                            Items = (v.Items ?? new List<VendorOfferPerItemDto>())
+                            Items = (v.Items ?? [])
                                 .Select(it => new VendorOfferPerItemInputVm
                                 {
                                     ProcOfferId = it.ProcOfferId,
-                                    Prices = it.Prices?.ToList() ?? new List<decimal>(),
-                                    Letters = it.Letters?.ToList() ?? new List<string>(),
+                                    Prices = it.Prices?.ToList() ?? [],
+                                    Letters = it.Letters?.ToList() ?? [],
                                 })
                                 .ToList(),
                         })
@@ -881,8 +878,8 @@ var procurement = new Procurement {
                         Letters = [],
                     };
 
-                    var prices = item.Prices ?? new List<decimal>();
-                    var letters = item.Letters ?? new List<string>();
+                    var prices = item.Prices ?? [];
+                    var letters = item.Letters ?? [];
 
                     for (int idx = 0; idx < prices.Count; idx++)
                     {
@@ -960,6 +957,11 @@ var procurement = new Procurement {
 
         private async Task RepopulateCreateViewModel(ProcurementCreateViewModel createViewModel)
         {
+            ArgumentNullException.ThrowIfNull(createViewModel);
+            createViewModel.Procurement ??= new Procurement();
+
+            await PopulateCreateUserSelectListsAsync(createViewModel);
+
             var jobTypeName = (
                 await _procurementService.GetJobTypeByIdAsync(
                     createViewModel.Procurement.JobTypeId ?? string.Empty
@@ -970,17 +972,92 @@ var procurement = new Procurement {
             ViewBag.SelectedJobTypeName = jobTypeName ?? "Other";
         }
 
+        private async Task PopulateCreateUserSelectListsAsync(ProcurementCreateViewModel viewModel)
+        {
+            viewModel.PicOpsUsers = await BuildUserSelectListAsync(
+                "HTE",
+                viewModel.Procurement.PicOpsUserId
+            );
+            viewModel.AnalystUsers = await BuildUserSelectListAsync(
+                "Analyst HTE & LTS",
+                viewModel.Procurement.AnalystHteUserId
+            );
+            viewModel.AssistantManagerUsers = await BuildUserSelectListAsync(
+                "Assistant Manager HTE",
+                viewModel.Procurement.AssistantManagerUserId
+            );
+            viewModel.ManagerUsers = await BuildUserSelectListAsync(
+                "Manager Transport & Logistic",
+                viewModel.Procurement.ManagerUserId
+            );
+        }
+
+        private async Task<IEnumerable<SelectListItem>> BuildUserSelectListAsync(
+            string roleName,
+            string? selectedUserId
+        )
+        {
+            if (_userManager == null)
+                return Enumerable.Empty<SelectListItem>();
+
+            var users = await _userManager.GetUsersInRoleAsync(roleName);
+
+            return users
+                .OrderBy(user => user.FirstName)
+                .ThenBy(user => user.LastName)
+                .Select(user => new SelectListItem
+                {
+                    Value = user.Id,
+                    Text = BuildUserDisplayName(user),
+                    Selected = string.Equals(user.Id, selectedUserId, StringComparison.Ordinal),
+                })
+                .ToList();
+        }
+
+        private static string BuildUserDisplayName(User user)
+        {
+            var parts = new[] { user.FirstName, user.LastName }.Where(part =>
+                !string.IsNullOrWhiteSpace(part)
+            );
+            var fullName = string.Join(' ', parts);
+            return string.IsNullOrWhiteSpace(fullName)
+                ? user.UserName ?? user.Email ?? "Unknown User"
+                : fullName;
+        }
+
         private async Task RepopulateEditViewModel(ProcurementEditViewModel viewModel)
         {
-            var (jobTypes, statuses) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+            var (jobTypes, statuses) =
+                await _procurementService.GetRelatedEntitiesForProcurementAsync();
             viewModel.JobTypes = jobTypes;
             viewModel.Statuses = statuses;
+            await PopulateEditUserSelectListsAsync(viewModel);
 
             var jobTypeName = jobTypes
                 .FirstOrDefault(w => w.JobTypeId == viewModel.JobTypeId)
                 ?.TypeName;
             ViewBag.CreatePartial = ResolveCreatePartialByName(jobTypeName);
             ViewBag.SelectedJobTypeName = jobTypeName ?? "Other";
+        }
+
+        private async Task PopulateEditUserSelectListsAsync(ProcurementEditViewModel viewModel)
+        {
+            viewModel.PicOpsUsers = await BuildUserSelectListAsync(
+                "HTE",
+                viewModel.PicOpsUserId
+            );
+            viewModel.AnalystUsers = await BuildUserSelectListAsync(
+                "Analyst HTE & LTS",
+                viewModel.AnalystHteUserId
+            );
+            viewModel.AssistantManagerUsers = await BuildUserSelectListAsync(
+                "Assistant Manager HTE",
+                viewModel.AssistantManagerUserId
+            );
+            viewModel.ManagerUsers = await BuildUserSelectListAsync(
+                "Manager Transport & Logistic",
+                viewModel.ManagerUserId
+            );
         }
 
         #endregion

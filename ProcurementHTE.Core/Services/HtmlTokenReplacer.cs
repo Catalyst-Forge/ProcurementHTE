@@ -43,7 +43,7 @@ namespace ProcurementHTE.Core.Services
             string GetUserName(User? user) =>
                 user?.FullName ?? user?.UserName ?? user?.Email ?? "-";
 
-            var jobTypeName = wo.JobTypeConfig?.TypeName ?? wo.JobType ?? "-";
+            var jobTypeName = wo.JobType?.TypeName;
 
             // Basic Procurement fields (reuse legacy token names for compatibility)
             html = ReplaceToken(html, "ProcNum", wo.ProcNum);
@@ -52,29 +52,26 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "ProcurementType", jobTypeName);
             html = ReplaceToken(html, "SpkNumber", wo.SpkNumber);
             html = ReplaceToken(html, "DateLetter", FormatDate(wo.StartDate));
-            html = ReplaceToken(html, "From", GetUserName(wo.PicOpsUser));
-            html = ReplaceToken(html, "To", GetUserName(wo.ManagerSignerUser));
+            html = ReplaceToken(html, "From", wo.PicOpsUserId);
+            html = ReplaceToken(html, "To", wo.ManagerUserId);
             html = ReplaceToken(html, "ProcurementLetter", wo.LtcName);
             html = ReplaceToken(html, "WBS", wo.ProjectCode);
-            html = ReplaceToken(html, "GlAccount", wo.ContractType);
+            html = ReplaceToken(html, "GlAccount", wo.ContractType.ToString());
             html = ReplaceToken(html, "DateRequired", FormatDate(wo.EndDate));
             html = ReplaceToken(html, "Requester", GetUserName(wo.User));
-            html = ReplaceToken(html, "Approved", GetUserName(wo.ManagerSignerUser));
+            html = ReplaceToken(html, "Approved", wo.ManagerUserId);
             html = ReplaceToken(html, "CreatedAt", FormatDate(wo.CreatedAt));
             html = ReplaceToken(html, "UpdatedAt", FormatDate(wo.UpdatedAt));
             html = ReplaceToken(html, "CompletedAt", FormatDate(wo.CompletedAt));
 
             // Additional new fields
-            html = ReplaceToken(html, "ProjectRegion", wo.ProjectRegion);
-            html = ReplaceToken(html, "DistanceKm", FormatDecimal(wo.DistanceKm, "N2"));
+            html = ReplaceToken(html, "ProjectRegion", wo.ProjectRegion.ToString());
             html = ReplaceToken(html, "AccrualAmount", FormatDecimal(wo.AccrualAmount));
             html = ReplaceToken(html, "RealizationAmount", FormatDecimal(wo.RealizationAmount));
             html = ReplaceToken(html, "PotentialAccrualDate", FormatDate(wo.PotentialAccrualDate));
             html = ReplaceToken(html, "SpmpNumber", wo.SpmpNumber);
             html = ReplaceToken(html, "MemoNumber", wo.MemoNumber);
             html = ReplaceToken(html, "OeNumber", wo.OeNumber);
-            html = ReplaceToken(html, "SelectedVendorName", wo.SelectedVendorName);
-            html = ReplaceToken(html, "VendorSphNumber", wo.VendorSphNumber);
             html = ReplaceToken(html, "RaNumber", wo.RaNumber);
             html = ReplaceToken(html, "LtcName", wo.LtcName);
 
@@ -101,7 +98,7 @@ namespace ProcurementHTE.Core.Services
             var pnl = await _pnlRepo.GetLatestByProcurementIdAsync(wo.ProcurementId);
             if (pnl != null)
             {
-                var items = pnl.Items ?? new List<ProfitLossItem>();
+                var items = pnl.Items ?? [];
 
                 string FormatInt(int value) => value.ToString("N0", Id);
                 decimal Sum(Func<ProfitLossItem, decimal> selector) => items.Sum(selector);

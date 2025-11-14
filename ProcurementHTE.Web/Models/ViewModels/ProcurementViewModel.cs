@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Models.ViewModels;
@@ -9,6 +11,11 @@ public class ProcurementCreateViewModel
     public Procurement Procurement { get; set; } = new();
     public List<ProcDetail> Details { get; set; } = [];
     public List<ProcOffer> Offers { get; set; } = [];
+
+    public IEnumerable<SelectListItem> PicOpsUsers { get; set; } = [];
+    public IEnumerable<SelectListItem> AnalystUsers { get; set; } = [];
+    public IEnumerable<SelectListItem> AssistantManagerUsers { get; set; } = [];
+    public IEnumerable<SelectListItem> ManagerUsers { get; set; } = [];
 }
 
 public class ProcurementEditViewModel
@@ -28,7 +35,7 @@ public class ProcurementEditViewModel
     public string? JobTypeOther { get; set; }
 
     [DisplayName("Contract Type")]
-    public string? ContractType { get; set; }
+    public ContractType ContractType { get; set; }
 
     [DisplayName("Job Name")]
     public string? JobName { get; set; }
@@ -38,17 +45,16 @@ public class ProcurementEditViewModel
 
     [DisplayName("Start Date")]
     [DataType(DataType.Date)]
-    public DateTime? StartDate { get; set; }
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    public DateTime StartDate { get; set; }
 
     [DisplayName("End Date")]
     [DataType(DataType.Date)]
-    public DateTime? EndDate { get; set; }
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    public DateTime EndDate { get; set; }
 
     [DisplayName("Project Region")]
-    public string? ProjectRegion { get; set; }
-
-    [DisplayName("Distance (Km)")]
-    public decimal? DistanceKm { get; set; }
+    public ProjectRegion ProjectRegion { get; set; }
 
     [DisplayName("Accrual Amount")]
     public decimal? AccrualAmount { get; set; }
@@ -58,6 +64,7 @@ public class ProcurementEditViewModel
 
     [DisplayName("Potential Accrual Date")]
     [DataType(DataType.Date)]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime? PotentialAccrualDate { get; set; }
 
     [DisplayName("SPMP Number")]
@@ -68,12 +75,6 @@ public class ProcurementEditViewModel
 
     [DisplayName("OE Number")]
     public string? OeNumber { get; set; }
-
-    [DisplayName("Selected Vendor Name")]
-    public string? SelectedVendorName { get; set; }
-
-    [DisplayName("Vendor SPH Number")]
-    public string? VendorSphNumber { get; set; }
 
     [DisplayName("RA Number")]
     public string? RaNumber { get; set; }
@@ -93,18 +94,23 @@ public class ProcurementEditViewModel
     [DisplayName("PIC Operations User Id")]
     public string? PicOpsUserId { get; set; }
 
-    [DisplayName("Analyst HTE Signer User Id")]
-    public string? AnalystHteSignerUserId { get; set; }
+    [DisplayName("Analyst HTE User Id")]
+    public string? AnalystHteUserId { get; set; }
 
-    [DisplayName("Assistant Manager Signer User Id")]
-    public string? AssistantManagerSignerUserId { get; set; }
+    [DisplayName("Assistant Manager  User Id")]
+    public string? AssistantManagerUserId { get; set; }
 
-    [DisplayName("Manager Signer User Id")]
-    public string? ManagerSignerUserId { get; set; }
+    [DisplayName("Manager User Id")]
+    public string? ManagerUserId { get; set; }
 
     public List<ProcDetail> Details { get; set; } = [];
     public List<ProcOffer> Offers { get; set; } = [];
 
     public IEnumerable<JobTypes>? JobTypes { get; set; }
     public IEnumerable<Status>? Statuses { get; set; }
+
+    public IEnumerable<SelectListItem> PicOpsUsers { get; set; } = [];
+    public IEnumerable<SelectListItem> AnalystUsers { get; set; } = [];
+    public IEnumerable<SelectListItem> AssistantManagerUsers { get; set; } = [];
+    public IEnumerable<SelectListItem> ManagerUsers { get; set; } = [];
 }

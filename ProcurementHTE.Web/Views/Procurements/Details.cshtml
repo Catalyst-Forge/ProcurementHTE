@@ -3,14 +3,14 @@
 @using ProcurementHTE.Core.Authorization
 @using ProcurementHTE.Web.Models.ViewModels
 @inject IAuthorizationService AuthZ
-@model WorkOrder
+@model Procurement
 @{
-    ViewData["Title"] = "Work Order Details";
+    ViewData["Title"] = "Procurement Details";
     var no = 1;
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     var pnl = ViewBag.PnlViewModel as ProfitLossSummaryViewModel;
-    var documents = ViewBag.Documents as IReadOnlyList<WoDocuments>;
+    var documents = ViewBag.Documents as IReadOnlyList<ProcDocuments>;
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
@@ -30,12 +30,12 @@
         </button>
 
         <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
-            <a asp-controller="WorkOrderDocuments" asp-action="Index" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
+            <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
             <span title="@(pnl != null ? "data pnl sudah ada" : "")">
-                <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model?.WorkOrderId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-file-earmark-text-fill"></i> Create Profit & Loss</a>
+                <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model?.ProcurementId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-file-earmark-text-fill"></i> Create Profit & Loss</a>
             </span>
-            <a asp-action="Edit" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-            <a asp-action="Delete" asp-route-id="@Model?.WorkOrderId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+            <a asp-action="Edit" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
             <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
         </div>
     </div>
@@ -44,10 +44,10 @@
     <nav>
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="wo-tab" data-bs-toggle="tab"
-                        data-bs-target="#wo-tab-pane" type="button" role="tab"
-                        aria-controls="wo-tab-pane" aria-selected="true">
-                    Work order information
+                <button class="nav-link active" id="procurement-tab" data-bs-toggle="tab"
+                        data-bs-target="#procurement-tab-pane" type="button" role="tab"
+                        aria-controls="procurement-tab-pane" aria-selected="true">
+                    Procurement information
                 </button>
             </li>
 
@@ -64,59 +64,122 @@
 
 @* Content body *@
 <div class="tab-content" id="myTabContent">
-    <!-- ================= WORK ORDER DETAIL ================= -->
-    <section class="tab-pane show active" id="wo-tab-pane" role="tabpanel" aria-labelledby="wo-tab" tabindex="0">
+    <!-- ================= PROCUREMENT DETAIL ================= -->
+    <section class="tab-pane show active" id="procurement-tab-pane" role="tabpanel" aria-labelledby="procurement-tab" tabindex="0">
         <div class="d-grid gap-md-3 mt-2 wo-content">
             <div>
-                @* Work request card *@
+                @* Job Information card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Job Request</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Job Information</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
                     <div class="card-body">
                         <div class="row mb-0">
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.WoNum)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.WoNum)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ContractType)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ContractType)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.WoNumLetter)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.WoNumLetter)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcNum)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcNum)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.DateLetter)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Model?.DateLetter.ToTanggalIndonesia()</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectRegion)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProjectRegion)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.From)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.From)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectCode)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.ProjectCode</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.To)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.To)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.JobName)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.JobName)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.WBS)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@(Model?.WBS ?? "-")</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.LtcName)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.LtcName)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+                
+                @* Reference Numbers Card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-box-2-fill text-primary me-1"></i> Reference Numbers</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpkNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.SpkNumber</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.GlAccount)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@(Model?.GlAccount ?? "-")</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpmpNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.SpmpNumber</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.DateRequired)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Model?.DateRequired.ToTanggalIndonesia()</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.MemoNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.MemoNumber</dd>
                             </dl>
 
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.OeNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.OeNumber</dd>
+                            </dl>
+
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.RaNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.RaNumber</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+
+                @* Schedule & Financials Card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Schedule & Financials</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.StartDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.StartDate.ToTanggalIndonesia()</dd>
+                            </dl>
+
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.EndDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.EndDate.ToTanggalIndonesia()</dd>
+                            </dl>
+
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.AccrualAmount)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@(Model?.AccrualAmount.ToIDR() ?? "-")</dd>
+                            </dl>
+
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.RealizationAmount)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@(Model?.RealizationAmount.ToIDR() ?? "-")</dd>
+                            </dl>
+
+                            <dl class="col-6 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.PotentialAccrualDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.PotentialAccrualDate.ToTanggalIndonesia()</dd>
+                            </dl>
                         </div>
                     </div>
                 </article>
@@ -135,14 +198,18 @@
                                     <tr>
                                         <th class="mw-100 text-nowrap text-uppercase">No</th>
                                         <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
+                                        <th class="mw-100 text-nowrap text-uppercase">Quantity</th>
+                                        <th class="mw-100 text-nowrap text-uppercase">Unit</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
-                                    @foreach (var item in Model!.WoOffers) {
+                                    @foreach (var item in Model!.ProcOffers) {
                                         <tr>
                                             <td class="text-nowrap">@no</td>
                                             <td>@item.ItemPenawaran</td>
+                                            <td>@item.Qty</td>
+                                            <td>@item.Unit</td>
                                         </tr>
                                         no++;
                                     }
@@ -172,9 +239,9 @@
                                 </thead>
 
                                 <tbody>
-                                    @if (Model?.WoDetails != null && Model.WoDetails.Any()) {
+                                    @if (Model.ProcDetails != null && Model.ProcDetails.Any()) {
                                         no = 1;
-                                        foreach (var detail in Model.WoDetails) {
+                                        foreach (var detail in Model.ProcDetails) {
                                             <tr>
                                                 <td class="text-nowrap">@no</td>
                                                 <td>@detail.ItemName</td>
@@ -204,25 +271,6 @@
                     <div class="card-body">
                         <div class="row mb-0">
                             <dl class="col-12 mb-3">
-                                <dt class="fw-semibold text-uppercase text-secondary mb-2">
-                                    @Html.DisplayNameFor(model => model.Description)
-                                </dt>
-                                <dd class="bg-body text-primary-emphasis p-3 lh-base border-start border-primary rounded-3 border-5">
-                                    @Html.DisplayFor(model => model.Description)
-                                </dd>
-                            </dl>
-
-                            <dl class="col-6 mb-3">
-                                <dt class="fw-semibold text-uppercase text-secondary mb-2">From</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.XS1)</dd>
-                            </dl>
-
-                            <dl class="col-6 mb-3">
-                                <dt class="fw-semibold text-uppercase text-secondary mb-2">To</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.XS2)</dd>
-                            </dl>
-
-                            <dl class="col-12 mb-3">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-2">@Html.DisplayNameFor(model => model.Note)</dt>
                                 <dd class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info rounded-3 border-5">@Html.DisplayFor(model => model.Note)</dd>
                             </dl>
@@ -232,10 +280,10 @@
             </div>
 
             <div>
-                @* Work order information card *@
+                @* Procurement information card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Information Work Order</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Procurement Information</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
@@ -243,11 +291,11 @@
                         <div class="row mb-0">
                             <dl class="col-6 col-lg-12 col-xl-6">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
-                                    @Html.DisplayNameFor(model => model.WoType)
+                                    @Html.DisplayNameFor(model => model.JobType)
                                 </dt>
                                 <dd>
                                     <span class="badge bg-info rounded-5 p-2 px-3">
-                                        @Html.DisplayFor(model => model.WoType!.TypeName)
+                                        @Html.DisplayFor(model => model.JobType!.TypeName)
                                     </span>
                                 </dd>
                             </dl>
@@ -268,7 +316,7 @@
                                     @Html.DisplayNameFor(model => model.CreatedAt)
                                 </dt>
                                 <dd class="fw-medium text-secondary-emphasis">
-                                    @Model?.CreatedAt.ToTanggalIndonesia()
+                                    @Model.CreatedAt.ToTanggalIndonesia()
                                 </dd>
                             </dl>
 
@@ -278,6 +326,15 @@
                                 </dt>
                                 <dd class="fw-medium text-secondary-emphasis">
                                     @Html.DisplayFor(model => model.User!.FullName)
+                                </dd>
+                            </dl>
+
+                            <dl class="col-6 col-lg-12 col-xl-6">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                    @Html.DisplayNameFor(model => model.CompletedAt)
+                                </dt>
+                                <dd class="fw-medium text-secondary-emphasis">
+                                    @Model?.CompletedAt.ToTanggalIndonesia()
                                 </dd>
                             </dl>
                         </div>
@@ -294,12 +351,12 @@
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold mb-2"><i class="bi bi-geo-alt-fill"></i> Lokasi</dt>
-                            <dd class="text-secondary-emphasis">CP Lokasi @Model?.XS1 : <br /> @Html.DisplayFor(model => model.XS3)</dd>
+                            @* <dd class="text-secondary-emphasis">CP Lokasi @Model?.XS1 : <br /> @Html.DisplayFor(model => model.XS3)</dd> *@
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold mb-2"><i class="bi bi-tools"></i> Workshop</dt>
-                            <dd class="text-secondary-emphasis">CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd>
+                            @* <dd class="text-secondary-emphasis">CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd> *@
                         </dl>
                     </div>
                 </article>
@@ -307,19 +364,29 @@
                 @* Approvals card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-check-circle-fill text-primary me-1"></i> Approvals</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-check-circle-fill text-primary me-1"></i> Approvers</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
-                            <dt class="fw-semibold text-secondary mb-2">Coring Coordinator</dt>
-                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Requester)</dd>
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.PicOpsUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.PicOpsUserId)</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
-                            <dt class="fw-semibold text-secondary mb-2">Pjs. Subsurface Services Mgr</dt>
-                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Approved)</dd>
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AnalystHteUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.AnalystHteUserId)</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AssistantManagerUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.AssistantManagerUserId)</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.ManagerUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ManagerUserId)</dd>
                         </dl>
                     </div>
                 </article>
@@ -332,10 +399,10 @@
         @if (pnl == null) {
             <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
-                Belum ada data Profit &amp; Loss untuk WO ini.
+                Belum ada data Profit &amp; Loss untuk Procurement ini.
             </div>
 
-            <a asp-action="CreateProfitLoss" asp-route-workOrderId="@Model!.WorkOrderId" class="btn btn-success">
+            <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model!.ProcurementId" class="btn btn-success">
                 <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
             </a>
         } else {
@@ -426,7 +493,7 @@
                 </div>
             </article>
 
-            @* RINCIAN ITEM (PER-WOOFFER) *@
+            @* RINCIAN ITEM *@
             <article class="card shadow-sm mb-3 rounded-4">
                 <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
                     <h2 class="card-title mb-0 h5">
@@ -524,12 +591,12 @@
         }
     </section>
 
-    <!-- ================= WORK ORDER DOCUMENTS ================= -->
+    <!-- ================= PROCUREMENT DOCUMENTS ================= -->
     <section class="tab-pane" id="document-tab-pane" role="tabpanel" aria-labelledby="document-tab" tabindex="0">
         <div class="mb-3">
-            @* Work Order Documents card *@
+            @* Procurement Documents card *@
             <header class="mt-2 fw-semibold bg-transparent border-bottom-0">
-                <h2 class="card-title mb-0 h5"><i class="bi bi-folder-fill text-primary me-1"></i> Work Order Documents</h2>
+                <h2 class="card-title mb-0 h5"><i class="bi bi-folder-fill text-primary me-1"></i> Procurement Documents</h2>
             </header>
             <hr />
 
@@ -550,13 +617,13 @@
                                 <div class="d-flex flex-column flex-sm-row gap-1 align-items-end">
                                     <button type="button"
                                             class="btn btn-sm btn-outline-secondary btn-preview"
-                                            data-doc-id="@doc.WoDocumentId"
+                                            data-doc-id="@doc.ProcDocumentId"
                                             data-doc-name="@(doc.FileName)"
                                             data-file-name="@(doc.FileName)">
                                         <i class="bi bi-eye"></i> Preview
                                     </button>
 
-                                    <a asp-controller="WorkOrderDocuments" asp-action="Download" asp-route-id="@doc.WoDocumentId" class="btn btn-outline-primary btn-sm btn-download" role="button" data-doc-id="@doc.WoDocumentId">
+                                    <a asp-controller="ProcurementDocuments" asp-action="Download" asp-route-id="@doc.ProcDocumentId" class="btn btn-outline-primary btn-sm btn-download" role="button" data-doc-id="@doc.ProcDocumentId">
                                         <i class="bi bi-download"></i> Download
                                     </a>
                                 </div>
@@ -565,7 +632,7 @@
                     }
                 </div>
             } else {
-                <div class="alert alert-info mb-0">No documents available for this work order.</div>
+                <div class="alert alert-info mb-0">No documents available for this procurement.</div>
             }
         </div>
     </section>
@@ -641,7 +708,7 @@
                     errorContainer.classList.add("d-none");
 
                     try {
-                        const response = await fetch(`/WorkOrderDocuments/PreviewUrl/${docId}?workOrderId=@Model?.WorkOrderId`);
+                        const response = await fetch(`/ProcurementDocuments/PreviewUrl/${docId}?workOrderId=@Model!.ProcurementId`);
                         const data = await response.json();
 
                         if (data.ok && data.url) {
@@ -684,7 +751,7 @@
         });
 
         document.addEventListener("DOMContentLoaded", function () {
-            var triggerEl = document.querySelector('#wo-tab')
+            var triggerEl = document.querySelector('#procurement-tab')
             var tab = new bootstrap.Tab(triggerEl)
             tab.show()
 

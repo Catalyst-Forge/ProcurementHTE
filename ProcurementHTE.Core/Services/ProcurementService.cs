@@ -198,7 +198,6 @@ public class ProcurementService : IProcurementService
         existing.StartDate = updated.StartDate;
         existing.EndDate = updated.EndDate;
         existing.ProjectRegion = updated.ProjectRegion;
-        existing.DistanceKm = updated.DistanceKm;
         existing.AccrualAmount = updated.AccrualAmount;
         existing.RealizationAmount = updated.RealizationAmount;
         existing.PotentialAccrualDate = updated.PotentialAccrualDate;
@@ -206,8 +205,6 @@ public class ProcurementService : IProcurementService
         existing.SpmpNumber = updated.SpmpNumber;
         existing.MemoNumber = updated.MemoNumber;
         existing.OeNumber = updated.OeNumber;
-        existing.SelectedVendorName = updated.SelectedVendorName;
-        existing.VendorSphNumber = updated.VendorSphNumber;
         existing.RaNumber = updated.RaNumber;
         existing.ProjectCode = updated.ProjectCode;
         existing.LtcName = updated.LtcName;
@@ -215,9 +212,9 @@ public class ProcurementService : IProcurementService
         existing.JobType = updated.JobType;
         existing.JobTypeId = updated.JobTypeId;
         existing.PicOpsUserId = updated.PicOpsUserId;
-        existing.AnalystHteSignerUserId = updated.AnalystHteSignerUserId;
-        existing.AssistantManagerSignerUserId = updated.AssistantManagerSignerUserId;
-        existing.ManagerSignerUserId = updated.ManagerSignerUserId;
+        existing.AnalystHteUserId = updated.AnalystHteUserId;
+        existing.AssistantManagerUserId = updated.AssistantManagerUserId;
+        existing.ManagerUserId = updated.ManagerUserId;
         existing.UpdatedAt = DateTime.UtcNow;
 
         if (updated.StatusId > 0)

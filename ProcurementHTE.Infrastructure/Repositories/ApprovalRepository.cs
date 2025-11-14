@@ -386,14 +386,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            var ids = (roleIds ?? Enumerable.Empty<string>())
+            var ids = (roleIds ?? [])
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(s => s.Trim())
                 .Distinct()
                 .ToList();
 
             if (ids.Count == 0)
-                return Array.Empty<string>();
+                return [];
 
             var exist = await _context
                 .Roles.AsNoTracking()
@@ -409,14 +409,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            var names = (roleNames ?? Enumerable.Empty<string>())
+            var names = (roleNames ?? [])
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(s => s.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             if (names.Count == 0)
-                return Array.Empty<string>();
+                return [];
 
             var upper = names.Select(n => n.ToUpperInvariant()).ToList();
 
@@ -535,7 +535,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     DocStatus = doc.Status,
                     Level = null,
                     SequenceOrder = null,
-                    RequiredRoles = new List<RoleInfoDto>(), // kosong ? AlreadyFinalized
+                    RequiredRoles = [], // kosong ? AlreadyFinalized
                 };
             }
 

@@ -5,21 +5,21 @@
     ViewData["Title"] = "Create Profit & Loss";
 }
 
-<form asp-action="CreateProfitLossPost" asp-controller="WorkOrders" method="post" id="pl-form">
+<form asp-action="CreateProfitLossPost" asp-controller="Procurements" method="post" id="pl-form">
     @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="WorkOrderId" />
+    <input type="hidden" asp-for="ProcurementId" />
 
     <header class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h1 class="h3 mb-1">Create Profit &amp; Loss</h1>
             <p class="text-muted small mb-0">
-                WO: <strong>@ViewBag.WoNum</strong> &middot; Issued: @ViewBag.IssueDate
+                Procurement: <strong>@ViewBag.ProcNum</strong> &middot; Issued: @ViewBag.IssueDate
             </p>
         </div>
 
         <nav class="d-flex gap-2" aria-label="Navigasi halaman">
-            <a asp-action="Details" asp-route-id="@Model.WorkOrderId" class="btn btn-outline-secondary" role="button">
-                <i class="bi bi-arrow-left"></i> Back to WO
+            <a asp-action="Details" asp-route-id="@Model.ProcurementId" class="btn btn-outline-secondary" role="button">
+                <i class="bi bi-arrow-left"></i> Back to Procurement
             </a>
         </nav>
     </header>
@@ -77,12 +77,12 @@
                             </thead>
                             <tbody id="pdcItems">
                                 @for (var i = 0; i < Model.Items.Count; i++) {
-                                    var woId = Model.Items[i].WoOfferId;
-                                    var itemName = Model.WoItems.FirstOrDefault(x => x.WoOfferId == woId)?.ItemPenawaran;
+                                    var procOfferId = Model.Items[i].ProcOfferId;
+                                    var itemName = Model.OfferItems.FirstOrDefault(x => x.ProcOfferId == procOfferId)?.ItemPenawaran;
 
                                     <tr data-item-row>
                                         <input type="hidden" name="Items.Index" value="@i" />
-                                        <input type="hidden" name="Items[@i].WoOfferId" value="@woId" />
+                                        <input type="hidden" name="Items[@i].ProcOfferId" value="@procOfferId" />
 
                                         <td class="fw-semibold">@itemName</td>
 
@@ -204,17 +204,17 @@
         );
         var vendorChoicesJsonLiteral = System.Text.Json.JsonSerializer.Serialize(vendorChoicesJson);
 
-        var woItemsJson = System.Text.Json.JsonSerializer.Serialize(
-            (Model.WoItems ?? new System.Collections.Generic.List<ProcurementHTE.Web.Models.ViewModels.WoOfferLiteVm>())
-                .Select(i => new { woOfferId = i.WoOfferId, itemPenawaran = i.ItemPenawaran })
+        var procItemsJson = System.Text.Json.JsonSerializer.Serialize(
+            (Model.OfferItems ?? new System.Collections.Generic.List<ProcurementHTE.Web.Models.ViewModels.ProcOfferLiteVm>())
+                .Select(i => new { procOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran })
         );
-        var woItemsJsonLiteral = System.Text.Json.JsonSerializer.Serialize(woItemsJson);
+        var procItemsJsonLiteral = System.Text.Json.JsonSerializer.Serialize(procItemsJson);
     }
 
     <script>
         // --- data server ---
         const vendorsAll = JSON.parse(@Html.Raw(vendorChoicesJsonLiteral));
-        const woItems = JSON.parse(@Html.Raw(woItemsJsonLiteral));
+        const procItems = JSON.parse(@Html.Raw(procItemsJsonLiteral));
 
         // helpers
         const fmtClean = n => { const x = Number(n||0); return x % 1 === 0 ? x.toLocaleString('id-ID',{maximumFractionDigits:0}) : x.toLocaleString('id-ID'); };
@@ -401,7 +401,7 @@
                 document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
                     if (card.dataset.vendorId && !sel.has(card.dataset.vendorId)) card.remove();
                 });
-                document.getElementById('btnAddVendor').disabled = availableVendors().length === 0 || woItems.length === 0;
+                document.getElementById('btnAddVendor').disabled = availableVendors().length === 0 || procItems.length === 0;
                 document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(refreshCardVendorOptions);
                 recalcSummary();
             }
@@ -410,7 +410,7 @@
             function addVendor(){
                 const av = availableVendors();
                 if (!av.length) { alert('Pilih vendor terlebih dahulu.'); return; }
-                if (woItems.length === 0) { alert('Belum ada Item Penawaran (WoOffer).'); return; }
+                if (procItems.length === 0) { alert('Belum ada Item Penawaran (ProcOffer).'); return; }
                 const vendorId = av[0].id;
 
                 const idx = vendorIdx++;
@@ -441,9 +441,9 @@
                     updateVendorBlocks();
                 });
 
-                // render all WO items -> each has rounds
+                // render all Procurement items -> each has rounds
             const host = card.querySelector('[data-itemhost]');
-            woItems.forEach((it,iIdx) => {
+            procItems.forEach((it,iIdx) => {
                 const block = document.createElement('div');
                     block.className = 'border rounded-3 p-2 mb-2';
                     block.setAttribute('data-item-block','');
@@ -452,7 +452,7 @@
                             <div class="fw-semibold">${it.itemPenawaran}</div>
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-addround>+ Round</button>
                         </div>
-                        <input type="hidden" name="Vendors[${idx}].Items[${iIdx}].WoOfferId" value="${it.woOfferId}" />
+                        <input type="hidden" name="Vendors[${idx}].Items[${iIdx}].ProcOfferId" value="${it.procOfferId}" />
                         <div class="mt-2 vstack gap-2" data-rounds></div>
                     `;
                     host.appendChild(block);

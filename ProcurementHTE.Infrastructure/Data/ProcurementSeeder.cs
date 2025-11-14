@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data
@@ -37,22 +38,19 @@ namespace ProcurementHTE.Infrastructure.Data
                 ProcNum = procNum,
                 StatusId = draftStatus.StatusId,
                 JobTypeId = jobType.JobTypeId,
-                JobType = jobType.TypeName,
-                ContractType = "Jasa",
+                JobType = jobType,
+                ContractType = (ContractType)2,
                 JobName = "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
                 SpkNumber = "1063/PROC-DS/DSI1310/2025",
                 StartDate = new DateTime(2025, 9, 1),
                 EndDate = new DateTime(2025, 10, 15),
-                ProjectRegion = "JWKT",
-                DistanceKm = 1200,
+                ProjectRegion = (ProjectRegion)1,
                 AccrualAmount = 1_250_000_000m,
                 RealizationAmount = 0,
                 PotentialAccrualDate = new DateTime(2025, 11, 1),
                 SpmpNumber = "SPMP-001/2025",
                 MemoNumber = "MEMO-TRS/2025",
                 OeNumber = "OE-TRS/2025",
-                SelectedVendorName = "PT PDSI",
-                VendorSphNumber = "SPH-001/2025",
                 RaNumber = "RA-001/2025",
                 ProjectCode = "HTE/2110/030",
                 LtcName = "LTC Transport",

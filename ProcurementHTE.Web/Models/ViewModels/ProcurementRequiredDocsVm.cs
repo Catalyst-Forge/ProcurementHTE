@@ -6,7 +6,7 @@ public class ProcurementRequiredDocsVm
 {
     public string ProcurementId { get; set; } = default!;
     public string JobTypeId { get; set; } = default!;
-    public List<RequiredDocItemDto> Items { get; set; } = new();
+    public List<RequiredDocItemDto> Items { get; set; } = [];
 }
 
 public class UploadProcDocumentVm

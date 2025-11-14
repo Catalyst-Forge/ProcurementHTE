@@ -62,7 +62,7 @@ namespace ProcurementHTE.Web.Controllers
             {
                 ProcNum = item.ProcNum ?? "-",
                 JobName = item.JobName ?? item.Note,
-                JobTypeName = item.JobType ?? item.JobTypeConfig?.TypeName,
+                JobTypeName = item.JobType?.TypeName,
                 StatusName = item.Status?.StatusName ?? "-",
                 CreatedAt = item.CreatedAt,
             });
