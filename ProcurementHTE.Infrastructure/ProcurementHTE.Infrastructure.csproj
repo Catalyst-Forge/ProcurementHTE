@@ -1,22 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>ProcurementHTE.Infrastructure</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Remove="NewFolder\**" />
     <EmbeddedResource Remove="NewFolder\**" />
     <None Remove="NewFolder\**" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\ProcurementHTE.Core\ProcurementHTE.Core.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="4.0.7.13" />
     <PackageReference Include="DinkToPdf" Version="1.0.8" />
@@ -28,8 +24,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+      Version="9.0.9"
+    />
     <PackageReference Include="Minio" Version="6.0.5" />
   </ItemGroup>
-
 </Project>
