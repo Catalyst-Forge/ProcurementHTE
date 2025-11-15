@@ -3,7 +3,7 @@
     ViewData["Title"] = "Approval Documents";
 }
 
-<h3>Daftar Dokumen Menunggu Approval</h3>
+<h3>Documents Awaiting Approval</h3>
 <table class="table mobile-table">
     <thead>
         <tr>
@@ -16,7 +16,7 @@
     <tbody>
         @if (!Model.Any() || Model == null) {
                 <tr>
-                    <td colspan="8" class="text-center text-muted">Belum ada dokumen untuk diapprove</td>
+                    <td colspan="8" class="text-center text-muted">No documents require approval.</td>
                 </tr>
         } else {
             @foreach (var a in Model) {

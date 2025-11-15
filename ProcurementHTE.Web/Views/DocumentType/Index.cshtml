@@ -123,29 +123,29 @@
             const pageHidden = document.getElementById('pageHidden');
             const pageSizeHidden = document.getElementById('pageSizeHidden');
 
-            // Apply: ambil kolom tercentang, reset page ke 1, submit
+            // Apply: collect selected columns, reset page to 1, submit
             document.getElementById('btnApplyFilter').addEventListener('click', function () {
-            const cols = Array.from(document.querySelectorAll('.filter-col:checked')).map(c => c.value);
-            fieldsHidden.value = cols.join(',');
-            pageHidden.value = 1;
-            form.submit();
-            });
-
-            // Enter di search langsung submit (page reset ke 1)
-            searchBox.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+                const cols = Array.from(document.querySelectorAll('.filter-col:checked')).map(c => c.value);
+                fieldsHidden.value = cols.join(',');
                 pageHidden.value = 1;
                 form.submit();
-            }
             });
 
-            // Refresh: hapus search & kolom, reset page ke 1 & submit
+            // Submit search on Enter (reset to first page)
+            searchBox.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    pageHidden.value = 1;
+                    form.submit();
+                }
+            });
+
+            // Refresh: clear filters, reset page to 1, submit
             document.getElementById('btnRefresh').addEventListener('click', function () {
-            searchBox.value = '';
-            fieldsHidden.value = ''; // pakai default di Controller kalau kosong
-            pageHidden.value = 1;
-            form.submit();
+                searchBox.value = '';
+                fieldsHidden.value = '';
+                pageHidden.value = 1;
+                form.submit();
             });
         })();
         
@@ -155,14 +155,14 @@
 
             e.preventDefault();
 
-            const name = form.dataset.name || "data ini";
+            const name = form.dataset.name || "this record";
             const result = await Swal.fire({
                 icon: "warning",
-                title: "Hapus data ini?",
-                html: `Anda akan menghapus <strong>${name}</strong>.<br> Tindakan ini tidak dapat dibatalkan.`,
+                title: "Delete this record?",
+                html: `You are about to delete <strong>${name}</strong>.<br>This action cannot be undone.`,
                 showCancelButton: true,
-                confirmButtonText: "Ya, hapus",
-                cancelButtonText: "Batal",
+                confirmButtonText: "Yes, delete",
+                cancelButtonText: "Cancel",
                 confirmButtonColor: "#dc3545",
                 cancelButtonColor: "#6c757d",
                 reverseButtons: true
@@ -171,16 +171,15 @@
             if (result.isConfirmed) form.submit();
         });
 
-        // Tampilkan notifikasi TempData setelah redirect
         document.addEventListener("DOMContentLoaded", () => {
             const success = '@TempData["SuccessMessage"]';
             const error = '@TempData["ErrorMessage"]';
 
             if (success)
-                Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2500, showConfirmButton: false });
+                Swal.fire({ icon: "success", title: "Success", text: success, timer: 2500, showConfirmButton: false });
 
             if (error)
-                Swal.fire({ icon: "error", title: "Gagal", text: error });
+                Swal.fire({ icon: "error", title: "Error", text: error });
         });
     </script>
 }

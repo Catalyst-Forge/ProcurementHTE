@@ -69,12 +69,12 @@ namespace ProcurementHTE.Web.Controllers
             try
             {
                 await _jobTypeService.AddJobTypesAsync(jobType);
-                TempData["SuccessMessage"] = "Workorder type berhasil ditambahkan.";
+                TempData["SuccessMessage"] = "Work order type added successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Gagal menambahkan data: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to add work order type: " + ex.Message;
                 return View(jobType);
             }
         }
@@ -106,12 +106,12 @@ namespace ProcurementHTE.Web.Controllers
             try
             {
                 await _jobTypeService.EditJobTypesAsync(jobType, JobTypeId);
-                TempData["SuccessMessage"] = "Workorder type berhasil diupdate.";
+                TempData["SuccessMessage"] = "Work order type updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Gagal mengupdate data: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to update work order type: " + ex.Message;
                 return View(jobType);
             }
         }
@@ -127,13 +127,13 @@ namespace ProcurementHTE.Web.Controllers
 
                 if (jobType == null)
                 {
-                    TempData["ErrorMessage"] = $"JobType dengan ID {id} tidak ditemukan.";
+                    TempData["ErrorMessage"] = $"Job type with ID {id} was not found.";
                     return RedirectToAction(nameof(Index));
                 }
 
                 await _jobTypeService.DeleteJobTypesAsync(jobType);
 
-                TempData["SuccessMessage"] = "Workorders Type berhasil dihapus.";
+                TempData["SuccessMessage"] = "Work order type deleted successfully.";
             }
             catch (DbUpdateException ex)
             {

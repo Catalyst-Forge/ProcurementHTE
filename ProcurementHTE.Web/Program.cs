@@ -107,9 +107,8 @@ using (var scope = app.Services.CreateScope())
         // 1️⃣ Jalankan migrasi otomatis jika belum ada tabel
         var context = services.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync();
-
-        // 2️⃣ Baru jalankan seeding
         await DataSeeder.SeedAsync(services);
+
     }
     catch (Exception ex)
     {

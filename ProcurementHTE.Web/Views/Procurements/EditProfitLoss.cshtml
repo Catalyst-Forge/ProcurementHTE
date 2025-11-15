@@ -118,7 +118,7 @@
             </p>
         </div>
 
-        <nav class="d-flex gap-2" aria-label="Navigasi halaman">
+        <nav class="d-flex gap-2" aria-label="Page navigation">
             <a asp-action="Details" asp-route-id="@Model.ProcurementId" class="btn btn-outline-secondary" role="button">
                 <i class="bi bi-arrow-left"></i> Back to WO
             </a>
@@ -132,7 +132,7 @@
         <section class="col-12" aria-labelledby="vendor-section-title">
             <div class="card shadow-sm p-2">
                 <fieldset class="card-body">
-                    <legend class="card-title fw-semibold" id="vendor-section-title">Pilih Vendor yang Diikutkan</legend>
+                    <legend class="card-title fw-semibold" id="vendor-section-title">Select Participating Vendors</legend>
                     <hr />
                     <div class="row row-cols-2 row-cols-md-3 g-3">
                         @foreach (var vendor in vendorChoices)
@@ -157,19 +157,41 @@
             </div>
         </section>
 
+        <!-- ================= FINANCIAL SUMMARY ================= -->
+        <section class="col-12" aria-labelledby="financial-section-title">
+            <div class="card shadow-sm p-2">
+                <fieldset class="card-body">
+                    <legend class="card-title fw-semibold" id="financial-section-title">Financial Figures</legend>
+                    <hr />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="AccrualAmount" class="form-label"></label>
+                            <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                            <span class="text-danger" asp-validation-for="AccrualAmount"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="RealizationAmount" class="form-label"></label>
+                            <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                            <span class="text-danger" asp-validation-for="RealizationAmount"></span>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </section>
+
         <!-- ================= TAGIHAN KE PDC (PER-ITEM) ================= -->
         <section class="col-12" aria-labelledby="pdc-section-title">
             <div class="card shadow-sm">
                 <fieldset class="card-body">
-                    <legend class="card-title fw-semibold" id="pdc-section-title">Tagihan ke PDC (Revenue Builder per Item)</legend>
+                    <legend class="card-title fw-semibold" id="pdc-section-title">Billing to PDC (Revenue Builder per Item)</legend>
                     <hr />
                     <div class="table-responsive">
                         <table class="table align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="min-width:220px">Item Penawaran</th>
-                                    <th class="text-end" style="width:180px">Tarif 400 km</th>
-                                    <th class="text-end" style="width:160px">Tarif Add</th>
+                                    <th style="min-width:220px">Offer Item</th>
+                                    <th class="text-end" style="width:180px">400 km Rate</th>
+                                    <th class="text-end" style="width:160px">Additional Rate</th>
                                     <th class="text-end" style="width:140px">KM/25</th>
                                     <th class="text-end" style="width:180px">Operator Cost</th>
                                     <th class="text-end" style="width:180px">Revenue</th>
@@ -246,7 +268,7 @@
                             </tfoot>
                         </table>
                     </div>
-                    <small class="text-muted">Operator Cost per item = <em>Tarif Add × KM/25</em>, Revenue per item = <em>Tarif 400 km + Operator Cost</em></small>
+                    <small class="text-muted">Operator cost per item = <em>Additional Rate × KM/25</em>, Revenue per item = <em>400 km Rate + Operator Cost</em></small>
                 </fieldset>
             </div>
         </section>
@@ -256,9 +278,9 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
-                        <h3 class="card-title fw-semibold mb-0" id="offer-section-title">Penawaran Vendor</h3>
+                        <h3 class="card-title fw-semibold mb-0" id="offer-section-title">Vendor Offers</h3>
                         <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddVendor">
-                            <i class="bi bi-person-plus"></i> Tambah Vendor
+                            <i class="bi bi-person-plus"></i> Add Vendor
                         </button>
                     </div>
                     <hr />
@@ -271,7 +293,7 @@
         <section class="col-12" aria-labelledby="summary-section-title">
             <div class="card shadow-sm">
                 <fieldset class="card-body">
-                    <legend class="card-title fw-semibold" id="summary-section-title">Ringkasan Sementara</legend>
+                    <legend class="card-title fw-semibold" id="summary-section-title">Interim Summary</legend>
                     <hr />
                     <div class="table-responsive border rounded-3">
                         <table class="table align-middle" id="summary">
@@ -293,7 +315,7 @@
         <!-- ================= ACTION ================= -->
         <div class="col-12 d-flex justify-content-end gap-2 mb-3">
             <a asp-action="Details" asp-route-id="@Model.ProcurementId" class="btn btn-secondary">Batal</a>
-            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
     </div>
 </form>
@@ -458,7 +480,7 @@
             const currentId = card.dataset.vendorId || select.value || '';
             const options = vendorOptionsForCard(currentId);
             if (options.length === 0) {
-                select.innerHTML = '<option value="">(Pilih vendor)</option>';
+                select.innerHTML = '<option value="">(Select vendor)</option>';
                 select.value = '';
                 card.dataset.vendorId = '';
                 return;
@@ -498,7 +520,7 @@
             } else {
                 const av = availableVendors();
                 if (!av.length) {
-                    alert('Pilih vendor terlebih dahulu.');
+                    alert('Select a vendor first.');
                     return;
                 }
                 vendorId = av[0].id;
@@ -518,7 +540,7 @@
                         <div class="col-md-7">
                             <div class="hstack gap-2">
                                 <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-del>
-                                    <i class="bi bi-trash"></i> Hapus Vendor
+                                    <i class="bi bi-trash"></i> Remove Vendor
                                 </button>
                             </div>
                         </div>
@@ -581,7 +603,7 @@
                                data-price
                                data-format-currency
                                value="${priceValue ?? ''}" />
-                        <button type="button" class="btn btn-outline-danger" data-delround>Hapus</button>`;
+                            <button type="button" class="btn btn-outline-danger" data-delround>Remove</button>`;
                     rounds.appendChild(row);
                     const priceInput = row.querySelector('[data-price]');
                     bindCurrencyInput(priceInput);

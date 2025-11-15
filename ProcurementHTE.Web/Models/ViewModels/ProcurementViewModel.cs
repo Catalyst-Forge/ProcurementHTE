@@ -43,6 +43,10 @@ public class ProcurementEditViewModel
     [DisplayName("SPK Number")]
     public string? SpkNumber { get; set; }
 
+    [DisplayName("WO Number")]
+    [MaxLength(100)]
+    public string? Wonum { get; set; }
+
     [DisplayName("Start Date")]
     [DataType(DataType.Date)]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
@@ -55,12 +59,6 @@ public class ProcurementEditViewModel
 
     [DisplayName("Project Region")]
     public ProjectRegion ProjectRegion { get; set; }
-
-    [DisplayName("Accrual Amount")]
-    public decimal? AccrualAmount { get; set; }
-
-    [DisplayName("Realization Amount")]
-    public decimal? RealizationAmount { get; set; }
 
     [DisplayName("Potential Accrual Date")]
     [DataType(DataType.Date)]

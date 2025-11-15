@@ -63,7 +63,7 @@ namespace ProcurementHTE.Web.Controllers
             {
                 tender.CreatedAt = DateTime.Now;
                 await _tenderService.AddTenderAsync(tender);
-                TempData["SuccessMessage"] = "Data tender berhasil ditambahkan"; // Notification/Toast Message for data success
+                TempData["SuccessMessage"] = "Tender added successfully."; // Notification/Toast Message for data success
 
                 return RedirectToAction(nameof(Index));
             }
@@ -77,7 +77,7 @@ namespace ProcurementHTE.Web.Controllers
             {
                 ModelState.AddModelError(
                     "",
-                    "Terjadi kesalahan saat menyimpan data: " + ex.Message
+                    "An error occurred while saving the data: " + ex.Message
                 );
 
                 return View(tender);
@@ -120,7 +120,7 @@ namespace ProcurementHTE.Web.Controllers
             try
             {
                 await _tenderService.EditTenderAsync(tender, id);
-                TempData["SuccessMessage"] = "Data Tender berhasil diperbarui"; // Notification/Toast Message for data success
+                TempData["SuccessMessage"] = "Tender updated successfully."; // Notification/Toast Message for data success
 
                 return RedirectToAction(nameof(Index));
             }
@@ -128,7 +128,7 @@ namespace ProcurementHTE.Web.Controllers
             {
                 ModelState.AddModelError(
                     "",
-                    "Ada kendala ketika sedang memperbarui data: " + ex.Message
+                    "An issue occurred while updating the data: " + ex.Message
                 );
 
                 return View(tender);
@@ -166,13 +166,13 @@ namespace ProcurementHTE.Web.Controllers
                     return NotFound();
                 }
                 await _tenderService.DeleteTenderAsync(tender);
-                TempData["SuccessMessage"] = "Data tender berhasil dihapus";
+                TempData["SuccessMessage"] = "Tender deleted successfully.";
 
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Data gagal dihapus" + ex.Message;
+                TempData["ErrorMessage"] = "Failed to delete tender: " + ex.Message;
 
                 return RedirectToAction(nameof(Index));
             }

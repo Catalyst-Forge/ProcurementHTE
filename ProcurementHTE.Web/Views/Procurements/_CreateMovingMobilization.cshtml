@@ -6,107 +6,12 @@
 
 <section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
-        <legend class="card-title fw-semibold">Subject</legend>
+        <legend class="card-title fw-semibold">Notes</legend>
         <hr />
         <div class="row">
             <div class="col-12 mb-3">
-                <label asp-for="Procurement.Note" class="form-label"></label>
                 <textarea asp-for="Procurement.Note" class="form-control" maxlength="200" rows="3"></textarea>
             </div>
-
-            <div class="col-12 col-md-6">
-                <label asp-for="Procurement.Note" class="form-label"></label>
-                <input asp-for="Procurement.Note" class="form-control" />
-                <span asp-validation-for="Procurement.Note" class="text-danger small"></span>
-            </div>
-
-            <div class="col-12 col-md-6">
-                <label asp-for="Procurement.Note" class="form-label"></label>
-                <input asp-for="Procurement.Note" class="form-control" />
-                <span asp-validation-for="Procurement.Note" class="text-danger small"></span>
-            </div>
-        </div>
-    </fieldset>
-</section>
-
-<section class="card shadow-sm mb-3 p-2 rounded-4">
-    <fieldset class="card-body">
-        <div class="d-flex">
-            <legend class="card-title fw-semibold">Detail Items</legend>
-            <button type="button" id="btn-add-detail" class="btn btn-outline-primary mb-2">
-                <i class="bi bi-plus-lg"></i>
-            </button>
-        </div>
-        <hr />
-
-        <div class="row" id="details-container">
-            <div class="col-12 mb-3">
-                <label asp-for="Procurement.Note" class="form-label"></label>
-                <textarea asp-for="Procurement.Note" class="form-control" maxlength="200" rows="3"></textarea>
-                <span asp-validation-for="Procurement.Note" class="text-danger small"></span>
-            </div>
-
-            @if (Model.Details != null && Model.Details.Count > 0) {
-                for (var i = 0; i < Model.Details.Count; i++) {
-                    var key = i.ToString();
-                    <div class="col-12 detail-row position-relative">
-                        <input type="hidden" name="Details.Index" value="@key" />
-                        <div class="mb-2 d-flex gap-3 align-items-end">
-                            <div class="w-100">
-                                <div class="row g-3">
-                                    <div class="col-md-8">
-                                        <label class="form-label">Item Name</label>
-                                        <input type="text" class="form-control"
-                                            name="Details[@key].ItemName" value="@(Model.Details[i].ItemName)" />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Qty</label>
-                                        <input type="number" class="form-control" min="1"
-                                            name="Details[@key].Quantity"
-                                            value="@(Model.Details[i].Quantity == 0 ? "" : Model.Details[i].Quantity)" />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Unit</label>
-                                        <input type="text" class="form-control"
-                                            name="Details[@key].Unit" value="@(Model.Details[i].Unit)" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <button type="button" class="btn btn-outline-danger js-remove-detail">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                }
-            } else {
-                var key = Guid.NewGuid().ToString("N").Substring(0, 8);
-                <div class="col-12 detail-row position-relative">
-                    <input type="hidden" name="Details.Index" value="@key" />
-                    <div class="mb-2 d-flex gap-3 align-items-end">
-                        <div class="w-100">
-                            <div class="row g-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">Item Name</label>
-                                    <input class="form-control" name="Details[@key].ItemName" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Qty</label>
-                                    <input class="form-control" type="number" min="1" name="Details[@key].Quantity" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Unit</label>
-                                    <input class="form-control" name="Details[@key].Unit" />
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-outline-danger js-remove-detail">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            }
         </div>
     </fieldset>
 </section>
@@ -146,7 +51,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Apakah Anda ingin menambahkan Procurement baru? atau menyimpannya sebagai draft</p>
+                <p>Would you like to create a new procurement or save it as a draft?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

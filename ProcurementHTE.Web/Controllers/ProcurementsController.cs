@@ -70,6 +70,8 @@ namespace ProcurementHTE.Web.Controllers
                 ["pageSize"] = pageSize,
             };
 
+            ViewBag.UserNames = await BuildUserNameMapAsync(procurements.Items);
+
             return View(procurements);
         }
 
@@ -84,6 +86,8 @@ namespace ProcurementHTE.Web.Controllers
                 var procurement = await _procurementService.GetProcurementByIdAsync(id);
                 if (procurement == null)
                     return NotFound();
+
+                await PopulateUserFullNamesAsync(procurement);
 
                 var summary = await _pnlService.GetSummaryByProcurementAsync(id);
                 if (summary != null)
@@ -104,7 +108,7 @@ namespace ProcurementHTE.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading Procurement details for ID: {id}", id);
-                TempData["ErrorMessage"] = "Gagal memuat detail Procurement: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to load procurement details: " + ex.Message;
 
                 return RedirectToAction(nameof(Index));
             }
@@ -211,8 +215,8 @@ namespace ProcurementHTE.Web.Controllers
                     "Draft",
                     StringComparison.OrdinalIgnoreCase
                 )
-                    ? "Procurement berhasil disimpan sebagai draft"
-                    : "Procurement berhasil dibuat";
+                ? "Procurement saved as draft successfully"
+                : "Procurement created successfully";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -222,10 +226,10 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal menyimpan Procurement");
+                _logger.LogError(ex, "Failed to save procurement");
                 ModelState.AddModelError(
                     "",
-                    "Terjadi kesalahan saat menyimpan data: " + ex.Message
+                    "An error occurred while saving the data: " + ex.Message
                 );
             }
             await RepopulateCreateViewModel(woViewModel);
@@ -261,14 +265,13 @@ namespace ProcurementHTE.Web.Controllers
                     StartDate = procurement.StartDate,
                     EndDate = procurement.EndDate,
                     ProjectRegion = procurement.ProjectRegion,
-                    AccrualAmount = procurement.AccrualAmount,
-                    RealizationAmount = procurement.RealizationAmount,
                     PotentialAccrualDate = procurement.PotentialAccrualDate,
                     SpmpNumber = procurement.SpmpNumber,
                     MemoNumber = procurement.MemoNumber,
                     OeNumber = procurement.OeNumber,
                     RaNumber = procurement.RaNumber,
                     ProjectCode = procurement.ProjectCode,
+                    Wonum = procurement.Wonum,
                     LtcName = procurement.LtcName,
                     Note = procurement.Note,
                     StatusId = procurement.StatusId,
@@ -279,6 +282,8 @@ namespace ProcurementHTE.Web.Controllers
                     Details = procurement.ProcDetails?.ToList() ?? [],
                     Offers = procurement.ProcOffers?.ToList() ?? [],
                 };
+                viewModel.JobTypes = jobTypes;
+                viewModel.Statuses = statuses;
                 await PopulateEditUserSelectListsAsync(viewModel);
 
                 var jobTypeName = procurement.JobType?.TypeName ?? "Other";
@@ -290,7 +295,7 @@ namespace ProcurementHTE.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading Procurement for edit, ID: {id}", id);
-                TempData["ErrorMessage"] = $"Gagal memuat data untuk diedit: {ex.Message}";
+                TempData["ErrorMessage"] = $"Failed to load procurement for editing: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -328,8 +333,6 @@ namespace ProcurementHTE.Web.Controllers
                     StartDate = editViewModel.StartDate,
                     EndDate = editViewModel.EndDate,
                     ProjectRegion = editViewModel.ProjectRegion,
-                    AccrualAmount = editViewModel.AccrualAmount,
-                    RealizationAmount = editViewModel.RealizationAmount,
                     PotentialAccrualDate = editViewModel.PotentialAccrualDate,
                     SpkNumber = editViewModel.SpkNumber,
                     SpmpNumber = editViewModel.SpmpNumber,
@@ -337,6 +340,7 @@ namespace ProcurementHTE.Web.Controllers
                     OeNumber = editViewModel.OeNumber,
                     RaNumber = editViewModel.RaNumber,
                     ProjectCode = editViewModel.ProjectCode,
+                    Wonum = editViewModel.Wonum,
                     LtcName = editViewModel.LtcName,
                     Note = editViewModel.Note,
                     PicOpsUserId = editViewModel.PicOpsUserId!,
@@ -352,7 +356,7 @@ namespace ProcurementHTE.Web.Controllers
                     editViewModel.Details ?? [],
                     editViewModel.Offers ?? []
                 );
-                TempData["SuccessMessage"] = "Procurement berhasil diupdate!";
+                TempData["SuccessMessage"] = "Procurement updated successfully!";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -368,7 +372,7 @@ namespace ProcurementHTE.Web.Controllers
                 _logger.LogError(ex, "Error updating Procurement, ID: {id}", id);
                 ModelState.AddModelError(
                     "",
-                    $"Terjadi kesalahan saat mengupdate data: {ex.Message}"
+                    $"An error occurred while updating the data: {ex.Message}"
                 );
                 await RepopulateEditViewModel(editViewModel);
                 return View(editViewModel);
@@ -394,7 +398,7 @@ namespace ProcurementHTE.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading Procurement for delete, ID: {id}", id);
-                TempData["ErrorMessage"] = $"Gagal memuat data untuk delete: {ex.Message}";
+                TempData["ErrorMessage"] = $"Failed to load procurement for deletion: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -412,12 +416,12 @@ namespace ProcurementHTE.Web.Controllers
                     return NotFound();
 
                 await _procurementService.DeleteProcurementAsync(procurement);
-                TempData["SuccessMessage"] = "Procurement berhasil dihapus!";
+                TempData["SuccessMessage"] = "Procurement deleted successfully!";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Gagal menghapus Procurement: {ex.Message}";
+                TempData["ErrorMessage"] = $"Failed to delete procurement: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -477,7 +481,7 @@ namespace ProcurementHTE.Web.Controllers
 
                 if (viewModel.OfferItems.Count == 0)
                     TempData["WarningMessage"] =
-                        "Belum ada Item Penawaran (ProcOffer). Tambahkan di halaman Edit Procurement agar bisa input harga per item.";
+                        "No offer items (ProcOffer) exist. Add them on the Edit Procurement page to input prices per item.";
 
                 return View(viewModel);
             }
@@ -574,7 +578,7 @@ namespace ProcurementHTE.Web.Controllers
                 var saveResult = await _procDocService.SaveGeneratedAsync(generateReq);
 
                 TempData["SuccessMessage"] =
-                    "Profit & Loss berhasil dibuat & generate dokumen telah berhasil";
+                    "Profit & Loss created successfully and documents were generated.";
 
                 return RedirectToAction(nameof(Details), new { id = dto.ProcurementId });
             }
@@ -650,6 +654,8 @@ namespace ProcurementHTE.Web.Controllers
                 {
                     ProfitLossId = dto.ProfitLossId,
                     ProcurementId = dto.ProcurementId,
+                    AccrualAmount = dto.AccrualAmount,
+                    RealizationAmount = dto.RealizationAmount,
                     // agregat lama (TarifAwal/TarifAdd/KmPer25) TIDAK dipakai lagi
                     Items = dtoItems
                         .Select(x => new ItemTariffInputVm
@@ -735,6 +741,8 @@ namespace ProcurementHTE.Web.Controllers
             {
                 ProfitLossId = viewModel.ProfitLossId,
                 ProcurementId = viewModel.ProcurementId,
+                AccrualAmount = viewModel.AccrualAmount,
+                RealizationAmount = viewModel.RealizationAmount,
                 Items = (viewModel.Items ?? [])
                     .Select(x => new ProfitLossItemInputDto
                     {
@@ -755,7 +763,7 @@ namespace ProcurementHTE.Web.Controllers
             update.Vendors = BuildVendorOfferDtos(viewModel.Vendors, allowedVendorSet);
 
             await _pnlService.EditProfitLossAsync(update);
-            TempData["Success"] = "Profit & Loss berhasil diupdate";
+            TempData["Success"] = "Profit & Loss updated successfully";
             return RedirectToAction(nameof(Index));
         }
 
@@ -795,6 +803,8 @@ namespace ProcurementHTE.Web.Controllers
 
                 TotalOperatorCost = dto.TotalOperatorCost,
                 TotalRevenue = dto.TotalRevenue,
+                AccrualAmount = dto.AccrualAmount,
+                RealizationAmount = dto.RealizationAmount,
 
                 SelectedVendorId = dto.SelectedVendorId,
                 SelectedVendorName = dto.SelectedVendorName,
@@ -839,6 +849,8 @@ namespace ProcurementHTE.Web.Controllers
             return new ProfitLossInputDto
             {
                 ProcurementId = vm.ProcurementId,
+                AccrualAmount = vm.AccrualAmount,
+                RealizationAmount = vm.RealizationAmount,
                 Items = items,
                 SelectedVendorIds = selectedVendors,
                 Vendors = vendorItemOffers,
@@ -975,7 +987,7 @@ namespace ProcurementHTE.Web.Controllers
         private async Task PopulateCreateUserSelectListsAsync(ProcurementCreateViewModel viewModel)
         {
             viewModel.PicOpsUsers = await BuildUserSelectListAsync(
-                "HTE",
+                "Operation",
                 viewModel.Procurement.PicOpsUserId
             );
             viewModel.AnalystUsers = await BuildUserSelectListAsync(
@@ -1043,7 +1055,7 @@ namespace ProcurementHTE.Web.Controllers
         private async Task PopulateEditUserSelectListsAsync(ProcurementEditViewModel viewModel)
         {
             viewModel.PicOpsUsers = await BuildUserSelectListAsync(
-                "HTE",
+                "Operation",
                 viewModel.PicOpsUserId
             );
             viewModel.AnalystUsers = await BuildUserSelectListAsync(
@@ -1058,6 +1070,83 @@ namespace ProcurementHTE.Web.Controllers
                 "Manager Transport & Logistic",
                 viewModel.ManagerUserId
             );
+        }
+
+        private async Task PopulateUserFullNamesAsync(Procurement procurement)
+        {
+            var map = await GetUserNamesAsync(
+                new[]
+                {
+                    procurement.PicOpsUserId,
+                    procurement.AnalystHteUserId,
+                    procurement.AssistantManagerUserId,
+                    procurement.ManagerUserId,
+                }
+            );
+
+            string Resolve(string id) =>
+                map.TryGetValue(id, out var name) ? name : id;
+
+            ViewBag.PicOpsName = Resolve(procurement.PicOpsUserId);
+            ViewBag.AnalystName = Resolve(procurement.AnalystHteUserId);
+            ViewBag.AssistantManagerName = Resolve(procurement.AssistantManagerUserId);
+            ViewBag.ManagerName = Resolve(procurement.ManagerUserId);
+        }
+
+        private async Task<Dictionary<string, string>> BuildUserNameMapAsync(
+            IEnumerable<Procurement> procurements
+        )
+        {
+            var ids = procurements
+                .SelectMany(p => new[]
+                {
+                    p.PicOpsUserId,
+                    p.AnalystHteUserId,
+                    p.AssistantManagerUserId,
+                    p.ManagerUserId,
+                })
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (ids.Count == 0)
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            return await GetUserNamesAsync(ids);
+        }
+
+        private async Task<Dictionary<string, string>> GetUserNamesAsync(IEnumerable<string?> ids)
+        {
+            var uniqueIds = ids
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Cast<string>()
+                .ToList();
+
+            var users = await _userManager.Users
+                .Where(u => uniqueIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName, u.UserName, u.Email })
+                .ToListAsync();
+
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var user in users)
+            {
+                var name =
+                    !string.IsNullOrWhiteSpace(user.FullName)
+                        ? user.FullName
+                        : !string.IsNullOrWhiteSpace(user.UserName)
+                            ? user.UserName!
+                            : user.Email ?? user.Id;
+                map[user.Id] = name;
+            }
+
+            foreach (var id in uniqueIds)
+            {
+                if (!map.ContainsKey(id))
+                    map[id] = id;
+            }
+
+            return map;
         }
 
         #endregion

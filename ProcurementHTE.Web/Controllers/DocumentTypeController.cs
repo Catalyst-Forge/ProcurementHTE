@@ -68,12 +68,12 @@ namespace ProcurementHTE.Web.Controllers
             try
             {
                 await _documentTypeService.AddDocumentTypeAsync(documentType);
-                TempData["SuccessMessage"] = "Document type berhasil ditambahkan.";
+                TempData["SuccessMessage"] = "Document type added successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Gagal menambahkan data: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to add document type: " + ex.Message;
                 return View(documentType);
             }
         }
@@ -106,12 +106,12 @@ namespace ProcurementHTE.Web.Controllers
             try
             {
                 await _documentTypeService.EditDocumentTypeAsync(documentType, id);
-                TempData["SuccessMessage"] = "Document type berhasil diupdate.";
+                TempData["SuccessMessage"] = "Document type updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Gagal mengupdate data: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to update document type: " + ex.Message;
                 return View(documentType);
             }
         }
@@ -124,11 +124,11 @@ namespace ProcurementHTE.Web.Controllers
                 var documentType = await _documentTypeService.GetDocumentTypeByIdAsync(id);
                 if (documentType == null)
                 {
-                    TempData["ErrorMessage"] = "Document type tidak ditemukan.";
+                    TempData["ErrorMessage"] = "Document type not found.";
                     return NotFound();
                 }
                 await _documentTypeService.DeleteDocumentTypeAsync(documentType);
-                TempData["SuccessMessage"] = "Document type berhasil dihapus.";
+                TempData["SuccessMessage"] = "Document type deleted successfully.";
             }
             catch (DbUpdateException ex)
             {
@@ -139,7 +139,7 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Gagal menghapus data: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to delete document type: " + ex.Message;
                 Console.WriteLine("[DEBUG] ERROR: " + ex.Message);
             }
             return RedirectToAction(nameof(Index));

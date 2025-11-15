@@ -84,6 +84,14 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
             entity
                 .Property(procurement => procurement.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+            entity
+                .Property(procurement => procurement.ContractType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity
+                .Property(procurement => procurement.ProjectRegion)
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             // Indexes
             entity
@@ -271,18 +279,22 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region DocumentType
 
-    private static void ConfigureDocumentType(ModelBuilder builder) {
-        builder.Entity<DocumentType>(entity => {
+    private static void ConfigureDocumentType(ModelBuilder builder)
+    {
+        builder.Entity<DocumentType>(entity =>
+        {
             // Properties
             entity.Property(documentType => documentType.DocumentTypeId).ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasMany(documentType => documentType.ProcDocuments)
+            entity
+                .HasMany(documentType => documentType.ProcDocuments)
                 .WithOne(document => document.DocumentType)
                 .HasForeignKey(document => document.DocumentTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(documentType => documentType.JobTypeDocuments)
+            entity
+                .HasMany(documentType => documentType.JobTypeDocuments)
                 .WithOne(jobTypeDoc => jobTypeDoc.DocumentType)
                 .HasForeignKey(jobTypeDoc => jobTypeDoc.DocumentTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -293,23 +305,28 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region ProcDocuments
 
-    private static void ConfigureProcDocuments(ModelBuilder builder) {
-        builder.Entity<ProcDocuments>(entity => {
+    private static void ConfigureProcDocuments(ModelBuilder builder)
+    {
+        builder.Entity<ProcDocuments>(entity =>
+        {
             // Properties
             entity.Property(document => document.ProcDocumentId).ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasOne(document => document.Procurement)
+            entity
+                .HasOne(document => document.Procurement)
                 .WithMany(procurement => procurement.ProcDocuments)
                 .HasForeignKey(document => document.ProcurementId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(document => document.DocumentType)
+            entity
+                .HasOne(document => document.DocumentType)
                 .WithMany(documentType => documentType.ProcDocuments)
                 .HasForeignKey(document => document.DocumentTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(document => document.Approvals)
+            entity
+                .HasMany(document => document.Approvals)
                 .WithOne(approval => approval.ProcDocument)
                 .HasForeignKey(approval => approval.ProcDocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -320,28 +337,36 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region ProcDocumentApprovals
 
-    private static void ConfigureProcDocumentApprovals(ModelBuilder builder) {
-        builder.Entity<ProcDocumentApprovals>(entity => {
+    private static void ConfigureProcDocumentApprovals(ModelBuilder builder)
+    {
+        builder.Entity<ProcDocumentApprovals>(entity =>
+        {
             // Properties
-            entity.Property(documentApproval => documentApproval.ProcDocumentApprovalId).ValueGeneratedOnAdd();
+            entity
+                .Property(documentApproval => documentApproval.ProcDocumentApprovalId)
+                .ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasOne(documentApproval => documentApproval.Procurement)
+            entity
+                .HasOne(documentApproval => documentApproval.Procurement)
                 .WithMany(procurement => procurement.DocumentApprovals)
                 .HasForeignKey(documentApproval => documentApproval.ProcurementId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(documentApproval => documentApproval.ProcDocument)
+            entity
+                .HasOne(documentApproval => documentApproval.ProcDocument)
                 .WithMany(document => document.Approvals)
                 .HasForeignKey(documentApproval => documentApproval.ProcDocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(documentApproval => documentApproval.Role)
+            entity
+                .HasOne(documentApproval => documentApproval.Role)
                 .WithMany()
                 .HasForeignKey(documentApproval => documentApproval.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(documentApproval => documentApproval.Approver)
+            entity
+                .HasOne(documentApproval => documentApproval.Approver)
                 .WithMany()
                 .HasForeignKey(documentApproval => documentApproval.ApproverId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -352,23 +377,28 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region ProfitLoss
 
-    private static void ConfigureProfitLoss(ModelBuilder builder) {
-        builder.Entity<ProfitLoss>(entity => {
+    private static void ConfigureProfitLoss(ModelBuilder builder)
+    {
+        builder.Entity<ProfitLoss>(entity =>
+        {
             // Properties
             entity.Property(profitLoss => profitLoss.ProfitLossId).ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasOne(profitLoss => profitLoss.Procurement)
+            entity
+                .HasOne(profitLoss => profitLoss.Procurement)
                 .WithMany(procurement => procurement.ProfitLosses)
                 .HasForeignKey(profitLoss => profitLoss.ProcurementId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(profitLoss => profitLoss.SelectedVendor)
+            entity
+                .HasOne(profitLoss => profitLoss.SelectedVendor)
                 .WithMany()
                 .HasForeignKey(profitLoss => profitLoss.SelectedVendorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(profitLoss => profitLoss.Items)
+            entity
+                .HasMany(profitLoss => profitLoss.Items)
                 .WithOne(item => item.ProfitLoss)
                 .HasForeignKey(item => item.ProfitLossId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -379,18 +409,22 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region ProfitLossItem
 
-    private static void ConfigureProfitLossItem(ModelBuilder builder) {
-        builder.Entity<ProfitLossItem>(entity => {
+    private static void ConfigureProfitLossItem(ModelBuilder builder)
+    {
+        builder.Entity<ProfitLossItem>(entity =>
+        {
             // Properties
             entity.Property(item => item.ProfitLossItemId).ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasOne(item => item.ProfitLoss)
+            entity
+                .HasOne(item => item.ProfitLoss)
                 .WithMany(profitLoss => profitLoss.Items)
                 .HasForeignKey(item => item.ProfitLossId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(item => item.ProcOffer)
+            entity
+                .HasOne(item => item.ProcOffer)
                 .WithMany()
                 .HasForeignKey(item => item.ProcOfferId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -401,23 +435,28 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region JobTypeDocuments
 
-    private static void ConfigureJobTypeDocuments(ModelBuilder builder) {
-        builder.Entity<JobTypeDocuments>(entity => {
+    private static void ConfigureJobTypeDocuments(ModelBuilder builder)
+    {
+        builder.Entity<JobTypeDocuments>(entity =>
+        {
             // Properties
             entity.Property(jobTypeDoc => jobTypeDoc.JobTypeDocumentId).ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasOne(jobTypeDoc => jobTypeDoc.JobType)
+            entity
+                .HasOne(jobTypeDoc => jobTypeDoc.JobType)
                 .WithMany(jobType => jobType.JobTypeDocuments)
                 .HasForeignKey(jobTypeDoc => jobTypeDoc.JobTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(jobTypeDoc => jobTypeDoc.DocumentType)
+            entity
+                .HasOne(jobTypeDoc => jobTypeDoc.DocumentType)
                 .WithMany(documentType => documentType.JobTypeDocuments)
                 .HasForeignKey(jobTypeDoc => jobTypeDoc.DocumentTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasMany(jobTypeDoc => jobTypeDoc.DocumentApprovals)
+            entity
+                .HasMany(jobTypeDoc => jobTypeDoc.DocumentApprovals)
                 .WithOne(documentApproval => documentApproval.JobTypeDocument)
                 .HasForeignKey(documentApproval => documentApproval.JobTypeDocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -428,18 +467,24 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
 
     #region DocumentApprovals
 
-    private static void ConfigureDocumentApprovals(ModelBuilder builder) {
-        builder.Entity<DocumentApprovals>(entity => {
+    private static void ConfigureDocumentApprovals(ModelBuilder builder)
+    {
+        builder.Entity<DocumentApprovals>(entity =>
+        {
             // Properties
-            entity.Property(documentApproval => documentApproval.DocumentApprovalId).ValueGeneratedOnAdd();
+            entity
+                .Property(documentApproval => documentApproval.DocumentApprovalId)
+                .ValueGeneratedOnAdd();
 
             // Relationships
-            entity.HasOne(documentApproval => documentApproval.JobTypeDocument)
+            entity
+                .HasOne(documentApproval => documentApproval.JobTypeDocument)
                 .WithMany(jobTypeDoc => jobTypeDoc.DocumentApprovals)
                 .HasForeignKey(documentApproval => documentApproval.JobTypeDocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(documentApproval => documentApproval.Role)
+            entity
+                .HasOne(documentApproval => documentApproval.Role)
                 .WithMany()
                 .HasForeignKey(documentApproval => documentApproval.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);

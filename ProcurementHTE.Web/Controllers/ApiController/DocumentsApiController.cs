@@ -54,7 +54,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                 return NotFound(new ProblemDetails
                 {
                     Title = "Document reference not found or not pending",
-                    Detail = "Tidak ada dokumen referensi/procurement terkait.",
+                    Detail = "No related reference/procurement document is available.",
                     Status = 404,
                     Instance = HttpContext.Request.Path
                 });
@@ -73,7 +73,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "[documents/by-qr] presign gagal: {DocId}", d.ProcDocumentId);
+                    _logger.LogWarning(ex, "[documents/by-qr] failed to generate presigned URL: {DocId}", d.ProcDocumentId);
                 }
 
                 list.Add(new ProcDocumentLiteWithUrlDto(

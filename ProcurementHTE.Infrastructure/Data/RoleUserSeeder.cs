@@ -30,6 +30,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
                 "HTE",
+                "Operation",
                 "Assistant Manager HTE",
                 "Vice President",
                 "HSE",
@@ -112,6 +113,15 @@ namespace ProcurementHTE.Infrastructure.Data
             );
 
             await AddPermissions(
+                "Operation",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload
+            );
+
+            await AddPermissions(
                 "Analyst HTE & LTS",
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Edit,
@@ -147,6 +157,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ("managerTL", "manager@example.com", "Manager123!", "Manager Transport & Logistic"),
                 ("AHte", "AHte@example.com", "AHte123!", "Analyst HTE & LTS"),
                 ("hte", "hte@example.com", "Hte1234!", "HTE"),
+                ("Operation", "pro.operation@example.com", "ProOperation123!", "Operation"),
                 (
                     "assistantmanagerhte",
                     "assistantmanagerhte@example.com",

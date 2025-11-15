@@ -40,6 +40,12 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
 
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? AccrualAmount { get; set; }
+
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? RealizationAmount { get; set; }
+
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
 
@@ -64,6 +70,12 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
+
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? AccrualAmount { get; set; }
+
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? RealizationAmount { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -91,6 +103,12 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
 
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? AccrualAmount { get; set; }
+
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? RealizationAmount { get; set; }
+
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
 
@@ -111,6 +129,9 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         public decimal TotalOperatorCost { get; set; }
         public decimal TotalRevenue { get; set; }
+
+        public decimal? AccrualAmount { get; set; }
+        public decimal? RealizationAmount { get; set; }
 
         [Required, StringLength(450)]
         public string SelectedVendorId { get; set; } = null!;

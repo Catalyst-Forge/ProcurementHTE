@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProcurementHTE.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251115095735_Alpha2")]
+    partial class Alpha2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -434,6 +437,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<decimal?>("AccrualAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("AnalystHteUserId")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -519,6 +525,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<decimal?>("RealizationAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("SpkNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -538,10 +547,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Wonum")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("ProcurementId");
 
@@ -566,9 +571,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal?>("AccrualAmount")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -581,9 +583,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("ProfitPercent")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal?>("RealizationAmount")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("SelectedVendorFinalOffer")

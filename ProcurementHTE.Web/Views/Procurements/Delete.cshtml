@@ -1,54 +1,74 @@
-﻿@* @using ProcurementHTE.Core.Models
-@model Procurement
+@model ProcurementHTE.Core.Models.Procurement
 
 @{
-    ViewData["Title"] = "Delete";
+    ViewData["Title"] = "Delete Procurement";
 }
 
-<h1>Delete</h1>
+<section class="card shadow-sm">
+    <div class="card-body">
+        <header class="mb-3">
+            <h1 class="h4 text-danger mb-1">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">
+                Are you sure you want to delete procurement <strong>@Model.Wonum</strong>?
+            </p>
+        </header>
 
-<h3>Are you sure you want to delete this?</h3>
-<div>
-    <h4>WorkOrder</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Note)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Note)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CreatedAt)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.WoType)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.WoType.TypeName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status.StatusName)
-        </dd>
-    </dl>
-    
-    <div class="d-inline-flex gap-1">
-        <form asp-action="Delete">
-            <input type="hidden" asp-for="WorkOrderId" />
-            <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete</button>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Job Name</dt>
+                    <dd class="fw-semibold">@Model.JobName</dd>
+                </dl>
+            </div>
+            <div class="col-md-3">
+                <dl class="mb-0">
+                    <dt class="text-secondary">WO Number</dt>
+                    <dd class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.Wonum) ? Model.Wonum : "-")</dd>
+                </dl>
+            </div>
+            <div class="col-md-3">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Status</dt>
+                    <dd class="fw-semibold">@Model.Status?.StatusName ?? "-"</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Job Type</dt>
+                    <dd class="fw-semibold">@Model.JobType?.TypeName ?? "-"</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Project Region</dt>
+                    <dd class="fw-semibold">@Model.ProjectRegion</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Created At</dt>
+                    <dd class="fw-semibold">@Model.CreatedAt.ToString("d MMM yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>This action cannot be undone.</span>
+        </div>
+
+        <form asp-action="Delete" method="post" class="d-flex gap-2">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.ProcurementId" />
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash-fill me-1"></i> Delete
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Cancel
+            </a>
         </form>
-        <a asp-action="Index" class="btn btn-secondary" role="button"><i class="bi bi-arrow-left-circle"></i> Back to List</a>
     </div>
-</div> *@
+</section>

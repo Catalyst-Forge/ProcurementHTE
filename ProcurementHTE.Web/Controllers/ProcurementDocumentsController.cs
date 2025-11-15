@@ -48,7 +48,7 @@ public class ProcurementDocumentsController : Controller
         if (string.IsNullOrWhiteSpace(procurementId))
         {
             _logger.LogWarning("[ProcDocs] Index without procurementId.");
-            return BadRequest("Parameter procurementId tidak valid.");
+            return BadRequest("Invalid procurementId parameter.");
         }
 
         try
@@ -56,8 +56,8 @@ public class ProcurementDocumentsController : Controller
             var dto = await _query.GetRequiredDocsAsync(procurementId, TimeSpan.FromMinutes(30));
             if (dto is null)
             {
-                _logger.LogInformation("[ProcDocs] Procurement {Procurement} tidak ditemukan.", procurementId);
-                return NotFound("Procurement tidak ditemukan.");
+                _logger.LogInformation("[ProcDocs] Procurement {Procurement} not found.", procurementId);
+                return NotFound("Procurement was not found.");
             }
 
             var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
@@ -92,7 +92,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] Error load Index for Procurement={Procurement}.", procurementId);
-            TempData["error"] = "Gagal memuat daftar dokumen.";
+            TempData["error"] = "Failed to load document list.";
             return RedirectToAction("Error", "Home");
         }
     }
@@ -110,13 +110,13 @@ public class ProcurementDocumentsController : Controller
     {
         if (string.IsNullOrWhiteSpace(ProcurementId) || string.IsNullOrWhiteSpace(DocumentTypeId))
         {
-            TempData["error"] = "Parameter tidak lengkap.";
+            TempData["error"] = "Missing required parameters.";
             return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
         }
 
         if (File is null || File.Length == 0)
         {
-            TempData["error"] = "File belum dipilih.";
+            TempData["error"] = "No file selected.";
             return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
         }
 
@@ -141,7 +141,7 @@ public class ProcurementDocumentsController : Controller
             };
 
             var result = await _docSvc.UploadAsync(req, HttpContext.RequestAborted);
-            var message = $"Berhasil upload \"{File.FileName}\".";
+            var message = $"Successfully uploaded \"{File.FileName}\".";
 
             if (IsAjaxRequest())
             {
@@ -247,7 +247,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] Download gagal: id={Id}", id);
-            TempData["error"] = "Gagal mengunduh dokumen.";
+            TempData["error"] = "Failed to download document.";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
     }
@@ -270,7 +270,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] PreviewUrl gagal: id={Id}", id);
-            return Json(new { ok = false, error = "Gagal membuat link preview." });
+            return Json(new { ok = false, error = "Failed to create preview link." });
         }
     }
 
@@ -286,8 +286,8 @@ public class ProcurementDocumentsController : Controller
         {
             var ok = await _docSvc.DeleteAsync(id);
             TempData[ok ? "success" : "error"] = ok
-                ? "Dokumen dihapus."
-                : "Dokumen tidak ditemukan.";
+                ? "Document deleted."
+                : "Document not found.";
         }
         catch (Exception ex)
         {
@@ -309,7 +309,7 @@ public class ProcurementDocumentsController : Controller
             var ok = await _docSvc.CanSendApprovalAsync(procurementId);
             if (!ok)
             {
-                TempData["error"] = "Dokumen wajib belum lengkap.";
+                TempData["error"] = "Mandatory documents are not yet complete.";
                 return RedirectToAction(nameof(Index), new { procurementId });
             }
 
@@ -320,7 +320,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] SendApproval gagal untuk Procurement={Procurement}", procurementId);
-            TempData["error"] = "Gagal mengirim approval.";
+            TempData["error"] = "Failed to send approval.";
         }
 
         return RedirectToAction(nameof(Index), new { procurementId });
@@ -341,7 +341,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] QrUrl gagal: id={Id}", id);
-            return Json(new { ok = false, error = "Gagal membuat link QR." });
+            return Json(new { ok = false, error = "Failed to create QR link." });
         }
     }
 
@@ -374,7 +374,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] DownloadQr gagal: id={Id}", id);
-            return BadRequest("Gagal mengunduh QR.");
+            return BadRequest("Failed to download QR.");
         }
     }
 
@@ -388,14 +388,14 @@ public class ProcurementDocumentsController : Controller
             var procurementEntity = await _procurementService.GetProcurementByIdAsync(procurementId);
             if (procurementEntity == null)
             {
-                TempData["error"] = "Procurement tidak ditemukan";
+                TempData["error"] = "Procurement was not found";
                 return RedirectToAction("Index", new { procurementId });
             }
 
             var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
             if (docType == null)
             {
-                TempData["error"] = "Document Type tidak ditemukan";
+                TempData["error"] = "Document type was not found";
                 return RedirectToAction("Index", new { procurementId });
             }
 
@@ -459,7 +459,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            TempData["error"] = $"Gagal generate dokumen: {ex.Message}";
+            TempData["error"] = $"Failed to generate documents: {ex.Message}";
             _logger.LogError(ex, "Error generating document for Procurement={Procurement}", procurementId);
             return RedirectToAction("Index", new { procurementId });
         }
@@ -473,11 +473,11 @@ public class ProcurementDocumentsController : Controller
         {
             var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
             if (procurement == null)
-                return NotFound("Procurement tidak ditemukan");
+                return NotFound("Procurement was not found");
 
             var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
             if (docType == null)
-                return NotFound("Document Type tidak ditemukan");
+                return NotFound("Document type was not found");
 
             byte[] pdfBytes = docType.Name switch
             {
@@ -513,7 +513,7 @@ public class ProcurementDocumentsController : Controller
     public async Task<IActionResult> ApprovalTimeline(string procDocumentId)
     {
         if (string.IsNullOrWhiteSpace(procDocumentId))
-            return BadRequest(new { ok = false, message = "procDocumentId tidak valid." });
+            return BadRequest(new { ok = false, message = "Invalid procDocumentId." });
 
         try
         {
@@ -522,14 +522,14 @@ public class ProcurementDocumentsController : Controller
                 HttpContext.RequestAborted
             );
             if (dto is null)
-                return NotFound(new { ok = false, message = "Dokumen tidak ditemukan." });
+                return NotFound(new { ok = false, message = "Document was not found." });
 
             return Ok(new { ok = true, data = dto });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] ApprovalTimeline gagal: doc={Doc}", procDocumentId);
-            return StatusCode(500, new { ok = false, message = "Gagal memuat timeline approval." });
+            return StatusCode(500, new { ok = false, message = "Failed to load approval timeline." });
         }
     }
 }

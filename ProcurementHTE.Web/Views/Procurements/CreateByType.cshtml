@@ -54,28 +54,36 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Procurement.JobTypeOther" class="form-label"></label>
-                    <input asp-for="Procurement.JobTypeOther" class="form-control" />
+                    <input asp-for="Procurement.JobTypeOther" class="form-control" maxlength="255" />
                     <span class="text-danger" asp-validation-for="Procurement.JobTypeOther"></span>
                 </div>
             </div>
 
             <div class="row g-3 mt-0">
-                <div class="col-md-6">
+                <div class="col-12">
                     <label asp-for="Procurement.JobName" class="form-label"></label>
-                    <textarea asp-for="Procurement.JobName" class="form-control" rows="3" maxlength="200"></textarea>
+                    <textarea asp-for="Procurement.JobName" class="form-control" rows="3" maxlength="255"></textarea>
                     <span class="text-danger" asp-validation-for="Procurement.JobName"></span>
                 </div>
-                <div class="col-md-3">
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-4">
                     <label asp-for="Procurement.ProjectRegion" class="form-label"></label>
                     <select asp-for="Procurement.ProjectRegion" class="form-select" asp-items="projectRegionOptions">
                         <option value="">Select project region</option>
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.ProjectRegion"></span>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label asp-for="Procurement.ProjectCode" class="form-label"></label>
-                    <input asp-for="Procurement.ProjectCode" class="form-control" />
+                    <input asp-for="Procurement.ProjectCode" class="form-control" maxlength="64" />
                     <span class="text-danger" asp-validation-for="Procurement.ProjectCode"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Procurement.Wonum" class="form-label"></label>
+                    <input asp-for="Procurement.Wonum" class="form-control" maxlength="100" />
+                    <span class="text-danger" asp-validation-for="Procurement.Wonum"></span>
                 </div>
             </div>
         </fieldset>
@@ -83,7 +91,7 @@
 
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold">Schedule &amp; Amounts</legend>
+            <legend class="card-title fw-semibold">Schedule &amp; Etc</legend>
             <hr />
 
             <div class="row g-3">
@@ -105,19 +113,9 @@
             </div>
 
             <div class="row g-3 mt-0">
-                <div class="col-md-4">
-                    <label asp-for="Procurement.AccrualAmount" class="form-label"></label>
-                    <input asp-for="Procurement.AccrualAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                    <span class="text-danger" asp-validation-for="Procurement.AccrualAmount"></span>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="Procurement.RealizationAmount" class="form-label"></label>
-                    <input asp-for="Procurement.RealizationAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                    <span class="text-danger" asp-validation-for="Procurement.RealizationAmount"></span>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label asp-for="Procurement.LtcName" class="form-label"></label>
-                    <input asp-for="Procurement.LtcName" class="form-control" />
+                    <input asp-for="Procurement.LtcName" class="form-control" maxlength="255" />
                     <span class="text-danger" asp-validation-for="Procurement.LtcName"></span>
                 </div>
             </div>
@@ -137,17 +135,17 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <label asp-for="Procurement.SpkNumber" class="form-label"></label>
-                    <input asp-for="Procurement.SpkNumber" class="form-control" />
+                    <input asp-for="Procurement.SpkNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.SpkNumber"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Procurement.SpmpNumber" class="form-label"></label>
-                    <input asp-for="Procurement.SpmpNumber" class="form-control" />
+                    <input asp-for="Procurement.SpmpNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.SpmpNumber"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Procurement.MemoNumber" class="form-label"></label>
-                    <input asp-for="Procurement.MemoNumber" class="form-control" />
+                    <input asp-for="Procurement.MemoNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.MemoNumber"></span>
                 </div>
             </div>
@@ -155,12 +153,12 @@
             <div class="row g-3 mt-0">
                 <div class="col-md-6">
                     <label asp-for="Procurement.OeNumber" class="form-label"></label>
-                    <input asp-for="Procurement.OeNumber" class="form-control" />
+                    <input asp-for="Procurement.OeNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.OeNumber"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Procurement.RaNumber" class="form-label"></label>
-                    <input asp-for="Procurement.RaNumber" class="form-control" />
+                    <input asp-for="Procurement.RaNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.RaNumber"></span>
                 </div>
             </div>

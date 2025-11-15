@@ -50,12 +50,13 @@ public class ProcurementCreateDto
     public string? ProjectRegion { get; set; }
 
     public decimal? DistanceKm { get; set; }
-    public decimal? AccrualAmount { get; set; }
-    public decimal? RealizationAmount { get; set; }
     public DateTime? PotentialAccrualDate { get; set; }
 
     [MaxLength(100)]
     public string? SpkNumber { get; set; }
+
+    [MaxLength(100)]
+    public string? Wonum { get; set; }
 
     [MaxLength(100)]
     public string? SpmpNumber { get; set; }
@@ -105,6 +106,7 @@ public class ProcurementResponseDto
 {
     public string ProcurementId { get; set; } = default!;
     public string ProcNum { get; set; } = default!;
+    public string? Wonum { get; set; }
     public string? JobType { get; set; }
     public string? StatusName { get; set; }
     public DateTime CreatedAt { get; set; }

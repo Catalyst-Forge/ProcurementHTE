@@ -51,6 +51,7 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "Note", wo.Note);
             html = ReplaceToken(html, "ProcurementType", jobTypeName);
             html = ReplaceToken(html, "SpkNumber", wo.SpkNumber);
+            html = ReplaceToken(html, "Wonum", wo.Wonum);
             html = ReplaceToken(html, "DateLetter", FormatDate(wo.StartDate));
             html = ReplaceToken(html, "From", wo.PicOpsUserId);
             html = ReplaceToken(html, "To", wo.ManagerUserId);
@@ -66,8 +67,6 @@ namespace ProcurementHTE.Core.Services
 
             // Additional new fields
             html = ReplaceToken(html, "ProjectRegion", wo.ProjectRegion.ToString());
-            html = ReplaceToken(html, "AccrualAmount", FormatDecimal(wo.AccrualAmount));
-            html = ReplaceToken(html, "RealizationAmount", FormatDecimal(wo.RealizationAmount));
             html = ReplaceToken(html, "PotentialAccrualDate", FormatDate(wo.PotentialAccrualDate));
             html = ReplaceToken(html, "SpmpNumber", wo.SpmpNumber);
             html = ReplaceToken(html, "MemoNumber", wo.MemoNumber);
@@ -95,6 +94,9 @@ namespace ProcurementHTE.Core.Services
             }
 
             // Profit & Loss data
+            decimal? accrualAmount = null;
+            decimal? realizationAmount = null;
+
             var pnl = await _pnlRepo.GetLatestByProcurementIdAsync(wo.ProcurementId);
             if (pnl != null)
             {
@@ -102,12 +104,16 @@ namespace ProcurementHTE.Core.Services
 
                 string FormatInt(int value) => value.ToString("N0", Id);
                 decimal Sum(Func<ProfitLossItem, decimal> selector) => items.Sum(selector);
+                var operatorCostTotal = Sum(i => i.OperatorCost);
+                var revenueTotal = Sum(i => i.Revenue);
+                accrualAmount = pnl.AccrualAmount ?? revenueTotal;
+                realizationAmount = pnl.RealizationAmount ?? operatorCostTotal;
 
                 html = ReplaceToken(html, "TarifAwal", FormatDecimal(Sum(i => i.TarifAwal)));
                 html = ReplaceToken(html, "TarifAdd", FormatDecimal(Sum(i => i.TarifAdd)));
                 html = ReplaceToken(html, "KmPer25", FormatInt(items.Sum(i => i.KmPer25)));
-                html = ReplaceToken(html, "OperatorCost", FormatDecimal(Sum(i => i.OperatorCost)));
-                html = ReplaceToken(html, "Revenue", FormatDecimal(Sum(i => i.Revenue)));
+                html = ReplaceToken(html, "OperatorCost", FormatDecimal(operatorCostTotal));
+                html = ReplaceToken(html, "Revenue", FormatDecimal(revenueTotal));
                 html = ReplaceToken(
                     html,
                     "SelectedVendorFinalOffer",
@@ -165,6 +171,9 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "SelectedVendorProvince", "-");
                 html = ReplaceToken(html, "SelectedVendorEmail", "-");
             }
+
+            html = ReplaceToken(html, "AccrualAmount", FormatDecimal(accrualAmount));
+            html = ReplaceToken(html, "RealizationAmount", FormatDecimal(realizationAmount));
 
             // Current date/time untuk footer
             html = ReplaceToken(html, "CurrentDate", DateTime.Now.ToString("dd MMMM yyyy"));

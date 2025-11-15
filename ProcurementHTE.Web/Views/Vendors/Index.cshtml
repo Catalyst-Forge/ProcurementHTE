@@ -185,14 +185,14 @@
 
           e.preventDefault();
 
-          const name = form.dataset.name || "vendor ini";
+          const name = form.dataset.name || "this vendor";
           const result = await Swal.fire({
             icon: "warning",
-            title: "Hapus vendor?",
-            html: `Anda akan menghapus <strong>${name}</strong>.<br/>Tindakan ini tidak dapat dibatalkan.`,
+            title: "Delete vendor?",
+            html: `You are about to delete <strong>${name}</strong>.<br/>This action cannot be undone.`,
             showCancelButton: true,
-            confirmButtonText: "Ya, hapus",
-            cancelButtonText: "Batal",
+            confirmButtonText: "Yes, delete",
+            cancelButtonText: "Cancel",
             confirmButtonColor: "#dc3545",
             cancelButtonColor: "#6c757d",
             reverseButtons: true,
@@ -205,8 +205,8 @@
         document.addEventListener("DOMContentLoaded", () => {
           const success = '@(TempData["SuccessMessage"] ?? "")';
           const error = '@(TempData["ErrorMessage"] ?? "")';
-          if (success) Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2200, showConfirmButton: false });
-          if (error) Swal.fire({ icon: "error", title: "Gagal", text: error });
+          if (success) Swal.fire({ icon: "success", title: "Success", text: success, timer: 2200, showConfirmButton: false });
+          if (error) Swal.fire({ icon: "error", title: "Error", text: error });
         });
     </script>
 }

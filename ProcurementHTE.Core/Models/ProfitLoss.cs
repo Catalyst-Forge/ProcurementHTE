@@ -19,6 +19,12 @@ namespace ProcurementHTE.Core.Models
         [Column(TypeName = "decimal(18, 2)")]
         public decimal ProfitPercent { get; set; }
 
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? AccrualAmount { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? RealizationAmount { get; set; }
+
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

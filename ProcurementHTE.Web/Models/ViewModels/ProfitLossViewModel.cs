@@ -9,6 +9,14 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
 
+        [DisplayName("Accrual Amount")]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? AccrualAmount { get; set; }
+
+        [DisplayName("Realization Amount")]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? RealizationAmount { get; set; }
+
         [DisplayName("Daftar Item P&L")]
         [MinLength(1)]
         public List<ItemTariffInputVm> Items { get; set; } = [];
@@ -105,6 +113,9 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         public decimal TotalOperatorCost { get; set; }
         public decimal TotalRevenue { get; set; }
+
+        public decimal? AccrualAmount { get; set; }
+        public decimal? RealizationAmount { get; set; }
 
         [Required, StringLength(450)]
         public string SelectedVendorId { get; set; } = null!;

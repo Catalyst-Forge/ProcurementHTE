@@ -133,6 +133,8 @@ namespace ProcurementHTE.Core.Services
                 ProcurementId = pnl.ProcurementId,
                 TotalOperatorCost = totalOperatorCost,
                 TotalRevenue = totalRevenue,
+                AccrualAmount = pnl.AccrualAmount ?? totalRevenue,
+                RealizationAmount = pnl.RealizationAmount ?? totalOperatorCost,
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
                 SelectedVendorName = vendorComparisons
                     .FirstOrDefault(vendor => vendor.IsSelected)
@@ -194,6 +196,8 @@ namespace ProcurementHTE.Core.Services
             {
                 ProfitLossId = pnl.ProfitLossId,
                 ProcurementId = pnl.ProcurementId,
+                AccrualAmount = pnl.AccrualAmount,
+                RealizationAmount = pnl.RealizationAmount,
                 Items = items,
                 SelectedVendorId = pnl.SelectedVendorId,
                 SelectedVendorFinalOffer = pnl.SelectedVendorFinalOffer,
@@ -230,6 +234,8 @@ namespace ProcurementHTE.Core.Services
 
             var profit = revTotal - bestTotal;
             var profitPct = revTotal > 0 ? (profit / revTotal) * 100m : 0m;
+            var accrualAmount = dto.AccrualAmount ?? revTotal;
+            var realizationAmount = dto.RealizationAmount ?? opTotal;
 
             var pnl = new ProfitLoss
             {
@@ -238,6 +244,8 @@ namespace ProcurementHTE.Core.Services
                 SelectedVendorFinalOffer = bestTotal,
                 Profit = profit,
                 ProfitPercent = profitPct,
+                AccrualAmount = accrualAmount,
+                RealizationAmount = realizationAmount,
                 Items = items,
             };
 
@@ -274,10 +282,15 @@ namespace ProcurementHTE.Core.Services
             var procOfferIds = items.Select(item => item.ProcOfferId).ToList();
             var (bestVendorId, bestTotal, _) = PickBestVendor(newOffers, procOfferIds);
 
+            var accrualAmount = dto.AccrualAmount ?? revTotal;
+            var realizationAmount = dto.RealizationAmount ?? opTotal;
+
             pnl.SelectedVendorId = bestVendorId;
             pnl.SelectedVendorFinalOffer = bestTotal;
             pnl.Profit = revTotal - bestTotal;
             pnl.ProfitPercent = revTotal > 0 ? (pnl.Profit / revTotal) * 100m : 0m;
+            pnl.AccrualAmount = accrualAmount;
+            pnl.RealizationAmount = realizationAmount;
             pnl.UpdatedAt = DateTime.Now;
 
             // replace items

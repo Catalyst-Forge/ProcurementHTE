@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Authorization
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
 @using ProcurementHTE.Web.Models.ViewModels
@@ -11,6 +11,10 @@
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     var pnl = ViewBag.PnlViewModel as ProfitLossSummaryViewModel;
     var documents = ViewBag.Documents as IReadOnlyList<ProcDocuments>;
+    var picOpsName = ViewBag.PicOpsName as string ?? Model?.PicOpsUserId;
+    var analystName = ViewBag.AnalystName as string ?? Model?.AnalystHteUserId;
+    var assistantManagerName = ViewBag.AssistantManagerName as string ?? Model?.AssistantManagerUserId;
+    var managerName = ViewBag.ManagerName as string ?? Model?.ManagerUserId;
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
@@ -83,8 +87,8 @@
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcNum)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcNum)</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
@@ -124,10 +128,10 @@
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.SpkNumber</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpmpNumber)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Model?.SpmpNumber</dd>
-                            </dl>
+                              <dl class="col-6 mb-2">
+                                  <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpmpNumber)</dt>
+                                  <dd class="fw-medium text-secondary-emphasis">@Model?.SpmpNumber</dd>
+                              </dl>
 
                             <dl class="col-6 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.MemoNumber)</dt>
@@ -167,13 +171,13 @@
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.AccrualAmount)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@(Model?.AccrualAmount.ToIDR() ?? "-")</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">Accrual Amount</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@(pnl?.AccrualAmount.ToIDR() ?? "-")</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.RealizationAmount)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@(Model?.RealizationAmount.ToIDR() ?? "-")</dd>
+                                <dt class="fw-semibold text-uppercase text-secondary">Realization Amount</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@(pnl?.RealizationAmount.ToIDR() ?? "-")</dd>
                             </dl>
 
                             <dl class="col-6 mb-2">
@@ -187,7 +191,8 @@
                 @* Item penawaran card*@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Item Penawaran</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Items
+                        </h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
@@ -212,48 +217,6 @@
                                             <td>@item.Unit</td>
                                         </tr>
                                         no++;
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </article>
-
-                @* Item details card *@
-                <article class="card shadow-sm mb-3 rounded-4">
-                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Item Details</h2>
-                    </header>
-                    <hr class="mx-3 my-2" />
-
-                    <div class="card-body">
-                        <div class="table-responsive rounded-3">
-                            <table class="table table-hover">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th class="mw-100 text-nowrap text-uppercase">No</th>
-                                        <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
-                                        <th class="mw-100 text-nowrap text-uppercase">Qty</th>
-                                        <th class="mw-100 text-nowrap text-uppercase">Unit</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    @if (Model.ProcDetails != null && Model.ProcDetails.Any()) {
-                                        no = 1;
-                                        foreach (var detail in Model.ProcDetails) {
-                                            <tr>
-                                                <td class="text-nowrap">@no</td>
-                                                <td>@detail.ItemName</td>
-                                                <td>@detail.Quantity</td>
-                                                <td>@detail.Unit</td>
-                                            </tr>
-                                            no++;
-                                        }
-                                    } else {
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted">Belum ada rincian barang</td>
-                                        </tr>
                                     }
                                 </tbody>
                             </table>
@@ -371,22 +334,22 @@
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.PicOpsUserId)</dt>
-                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.PicOpsUserId)</dd>
+                            <dd class="fw-medium text-secondary-emphasis">@picOpsName</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AnalystHteUserId)</dt>
-                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.AnalystHteUserId)</dd>
+                            <dd class="fw-medium text-secondary-emphasis">@analystName</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AssistantManagerUserId)</dt>
-                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.AssistantManagerUserId)</dd>
+                            <dd class="fw-medium text-secondary-emphasis">@assistantManagerName</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.ManagerUserId)</dt>
-                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ManagerUserId)</dd>
+                            <dd class="fw-medium text-secondary-emphasis">@managerName</dd>
                         </dl>
                     </div>
                 </article>
@@ -399,7 +362,7 @@
         @if (pnl == null) {
             <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>
-                Belum ada data Profit &amp; Loss untuk Procurement ini.
+                No Profit &amp; Loss data is available for this procurement.
             </div>
 
             <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model!.ProcurementId" class="btn btn-success">
@@ -426,7 +389,7 @@
                             }
                         </div>
                     } else {
-                        <span class="text-muted">—</span>
+                        <span class="text-muted">�</span>
                     }
                 </div>
             </article>
@@ -451,19 +414,19 @@
 
                     <div class="row g-3">
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Tarif 400 km (Σ)</div>
+                            <div class="fw-semibold">Tarif 400 km (S)</div>
                             <div>@((pnl.Items?.Sum(x => x.TarifAwal) ?? 0m).ToIDR())</div>
                         </div>
 
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Tarif Add (Σ)</div>
+                            <div class="fw-semibold">Tarif Add (S)</div>
                             <div>@((pnl.Items?.Sum(x => x.TarifAdd) ?? 0m).ToIDR())</div>
                         </div>
 
                         <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Cost Operator</div>
                             <div>@((pnl.Items?.Sum(x => x.OperatorCost) ?? 0m).ToIDR())</div>
-                            <div class="small text-muted">= Σ(Tarif Add × KM/25 per item)</div>
+                            <div class="small text-muted">= S(Tarif Add � KM/25 per item)</div>
                         </div>
 
                         <div class="col-12 col-sm-6 col-md-3">
@@ -479,7 +442,7 @@
                         <div class="col-12 col-sm-6 col-md-3">
                             <div class="fw-semibold">Final Offer</div>
                             <div>@pnl.SelectedFinalOffer.ToIDR()</div>
-                            <div class="small text-muted">(Σ harga round terakhir tiap item)</div>
+                            <div class="small text-muted">(S harga round terakhir tiap item)</div>
                         </div>
 
                         <div class="col-12 col-sm-6 col-md-3">
@@ -487,7 +450,7 @@
                             <div class="fw-bold text-success">
                                 @pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())
                             </div>
-                            <div class="small text-muted">= Revenue − Final Offer</div>
+                            <div class="small text-muted">= Revenue - Final Offer</div>
                         </div>
                     </div>
                 </div>
@@ -539,7 +502,7 @@
                 </div>
 
                 <div class="small text-muted px-3 pb-2">
-                    Operator Cost per item = <em>Tarif Add × KM/25</em>, Revenue per item = <em>Tarif 400 km + Operator Cost</em>.
+                    Operator Cost per item = <em>Tarif Add � KM/25</em>, Revenue per item = <em>Tarif 400 km + Operator Cost</em>.
                 </div>
             </article>
 
@@ -585,7 +548,7 @@
                 </div>
 
                 <div class="small text-muted px-3 pb-2">
-                    Best offer dipilih otomatis dari vendor dengan harga total paling rendah (Σ harga round terakhir setiap item).
+                    Best offer dipilih otomatis dari vendor dengan harga total paling rendah (S harga round terakhir setiap item).
                 </div>
             </article>
         }
@@ -658,7 +621,7 @@
                 </div>
                 <div id="pdfErrorContainer" class="text-center py-5 d-none">
                     <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
-                    <p class="text-muted">Gagal memuat dokumen. Silakan coba lagi.</p>
+                    <p class="text-muted">Failed to load documents. Please try again.</p>
                 </div>
                 <iframe id="pdfPreviewFrame"
                         style="width: 100%; height: 75vh; border: none; display: none;"

@@ -3,6 +3,7 @@
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
 @using System.Linq
+@using System.Collections.Generic
 @model PagedResult<Procurement>
 @inject IAuthorizationService AuthZ
 @{
@@ -24,6 +25,7 @@
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
     var columns = new (string Key, string Label)[] {
         ("ProcNum","Procurement No."),
+        ("Wonum","WO Number"),
         ("JobName","Job Name"),
         ("JobType","Job Type"),
         ("SelectedVendorName","Vendor"),
@@ -31,6 +33,13 @@
     };
     var pageSize = Model.PageSize;
     Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
+    var userNames = ViewBag.UserNames as IDictionary<string, string> ?? new Dictionary<string, string>();
+    Func<string?, string> resolveUserName = id =>
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return "-";
+        return userNames.TryGetValue(id, out var name) ? name : id;
+    };
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
@@ -80,6 +89,7 @@
         <thead class="table-light">
             <tr class="align-middle">
                 <th class="border-end">Job Name</th>
+                <th class="border-end">WO Number</th>
                 <th class="border-end">Start Date</th>
                 <th class="border-end">Job Type</th>
                 <th class="border-end text-end">Revenue</th>
@@ -91,7 +101,6 @@
                 <th class="border-end text-center">Analyst</th>
                 <th class="border-end text-center">Asst. Manager</th>
                 <th class="border-end text-center">Manager</th>
-                <th class="text-center">Tracking</th>
                 <th class="text-center">Action</th>
 
             </tr>
@@ -104,20 +113,30 @@
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
-                    var revenue = item.AccrualAmount;
-                    var cost = item.RealizationAmount;
-                    var profitPercent = "-";
-                    if (revenue.HasValue && cost.HasValue && revenue.Value != 0)
-                    {
-                        var pct = (revenue.Value - cost.Value) / revenue.Value * 100m;
-                        profitPercent = pct.ToString("0.##");
-                    }
-                    var vendorName = item.VendorOffers?.FirstOrDefault()?.Vendor?.VendorName ?? item.ProcOffers?.FirstOrDefault()?.ItemPenawaran ?? "-";
+                    var latestPnl = item.ProfitLosses?
+                        .OrderByDescending(p => p.CreatedAt)
+                        .FirstOrDefault();
+                    var revenue = latestPnl?.AccrualAmount;
+                    var cost = latestPnl?.RealizationAmount;
+                    var profitPercent = latestPnl != null
+                        ? latestPnl.ProfitPercent.ToString("0.##")
+                        : "-";
+                    var vendorName = latestPnl?.SelectedVendor?.VendorName
+                        ?? (!string.IsNullOrWhiteSpace(latestPnl?.SelectedVendorId) ? latestPnl!.SelectedVendorId : null)
+                        ?? "-";
                     var region = item.ProjectRegion.ToString();
+                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
+                    var picOps = resolveUserName(item.PicOpsUserId);
+                    var analyst = resolveUserName(item.AnalystHteUserId);
+                    var assistant = resolveUserName(item.AssistantManagerUserId);
+                    var manager = resolveUserName(item.ManagerUserId);
 
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
                             @item.JobName
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="WO Number">
+                            @wonum
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Start Date">
                             @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
@@ -141,19 +160,16 @@
                             @(!string.IsNullOrWhiteSpace(region) ? region : "-")
                         </td>
                         <td class="text-center d-flex d-sm-table-cell" data-label="PIC Ops">
-                            -
+                            @picOps
                         </td>
                         <td class="text-center d-flex d-sm-table-cell" data-label="Analyst">
-                            -
+                            @analyst
                         </td>
                         <td class="text-center d-flex d-sm-table-cell" data-label="Asst. Manager">
-                            -
+                            @assistant
                         </td>
                         <td class="text-center d-flex d-sm-table-cell" data-label="Manager">
-                            -
-                        </td>
-                        <td class="text-center d-flex d-sm-table-cell" data-label="Tracking">
-                            -
+                            @manager
                         </td>
                         <td class="text-md-center d-flex d-sm-table-cell" data-label="Action">
                             <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
@@ -164,10 +180,17 @@
                                 <span class="visually-hidden">Detail</span>
                                 <i class="bi bi-eye-fill"></i>
                             </a>
-                            <a class="link-danger link-opacity-50-hover text-decoration-none me-2" asp-action="Delete" asp-route-id="@item.ProcurementId" role="button">
-                                <span class="visually-hidden">Delete</span>
-                                <i class="bi bi-trash-fill"></i>
-                            </a>
+                            @if (canDelete.Succeeded)
+                            {
+                                <button type="button"
+                                        class="btn btn-link p-0 border-0 link-danger link-opacity-50-hover text-decoration-none me-2 js-delete-procurement"
+                                        data-procurement-id="@item.ProcurementId"
+                                        data-wo-number="@(string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum)"
+                                        data-job-name="@item.JobName">
+                                    <span class="visually-hidden">Delete</span>
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            }
                         </td>
                     </tr>
                 }
@@ -175,6 +198,14 @@
         </tbody>
     </table>
 </div>
+
+@if (canDelete.Succeeded)
+{
+    <form asp-action="Delete" method="post" id="deleteProcurementForm" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="deleteProcurementFormId" />
+    </form>
+}
 
 @await Html.PartialAsync("_Pager", Model)
 
@@ -211,6 +242,37 @@
                 pageHidden.value = 1;
                 form.submit();
             });
+
+            const deleteButtons = document.querySelectorAll('.js-delete-procurement');
+            const deleteForm = document.getElementById('deleteProcurementForm');
+            const deleteIdInput = document.getElementById('deleteProcurementFormId');
+
+            if (deleteButtons.length && deleteForm && deleteIdInput && window.Swal) {
+                deleteButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const procId = button.getAttribute('data-procurement-id');
+                        const woNumber = button.getAttribute('data-wo-number') || 'WO Number -';
+                        const jobName = button.getAttribute('data-job-name') || '';
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: `Delete ${woNumber}?`,
+                            html: jobName ? `<div class="text-muted">${jobName}</div>` : '',
+                            showCancelButton: true,
+                            confirmButtonText: 'Delete',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            focusCancel: true
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                deleteIdInput.value = procId;
+                                deleteForm.submit();
+                            }
+                        });
+                    });
+                });
+            }
         })();
     </script>
 }

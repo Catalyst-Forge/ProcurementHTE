@@ -18,6 +18,10 @@ public class Procurement
     [DisplayName("SPK No.")]
     public string? SpkNumber { get; set; }
 
+    [MaxLength(100)]
+    [DisplayName("WO Number")]
+    public string? Wonum { get; set; }
+
     [MaxLength(255)]
     public string? JobTypeOther { get; set; }
 
@@ -43,14 +47,6 @@ public class Procurement
     [Required]
     [DisplayName("Project Region")]
     public ProjectRegion ProjectRegion { get; set; }
-
-    [Column(TypeName = "decimal(18,2)")]
-    [DisplayName("Accrual Amount")]
-    public decimal? AccrualAmount { get; set; }
-
-    [Column(TypeName = "decimal(18,2)")]
-    [DisplayName("Realization Amount")]
-    public decimal? RealizationAmount { get; set; }
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     [DisplayName("Potential Accrual Date")]
@@ -104,11 +100,15 @@ public class Procurement
     public string ManagerUserId { get; set; } = null!;
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+
+    [DisplayName("Created At")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    [DisplayName("Update At")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime? UpdatedAt { get; set; }
 
+    [DisplayName("Completed At")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime? CompletedAt { get; set; }
 

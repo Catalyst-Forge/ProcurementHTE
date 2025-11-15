@@ -198,10 +198,9 @@ public class ProcurementService : IProcurementService
         existing.StartDate = updated.StartDate;
         existing.EndDate = updated.EndDate;
         existing.ProjectRegion = updated.ProjectRegion;
-        existing.AccrualAmount = updated.AccrualAmount;
-        existing.RealizationAmount = updated.RealizationAmount;
         existing.PotentialAccrualDate = updated.PotentialAccrualDate;
         existing.SpkNumber = updated.SpkNumber;
+        existing.Wonum = updated.Wonum;
         existing.SpmpNumber = updated.SpmpNumber;
         existing.MemoNumber = updated.MemoNumber;
         existing.OeNumber = updated.OeNumber;

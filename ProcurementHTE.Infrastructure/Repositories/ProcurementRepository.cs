@@ -49,6 +49,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(procurement => procurement.JobType)
                 .Include(procurement => procurement.User)
                 .Include(procurement => procurement.ProcDetails)
+                .Include(procurement => procurement.ProfitLosses)
                 .FirstOrDefaultAsync(procurement => procurement.ProcurementId == id);
         }
 
@@ -281,7 +282,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(procurement => procurement.Status)
                 .Include(procurement => procurement.JobType)
                 .Include(procurement => procurement.User)
-                .Include(procurement => procurement.ProcDetails)
+                .Include(procurement => procurement.ProfitLosses)
+                .ThenInclude(pl => pl.SelectedVendor)
+                .AsSplitQuery()
                 .AsNoTracking();
         }
 
@@ -319,6 +322,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             //return query.Where(wo => predicates.Any(p => p(wo)));
 
             bool byProcNum = fields.Contains("ProcNum", StringComparer.OrdinalIgnoreCase);
+            bool byWonum = fields.Contains("Wonum", StringComparer.OrdinalIgnoreCase);
             bool byJobName = fields.Contains("JobName", StringComparer.OrdinalIgnoreCase);
             bool byProjectCode = fields.Contains("ProjectCode", StringComparer.OrdinalIgnoreCase);
             bool bySelectedVendor = fields.Contains(
@@ -334,6 +338,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     byProcNum
                     && procurement.ProcNum != null
                     && EF.Functions.Like(procurement.ProcNum, like)
+                )
+                || (
+                    byWonum
+                    && procurement.Wonum != null
+                    && EF.Functions.Like(procurement.Wonum, like)
                 )
                 || (
                     byJobName

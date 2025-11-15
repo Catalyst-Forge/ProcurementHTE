@@ -87,7 +87,7 @@ namespace ProcurementHTE.Web.Controllers
             }
 
             await _vendorService.AddVendorAsync(vendor);
-            TempData["SuccessMessage"] = "Vendor berhasil ditambahkan.";
+            TempData["SuccessMessage"] = "Vendor added successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -107,8 +107,8 @@ namespace ProcurementHTE.Web.Controllers
             }
             catch (Exception ex)
             {
-                // Tampilkan pesan ramah + kembali ke list
-                TempData["ErrorMessage"] = "Gagal membuka halaman edit vendor: " + ex.Message;
+                // Show friendly message + go back to list
+                TempData["ErrorMessage"] = "Failed to open the edit page: " + ex.Message;
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -137,7 +137,7 @@ namespace ProcurementHTE.Web.Controllers
 
                 await _vendorService.EditVendorAsync(vendor, id);
 
-                TempData["SuccessMessage"] = "Vendor berhasil diupdate.";
+                TempData["SuccessMessage"] = "Vendor updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (KeyNotFoundException ex)
@@ -151,7 +151,7 @@ namespace ProcurementHTE.Web.Controllers
                 // Konflik concurrency (baris sudah berubah/dihapus)
                 ModelState.AddModelError(
                     string.Empty,
-                    "Data vendor berubah saat Anda mengedit. Silakan muat ulang halaman dan coba lagi."
+                    "Vendor data changed while you were editing. Please refresh and try again."
                 );
                 return View(vendor);
             }
@@ -160,7 +160,7 @@ namespace ProcurementHTE.Web.Controllers
                 // Error DB (unique constraint, dsb.)
                 ModelState.AddModelError(
                     string.Empty,
-                    "Gagal menyimpan perubahan ke database. " + ex.GetBaseException().Message
+                    "Failed to save changes to the database. " + ex.GetBaseException().Message
                 );
                 return View(vendor);
             }
@@ -169,7 +169,7 @@ namespace ProcurementHTE.Web.Controllers
                 // Fallback umum
                 ModelState.AddModelError(
                     string.Empty,
-                    "Terjadi kesalahan tak terduga: " + ex.Message
+                    "An unexpected error occurred: " + ex.Message
                 );
                 return View(vendor);
             }
@@ -189,11 +189,11 @@ namespace ProcurementHTE.Web.Controllers
                 }
                 await _vendorService.DeleteVendorAsync(vendor);
 
-                TempData["SuccessMessage"] = "Vendor berhasil dihapus.";
+                TempData["SuccessMessage"] = "Vendor deleted successfully.";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Gagal menghapus data: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to delete vendor: " + ex.Message;
             }
             return RedirectToAction(nameof(Index));
         }
