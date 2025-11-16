@@ -7,6 +7,8 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcOfferId { get; set; } = null!;
 
+        public int Quantity { get; set; }
+
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAwal { get; set; }
 
@@ -46,6 +48,9 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal? RealizationAmount { get; set; }
 
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? Distance { get; set; }
+
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
 
@@ -76,6 +81,9 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal? RealizationAmount { get; set; }
+
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -109,6 +117,9 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal? RealizationAmount { get; set; }
 
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? Distance { get; set; }
+
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
 
@@ -132,6 +143,7 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         public decimal? AccrualAmount { get; set; }
         public decimal? RealizationAmount { get; set; }
+        public decimal? Distance { get; set; }
 
         [Required, StringLength(450)]
         public string SelectedVendorId { get; set; } = null!;
@@ -142,10 +154,12 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         public decimal Profit { get; set; }
         public decimal ProfitPercent { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public List<(
             string ProcOfferId,
             string ItemName,
+            int Quantity,
             decimal TarifAwal,
             decimal TarifAdd,
             int KmPer25,

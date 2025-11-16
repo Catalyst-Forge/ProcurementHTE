@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Authorization
+ï»¿@using Microsoft.AspNetCore.Authorization
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
 @using ProcurementHTE.Web.Models.ViewModels
@@ -26,8 +26,8 @@
 }
 
 <header class="mb-3">
-    <div class="hstack flex-wrap justify-content-between mb-2">
-        <h1 class="h2">@ViewBag.Title</h1>
+    <div class="hstack flex-wrap justify-content-between my-2">
+        <h1 class="h2 fw-bold">@ViewBag.Title</h1>
 
         <button class="btn btn-primary d-md-none position-fixed bottom-0 end-0 mb-4 mb-md-0 me-4 me-md-0 z-3" type="button" id="buttonNavToggle">
             <i class="bi bi-three-dots-vertical"></i>
@@ -51,7 +51,7 @@
                 <button class="nav-link active" id="procurement-tab" data-bs-toggle="tab"
                         data-bs-target="#procurement-tab-pane" type="button" role="tab"
                         aria-controls="procurement-tab-pane" aria-selected="true">
-                    Procurement information
+                    Procurement Information
                 </button>
             </li>
 
@@ -81,32 +81,32 @@
 
                     <div class="card-body">
                         <div class="row mb-0">
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ContractType)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ContractType)</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectRegion)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProjectRegion)</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectCode)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.ProjectCode</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.JobName)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.JobName)</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.LtcName)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.LtcName)</dd>
                             </dl>
@@ -117,33 +117,33 @@
                 @* Reference Numbers Card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-box-2-fill text-primary me-1"></i> Reference Numbers</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-hash text-primary me-1"></i> Reference Numbers</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
                     <div class="card-body">
                         <div class="row mb-0">
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpkNumber)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.SpkNumber</dd>
                             </dl>
 
-                              <dl class="col-6 mb-2">
+                              <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                   <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpmpNumber)</dt>
                                   <dd class="fw-medium text-secondary-emphasis">@Model?.SpmpNumber</dd>
                               </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.MemoNumber)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.MemoNumber</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.OeNumber)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.OeNumber</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.RaNumber)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.RaNumber</dd>
                             </dl>
@@ -154,35 +154,35 @@
                 @* Schedule & Financials Card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Schedule & Financials</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-calendar-check text-primary me-1"></i> Schedule & Financials</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
                     <div class="card-body">
                         <div class="row mb-0">
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.StartDate)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.StartDate.ToTanggalIndonesia()</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.EndDate)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Model?.EndDate.ToTanggalIndonesia()</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.PotentialAccrualDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.PotentialAccrualDate.ToTanggalIndonesia()</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">Accrual Amount</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@(pnl?.AccrualAmount.ToIDR() ?? "-")</dd>
                             </dl>
 
-                            <dl class="col-6 mb-2">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">Realization Amount</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@(pnl?.RealizationAmount.ToIDR() ?? "-")</dd>
-                            </dl>
-
-                            <dl class="col-6 mb-2">
-                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.PotentialAccrualDate)</dt>
-                                <dd class="fw-medium text-secondary-emphasis">@Model?.PotentialAccrualDate.ToTanggalIndonesia()</dd>
                             </dl>
                         </div>
                     </div>
@@ -191,7 +191,7 @@
                 @* Item penawaran card*@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-box2-fill text-primary me-1"></i> Items
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-list-check text-primary me-1"></i> Items
                         </h2>
                     </header>
                     <hr class="mx-3 my-2" />
@@ -199,7 +199,7 @@
                     <div class="card-body">
                         <div class="table-responsive rounded-3">
                             <table class="table table-hover">
-                                <thead class="table-primary">
+                                <thead class="table-info">
                                     <tr>
                                         <th class="mw-100 text-nowrap text-uppercase">No</th>
                                         <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
@@ -243,38 +243,38 @@
             </div>
 
             <div>
-                @* Procurement information card *@
+                @* Procurement Status card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Procurement Information</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Status</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
                     <div class="card-body">
                         <div class="row mb-0">
-                            <dl class="col-6 col-lg-12 col-xl-6">
+                            <dl class="col-12">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.JobType)
                                 </dt>
                                 <dd>
-                                    <span class="badge bg-info rounded-5 p-2 px-3">
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">
                                         @Html.DisplayFor(model => model.JobType!.TypeName)
                                     </span>
                                 </dd>
                             </dl>
 
-                            <dl class="col-6 col-lg-12 col-xl-6">
+                            <dl class="col-12">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.Status)
                                 </dt>
                                 <dd>
-                                    <span class="badge bg-secondary rounded-5 p-2 px-3">
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary rounded-5 p-2 px-3">
                                         @Html.DisplayFor(model => model.Status!.StatusName)
                                     </span>
                                 </dd>
                             </dl>
 
-                            <dl class="col-6 col-lg-12 col-xl-6">
+                            <dl class="col-12">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.CreatedAt)
                                 </dt>
@@ -283,7 +283,7 @@
                                 </dd>
                             </dl>
 
-                            <dl class="col-6 col-lg-12 col-xl-6">
+                            <dl class="col-12">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.User)
                                 </dt>
@@ -292,7 +292,7 @@
                                 </dd>
                             </dl>
 
-                            <dl class="col-6 col-lg-12 col-xl-6">
+                            <dl class="col-12">
                                 <dt class="fw-semibold text-uppercase text-secondary mb-1">
                                     @Html.DisplayNameFor(model => model.CompletedAt)
                                 </dt>
@@ -305,7 +305,7 @@
                 </article>
 
                 @* Contact person card *@
-                <article class="card shadow-sm mb-3 rounded-4">
+                @* <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
                         <h2 class="card-title mb-0 h5"><i class="bi bi-person-fill text-primary me-1"></i> Contact Person</h2>
                     </header>
@@ -314,20 +314,20 @@
                     <div class="card-body">
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold mb-2"><i class="bi bi-geo-alt-fill"></i> Lokasi</dt>
-                            @* <dd class="text-secondary-emphasis">CP Lokasi @Model?.XS1 : <br /> @Html.DisplayFor(model => model.XS3)</dd> *@
+                            <dd class="text-secondary-emphasis">CP Lokasi @Model?.XS1 : <br /> @Html.DisplayFor(model => model.XS3)</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
                             <dt class="fw-semibold mb-2"><i class="bi bi-tools"></i> Workshop</dt>
-                            @* <dd class="text-secondary-emphasis">CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd> *@
+                            <dd class="text-secondary-emphasis">CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd>
                         </dl>
                     </div>
-                </article>
+                </article> *@
 
                 @* Approvals card *@
                 <article class="card shadow-sm mb-3 rounded-4">
                     <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
-                        <h2 class="card-title mb-0 h5"><i class="bi bi-check-circle-fill text-primary me-1"></i> Approvers</h2>
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-people text-primary me-1"></i> Approvers</h2>
                     </header>
                     <hr class="mx-3 my-2" />
 
@@ -376,7 +376,7 @@
                 <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
                     <h2 class="card-title mb-0 h5">
                         <i class="bi bi-building-fill text-primary me-1"></i>
-                        Vendor yang diikutkan
+                        Vendors Involved
                     </h2>
                 </header>
                 <hr class="mx-3 my-2" />
@@ -389,7 +389,7 @@
                             }
                         </div>
                     } else {
-                        <span class="text-muted">—</span>
+                        <span class="text-muted">ï¿½</span>
                     }
                 </div>
             </article>
@@ -399,59 +399,90 @@
                 <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
                     <h2 class="card-title mb-0 h5">
                         <i class="bi bi-bar-chart text-primary me-1"></i>
-                        Ringkasan Profit &amp; Loss
+                        Profit &amp; Loss Statement and Summary
                     </h2>
                 </header>
                 <hr class="mx-3 my-2" />
 
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="card-title mb-0 h6">Ringkasan</h3>
+                        <h3 class="card-title mb-0 h6">Information</h3>
+                    </div>
+
+                    <div class="row g-3">
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">WO Start</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Model!.StartDate.ToTanggalIndonesia()</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">WO Create</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Model!.CreatedAt.ToTanggalIndonesia()</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">Vendor</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@pnl.SelectedVendorName</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Status)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Status!.StatusName)</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => pnl.Distance)</dt>
+                            <div class="fw-medium text-secondary-emphasis">@pnl.Distance KM</div>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">Profit & Loss Create</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@pnl.CreatedAt.ToTanggalIndonesia()</dd>
+                        </dl>
+                    </div>
+
+                    <hr class="mt-1 mb-4" />
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="card-title mb-0 h6">Summary</h3>
                         <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
-                            Hitung Ulang
+                            Recount
                         </a>
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Tarif 400 km (S)</div>
-                            <div>@((pnl.Items?.Sum(x => x.TarifAwal) ?? 0m).ToIDR())</div>
-                        </div>
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => pnl.AccrualAmount)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@(pnl.AccrualAmount.ToIDR())</dd>
+                        </dl>
 
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Tarif Add (S)</div>
-                            <div>@((pnl.Items?.Sum(x => x.TarifAdd) ?? 0m).ToIDR())</div>
-                        </div>
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => pnl.RealizationAmount)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@(pnl.RealizationAmount.ToIDR())</dd>
+                        </dl>
 
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Cost Operator</div>
-                            <div>@((pnl.Items?.Sum(x => x.OperatorCost) ?? 0m).ToIDR())</div>
-                            <div class="small text-muted">= S(Tarif Add × KM/25 per item)</div>
-                        </div>
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Best Vendor</dt>
+                            <dd class="text-success fw-medium">@pnl.SelectedVendorName</dd>
+                        </dl>
 
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Total Revenue</div>
-                            <div class="fw-bold">@((pnl.Items?.Sum(x => x.Revenue) ?? 0m).ToIDR())</div>
-                        </div>
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Total Revenue</dt>
+                            <dd class="fw-bold">@((pnl.Items?.Sum(x => x.Revenue) ?? 0m).ToIDR())</dd>
+                        </dl>
 
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Best Vendor</div>
-                            <div class="text-success fw-semibold">@pnl.SelectedVendorName</div>
-                        </div>
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Final Offer</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@pnl.SelectedFinalOffer.ToIDR()</dd>
+                            <span class="small text-muted">(Î£ last round price of each item)</span>
+                        </dl>
 
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Final Offer</div>
-                            <div>@pnl.SelectedFinalOffer.ToIDR()</div>
-                            <div class="small text-muted">(S harga round terakhir tiap item)</div>
-                        </div>
-
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="fw-semibold">Profit</div>
-                            <div class="fw-bold text-success">
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Profit</dt>
+                            <dd class="fw-bold text-success">
                                 @pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())
-                            </div>
-                            <div class="small text-muted">= Revenue - Final Offer</div>
-                        </div>
+                            </dd>
+                            <span class="small text-muted">= Total Revenue - Final Offer</span>
+                        </dl>
                     </div>
                 </div>
             </article>
@@ -461,7 +492,7 @@
                 <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
                     <h2 class="card-title mb-0 h5">
                         <i class="bi bi-list-ul text-primary me-1"></i>
-                        Rincian Item (Revenue Builder)
+                        Item Details (Revenue)
                     </h2>
                 </header>
                 <hr class="mx-3 my-2" />
@@ -472,8 +503,9 @@
                             <thead class="table-info">
                                 <tr>
                                     <th>Item</th>
-                                    <th class="text-end">Tarif 400 km</th>
-                                    <th class="text-end">Tarif Add</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">400 KM Tariff</th>
+                                    <th class="text-end">Additional Tariff</th>
                                     <th class="text-end">KM/25</th>
                                     <th class="text-end">Operator Cost</th>
                                     <th class="text-end">Revenue</th>
@@ -482,7 +514,8 @@
                             <tbody>
                                 @foreach (var it in items) {
                                     <tr>
-                                        <td>@it.ItemName</td>
+                                        <td class="w-25">@it.ItemName</td>
+                                        <td class="text-end">@it.Quantity</td>
                                         <td class="text-end">@it.TarifAwal.ToIDR()</td>
                                         <td class="text-end">@it.TarifAdd.ToIDR()</td>
                                         <td class="text-end">@it.KmPer25</td>
@@ -493,7 +526,7 @@
                             </tbody>
                             <tfoot>
                                 <tr class="table-light">
-                                    <th class="text-end" colspan="5">Total</th>
+                                    <th class="text-end" colspan="6">Total</th>
                                     <th class="text-end fw-bold">@items.Sum(x => x.Revenue).ToIDR()</th>
                                 </tr>
                             </tfoot>
@@ -501,8 +534,8 @@
                     </div>
                 </div>
 
-                <div class="small text-muted px-3 pb-2">
-                    Operator Cost per item = <em>Tarif Add × KM/25</em>, Revenue per item = <em>Tarif 400 km + Operator Cost</em>.
+                <div class="small text-muted px-3 pb-3">
+                    Operator Cost per item = <em>Additional Tariff * KM/25</em><br /> Revenue per item = <em>400 km Tariff + Operator Cost</em>.
                 </div>
             </article>
 
@@ -512,7 +545,7 @@
                 <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
                     <h2 class="card-title mb-0 h5">
                         <i class="bi bi-award text-primary me-1"></i>
-                        Perbandingan Vendor
+                        Vendor Comparison
                     </h2>
                 </header>
                 <hr class="mx-3 my-2" />
@@ -537,7 +570,9 @@
                                         <td class="text-end">@row.ProfitPercent.ToPersen()</td>
                                         <td class="text-center">
                                             @if (row.IsSelected) {
-                                                <span class="badge text-bg-success">Terpilih</span>
+                                                <span class="badge py-2 px-3 bg-success-subtle text-success border border-success rounded-5">
+                                                    <i class="bi bi-check-circle-fill"></i> Selected
+                                                </span>
                                             }
                                         </td>
                                     </tr>
@@ -547,8 +582,8 @@
                     </div>
                 </div>
 
-                <div class="small text-muted px-3 pb-2">
-                    Best offer dipilih otomatis dari vendor dengan harga total paling rendah (S harga round terakhir setiap item).
+                <div class="small text-muted px-3 pb-3">
+                    The best offer is automatically selected from the vendor with the lowest total price (Î£ the last round price of each item).
                 </div>
             </article>
         }

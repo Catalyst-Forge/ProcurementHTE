@@ -11,8 +11,8 @@ public class ProcurementService : IProcurementService
 
     public ProcurementService(IProcurementRepository procurementRepository)
     {
-        _procurementRepository = procurementRepository
-            ?? throw new ArgumentNullException(nameof(procurementRepository));
+        _procurementRepository =
+            procurementRepository ?? throw new ArgumentNullException(nameof(procurementRepository));
     }
 
     #region Query Methods
@@ -76,8 +76,10 @@ public class ProcurementService : IProcurementService
         return _procurementRepository.GetStatusByNameAsync(name);
     }
 
-    public async Task<(List<JobTypes> JobTypes, List<Status> Statuses)>
-        GetRelatedEntitiesForProcurementAsync()
+    public async Task<(
+        List<JobTypes> JobTypes,
+        List<Status> Statuses
+    )> GetRelatedEntitiesForProcurementAsync()
     {
         var jobTypes = await _procurementRepository.GetJobTypesAsync();
         var statuses = await _procurementRepository.GetStatusesAsync();
@@ -104,8 +106,11 @@ public class ProcurementService : IProcurementService
         var validDetails = FilterValidDetails(details);
         var validOffers = FilterValidOffers(offers);
 
-        await _procurementRepository
-            .StoreProcurementWithDetailsAsync(procurement, validDetails, validOffers);
+        await _procurementRepository.StoreProcurementWithDetailsAsync(
+            procurement,
+            validDetails,
+            validOffers
+        );
     }
 
     public async Task EditProcurementAsync(
@@ -120,7 +125,8 @@ public class ProcurementService : IProcurementService
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("ID tidak boleh kosong", nameof(id));
 
-        var existing = await _procurementRepository.GetByIdAsync(id)
+        var existing =
+            await _procurementRepository.GetByIdAsync(id)
             ?? throw new KeyNotFoundException($"Procurement dengan ID {id} tidak ditemukan");
 
         UpdateProcurementProperties(existing, procurement);
@@ -131,7 +137,11 @@ public class ProcurementService : IProcurementService
         var validDetails = FilterValidDetails(details);
         var validOffers = FilterValidOffers(offers);
 
-        await _procurementRepository.UpdateProcurementWithDetailsAsync(existing, validDetails, validOffers);
+        await _procurementRepository.UpdateProcurementWithDetailsAsync(
+            existing,
+            validDetails,
+            validOffers
+        );
     }
 
     public async Task DeleteProcurementAsync(Procurement procurement)
@@ -145,8 +155,11 @@ public class ProcurementService : IProcurementService
         if (string.IsNullOrWhiteSpace(procurementId))
             throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
 
-        var procurement = await _procurementRepository.GetByIdAsync(procurementId)
-            ?? throw new KeyNotFoundException($"Procurement dengan ID {procurementId} tidak ditemukan");
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
 
         var completedStatus = await GetCompletedStatusAsync();
         procurement.StatusId = completedStatus.StatusId;
@@ -168,7 +181,8 @@ public class ProcurementService : IProcurementService
 
     private async Task EnsureJobTypeExistsAsync(string jobTypeId)
     {
-        _ = await _procurementRepository.GetJobTypeByIdAsync(jobTypeId)
+        _ =
+            await _procurementRepository.GetJobTypeByIdAsync(jobTypeId)
             ?? throw new KeyNotFoundException($"Job type dengan Id {jobTypeId} tidak ditemukan");
     }
 
@@ -185,9 +199,7 @@ public class ProcurementService : IProcurementService
 
     private static List<ProcOffer> FilterValidOffers(List<ProcOffer>? offers)
     {
-        return (offers ?? [])
-            .Where(o => !string.IsNullOrWhiteSpace(o.ItemPenawaran))
-            .ToList();
+        return (offers ?? []).Where(o => !string.IsNullOrWhiteSpace(o.ItemPenawaran)).ToList();
     }
 
     private static void UpdateProcurementProperties(Procurement existing, Procurement updated)
@@ -208,13 +220,14 @@ public class ProcurementService : IProcurementService
         existing.ProjectCode = updated.ProjectCode;
         existing.LtcName = updated.LtcName;
         existing.Note = updated.Note;
-        existing.JobType = updated.JobType;
-        existing.JobTypeId = updated.JobTypeId;
         existing.PicOpsUserId = updated.PicOpsUserId;
         existing.AnalystHteUserId = updated.AnalystHteUserId;
         existing.AssistantManagerUserId = updated.AssistantManagerUserId;
         existing.ManagerUserId = updated.ManagerUserId;
         existing.UpdatedAt = DateTime.UtcNow;
+
+        if (!string.IsNullOrWhiteSpace(updated.JobTypeId))
+            existing.JobTypeId = updated.JobTypeId;
 
         if (updated.StatusId > 0)
             existing.StatusId = updated.StatusId;

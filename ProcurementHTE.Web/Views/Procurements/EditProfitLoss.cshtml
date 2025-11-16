@@ -87,7 +87,7 @@
     );
 
     var procurementItemsLiteral = JsonSerializer.Serialize(
-        procurementItems.Select(i => new { woOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran })
+        procurementItems.Select(i => new { procOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran })
     );
 
     var existingVendorsLiteral = JsonSerializer.Serialize(
@@ -97,7 +97,7 @@
             items = (v.Items ?? new List<VendorOfferPerItemInputVm>())
                 .Select(it => new
                 {
-                    woOfferId = it.ProcOfferId,
+                    procOfferId = it.ProcOfferId,
                     prices = (it.Prices ?? new List<decimal>()),
                     letters = (it.Letters ?? new List<string>()),
                 })
@@ -114,13 +114,13 @@
         <div>
             <h1 class="h3 mb-1">Edit Profit &amp; Loss</h1>
             <p class="text-muted small mb-0">
-                WO: <strong>@(ViewBag.ProcNum ?? Model.ProcurementId)</strong>
+                Procurement: <strong>@(ViewBag.ProcNum ?? Model.ProcurementId)</strong>
             </p>
         </div>
 
         <nav class="d-flex gap-2" aria-label="Page navigation">
             <a asp-action="Details" asp-route-id="@Model.ProcurementId" class="btn btn-outline-secondary" role="button">
-                <i class="bi bi-arrow-left"></i> Back to WO
+                <i class="bi bi-arrow-left"></i> Back to Procurement
             </a>
         </nav>
     </header>
@@ -164,15 +164,18 @@
                     <legend class="card-title fw-semibold" id="financial-section-title">Financial Figures</legend>
                     <hr />
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label asp-for="AccrualAmount" class="form-label"></label>
-                            <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                            <span class="text-danger" asp-validation-for="AccrualAmount"></span>
+                            <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label asp-for="RealizationAmount" class="form-label"></label>
-                            <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                            <span class="text-danger" asp-validation-for="RealizationAmount"></span>
+                            <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Distance" class="form-label"></label>
+                            <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                            <span class="text-danger" asp-validation-for="Distance"></span>
                         </div>
                     </div>
                 </fieldset>
@@ -190,6 +193,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th style="min-width:220px">Offer Item</th>
+                                    <th class="text-end" style="width:180px">Quantity</th>
                                     <th class="text-end" style="width:180px">400 km Rate</th>
                                     <th class="text-end" style="width:160px">Additional Rate</th>
                                     <th class="text-end" style="width:140px">KM/25</th>
@@ -197,6 +201,7 @@
                                     <th class="text-end" style="width:180px">Revenue</th>
                                 </tr>
                             </thead>
+
                             <tbody id="pdcItems">
                                 @for (var i = 0; i < items.Count; i++)
                                 {
@@ -204,9 +209,20 @@
                                     var itemName = procurementItems.FirstOrDefault(x => x.ProcOfferId == ProcurementId)?.ItemPenawaran ?? ProcurementId;
                                     <tr data-item-row>
                                         <input type="hidden" name="Items.Index" value="@i" />
-                                        <input type="hidden" name="Items[@i].WoOfferId" value="@ProcurementId" />
+                                        <input type="hidden" name="Items[@i].ProcOfferId" value="@ProcurementId" />
 
                                         <td class="fw-semibold">@itemName</td>
+
+                                        <td class="text-end">
+                                            <input class="form-control text-end"
+                                                    name="Items[@i].Quantity"
+                                                    data-quantity
+                                                    data-format-currency
+                                                    type="number"
+                                                    inputmode="numeric"
+                                                    autocomplete="off"
+                                                    value="@items[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
+                                        </td>
 
                                         <td class="text-end">
                                             <div class="input-group input-group-sm">
@@ -255,9 +271,10 @@
                                     </tr>
                                 }
                             </tbody>
+
                             <tfoot class="table-light">
                                 <tr>
-                                    <th colspan="4" class="text-end">TOTAL</th>
+                                    <th colspan="5" class="text-end">TOTAL</th>
                                     <th class="text-end">
                                         <input id="operatorCost" class="form-control form-control-sm text-end" readonly />
                                     </th>
@@ -268,7 +285,7 @@
                             </tfoot>
                         </table>
                     </div>
-                    <small class="text-muted">Operator cost per item = <em>Additional Rate × KM/25</em>, Revenue per item = <em>400 km Rate + Operator Cost</em></small>
+                    <small class="text-muted">Operator cost per item = <em>Additional Rate × KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
                 </fieldset>
             </div>
         </section>
@@ -321,19 +338,18 @@
 </form>
 
 @section Scripts {
-    var _vendorChoices = @Html.Raw(vendorChoicesLiteral);
-    var _procurementItems = @Html.Raw(procurementItemsLiteral);
-    var _existingVendors = @Html.Raw(existingVendorsLiteral);
-
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const vendorsAll = _vendorChoices;
-        const procurementItems = _procurementItems;
-        const existingVendors = _existingVendors;
+        const vendorsAll = @Html.Raw(vendorChoicesLiteral);
+        const procurementItems = @Html.Raw(procurementItemsLiteral);
+        const existingVendors = @Html.Raw(existingVendorsLiteral);
 
         const fmtClean = n => {
             const x = Number(n || 0);
-            return x % 1 === 0 ? x.toLocaleString('id-ID', { maximumFractionDigits: 0 }) : x.toLocaleString('id-ID');
+            return x % 1 === 0 ? 
+                x.toLocaleString('id-ID', { maximumFractionDigits: 0 }) 
+                : 
+                x.toLocaleString('id-ID');
         };
         const getEl = sel => document.querySelector(sel);
         const getAll = sel => document.querySelectorAll(sel);
@@ -413,29 +429,37 @@
         }
 
         function recalcHeader() {
-            let opTotal = 0,
-                revTotal = 0;
+            let opTotal = 0, revTotal = 0;
+
             getAll('#pdcItems [data-item-row]').forEach(row => {
+                const qty = numberValue(row.querySelector('[data-quantity]'))
                 const a = numberValue(row.querySelector('[data-tarif-awal]'));
                 const add = numberValue(row.querySelector('[data-tarif-add]'));
                 const km = parseFloat(row.querySelector('[data-km]').value || 0);
+
                 const op = add * km;
-                const rev = a + op;
+                const price = a + op;
+                const rev = price * qty;
+
                 row.querySelector('[data-op]').value = fmtClean(op);
                 row.querySelector('[data-rev]').value = fmtClean(rev);
+
                 opTotal += op;
                 revTotal += rev;
             });
+
             const opField = getEl('#operatorCost');
             if (opField) {
                 opField.value = fmtClean(opTotal);
                 opField.dataset.rawValue = opTotal.toString();
             }
+
             const revField = getEl('#revenue');
             if (revField) {
                 revField.value = fmtClean(revTotal);
                 revField.dataset.rawValue = revTotal.toString();
             }
+            
             recalcSummary();
         }
 
@@ -508,10 +532,242 @@
                 }
             });
             document.getElementById('btnAddVendor').disabled = availableVendors().length === 0 || procurementItems.length === 0;
-            document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(refreshCardVendorOptions);
+            document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
+                refreshCardVendorOptions(card);
+                reindexVendorItems(card);
+            });
             recalcSummary();
         }
         document.querySelectorAll('input[name="SelectedVendorIds"]').forEach(cb => cb.addEventListener('change', updateVendorBlocks));
+
+        function vendorItemIds(card) {
+            return [...card.querySelectorAll('[data-item-block]')]
+                .map(block => block.dataset.procOfferId)
+                .filter(Boolean);
+        }
+
+        function availableProcItemsForCard(card, currentProcOfferId) {
+            const used = new Set(vendorItemIds(card));
+            if (currentProcOfferId) used.delete(currentProcOfferId);
+            return procurementItems.filter(item => !used.has(item.procOfferId));
+        }
+
+        function nextProcItem(card) {
+            return availableProcItemsForCard(card, null)[0];
+        }
+
+        function findProcItem(procOfferId) {
+            return (
+                procurementItems.find(item => item.procOfferId === procOfferId) ?? {
+                    procOfferId,
+                    itemPenawaran: procOfferId
+                }
+            );
+        }
+
+        function addItemToVendor(card, presetItem) {
+            const idx = card.dataset.vendorIndex;
+            if (idx === undefined) return;
+            const host = card.querySelector('[data-itemhost]');
+            if (!host) return;
+
+            let itemInfo;
+            if (presetItem?.procOfferId) {
+                itemInfo = findProcItem(presetItem.procOfferId);
+            } else {
+                itemInfo = nextProcItem(card);
+                if (!itemInfo) {
+                    alert('All offer items already added for this vendor.');
+                    return;
+                }
+            }
+
+            const block = buildVendorItemBlock(card, itemInfo, presetItem);
+            if (!block) return;
+            host.appendChild(block);
+            refreshItemSelects(card);
+            reindexVendorItems(card);
+            recalcSummary();
+        }
+
+        function buildVendorItemBlock(card, itemInfo, presetItem) {
+            const block = document.createElement('div');
+            block.className = 'border rounded-3 p-2 mb-3';
+            block.dataset.itemBlock = '';
+            block.dataset.procOfferId = itemInfo.procOfferId;
+            block.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <label class="form-label form-label-sm mb-1">Offer Item</label>
+                        <select class="form-select form-select-sm" data-item-select></select>
+                    </div>
+                    <div class="col-auto d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-addround>+ Round</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>Remove</button>
+                    </div>
+                </div>
+                <input type="hidden" data-proc-input value="${itemInfo.procOfferId}" />
+                <div class="mt-2 vstack gap-2" data-rounds></div>
+            `;
+
+            const select = block.querySelector('[data-item-select]');
+            const populateOptions = (currentId) => {
+                const options = availableProcItemsForCard(card, currentId);
+                if (options.length === 0) {
+                    select.innerHTML = '<option value="">No items available</option>';
+                    select.value = '';
+                    return false;
+                }
+
+                select.innerHTML = options
+                    .map(item => `<option value="${item.procOfferId}">${item.itemPenawaran || item.procOfferId}</option>`)
+                    .join('');
+
+                if (currentId && options.some(item => item.procOfferId === currentId)) {
+                    select.value = currentId;
+                } else {
+                    select.value = options[0].procOfferId;
+                }
+
+                block.dataset.procOfferId = select.value;
+                hiddenInput.value = select.value;
+                return true;
+            };
+
+            const hiddenInput = block.querySelector('[data-proc-input]');
+            if (!populateOptions(itemInfo.procOfferId)) {
+                block.remove();
+                return null;
+            }
+
+            select.addEventListener('change', () => {
+                block.dataset.procOfferId = select.value;
+                hiddenInput.value = select.value;
+                refreshItemSelects(card);
+                reindexVendorItems(card);
+                recalcSummary();
+            });
+
+            const rounds = block.querySelector('[data-rounds]');
+            const addRoundRow = (priceValue = '', letterValue = '') => {
+                const row = document.createElement('div');
+                row.className = 'input-group input-group-sm';
+                row.dataset.roundRow = '1';
+                row.innerHTML = `
+                    <span class="input-group-text">No</span>
+                    <input class="form-control form-control-sm"
+                           type="text"
+                           data-letter
+                           placeholder="No Letter"
+                           value="${letterValue ?? ''}" />
+                    <span class="input-group-text">Rp</span>
+                    <input class="form-control text-end"
+                           type="text"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           data-price
+                           data-format-currency
+                           value="${priceValue ?? ''}" />
+                    <button type="button" class="btn btn-outline-danger" data-delround>Remove</button>`;
+
+                rounds.appendChild(row);
+                const priceInput = row.querySelector('[data-price]');
+                bindCurrencyInput(priceInput);
+                updateCurrencyInput(priceInput);
+                row.querySelector('[data-delround]').addEventListener('click', () => {
+                    row.remove();
+                    reindexVendorItems(card);
+                    recalcSummary();
+                });
+                return row;
+            };
+
+            const presetRounds =
+                Array.isArray(presetItem?.prices) && presetItem.prices.length > 0
+                    ? presetItem.prices.map((price, index) => ({
+                          priceValue: price,
+                          letterValue: presetItem.letters?.[index] ?? ''
+                      }))
+                    : [{ priceValue: '', letterValue: '' }];
+
+            presetRounds.forEach(r => addRoundRow(r.priceValue, r.letterValue));
+
+            block.querySelector('[data-addround]').addEventListener('click', () => {
+                addRoundRow();
+                reindexVendorItems(card);
+                recalcSummary();
+            });
+
+            block.querySelector('[data-remove-item]').addEventListener('click', () => {
+                block.remove();
+                refreshItemSelects(card);
+                reindexVendorItems(card);
+                recalcSummary();
+            });
+
+            return block;
+        }
+
+        function refreshItemSelects(card) {
+            card.querySelectorAll('[data-item-block]').forEach(block => {
+                const select = block.querySelector('[data-item-select]');
+                const hiddenInput = block.querySelector('[data-proc-input]');
+                if (!select) return;
+
+                const currentId = block.dataset.procOfferId;
+                const options = availableProcItemsForCard(card, currentId);
+
+                if (options.length === 0) {
+                    select.innerHTML = '<option value="">No items available</option>';
+                    select.value = '';
+                    block.dataset.procOfferId = '';
+                    if (hiddenInput) hiddenInput.value = '';
+                    return;
+                }
+
+                select.innerHTML = options
+                    .map(item => `<option value="${item.procOfferId}">${item.itemPenawaran || item.procOfferId}</option>`)
+                    .join('');
+
+                if (currentId && options.some(item => item.procOfferId === currentId)) {
+                    select.value = currentId;
+                } else {
+                    select.value = options[0].procOfferId;
+                    block.dataset.procOfferId = select.value;
+                    if (hiddenInput) hiddenInput.value = select.value;
+                }
+            });
+
+            const addItemBtn = card.querySelector('[data-add-item]');
+            if (addItemBtn) {
+                addItemBtn.disabled = availableProcItemsForCard(card, null).length === 0;
+            }
+        }
+
+        function reindexVendorItems(card) {
+            const idx = card.dataset.vendorIndex;
+            if (idx === undefined) return;
+
+            const blocks = card.querySelectorAll('[data-item-block]');
+            blocks.forEach((block, itemIdx) => {
+                block.dataset.itemIndex = itemIdx.toString();
+                const hiddenInput = block.querySelector('[data-proc-input]');
+                if (hiddenInput) {
+                    hiddenInput.name = `Vendors[${idx}].Items[${itemIdx}].ProcOfferId`;
+                }
+
+                block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
+                    const letter = row.querySelector('[data-letter]');
+                    const price = row.querySelector('[data-price]');
+                    if (letter) {
+                        letter.name = `Vendors[${idx}].Items[${itemIdx}].Letters[${roundIdx}]`;
+                    }
+                    if (price) {
+                        price.name = `Vendors[${idx}].Items[${itemIdx}].Prices[${roundIdx}]`;
+                    }
+                });
+            });
+        }
 
         function addVendor(preset) {
             let vendorId;
@@ -530,6 +786,7 @@
             const card = document.createElement('div');
             card.className = 'card border';
             card.dataset.vendorId = vendorId;
+            card.dataset.vendorIndex = idx;
             card.innerHTML = `
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
@@ -539,6 +796,9 @@
                         </div>
                         <div class="col-md-7">
                             <div class="hstack gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-add-item>
+                                    <i class="bi bi-plus-lg"></i> Add Item
+                                </button>
                                 <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-del>
                                     <i class="bi bi-trash"></i> Remove Vendor
                                 </button>
@@ -555,78 +815,11 @@
             card.dataset.vendorId = vendorId;
             select.addEventListener('change', () => {
                 card.dataset.vendorId = select.value;
-                refreshCardVendorOptions(card);
-                recalcSummary();
-                document.getElementById('btnAddVendor').disabled = availableVendors().length === 0 || procurementItems.length === 0;
-                document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(refreshCardVendorOptions);
+                updateVendorBlocks();
             });
 
-            const presetItems = {};
-            if (preset && Array.isArray(preset.items)) {
-                preset.items.forEach(it => {
-                    presetItems[(it.woOfferId || '').toLowerCase()] = {
-                        prices: it.prices || [],
-                        letters: it.letters || []
-                    };
-                });
-            }
-
-            const host = card.querySelector('[data-itemhost]');
-            procurementItems.forEach((it, iIdx) => {
-                const block = document.createElement('div');
-                block.className = 'border rounded-3 p-2 mb-2';
-                block.setAttribute('data-item-block', '');
-                block.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="fw-semibold">${it.itemPenawaran}</div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-addround>+ Round</button>
-                    </div>
-                    <input type="hidden" name="Vendors[${idx}].Items[${iIdx}].WoOfferId" value="${it.woOfferId}" />
-                    <div class="mt-2 vstack gap-2" data-rounds></div>
-                `;
-                host.appendChild(block);
-
-                const rounds = block.querySelector('[data-rounds]');
-                let r = 0;
-                const addRound = (priceValue = '', letterValue = '') => {
-                    const row = document.createElement('div');
-                    row.className = 'input-group input-group-sm';
-                    row.innerHTML = `
-                        <span class="input-group-text">No</span>
-                        <input class="form-control form-control-sm" name="Vendors[${idx}].Items[${iIdx}].Letters[${r}]" type="text" data-letter placeholder="No Letter" value="${letterValue ?? ''}" />
-                        <span class="input-group-text">Rp</span>
-                        <input class="form-control text-end"
-                               name="Vendors[${idx}].Items[${iIdx}].Prices[${r}]"
-                               type="text"
-                               inputmode="numeric"
-                               autocomplete="off"
-                               data-price
-                               data-format-currency
-                               value="${priceValue ?? ''}" />
-                            <button type="button" class="btn btn-outline-danger" data-delround>Remove</button>`;
-                    rounds.appendChild(row);
-                    const priceInput = row.querySelector('[data-price]');
-                    bindCurrencyInput(priceInput);
-                    updateCurrencyInput(priceInput);
-                    row.querySelector('[data-delround]').addEventListener('click', () => {
-                        row.remove();
-                        recalcSummary();
-                    });
-                    r++;
-                };
-
-                const key = (it.woOfferId || '').toLowerCase();
-                const presetItem = presetItems[key] || { prices: [], letters: [] };
-                if (presetItem.prices.length > 0) {
-                    for (let rr = 0; rr < presetItem.prices.length; rr++) {
-                        addRound(presetItem.prices[rr], presetItem.letters[rr] || '');
-                    }
-                }
-                else {
-                    addRound('', '');
-                }
-
-                block.querySelector('[data-addround]').addEventListener('click', () => addRound('', ''));
+            card.querySelector('[data-add-item]').addEventListener('click', () => {
+                addItemToVendor(card);
             });
 
             card.querySelector('[data-del]').addEventListener('click', () => {
@@ -634,6 +827,11 @@
                 updateVendorBlocks();
             });
 
+            if (preset && Array.isArray(preset.items)) {
+                preset.items.forEach(item => addItemToVendor(card, item));
+            }
+
+            reindexVendorItems(card);
             updateVendorBlocks();
         }
 
@@ -660,6 +858,7 @@
                         complete = false;
                         return;
                     }
+
                     const last = prices[prices.length - 1];
                     const rawVal = last?.dataset?.rawValue;
                     const val = rawVal && rawVal.length ? parseFloat(rawVal) : parseFloat(digitsOnly(last.value)) || 0;
@@ -702,8 +901,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             bindCurrencyInputs(document);
             getAll(currencySelector).forEach(input => updateCurrencyInput(input));
-            existingVendors.forEach(v => addVendor(v));
             updateVendorBlocks();
+
+            existingVendors.forEach(v => addVendor(v));
             if (existingVendors.length === 0) {
                 recalcSummary();
             }
@@ -719,3 +919,4 @@
         });
     </script>
 }
+

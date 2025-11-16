@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using System.Collections.Generic;
 
 namespace ProcurementHTE.Core.Services
 {
@@ -118,6 +118,7 @@ namespace ProcurementHTE.Core.Services
                     return (
                         item.ProcOfferId,
                         ItemName: itemName,
+                        item.Quantity,
                         item.TarifAwal,
                         item.TarifAdd,
                         item.KmPer25,
@@ -135,6 +136,7 @@ namespace ProcurementHTE.Core.Services
                 TotalRevenue = totalRevenue,
                 AccrualAmount = pnl.AccrualAmount ?? totalRevenue,
                 RealizationAmount = pnl.RealizationAmount ?? totalOperatorCost,
+                Distance = pnl.Distance,
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
                 SelectedVendorName = vendorComparisons
                     .FirstOrDefault(vendor => vendor.IsSelected)
@@ -145,6 +147,7 @@ namespace ProcurementHTE.Core.Services
                 Items = itemBreakdown,
                 SelectedVendorNames = selectedVendorNames,
                 VendorComparisons = vendorComparisons,
+                CreatedAt = pnl.CreatedAt,
             };
         }
 
@@ -169,7 +172,9 @@ namespace ProcurementHTE.Core.Services
                             VendorId = group.Key,
                             ProcOfferId = gg.Key,
                             Prices = gg.OrderBy(x => x.Round).Select(x => x.Price).ToList(),
-                            Letters = gg.OrderBy(offer => offer.Round).Select(vendorOffer => vendorOffer.NoLetter ?? string.Empty).ToList(),
+                            Letters = gg.OrderBy(offer => offer.Round)
+                                .Select(vendorOffer => vendorOffer.NoLetter ?? string.Empty)
+                                .ToList(),
                         })
                         .ToList(),
                 })
@@ -185,6 +190,7 @@ namespace ProcurementHTE.Core.Services
                 .Items.Select(item => new ProfitLossItemInputDto
                 {
                     ProcOfferId = item.ProcOfferId,
+                    Quantity = item.Quantity,
                     TarifAwal = item.TarifAwal,
                     TarifAdd = item.TarifAdd,
                     KmPer25 = item.KmPer25,
@@ -198,6 +204,7 @@ namespace ProcurementHTE.Core.Services
                 ProcurementId = pnl.ProcurementId,
                 AccrualAmount = pnl.AccrualAmount,
                 RealizationAmount = pnl.RealizationAmount,
+                Distance = pnl.Distance,
                 Items = items,
                 SelectedVendorId = pnl.SelectedVendorId,
                 SelectedVendorFinalOffer = pnl.SelectedVendorFinalOffer,
@@ -217,7 +224,10 @@ namespace ProcurementHTE.Core.Services
         public async Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto)
         {
             await _pnlRepository.RemoveSelectedVendorsAsync(dto.ProcurementId);
-            await _pnlRepository.StoreSelectedVendorsAsync(dto.ProcurementId, dto.SelectedVendorIds);
+            await _pnlRepository.StoreSelectedVendorsAsync(
+                dto.ProcurementId,
+                dto.SelectedVendorIds
+            );
 
             var offers = BuildVendorOffersMulti(dto.Vendors, dto.ProcurementId);
             if (offers.Count > 0)
@@ -234,8 +244,8 @@ namespace ProcurementHTE.Core.Services
 
             var profit = revTotal - bestTotal;
             var profitPct = revTotal > 0 ? (profit / revTotal) * 100m : 0m;
-            var accrualAmount = dto.AccrualAmount ?? revTotal;
-            var realizationAmount = dto.RealizationAmount ?? opTotal;
+            var accrualAmount = dto.AccrualAmount ?? 0m;
+            var realizationAmount = dto.RealizationAmount ?? 0m;
 
             var pnl = new ProfitLoss
             {
@@ -245,9 +255,12 @@ namespace ProcurementHTE.Core.Services
                 Profit = profit,
                 ProfitPercent = profitPct,
                 AccrualAmount = accrualAmount,
+                Distance = dto.Distance,
                 RealizationAmount = realizationAmount,
                 Items = items,
             };
+
+            StampItemsWithProfitLossId(items, pnl.ProfitLossId);
 
             await _pnlRepository.StoreProfitLossAsync(pnl);
             return pnl;
@@ -274,16 +287,49 @@ namespace ProcurementHTE.Core.Services
             if (newOffers.Count > 0)
                 await _voRepository.StoreAllOffersAsync(newOffers);
 
-            // Recompute items & totals
-            var (opTotal, revTotal, items) = ComputeItems(dto.Items);
-            if (items.Count == 0)
+            var itemsByOffer = pnl.Items.ToDictionary(
+                x => x.ProcOfferId,
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            decimal opTotal = 0m;
+            decimal revTotal = 0m;
+
+            foreach (var it in dto.Items)
+            {
+                if (!itemsByOffer.TryGetValue(it.ProcOfferId, out var entity))
+                {
+                    entity = new ProfitLossItem
+                    {
+                        ProfitLossId = pnl.ProfitLossId,
+                        ProcOfferId = it.ProcOfferId,
+                    };
+                    pnl.Items.Add(entity);
+                    itemsByOffer[it.ProcOfferId] = entity;
+                }
+
+                var operatorCost = it.TarifAdd * it.KmPer25;
+                var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
+
+                entity.Quantity = it.Quantity;
+                entity.TarifAwal = it.TarifAwal;
+                entity.TarifAdd = it.TarifAdd;
+                entity.KmPer25 = it.KmPer25;
+                entity.OperatorCost = operatorCost;
+                entity.Revenue = revenue;
+
+                opTotal += operatorCost;
+                revTotal += revenue;
+            }
+
+            if (pnl.Items.Count == 0)
                 throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
 
-            var procOfferIds = items.Select(item => item.ProcOfferId).ToList();
+            var procOfferIds = dto.Items.Select(item => item.ProcOfferId).ToList();
             var (bestVendorId, bestTotal, _) = PickBestVendor(newOffers, procOfferIds);
 
-            var accrualAmount = dto.AccrualAmount ?? revTotal;
-            var realizationAmount = dto.RealizationAmount ?? opTotal;
+            var accrualAmount = dto.AccrualAmount ?? 0m;
+            var realizationAmount = dto.RealizationAmount ?? 0m;
 
             pnl.SelectedVendorId = bestVendorId;
             pnl.SelectedVendorFinalOffer = bestTotal;
@@ -291,12 +337,8 @@ namespace ProcurementHTE.Core.Services
             pnl.ProfitPercent = revTotal > 0 ? (pnl.Profit / revTotal) * 100m : 0m;
             pnl.AccrualAmount = accrualAmount;
             pnl.RealizationAmount = realizationAmount;
+            pnl.Distance = dto.Distance;
             pnl.UpdatedAt = DateTime.Now;
-
-            // replace items
-            pnl.Items.Clear();
-            foreach (var item in items)
-                pnl.Items.Add(item);
 
             await _pnlRepository.UpdateProfitLossAsync(pnl);
             return pnl;
@@ -305,14 +347,17 @@ namespace ProcurementHTE.Core.Services
         public async Task<ProfitLoss?> GetLatestByProcurementAsync(string procurementId)
         {
             if (string.IsNullOrWhiteSpace(procurementId))
-                throw new ArgumentException("ProcurementId tidak boleh kosong", nameof(procurementId));
+                throw new ArgumentException(
+                    "ProcurementId tidak boleh kosong",
+                    nameof(procurementId)
+                );
 
             return await _pnlRepository.GetLatestByProcurementIdAsync(procurementId);
         }
 
         private List<VendorOffer> BuildVendorOffersMulti(
             List<VendorItemOffersDto> input,
-            string woId
+            string procurementId
         )
         {
             var offers = new List<VendorOffer>();
@@ -333,7 +378,7 @@ namespace ProcurementHTE.Core.Services
                         offers.Add(
                             new VendorOffer
                             {
-                                ProcurementId = woId,
+                                ProcurementId = procurementId,
                                 VendorId = vendor.VendorId,
                                 ProcOfferId = item.ProcOfferId,
                                 Round = i + 1,
@@ -348,33 +393,15 @@ namespace ProcurementHTE.Core.Services
             return offers;
         }
 
-        private List<VendorOffer> BuildVendorOffersForUpdate(ProfitLossUpdateDto dto)
+        private static void StampItemsWithProfitLossId(
+            IEnumerable<ProfitLossItem> items,
+            string profitLossId
+        )
         {
-            var offers = new List<VendorOffer>();
-
-            foreach (var vendor in dto.Vendors ?? new List<VendorItemOffersDto>())
+            foreach (var item in items)
             {
-                foreach (var item in vendor.Items ?? new List<VendorOfferPerItemDto>())
-                {
-                    var letters = item.Letters ?? new List<string>();
-                    for (int i = 0; i < (item.Prices?.Count ?? 0); i++)
-                    {
-                        offers.Add(
-                            new VendorOffer
-                            {
-                                ProcurementId = dto.ProcurementId,
-                                VendorId = vendor.VendorId,
-                                ProcOfferId = item.ProcOfferId, // ⬅️ nested
-                                Round = i + 1,
-                                Price = item.Prices![i],
-                                NoLetter = letters.Count > i ? letters[i] : null,
-                            }
-                        );
-                    }
-                }
+                item.ProfitLossId = profitLossId;
             }
-
-            return offers;
         }
 
         private (
@@ -390,12 +417,13 @@ namespace ProcurementHTE.Core.Services
             foreach (var it in input)
             {
                 var operatorCost = it.TarifAdd * it.KmPer25;
-                var revenue = it.TarifAwal + operatorCost;
+                var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
 
                 items.Add(
                     new ProfitLossItem
                     {
                         ProcOfferId = it.ProcOfferId,
+                        Quantity = it.Quantity,
                         TarifAwal = it.TarifAwal,
                         TarifAdd = it.TarifAdd,
                         KmPer25 = it.KmPer25,
@@ -411,7 +439,7 @@ namespace ProcurementHTE.Core.Services
             return (opTotal, revTotal, items);
         }
 
-        private (
+        private static (
             string vendorId,
             decimal totalFinal,
             Dictionary<string, decimal> finalPerItem

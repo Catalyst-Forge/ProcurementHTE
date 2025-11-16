@@ -215,8 +215,8 @@ namespace ProcurementHTE.Web.Controllers
                     "Draft",
                     StringComparison.OrdinalIgnoreCase
                 )
-                ? "Procurement saved as draft successfully"
-                : "Procurement created successfully";
+                    ? "Procurement saved as draft successfully"
+                    : "Procurement created successfully";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -596,20 +596,6 @@ namespace ProcurementHTE.Web.Controllers
             return View("CreateProfitLoss", viewModel);
         }
 
-        private static bool IsWkhtmltoxMissing(Exception ex)
-        {
-            if (ex is DllNotFoundException)
-                return true;
-
-            if (
-                !string.IsNullOrWhiteSpace(ex.Message)
-                && ex.Message.Contains("libwkhtmltox", StringComparison.OrdinalIgnoreCase)
-            )
-                return true;
-
-            return ex.InnerException != null && IsWkhtmltoxMissing(ex.InnerException);
-        }
-
         // GET: /Procurements/EditPnL/5
         [HttpGet]
         public async Task<IActionResult> EditProfitLoss(string id)
@@ -621,32 +607,9 @@ namespace ProcurementHTE.Web.Controllers
                 var dto = await _pnlService.GetEditDataAsync(id);
                 var dtoItems = dto.Items ?? [];
                 var dtoVendors = dto.Vendors ?? [];
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug(
-                        "EditPnL DTO snapshot for {ProfitLossId}: Items={ItemCount}, Vendors={VendorCount}",
-                        dto.ProfitLossId,
-                        dto.Items?.Count ?? 0,
-                        dto.Vendors?.Count ?? 0
-                    );
-                    if (dto.Items != null)
-                    {
-                        var index = 0;
-                        foreach (var item in dto.Items)
-                        {
-                            _logger.LogDebug(
-                                "EditPnL Item[{Index}] ProcOfferId={ProcOfferId} TarifAwal={TarifAwal} TarifAdd={TarifAdd} KmPer25={KmPer25}",
-                                index++,
-                                item.ProcOfferId,
-                                item.TarifAwal,
-                                item.TarifAdd,
-                                item.KmPer25
-                            );
-                        }
-                    }
-                }
+
                 var vendors = await _vendorService.GetAllVendorsAsync();
-                var wo =
+                var procurement =
                     await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
                     ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
@@ -656,11 +619,12 @@ namespace ProcurementHTE.Web.Controllers
                     ProcurementId = dto.ProcurementId,
                     AccrualAmount = dto.AccrualAmount,
                     RealizationAmount = dto.RealizationAmount,
-                    // agregat lama (TarifAwal/TarifAdd/KmPer25) TIDAK dipakai lagi
+                    Distance = dto.Distance,
                     Items = dtoItems
                         .Select(x => new ItemTariffInputVm
                         {
                             ProcOfferId = x.ProcOfferId,
+                            Quantity = x.Quantity,
                             TarifAwal = x.TarifAwal,
                             TarifAdd = x.TarifAdd,
                             KmPer25 = x.KmPer25,
@@ -689,7 +653,7 @@ namespace ProcurementHTE.Web.Controllers
                             Name = v.VendorName,
                         })
                         .ToList(),
-                    OfferItems = (wo.ProcOffers ?? [])
+                    OfferItems = (procurement.ProcOffers ?? [])
                         .Select(x => new ProcOfferLiteVm
                         {
                             ProcOfferId = x.ProcOfferId,
@@ -698,7 +662,7 @@ namespace ProcurementHTE.Web.Controllers
                         .ToList(),
                 };
 
-                ViewBag.ProcNum = wo.ProcNum;
+                ViewBag.ProcNum = procurement.ProcNum;
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
                 _logger.LogInformation("? EditPnL view akan ditampilkan");
                 return View(vm);
@@ -718,11 +682,13 @@ namespace ProcurementHTE.Web.Controllers
             if (!ModelState.IsValid)
             {
                 var vendors = await _vendorService.GetAllVendorsAsync();
-                var wo = await _procurementService.GetProcurementByIdAsync(viewModel.ProcurementId);
+                var procurement = await _procurementService.GetProcurementByIdAsync(
+                    viewModel.ProcurementId
+                );
                 viewModel.VendorChoices = vendors
                     .Select(v => new VendorChoiceViewModel { Id = v.VendorId, Name = v.VendorName })
                     .ToList();
-                viewModel.OfferItems = (wo?.ProcOffers ?? [])
+                viewModel.OfferItems = (procurement?.ProcOffers ?? [])
                     .Select(x => new ProcOfferLiteVm
                     {
                         ProcOfferId = x.ProcOfferId,
@@ -743,10 +709,12 @@ namespace ProcurementHTE.Web.Controllers
                 ProcurementId = viewModel.ProcurementId,
                 AccrualAmount = viewModel.AccrualAmount,
                 RealizationAmount = viewModel.RealizationAmount,
+                Distance = viewModel.Distance,
                 Items = (viewModel.Items ?? [])
                     .Select(x => new ProfitLossItemInputDto
                     {
                         ProcOfferId = x.ProcOfferId,
+                        Quantity = x.Quantity,
                         TarifAwal = x.TarifAwal,
                         TarifAdd = x.TarifAdd,
                         KmPer25 = x.KmPer25,
@@ -805,12 +773,15 @@ namespace ProcurementHTE.Web.Controllers
                 TotalRevenue = dto.TotalRevenue,
                 AccrualAmount = dto.AccrualAmount,
                 RealizationAmount = dto.RealizationAmount,
+                Distance = dto.Distance,
 
                 SelectedVendorId = dto.SelectedVendorId,
                 SelectedVendorName = dto.SelectedVendorName,
                 SelectedFinalOffer = dto.SelectedFinalOffer,
                 Profit = dto.Profit,
                 ProfitPercent = dto.ProfitPercent,
+
+                CreatedAt = dto.CreatedAt,
 
                 Items = dto.Items,
                 SelectedVendorNames = dto.SelectedVendorNames?.ToList() ?? [],
@@ -832,6 +803,7 @@ namespace ProcurementHTE.Web.Controllers
                 .Select(x => new ProfitLossItemInputDto
                 {
                     ProcOfferId = x.ProcOfferId,
+                    Quantity = x.Quantity,
                     TarifAwal = x.TarifAwal,
                     TarifAdd = x.TarifAdd,
                     KmPer25 = x.KmPer25,
@@ -851,6 +823,7 @@ namespace ProcurementHTE.Web.Controllers
                 ProcurementId = vm.ProcurementId,
                 AccrualAmount = vm.AccrualAmount,
                 RealizationAmount = vm.RealizationAmount,
+                Distance = vm.Distance,
                 Items = items,
                 SelectedVendorIds = selectedVendors,
                 Vendors = vendorItemOffers,
@@ -1084,8 +1057,7 @@ namespace ProcurementHTE.Web.Controllers
                 }
             );
 
-            string Resolve(string id) =>
-                map.TryGetValue(id, out var name) ? name : id;
+            string Resolve(string id) => map.TryGetValue(id, out var name) ? name : id;
 
             ViewBag.PicOpsName = Resolve(procurement.PicOpsUserId);
             ViewBag.AnalystName = Resolve(procurement.AnalystHteUserId);
@@ -1098,13 +1070,15 @@ namespace ProcurementHTE.Web.Controllers
         )
         {
             var ids = procurements
-                .SelectMany(p => new[]
-                {
-                    p.PicOpsUserId,
-                    p.AnalystHteUserId,
-                    p.AssistantManagerUserId,
-                    p.ManagerUserId,
-                })
+                .SelectMany(p =>
+                    new[]
+                    {
+                        p.PicOpsUserId,
+                        p.AnalystHteUserId,
+                        p.AssistantManagerUserId,
+                        p.ManagerUserId,
+                    }
+                )
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -1117,26 +1091,29 @@ namespace ProcurementHTE.Web.Controllers
 
         private async Task<Dictionary<string, string>> GetUserNamesAsync(IEnumerable<string?> ids)
         {
-            var uniqueIds = ids
-                .Where(id => !string.IsNullOrWhiteSpace(id))
+            var uniqueIds = ids.Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Cast<string>()
                 .ToList();
 
-            var users = await _userManager.Users
-                .Where(u => uniqueIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.FullName, u.UserName, u.Email })
+            var users = await _userManager
+                .Users.Where(u => uniqueIds.Contains(u.Id))
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.UserName,
+                    u.Email,
+                })
                 .ToListAsync();
 
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var user in users)
             {
                 var name =
-                    !string.IsNullOrWhiteSpace(user.FullName)
-                        ? user.FullName
-                        : !string.IsNullOrWhiteSpace(user.UserName)
-                            ? user.UserName!
-                            : user.Email ?? user.Id;
+                    !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName
+                    : !string.IsNullOrWhiteSpace(user.UserName) ? user.UserName!
+                    : user.Email ?? user.Id;
                 map[user.Id] = name;
             }
 

@@ -10,17 +10,7 @@
     Model.Details ??= new List<ProcDetail>();
     Model.Offers ??= new List<ProcOffer>();
 
-    var jobTypeOptions = (Model.JobTypes ?? Enumerable.Empty<JobTypes>())
-        .Select(job => new SelectListItem
-        {
-            Value = job.JobTypeId,
-            Text = job.TypeName
-        })
-        .ToList();
-
-    var jobTypeName = !string.IsNullOrWhiteSpace(Model.JobType)
-        ? Model.JobType
-        : (ViewBag.SelectedJobTypeName as string ?? "Other");
+    var jobTypeName = ViewBag.SelectedJobTypeName as string ?? "Other";
 
     var contractTypeOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ContractType>();
     var projectRegionOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProjectRegion>();
@@ -52,6 +42,7 @@
 
     <input type="hidden" asp-for="ProcurementId" />
     <input type="hidden" asp-for="ProcNum" />
+    <input type="hidden" asp-for="JobTypeId" />
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
     <section class="card shadow-sm mb-3 p-2 rounded-4">
@@ -59,13 +50,6 @@
             <legend class="card-title fw-semibold">Procurement Overview</legend>
             <hr />
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label asp-for="JobTypeId" class="form-label">Job Type</label>
-                    <select asp-for="JobTypeId" class="form-select" asp-items="jobTypeOptions">
-                        <option value="">Select job type</option>
-                    </select>
-                    <span asp-validation-for="JobTypeId" class="text-danger"></span>
-                </div>
                 <div class="col-md-4">
                     <label asp-for="ContractType" class="form-label"></label>
                     <select asp-for="ContractType" class="form-select" asp-items="contractTypeOptions">

@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using ProcurementHTE.Core.Models.DTOs;
 
 namespace ProcurementHTE.Web.Models.ViewModels
 {
@@ -16,6 +15,9 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [DisplayName("Realization Amount")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal? RealizationAmount { get; set; }
+
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? Distance { get; set; }
 
         [DisplayName("Daftar Item P&L")]
         [MinLength(1)]
@@ -46,11 +48,13 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [Required, StringLength(450)]
         public string ProcOfferId { get; set; } = null!;
 
-        [DisplayName("Tarif 400 km")]
+        public int Quantity { get; set; }
+
+        [DisplayName("400 KM Tariff")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAwal { get; set; }
 
-        [DisplayName("Tarif Add")]
+        [DisplayName("Additional Tariff")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAdd { get; set; }
 
@@ -114,8 +118,13 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal TotalOperatorCost { get; set; }
         public decimal TotalRevenue { get; set; }
 
+        [DisplayName("Accrual Amount")]
         public decimal? AccrualAmount { get; set; }
+
+        [DisplayName("Realization Amount")]
         public decimal? RealizationAmount { get; set; }
+
+        public decimal? Distance { get; set; }
 
         [Required, StringLength(450)]
         public string SelectedVendorId { get; set; } = null!;
@@ -124,10 +133,12 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal SelectedFinalOffer { get; set; }
         public decimal Profit { get; set; }
         public decimal ProfitPercent { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public List<(
             string ProcOfferId,
             string ItemName,
+            int Quantity,
             decimal TarifAwal,
             decimal TarifAdd,
             int KmPer25,

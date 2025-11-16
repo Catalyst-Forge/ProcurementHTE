@@ -3,9 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProcurementHTE.Core.Models
 {
-    public class ProfitLossItem {
+    public class ProfitLossItem
+    {
         [Key]
         public string ProfitLossItemId { get; set; } = Guid.NewGuid().ToString();
+
+        public int Quantity { get; set; }
 
         // Angka per-item
         [Column(TypeName = "decimal(18, 2)")]
@@ -40,5 +43,4 @@ namespace ProcurementHTE.Core.Models
         [ForeignKey("ProcOfferId")]
         public ProcOffer ProcOffer { get; set; } = default!;
     }
-
 }
