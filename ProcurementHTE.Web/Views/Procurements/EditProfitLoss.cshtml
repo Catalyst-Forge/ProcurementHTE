@@ -164,23 +164,52 @@
                     <legend class="card-title fw-semibold" id="financial-section-title">Financial Figures</legend>
                     <hr />
                     <div class="row g-3">
+                        <!-- Accrual -->
                         <div class="col-md-4">
                             <label asp-for="AccrualAmount" class="form-label"></label>
-                            <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                            <div class="input-group">
+                                <span class="input-group-text">Rp.</span>
+                                <input asp-for="AccrualAmount"
+                                       class="form-control text-end"
+                                       inputmode="text"
+                                       type="text"
+                                       autocomplete="off"
+                                       data-format-currency />
+                            </div>
+                            <span class="text-danger" asp-validation-for="AccrualAmount"></span>
                         </div>
+
+                        <!-- Realization -->
                         <div class="col-md-4">
                             <label asp-for="RealizationAmount" class="form-label"></label>
-                            <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                            <div class="input-group">
+                                <span class="input-group-text">Rp.</span>
+                                <input asp-for="RealizationAmount"
+                                       class="form-control text-end"
+                                       inputmode="text"
+                                       type="text"
+                                       autocomplete="off"
+                                       data-format-currency />
+                            </div>
+                            <span class="text-danger" asp-validation-for="RealizationAmount"></span>
                         </div>
+
+                        <!-- Distance (KM di ujung) -->
                         <div class="col-md-4">
                             <label asp-for="Distance" class="form-label"></label>
-                            <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                            <div class="input-group">
+                                <input asp-for="Distance"
+                                       class="form-control text-end"
+                                       inputmode="numeric" />
+                                <span class="input-group-text">KM</span>
+                            </div>
                             <span class="text-danger" asp-validation-for="Distance"></span>
                         </div>
                     </div>
                 </fieldset>
             </div>
         </section>
+
 
         <!-- ================= TAGIHAN KE PDC (PER-ITEM) ================= -->
         <section class="col-12" aria-labelledby="pdc-section-title">
@@ -215,13 +244,12 @@
 
                                         <td class="text-end">
                                             <input class="form-control text-end"
-                                                    name="Items[@i].Quantity"
-                                                    data-quantity
-                                                    data-format-currency
-                                                    type="number"
-                                                    inputmode="numeric"
-                                                    autocomplete="off"
-                                                    value="@items[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
+                                                   name="Items[@i].Quantity"
+                                                   data-quantity
+                                                   type="number"
+                                                   inputmode="numeric"
+                                                   autocomplete="off"
+                                                   value="@items[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
                                         </td>
 
                                         <td class="text-end">
@@ -259,7 +287,7 @@
                                                    type="number"
                                                    inputmode="numeric"
                                                    min="0"
-                                                   value="@items[i].KmPer25" />
+                                                   value="@items[i].KmPer25.ToString(CultureInfo.InvariantCulture)" />
                                         </td>
 
                                         <td class="text-end">
@@ -317,17 +345,20 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Vendor</th>
-                                    <th class="text-end">Final Offer (Σ round terakhir / item)</th>
+                                    <th class="text-end">Final Offer (Σ min / item)</th>
                                     <th class="text-end">Profit</th>
                                     <th class="text-end">Profit %</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody>
+                                @* boleh kosong, atau kalau mau pre-populate dari server boleh isi di sini *@
+                            </tbody>
                         </table>
                     </div>
                 </fieldset>
             </div>
         </section>
+
 
         <!-- ================= ACTION ================= -->
         <div class="col-12 d-flex justify-content-end gap-2 mb-3">
@@ -346,9 +377,9 @@
 
         const fmtClean = n => {
             const x = Number(n || 0);
-            return x % 1 === 0 ? 
-                x.toLocaleString('id-ID', { maximumFractionDigits: 0 }) 
-                : 
+            return x % 1 === 0 ?
+                x.toLocaleString('id-ID', { maximumFractionDigits: 0 })
+                :
                 x.toLocaleString('id-ID');
         };
         const getEl = sel => document.querySelector(sel);
@@ -428,20 +459,43 @@
             return fallback ? parseFloat(fallback) : 0;
         }
 
+        function distanceValue() {
+            const distInput = document.querySelector('input[name="Distance"]');
+            if (!distInput) return 0;
+            const raw = distInput.value ? distInput.value.replace(',', '.') : '';
+            const distance = parseFloat(raw);
+            return Number.isFinite(distance) ? distance : 0;
+        }
+
         function recalcHeader() {
             let opTotal = 0, revTotal = 0;
 
+            const distance = distanceValue();
+
             getAll('#pdcItems [data-item-row]').forEach(row => {
-                const qty = numberValue(row.querySelector('[data-quantity]'))
-                const a = numberValue(row.querySelector('[data-tarif-awal]'));
+                const qty = numberValue(row.querySelector('[data-quantity]'));
+                const a   = numberValue(row.querySelector('[data-tarif-awal]'));
                 const add = numberValue(row.querySelector('[data-tarif-add]'));
-                const km = parseFloat(row.querySelector('[data-km]').value || 0);
 
-                const op = add * km;
+                let km = parseFloat(row.querySelector('[data-km]').value || 0);
+
+                // KmPer25 otomatis dari Distance jika diisi; kalau tidak, pakai nilai input
+                if (distance > 0) {
+                    const computedKm = distance > 400 ? (distance - 400) / 25 : 0;
+                    if (Number.isFinite(computedKm) && computedKm >= 0) {
+                        km = computedKm;
+                        const kmInput = row.querySelector('[data-km]');
+                        if (kmInput) {
+                            kmInput.value = km.toString();
+                        }
+                    }
+                }
+
+                const op    = add * km;
                 const price = a + op;
-                const rev = price * qty;
+                const rev   = price * qty;
 
-                row.querySelector('[data-op]').value = fmtClean(op);
+                row.querySelector('[data-op]').value  = fmtClean(op);
                 row.querySelector('[data-rev]').value = fmtClean(rev);
 
                 opTotal += op;
@@ -459,7 +513,7 @@
                 revField.value = fmtClean(revTotal);
                 revField.dataset.rawValue = revTotal.toString();
             }
-            
+
             recalcSummary();
         }
 
@@ -468,9 +522,8 @@
                 updateCurrencyInput(e.target, true);
                 return;
             }
-            if (e.target.matches('[data-km]')) {
-                recalcHeader();
-                recalcSummary();
+            if (e.target.matches('[data-km],[data-quantity]')) {
+                recalcHeader(); // recalcHeader sudah panggil recalcSummary()
             }
         });
 
@@ -611,6 +664,8 @@
             `;
 
             const select = block.querySelector('[data-item-select]');
+            const hiddenInput = block.querySelector('[data-proc-input]');
+
             const populateOptions = (currentId) => {
                 const options = availableProcItemsForCard(card, currentId);
                 if (options.length === 0) {
@@ -634,7 +689,6 @@
                 return true;
             };
 
-            const hiddenInput = block.querySelector('[data-proc-input]');
             if (!populateOptions(itemInfo.procOfferId)) {
                 block.remove();
                 return null;
@@ -853,20 +907,33 @@
 
                 card.querySelectorAll('[data-item-block]').forEach(block => {
                     if (!complete) return;
+
                     const prices = block.querySelectorAll('[data-price]');
                     if (prices.length === 0) {
                         complete = false;
                         return;
                     }
 
-                    const last = prices[prices.length - 1];
-                    const rawVal = last?.dataset?.rawValue;
-                    const val = rawVal && rawVal.length ? parseFloat(rawVal) : parseFloat(digitsOnly(last.value)) || 0;
-                    if (!(val > 0)) {
+                    // ✅ Ambil harga TERENDAH dari semua round di item ini
+                    let best = Infinity;
+                    prices.forEach(inp => {
+                        const rawVal = inp?.dataset?.rawValue;
+                        const val = rawVal && rawVal.length
+                            ? parseFloat(rawVal)
+                            : parseFloat(digitsOnly(inp.value)) || 0;
+
+                        if (val > 0 && val < best) {
+                            best = val;
+                        }
+                    });
+
+                    // Kalau tidak ada harga valid > 0, anggap belum lengkap
+                    if (!(best > 0 && Number.isFinite(best))) {
                         complete = false;
                         return;
                     }
-                    vendorTotal += val;
+
+                    vendorTotal += best;
                 });
 
                 if (!complete || vendorTotal <= 0) {
@@ -907,7 +974,16 @@
             if (existingVendors.length === 0) {
                 recalcSummary();
             }
+
+            const distanceInput = document.querySelector('input[name="Distance"]');
+            if (distanceInput) {
+                distanceInput.addEventListener('input', () => {
+                    recalcHeader();
+                });
+            }
+
             recalcHeader();
+
             const form = document.getElementById('pl-form');
             if (form) {
                 form.addEventListener('submit', () => {
@@ -917,6 +993,39 @@
                 });
             }
         });
+
+    </script>
+
+    <!-- PATCH: hilangkan client-side rule "number" untuk Accrual & Realization -->
+    <script>
+        $(function () {
+            if (!$.validator || !$.validator.methods || !$.validator.methods.number) {
+                return;
+            }
+
+            const originalNumberMethod = $.validator.methods.number;
+
+            $.validator.methods.number = function (value, element) {
+                // Hanya untuk input yang pakai data-format-currency
+                if ($(element).is('[data-format-currency]')) {
+                    // Hilangkan titik ribuan, koma jadi titik desimal
+                    const normalized = value
+                        .replace(/\./g, '')  // "1.000.000" -> "1000000"
+                        .replace(',', '.');  // kalau ada koma desimal
+
+                    // Kalau kosong, biar rule "required" yang ngurus
+                    if (normalized.trim() === '') {
+                        return this.optional(element);
+                    }
+
+                    return originalNumberMethod.call(this, normalized, element);
+                }
+
+                // Field lain tetap pakai aturan number default
+                return originalNumberMethod.call(this, value, element);
+            };
+        });
     </script>
 }
+
 

@@ -9,11 +9,21 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public string ProcurementId { get; set; } = null!;
 
         [DisplayName("Accrual Amount")]
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? AccrualAmount { get; set; }
 
         [DisplayName("Realization Amount")]
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -59,8 +69,8 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal TarifAdd { get; set; }
 
         [DisplayName("KM per 25 km")]
-        [Range(0, int.MaxValue)]
-        public int KmPer25 { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal KmPer25 { get; set; }
 
         [DisplayName("Biaya Operator (Item)")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -141,7 +151,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
             int Quantity,
             decimal TarifAwal,
             decimal TarifAdd,
-            int KmPer25,
+            decimal KmPer25,
             decimal OperatorCost,
             decimal Revenue
         )> Items { get; set; } = [];

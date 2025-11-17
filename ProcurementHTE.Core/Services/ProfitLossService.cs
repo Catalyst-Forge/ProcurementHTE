@@ -53,19 +53,17 @@ namespace ProcurementHTE.Core.Services
                 )
                 .ToList();
 
+            // ⬇️ BAGIAN INI YANG DIUBAH: pakai harga TERENDAH per item (MIN), sesuai rumus Excel
             var vendorTotals = offers
                 .GroupBy(vendorOffer => vendorOffer.VendorId)
                 .Select(group =>
                 {
+                    // per item (ProcOfferId), ambil MIN harga dari semua ronde
                     var finalPerItem = group
                         .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
                         .ToDictionary(
-                            groupVendorOffer => groupVendorOffer.Key,
-                            groupVendorOffer =>
-                                groupVendorOffer
-                                    .OrderBy(vendorOffer => vendorOffer.Round)
-                                    .Last()
-                                    .Price
+                            g => g.Key,
+                            g => g.Min(vo => vo.Price) // ✅ MIN, bukan last round
                         );
 
                     // Wajib quote semua item agar valid
@@ -234,7 +232,7 @@ namespace ProcurementHTE.Core.Services
                 await _voRepository.StoreAllOffersAsync(offers);
 
             // Hitung item & total
-            var (opTotal, revTotal, items) = ComputeItems(dto.Items);
+            var (opTotal, revTotal, items) = ComputeItems(dto.Items, dto.Distance ?? 0m);
             if (items.Count == 0)
                 throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
 
@@ -244,9 +242,8 @@ namespace ProcurementHTE.Core.Services
 
             var profit = revTotal - bestTotal;
             var profitPct = revTotal > 0 ? (profit / revTotal) * 100m : 0m;
-            var accrualAmount = dto.AccrualAmount ?? 0m;
-            var realizationAmount = dto.RealizationAmount ?? 0m;
 
+            // Biarkan null jika user tidak mengisi; summary akan fallback ke totalRevenue/totalOperatorCost
             var pnl = new ProfitLoss
             {
                 ProcurementId = dto.ProcurementId,
@@ -254,9 +251,9 @@ namespace ProcurementHTE.Core.Services
                 SelectedVendorFinalOffer = bestTotal,
                 Profit = profit,
                 ProfitPercent = profitPct,
-                AccrualAmount = accrualAmount,
+                AccrualAmount = dto.AccrualAmount,
                 Distance = dto.Distance,
-                RealizationAmount = realizationAmount,
+                RealizationAmount = dto.RealizationAmount,
                 Items = items,
             };
 
@@ -292,6 +289,13 @@ namespace ProcurementHTE.Core.Services
                 StringComparer.OrdinalIgnoreCase
             );
 
+            decimal kmFromDistance = 0m;
+            if (dto.Distance.HasValue && dto.Distance.Value > 0m)
+            {
+                var distance = dto.Distance.Value;
+                kmFromDistance = distance > 400m ? (distance - 400m) / 25m : 0m;
+            }
+
             decimal opTotal = 0m;
             decimal revTotal = 0m;
 
@@ -308,13 +312,15 @@ namespace ProcurementHTE.Core.Services
                     itemsByOffer[it.ProcOfferId] = entity;
                 }
 
-                var operatorCost = it.TarifAdd * it.KmPer25;
+                var kmPer25 = kmFromDistance > 0m ? kmFromDistance : it.KmPer25;
+
+                var operatorCost = it.TarifAdd * kmPer25;
                 var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
 
                 entity.Quantity = it.Quantity;
                 entity.TarifAwal = it.TarifAwal;
                 entity.TarifAdd = it.TarifAdd;
-                entity.KmPer25 = it.KmPer25;
+                entity.KmPer25 = kmPer25;
                 entity.OperatorCost = operatorCost;
                 entity.Revenue = revenue;
 
@@ -328,15 +334,14 @@ namespace ProcurementHTE.Core.Services
             var procOfferIds = dto.Items.Select(item => item.ProcOfferId).ToList();
             var (bestVendorId, bestTotal, _) = PickBestVendor(newOffers, procOfferIds);
 
-            var accrualAmount = dto.AccrualAmount ?? 0m;
-            var realizationAmount = dto.RealizationAmount ?? 0m;
-
             pnl.SelectedVendorId = bestVendorId;
             pnl.SelectedVendorFinalOffer = bestTotal;
             pnl.Profit = revTotal - bestTotal;
             pnl.ProfitPercent = revTotal > 0 ? (pnl.Profit / revTotal) * 100m : 0m;
-            pnl.AccrualAmount = accrualAmount;
-            pnl.RealizationAmount = realizationAmount;
+
+            // Biarkan null jika user tidak mengisi; summary akan fallback
+            pnl.AccrualAmount = dto.AccrualAmount;
+            pnl.RealizationAmount = dto.RealizationAmount;
             pnl.Distance = dto.Distance;
             pnl.UpdatedAt = DateTime.Now;
 
@@ -408,15 +413,24 @@ namespace ProcurementHTE.Core.Services
             decimal operatorCostTotal,
             decimal revenueTotal,
             List<ProfitLossItem> item
-        ) ComputeItems(List<ProfitLossItemInputDto> input)
+        ) ComputeItems(List<ProfitLossItemInputDto> input, decimal distance)
         {
             var items = new List<ProfitLossItem>();
             decimal opTotal = 0m,
                 revTotal = 0m;
 
+            // Hitung KmPer25 otomatis dari Distance jika diisi; jika tidak, pakai nilai per-item
+            decimal kmFromDistance = 0m;
+            if (distance > 0m)
+            {
+                kmFromDistance = distance > 400m ? (distance - 400m) / 25m : 0m;
+            }
+
             foreach (var it in input)
             {
-                var operatorCost = it.TarifAdd * it.KmPer25;
+                var kmPer25 = kmFromDistance > 0m ? kmFromDistance : it.KmPer25;
+
+                var operatorCost = it.TarifAdd * kmPer25;
                 var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
 
                 items.Add(
@@ -426,7 +440,7 @@ namespace ProcurementHTE.Core.Services
                         Quantity = it.Quantity,
                         TarifAwal = it.TarifAwal,
                         TarifAdd = it.TarifAdd,
-                        KmPer25 = it.KmPer25,
+                        KmPer25 = kmPer25,
                         OperatorCost = operatorCost,
                         Revenue = revenue,
                     }
@@ -439,13 +453,14 @@ namespace ProcurementHTE.Core.Services
             return (opTotal, revTotal, items);
         }
 
+
         private static (
             string vendorId,
             decimal totalFinal,
             Dictionary<string, decimal> finalPerItem
         ) PickBestVendor(List<VendorOffer> offers, IEnumerable<string> procOfferIds)
         {
-            // final per vendor = sum(final price per item)
+            // final per vendor = sum(MIN price per item)
             var perVendor = offers
                 .GroupBy(offer => offer.VendorId)
                 .Select(group => new
@@ -454,8 +469,8 @@ namespace ProcurementHTE.Core.Services
                     FinalPerItem = group
                         .GroupBy(x => x.ProcOfferId) // per item (ProcOffer)
                         .ToDictionary(
-                            gg => gg.Key,
-                            gg => gg.OrderBy(x => x.Round).Last().Price // final round per item
+                            g => g.Key,
+                            g => g.Min(vo => vo.Price) // ✅ pakai harga terendah dari semua ronde
                         ),
                 })
                 .Select(x => new

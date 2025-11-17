@@ -473,7 +473,8 @@
                         <dl class="col-12 col-sm-6 col-md-4">
                             <dt class="fw-semibold text-uppercase text-secondary">Final Offer</dt>
                             <dd class="fw-medium text-secondary-emphasis">@pnl.SelectedFinalOffer.ToIDR()</dd>
-                            <span class="small text-muted">(Σ last round price of each item)</span>
+                            <span class="small text-muted">(Σ minimum price per item)</span>
+
                         </dl>
 
                         <dl class="col-12 col-sm-6 col-md-4">
@@ -582,8 +583,10 @@
                     </div>
                 </div>
 
-                <div class="small text-muted px-3 pb-3">
-                    The best offer is automatically selected from the vendor with the lowest total price (Σ the last round price of each item).
+                <div class="small text-muted">
+                    The selected vendor is chosen based on the best profit,
+                    calculated from the vendor with the lowest total price
+                    (Σ the minimum price per item across all negotiation rounds).
                 </div>
             </article>
         }

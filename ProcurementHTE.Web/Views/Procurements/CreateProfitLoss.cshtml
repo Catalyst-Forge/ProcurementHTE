@@ -64,25 +64,50 @@
                     <legend class="card-title fw-semibold" id="financial-section-title">Financial Figures</legend>
                     <hr />
                     <div class="row g-3">
+                        <!-- Accrual -->
                         <div class="col-md-4">
                             <label asp-for="AccrualAmount" class="form-label"></label>
-                            <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                            <div class="input-group">
+                                <span class="input-group-text">Rp.</span>
+                                <input asp-for="AccrualAmount"
+                                       class="form-control text-end"
+                                       inputmode="numeric"
+                                       type="text"
+                                       data-format-currency />
+                            </div>
                             <span class="text-danger" asp-validation-for="AccrualAmount"></span>
                         </div>
+
+                        <!-- Realization -->
                         <div class="col-md-4">
                             <label asp-for="RealizationAmount" class="form-label"></label>
-                            <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                            <div class="input-group">
+                                <span class="input-group-text">Rp.</span>
+                                <input asp-for="RealizationAmount"
+                                       class="form-control text-end"
+                                       inputmode="numeric"
+                                       type="text"
+                                       data-format-currency />
+                            </div>
                             <span class="text-danger" asp-validation-for="RealizationAmount"></span>
                         </div>
+
+                        <!-- Distance (tanpa currency) -->
                         <div class="col-md-4">
                             <label asp-for="Distance" class="form-label"></label>
-                            <input asp-for="Distance" class="form-control text-end" inputmode="numeric" />
+                            <div class="input-group">
+                                <input asp-for="Distance"
+                                       class="form-control text-end"
+                                       inputmode="numeric" />
+                                <span class="input-group-text">KM</span>
+                            </div>
                             <span class="text-danger" asp-validation-for="Distance"></span>
                         </div>
                     </div>
                 </fieldset>
             </div>
         </section>
+
 
         <!-- ================= BILLING TO PDC (PER-ITEM) ================= -->
         <section class="col-12" aria-labelledby="pdc-section-title">
@@ -116,12 +141,10 @@
 
                                         <td class="text-end">
                                             <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Rp</span>
                                                 <input class="form-control text-end"
                                                        name="Items[@i].Quantity"
                                                        data-quantity
-                                                       data-format-currency 
-                                                       type="text"
+                                                       type="number"
                                                        inputmode="numeric"
                                                        autocomplete="off"
                                                        value="@Model.Items[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
@@ -159,9 +182,14 @@
                                         <td class="text-end">
                                             <input class="form-control form-control-sm text-end"
                                                    name="Items[@i].KmPer25"
-                                                   data-km type="number" inputmode="numeric" min="0"
-                                                   value="@(Model.Items[i].KmPer25)" />
+                                                   data-km
+                                                   type="number"
+                                                   inputmode="numeric"
+                                                   min="0"
+                                                   value="@Model.Items[i].KmPer25.ToString(CultureInfo.InvariantCulture)"
+                                                   readonly />
                                         </td>
+
 
                                         <td class="text-end">
                                             <input class="form-control form-control-sm text-end" data-operator readonly />
@@ -219,17 +247,20 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Vendor</th>
-                                    <th class="text-end">Final Offer (Σ last / item)</th>
+                                    <th class="text-end">Final Offer (Σ min / item)</th>
                                     <th class="text-end">Profit</th>
                                     <th class="text-end">Profit %</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody>
+                                @* dikosongin, nanti diisi JS recalcSummary *@
+                            </tbody>
                         </table>
                     </div>
                 </fieldset>
             </div>
         </section>
+
 
         <!-- ================= ACTION ================= -->
         <div class="col-12 d-flex justify-content-end gap-2 mb-3">
@@ -358,20 +389,43 @@
         }
 
         // ===== per-item -> total calc =====
+        function distanceValue() {
+            const distInput = document.querySelector('input[name="Distance"]');
+            if (!distInput) return 0;
+            const raw = distInput.value ? distInput.value.replace(',', '.') : '';
+            const distance = parseFloat(raw);
+            return Number.isFinite(distance) ? distance : 0;
+        }
+
         function recalcHeader() {
             let opTotal = 0, revTotal = 0;
 
+            const distance = distanceValue();
+
             getAll('#pdcItems [data-item-row]').forEach(row => {
                 const qty = numberValue(row.querySelector('[data-quantity]'));
-                const a = numberValue(row.querySelector('[data-tarif-awal]'));
+                const a   = numberValue(row.querySelector('[data-tarif-awal]'));
                 const add = numberValue(row.querySelector('[data-tarif-add]'));
-                const km = parseFloat(row.querySelector('[data-km]').value || 0);
 
-                const op = add * km;
+                let km = parseFloat(row.querySelector('[data-km]').value || 0);
+
+                // KmPer25 otomatis dari Distance jika diisi; kalau tidak, pakai nilai input
+                if (distance > 0) {
+                    const computedKm = distance > 400 ? (distance - 400) / 25 : 0;
+                    if (Number.isFinite(computedKm) && computedKm >= 0) {
+                        km = computedKm;
+                        const kmInput = row.querySelector('[data-km]');
+                        if (kmInput) {
+                            kmInput.value = km.toString();
+                        }
+                    }
+                }
+
+                const op  = add * km;
                 const rev = (a + op) * qty;
 
                 row.querySelector('[data-operator]').value = fmtClean(op);
-                row.querySelector('[data-rev]').value = fmtClean(rev);
+                row.querySelector('[data-rev]').value      = fmtClean(rev);
 
                 opTotal += op;
                 revTotal += rev;
@@ -392,16 +446,19 @@
             recalcSummary();
         }
 
+
         document.addEventListener('input', e => {
             if (e.target.matches(currencySelector)) {
                 updateCurrencyInput(e.target, true);
                 return;
             }
-            if (e.target.matches('[data-km]')) {
-                recalcHeader();
-                recalcSummary();
+
+            // KM/25 atau Quantity berubah → hitung ulang header + summary
+            if (e.target.matches('[data-km],[data-quantity]')) {
+                recalcHeader(); // recalcHeader sudah memanggil recalcSummary() di dalamnya
             }
         });
+
 
         document.addEventListener('blur', e => {
             if (e.target.matches(currencySelector)) {
@@ -779,20 +836,35 @@
                 let complete = true;
                 card.querySelectorAll('[data-item-block]').forEach(block => {
                     if (!complete) return;
+
                     const inputs = block.querySelectorAll('[data-price]');
                     if (!inputs.length) {
                         complete = false;
                         return;
                     }
-                    const last = inputs[inputs.length-1];
-                    const rawVal = last?.dataset?.rawValue;
-                    const val = rawVal && rawVal.length ? parseFloat(rawVal) : parseFloat(digitsOnly(last.value)) || 0;
-                    if (!(val > 0)) {
+
+                    // ⬇️ NEW: pakai harga TERENDAH dari semua ronde di item ini
+                    let best = Infinity;
+                    inputs.forEach(inp => {
+                        const rawVal = inp.dataset?.rawValue;
+                        const val = rawVal && rawVal.length
+                            ? parseFloat(rawVal)
+                            : parseFloat(digitsOnly(inp.value)) || 0;
+
+                        if (val > 0 && val < best) {
+                            best = val;
+                        }
+                    });
+
+                    // kalau belum ada harga valid > 0, anggap belum lengkap
+                    if (!(best > 0 && isFinite(best))) {
                         complete = false;
                         return;
                     }
-                    vendorTotal += val;
+
+                    vendorTotal += best;
                 });
+
 
                 if (!complete || vendorTotal <= 0) return;
 
@@ -826,6 +898,14 @@
             document.querySelectorAll(currencySelector).forEach(input => updateCurrencyInput(input));
             recalcHeader();
             updateVendorBlocks();
+
+            const distanceInput = document.querySelector('input[name="Distance"]');
+            if (distanceInput) {
+                distanceInput.addEventListener('input', () => {
+                    recalcHeader();
+                });
+            }
+
             const form = document.getElementById('pl-form');
             if (form) {
                 form.addEventListener('submit', () => {
@@ -835,8 +915,35 @@
                 });
             }
         })();
+
+    </script>
+
+    <!-- ✅ Override jQuery validate "number" khusus untuk input currency (Accrual & Realization) -->
+    <script>
+        $(function () {
+            if (!$.validator || !$.validator.methods || !$.validator.methods.number) {
+                return;
+            }
+
+            const originalNumberMethod = $.validator.methods.number;
+
+            $.validator.methods.number = function (value, element) {
+                // Hanya adjust untuk input yang pakai data-format-currency
+                if ($(element).is('[data-format-currency]')) {
+                    const normalized = value
+                        .replace(/\./g, '')   // "1.000.000" -> "1000000"
+                        .replace(',', '.');   // koma jadi titik kalau ada
+
+                    if (normalized.trim() === '') {
+                        return this.optional(element);
+                    }
+
+                    return originalNumberMethod.call(this, normalized, element);
+                }
+
+                // Field lain: pakai aturan default
+                return originalNumberMethod.call(this, value, element);
+            };
+        });
     </script>
 }
-
-
-
