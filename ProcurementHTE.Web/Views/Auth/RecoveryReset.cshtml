@@ -1,0 +1,35 @@
+@model ProcurementHTE.Web.Models.Auth.RecoveryResetViewModel
+@{
+    ViewData["Title"] = "Reset Password";
+    Layout = "_AuthenticationLayout";
+}
+
+<div class="d-flex justify-content-center">
+  <div class="card p-4 shadow-sm" style="width: 500px">
+    <header class="text-center mb-3">
+      <h1 class="fs-3 mb-1">Buat Password Baru</h1>
+      <p class="text-muted mb-0">Recovery code berhasil dipakai. Demi keamanan, segera ganti password Anda.</p>
+    </header>
+
+    <div class="card-body">
+      <form asp-action="RecoveryReset" method="post">
+        <div class="text-danger" asp-validation-summary="All"></div>
+        <div class="mb-3">
+          <label asp-for="NewPassword" class="form-label"></label>
+          <input asp-for="NewPassword" class="form-control" />
+          <span asp-validation-for="NewPassword" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+          <label asp-for="ConfirmPassword" class="form-label"></label>
+          <input asp-for="ConfirmPassword" class="form-control" />
+          <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Simpan Password Baru</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+  <partial name="_ValidationScriptsPartial" />
+}

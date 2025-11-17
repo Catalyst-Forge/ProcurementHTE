@@ -4,15 +4,18 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Authorization.Handlers;
 using ProcurementHTE.Core.Authorization.Requirements;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Options;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Repositories;
+using ProcurementHTE.Infrastructure.Services;
 using ProcurementHTE.Infrastructure.Storage;
 using System.Security.Claims;
 using System.Text;
@@ -373,10 +376,12 @@ namespace ProcurementHTE.Web.Extensions
 
             services.AddAuthorization();
 
-            // ------------- Storage (MinIO) -------------
-            // NOTE: Interface yang benar adalah IObjectStorage (bukan IObjectStorageRepository)
+            // ------------- Storage & Utilities -------------
             services.AddSingleton<IObjectStorage, MinioStorage>();
             services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+            services.Configure<EmailSenderOptions>(configuration.GetSection("EmailSender"));
+            services.Configure<SmsSenderOptions>(configuration.GetSection("SmsSender"));
+            services.AddHttpClient("SmsProvider");
 
             // ------------- Repositories -------------
             services.AddScoped<IProcurementRepository, ProcurementRepository>();
@@ -393,6 +398,8 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IApprovalRepository, ApprovalRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+            services.AddScoped<IUserSecurityLogRepository, UserSecurityLogRepository>();
             services.AddScoped<IDashboardRepository, DashboardRepository>();
 
             // ------------- Services (Core) -------------
@@ -412,10 +419,26 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<ITemplateProvider, FileSystemTemplateProvider>();
             services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
             services.AddScoped<IDocumentGenerator, DocumentGenerator>();
+            services.AddSingleton<IEmailSender>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<EmailSenderOptions>>().Value;
+                if (opts.UseDevelopmentMode)
+                    return ActivatorUtilities.CreateInstance<ConsoleEmailSender>(sp);
+                return ActivatorUtilities.CreateInstance<SmtpEmailSender>(sp);
+            });
+
+            services.AddSingleton<ISmsSender>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<SmsSenderOptions>>().Value;
+                if (opts.UseDevelopmentMode)
+                    return ActivatorUtilities.CreateInstance<ConsoleSmsSender>(sp);
+                return ActivatorUtilities.CreateInstance<HttpSmsSender>(sp);
+            });
 
             // ------------- Query Services -------------
             // INI YANG BENAR: ProcurementDocumentQuery di-bind ke IProcurementDocumentQuery (bukan ke IProcDocumentRepository)

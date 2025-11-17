@@ -183,6 +183,7 @@ namespace ProcurementHTE.Infrastructure.Data
                         EmailConfirmed = true,
                         FirstName = u.Username,
                         LastName = "Seeder",
+                        JobTitle = u.Role,
                         IsActive = true,
                     };
 

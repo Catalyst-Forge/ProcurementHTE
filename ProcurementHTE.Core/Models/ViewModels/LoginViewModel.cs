@@ -9,5 +9,8 @@ namespace ProcurementHTE.Core.Models.ViewModels {
     [Required(ErrorMessage = "Password wajib diisi")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = null!;
+
+    [Display(Name = "Ingat saya")]
+    public bool RememberMe { get; set; }
   }
 }

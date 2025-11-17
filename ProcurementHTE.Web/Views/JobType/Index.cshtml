@@ -1,0 +1,190 @@
+﻿@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<JobTypes>
+@{
+    ViewData["Title"] = "Workorder Type Data";
+    var currentSearch = Context.Request.Query["search"].ToString();
+    var currentFields = (Context.Request.Query["fields"].ToString() ?? "WoNum,Description")
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var columns = new (string Key, string Label)[] {
+        ("WoNum","WO No."),
+        ("Description","Description"),
+        ("Status","Status"),
+    };
+    var pageSize = Model.PageSize;
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Job Types</h1>
+    <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
+</header>
+
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
+    </div>
+
+    <div class="dropdown ms-sm-auto">
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-funnel"></i> Filter
+        </button>
+
+        <div class="dropdown-menu p-3">
+            <div class="mb-2 fw-semibold small text-muted">Search in columns</div>
+
+            @foreach (var col in columns) {
+                var checkedAttr = currentFields.Contains(col.Key) ? "Checked" : null;
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input filter-col" value="@col.Key" id="col_@col.Key" @checkedAttr />
+                    <label for="col_@col.Key" class="form-check-label">@col.Label</label>
+                </div>
+            }
+            
+            <div class="d-grid mt-3">
+                <button type="button" class="btn btn-primary btn-sm" id="btnApplyFilter">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="fields" id="fieldsHidden" value="@string.Join(",", currentFields)" />
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@pageSize" />
+
+    @* <button type="button" class="btn btn-outline-secondary ms-auto"><i class="bi bi-funnel me-1"></i> Filter</button> *@
+</form>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover mobile-table">
+        <thead class="table-light">
+            <tr>
+                <th class="border-end">
+                    @Html.DisplayNameFor(model => model.Items[0].TypeName)
+                </th>
+                <th class="border-end">
+                    @Html.DisplayNameFor(model => model.Items[0].Description)
+                </th>
+                <th class="text-center">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (!Model.Items.Any() || Model == null) {
+                <tr>
+                    <td colspan="3" class="text-center">No data available</td>
+                </tr>
+            } else {
+                foreach (var item in Model.Items) {
+                    <tr>
+                        <td class="d-flex d-md-table-cell" data-label="Type Name">
+                            <span>
+                                @Html.DisplayFor(modelItem => item.TypeName)
+                            </span>
+                        </td>
+                        <td class="d-flex d-md-table-cell" data-label="Description">
+                            <span>
+                                @Html.DisplayFor(modelItem => item.Description)
+                            </span>
+                        </td>
+                        <td class="text-center d-flex d-md-table-cell" data-label="Action">
+                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
+                               asp-action="Edit" asp-route-id="@item.JobTypeId" role="button">
+                                <span class="visually-hidden">Edit</span>
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+
+                            <form asp-action="DeleteConfirmed"
+                                  asp-route-id="@item.JobTypeId"
+                                  method="post"
+                                  class="d-inline delete-form"
+                                  data-name="@item.TypeName">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-link link-danger link-opacity-50-hover p-0 border-0 bg-transparent">
+                                    <span class="visually-hidden">Delete</span>
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        </td>
+
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@await Html.PartialAsync("_Pager", Model)
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('filterForm');
+            const searchBox = document.getElementById('searchBox');
+            const fieldsHidden = document.getElementById('fieldsHidden');
+            const pageHidden = document.getElementById('pageHidden');
+            const pageSizeHidden = document.getElementById('pageSizeHidden');
+
+            // Apply: ambil kolom tercentang, reset page ke 1, submit
+            document.getElementById('btnApplyFilter').addEventListener('click', function () {
+            const cols = Array.from(document.querySelectorAll('.filter-col:checked')).map(c => c.value);
+            fieldsHidden.value = cols.join(',');
+            pageHidden.value = 1;
+            form.submit();
+            });
+
+            // Enter di search langsung submit (page reset ke 1)
+            searchBox.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                pageHidden.value = 1;
+                form.submit();
+            }
+            });
+
+            // Refresh: hapus search & kolom, reset page ke 1 & submit
+            document.getElementById('btnRefresh').addEventListener('click', function () {
+            searchBox.value = '';
+            fieldsHidden.value = ''; // pakai default di Controller kalau kosong
+            pageHidden.value = 1;
+            form.submit();
+            });
+        })();
+        
+        document.addEventListener("submit", async function (e) {
+            const form = e.target.closest(".delete-form");
+            if (!form) return;
+
+            e.preventDefault();
+
+            const name = form.dataset.name || "data ini";
+            const result = await Swal.fire({
+                icon: "warning",
+                title: "Hapus data ini?",
+                html: `Anda akan menghapus <strong>${name}</strong>.<br> Tindakan ini tidak dapat dibatalkan.`,
+                showCancelButton: true,
+                confirmButtonText: "Ya, hapus",
+                cancelButtonText: "Batal",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+                reverseButtons: true
+            });
+
+            if (result.isConfirmed) form.submit();
+        });
+
+        // Tampilkan notifikasi TempData setelah redirect
+        document.addEventListener("DOMContentLoaded", () => {
+            const success = '@TempData["SuccessMessage"]';
+            const error = '@TempData["ErrorMessage"]';
+
+            if (success)
+                Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2500, showConfirmButton: false });
+
+            if (error)
+                Swal.fire({ icon: "error", title: "Gagal", text: error });
+        });
+    </script>
+}

@@ -370,3 +370,4 @@ FodyWeavers.xsd
 /mc-init.sh
 /minio-policy.json
 .dotnet-tools
+.config/dotnet-tools.json

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.Enums;
 
 namespace ProcurementHTE.Infrastructure.Data;
 
@@ -25,6 +26,8 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
     public DbSet<DocumentApprovals> DocumentApprovals { get; set; } = null!;
     public DbSet<DocumentType> DocumentTypes { get; set; } = null!;
     public DbSet<Tender> Tenders { get; set; } = null!;
+    public DbSet<UserSession> UserSessions { get; set; } = null!;
+    public DbSet<UserSecurityLog> UserSecurityLogs { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -36,6 +39,8 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
         // ========================================
         ConfigureUser(builder);
         ConfigureUserRole(builder);
+        ConfigureUserSession(builder);
+        ConfigureUserSecurityLog(builder);
 
         // ========================================
         // ENTITY CONFIGURATIONS
@@ -62,11 +67,61 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
             .Entity<User>()
             .Property(u => u.FullName)
             .HasComputedColumnSql("CONCAT([FirstName], ' ', [LastName])");
+
+        builder
+            .Entity<User>()
+            .Property(u => u.TwoFactorMethod)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .HasDefaultValue(TwoFactorMethod.None);
+
+        builder
+            .Entity<User>()
+            .HasMany(u => u.Sessions)
+            .WithOne(s => s.User)
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .Entity<User>()
+            .HasMany(u => u.SecurityLogs)
+            .WithOne(log => log.User)
+            .HasForeignKey(log => log.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static void ConfigureUserRole(ModelBuilder builder)
     {
         builder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+    }
+
+    private static void ConfigureUserSession(ModelBuilder builder)
+    {
+        builder.Entity<UserSession>(entity =>
+        {
+            entity.HasKey(session => session.UserSessionId);
+            entity
+                .Property(session => session.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+            entity
+                .Property(session => session.LastAccessedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+        });
+    }
+
+    private static void ConfigureUserSecurityLog(ModelBuilder builder)
+    {
+        builder.Entity<UserSecurityLog>(entity =>
+        {
+            entity.HasKey(log => log.UserSecurityLogId);
+            entity
+                .Property(log => log.EventType)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity
+                .Property(log => log.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+        });
     }
 
     #endregion

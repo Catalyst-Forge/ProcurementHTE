@@ -4,6 +4,8 @@ using Microsoft.Extensions.Options;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Storage;
 using ProcurementHTE.Web.Extensions;
+using ProcurementHTE.Web.Middleware;
+using ProcurementHTE.Web.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddHttpClient("MinioProxy");
+builder.Services.AddHttpClient("SmsProvider");
+builder.Services.Configure<SecurityBypassOptions>(builder.Configuration.GetSection("SecurityBypass"));
 var app = builder.Build();
 
 // Nanti Hapus ini setelah yakin konfigurasi Object Storage benar
@@ -89,6 +93,8 @@ app.Use(
 );
 
 app.UseAuthentication();
+app.UseMiddleware<UserSessionValidationMiddleware>();
+app.UseMiddleware<SecurityCheckpointMiddleware>();
 app.UseAuthorization();
 
 app.MapStaticAssets();
