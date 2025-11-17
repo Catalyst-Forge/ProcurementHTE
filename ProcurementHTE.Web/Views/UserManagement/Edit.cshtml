@@ -1,0 +1,132 @@
+﻿@using ProcurementHTE.Web.Models.Admin
+@model UserFormPageViewModel
+
+@{
+    var title = Model.IsEdit ? "Edit User" : "Tambah User";
+    ViewData["Title"] = title;
+}
+
+<h1 class="h3 mb-3">@title</h1>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="@(Model.IsEdit ? "Edit" : "Create")" method="post">
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+            @if (Model.IsEdit)
+            {
+                <input type="hidden" asp-for="Form.Id" />
+            }
+            else
+            {
+                <input type="hidden" asp-for="GeneratedPassword" />
+            }
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Form.FirstName" class="form-label"></label>
+                    <input asp-for="Form.FirstName" class="form-control" />
+                    <span asp-validation-for="Form.FirstName" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Form.LastName" class="form-label"></label>
+                    <input asp-for="Form.LastName" class="form-control" />
+                    <span asp-validation-for="Form.LastName" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Form.Email" class="form-label"></label>
+                    <input asp-for="Form.Email" class="form-control" />
+                    <span asp-validation-for="Form.Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Form.UserName" class="form-label"></label>
+                    <input asp-for="Form.UserName" class="form-control" />
+                    <span asp-validation-for="Form.UserName" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Form.JobTitle" class="form-label"></label>
+                    <input asp-for="Form.JobTitle" class="form-control" />
+                    <span asp-validation-for="Form.JobTitle" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Form.PhoneNumber" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">+62</span>
+                        <input asp-for="Form.PhoneNumber" class="form-control" />
+                    </div>
+                    <span asp-validation-for="Form.PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-check mt-4">
+                        <input asp-for="Form.IsActive" class="form-check-input" />
+                        <label asp-for="Form.IsActive" class="form-check-label"></label>
+                    </div>
+                </div>
+
+                <div class="col-md-9">
+                    <label class="form-label">Roles</label>
+                    <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        @if (Model.Roles.Any())
+                        {
+                            @foreach (var role in Model.Roles)
+                            {
+                                var isChecked = Model.Form.SelectedRoles.Contains(role.Name);
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="Form.SelectedRoles"
+                                           value="@role.Name"
+                                           @(isChecked ? "checked" : "") />
+                                    <label class="form-check-label">
+                                        @role.Name
+                                    </label>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">Belum ada role yang terdaftar.</span>
+                        }
+                    </div>
+                </div>
+
+                @if (!Model.IsEdit)
+                {
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <strong>Password awal akan digenerate otomatis.</strong><br />
+                            Setelah user dibuat, password yang digenerate akan tampil di halaman list
+                            (via pesan sukses TempData) untuk kamu berikan ke user.
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <hr />
+
+            <div class="d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    Kembali
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

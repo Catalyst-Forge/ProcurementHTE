@@ -19,8 +19,7 @@
             <button type="button" class="btn btn-sm fs-4 dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" area-expanded="false"><i class="bi bi-person-circle"></i></button>
 
             <ul class="dropdown-menu dropdown-menu-start shadow" aria-labelledby="dropdownUser">
-              <li><a href="" class="dropdown-item">Profile</a></li>
-              <li><a href="" class="dropdown-item">Settings</a></li>
+              <li><a asp-controller="Account" asp-action="Settings" class="dropdown-item">Profil &amp; Keamanan</a></li>
               <li><hr class="dropdown-divider" /></li>
               <li>
                 <form asp-action="Logout" asp-controller="Auth" method="post" class="">

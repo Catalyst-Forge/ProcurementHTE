@@ -1,0 +1,379 @@
+@model ProcurementHTE.Web.Models.Auth.TwoFactorSetupViewModel
+@using ProcurementHTE.Core.Models.Enums
+@{
+    ViewData["Title"] = "Aktifkan Two-Factor";
+    Layout = "_AuthenticationLayout";
+    var returnUrl = Model.ReturnUrl;
+    var activeTab = (Model.ActiveTab ?? "auth").ToLowerInvariant();
+    var emailAvailable = Model.EmailAvailable;
+    var smsAvailable = Model.PhoneAvailable;
+    var emailSetupCooldown = ViewBag.SetupEmailCooldown as int? ?? 0;
+    var smsSetupCooldown = ViewBag.SetupSmsCooldown as int? ?? 0;
+}
+
+<div class="mb-4 text-center">
+    <h2 class="mb-1">Aktifkan Two-Factor</h2>
+    <p class="text-muted">Pilih metode keamanan kedua sebelum melanjutkan.</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success small mx-auto" style="max-width: 820px">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger small mx-auto" style="max-width: 820px">@Model.ErrorMessage</div>
+}
+<ul class="nav nav-pills justify-content-center gap-2 mb-3">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "auth" ? "active" : string.Empty)"
+                data-bs-toggle="pill"
+                data-bs-target="#tab-auth"
+                type="button"
+                role="tab"
+                aria-selected="@(activeTab == "auth" ? "true" : "false")">
+            Authenticator
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "email" ? "active" : string.Empty) @(emailAvailable ? string.Empty : "disabled")"
+                data-bs-toggle="pill"
+                data-bs-target="#tab-email"
+                type="button"
+                role="tab"
+                @(emailAvailable ? string.Empty : "disabled")
+                aria-selected="@(activeTab == "email" ? "true" : "false")">
+            Email OTP
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(activeTab == "sms" ? "active" : string.Empty) @(smsAvailable ? string.Empty : "disabled")"
+                data-bs-toggle="pill"
+                data-bs-target="#tab-sms"
+                type="button"
+                role="tab"
+                @(smsAvailable ? string.Empty : "disabled")
+                aria-selected="@(activeTab == "sms" ? "true" : "false")">
+            SMS OTP
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade @(activeTab == "auth" ? "show active" : string.Empty)" id="tab-auth" role="tabpanel">
+        <div class="card shadow-sm equal-card">
+            <div class="card-body d-flex flex-column gap-3">
+                <h5 class="mb-1">Authenticator App</h5>
+                <p class="text-muted">Scan QR atau masukkan kode di aplikasi authenticator, lalu isi kode 6 digit yang muncul.</p>
+                <form asp-action="EnableTwoFactorFromSetup" method="post" class="d-flex flex-column gap-3 flex-grow-1">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="method" value="@TwoFactorMethod.AuthenticatorApp" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <div class="border rounded p-3 bg-light-subtle small">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <div>
+                                <span class="fw-semibold d-block text-uppercase text-muted small">Kode Rahasia</span>
+                                <span class="fs-5 fw-bold">@Model.SharedKey</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(Model.AuthenticatorQrBase64))
+                            {
+                                <img src="data:image/png;base64,@Model.AuthenticatorQrBase64" alt="QR" class="border rounded" style="max-width: 200px;" />
+                            }
+                        </div>
+                        <small class="text-muted d-block mt-2">Buka Google Authenticator / Microsoft Authenticator lalu scan QR di atas.</small>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold">Kode Verifikasi</label>
+                        <input type="text" name="verificationCode" class="form-control" maxlength="8" placeholder="123456" required />
+                        <small class="text-muted">Masukkan kode yang tampil di aplikasi authenticator.</small>
+                    </div>
+                    <div class="d-flex justify-content-between mt-auto">
+                        <a asp-action="Logout" class="btn btn-link link-secondary">Keluar</a>
+                        <button type="submit" class="btn btn-success">Aktifkan 2FA</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade @(activeTab == "email" ? "show active" : string.Empty)" id="tab-email" role="tabpanel">
+        <div class="card shadow-sm equal-card">
+            <div class="card-body d-flex flex-column">
+                @if (!emailAvailable)
+                {
+                    <div class="alert alert-warning mb-0">
+                        Email belum terverifikasi. Selesaikan verifikasi email sebelum menggunakan metode ini.
+                    </div>
+                }
+                else
+                {
+                    <h5 class="mb-1">OTP via Email</h5>
+                    <p class="text-muted">Kami akan mengirimkan kode OTP ke email terverifikasi Anda.</p>
+                    <form asp-action="EnableTwoFactorFromSetup" method="post" class="mt-3 d-flex flex-column gap-3 flex-grow-1">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="method" value="@TwoFactorMethod.Email" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <div>
+                            <label class="form-label">Email Tujuan</label>
+                            <input type="text" class="form-control" value="@(Model.Email ?? "-")" readonly />
+                                    <div class="d-flex align-items-center gap-2 mt-2">
+                                        <button type="button"
+                                                class="btn btn-outline-primary"
+                                                data-send-setup-code
+                                                data-method="email"
+                                                data-status-target="#emailSetupStatus"
+                                                data-label="Kirim kode"
+                                                data-cooldown-button
+                                                data-cooldown-seconds="@((emailAvailable ? emailSetupCooldown : 0))">
+                                            Kirim kode
+                                        </button>
+                                        <div class="small" id="emailSetupStatus"></div>
+                                    </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Kode OTP</label>
+                            <input type="hidden" name="verificationCode" data-otp-hidden="TwoFactor.Email" />
+                            <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactor.Email">
+                                @for (var i = 0; i < 6; i++)
+                                {
+                                    <input type="text" inputmode="numeric" maxlength="1" class="form-control text-center otp-input" data-otp-input autocomplete="one-time-code" />
+                                }
+                            </div>
+                            <small class="text-muted">Masukkan kode 6 digit dari email Anda.</small>
+                        </div>
+                        <div class="d-flex justify-content-between mt-auto">
+                            <a asp-action="Logout" class="btn btn-link link-secondary">Keluar</a>
+                            <button type="submit" class="btn btn-success">Aktifkan 2FA Email</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade @(activeTab == "sms" ? "show active" : string.Empty)" id="tab-sms" role="tabpanel">
+        <div class="card shadow-sm equal-card">
+            <div class="card-body d-flex flex-column">
+                @if (!smsAvailable)
+                {
+                    <div class="alert alert-warning mb-0">
+                        Nomor HP belum terverifikasi. Selesaikan verifikasi nomor dahulu sebelum menggunakan metode ini.
+                    </div>
+                }
+                else
+                {
+                    <h5 class="mb-1">OTP via SMS</h5>
+                    <p class="text-muted">Kami kirimkan OTP ke nomor HP Anda.</p>
+                    <form asp-action="EnableTwoFactorFromSetup" method="post" class="mt-3 d-flex flex-column gap-3 flex-grow-1">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="method" value="@TwoFactorMethod.Sms" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <div>
+                            <label class="form-label">Nomor Tujuan</label>
+                            <input type="text" class="form-control" value="@(Model.PhoneNumber ?? "-")" readonly />
+                                    <div class="d-flex align-items-center gap-2 mt-2">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                data-send-setup-code
+                                                data-method="sms"
+                                                data-status-target="#smsSetupStatus"
+                                                data-label="Kirim kode"
+                                                data-cooldown-button
+                                                data-cooldown-seconds="@((smsAvailable ? smsSetupCooldown : 0))">
+                                            Kirim kode
+                                        </button>
+                                        <div class="small" id="smsSetupStatus"></div>
+                                    </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Kode OTP</label>
+                            <input type="hidden" name="verificationCode" data-otp-hidden="TwoFactor.Sms" />
+                            <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactor.Sms">
+                                @for (var i = 0; i < 6; i++)
+                                {
+                                    <input type="text" inputmode="numeric" maxlength="1" class="form-control text-center otp-input" data-otp-input autocomplete="one-time-code" />
+                                }
+                            </div>
+                            <small class="text-muted">Masukkan kode 6 digit dari SMS.</small>
+                        </div>
+                        <div class="d-flex justify-content-between mt-auto">
+                            <a asp-action="Logout" class="btn btn-link link-secondary">Keluar</a>
+                            <button type="submit" class="btn btn-success">Aktifkan 2FA SMS</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const sendUrl = '@Url.Action("SendTwoFactorSetupCode")';
+            const DEFAULT_COOLDOWN = 60;
+
+            function startCooldown(button, seconds, statusSelector, baseMessage) {
+                if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
+                    return;
+
+                button.dataset.cooldownActive = '1';
+                const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
+                let remaining = seconds;
+                button.disabled = true;
+                const baseText = baseMessage ? `${baseMessage} ` : '';
+
+                const updateStatus = () => {
+                    if (statusEl) {
+                        statusEl.textContent = `${baseText}Tunggu ${remaining} detik sebelum mengirim ulang.`;
+                        statusEl.classList.remove('text-success', 'text-danger');
+                        statusEl.classList.add('text-warning');
+                    }
+                };
+
+                updateStatus();
+
+                const intervalId = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(intervalId);
+                        button.disabled = false;
+                        button.dataset.cooldownActive = '';
+                        if (statusEl) {
+                            statusEl.textContent = baseMessage ?? '';
+                            if (!baseMessage)
+                                statusEl.classList.remove('text-warning');
+                        }
+                    } else {
+                        updateStatus();
+                    }
+                }, 1000);
+            }
+
+            function initCooldownButtons() {
+                document.querySelectorAll('[data-cooldown-button]').forEach(button => {
+                    const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
+                    if (seconds > 0) {
+                        startCooldown(button, seconds, button.dataset.statusTarget, null);
+                    }
+                });
+            }
+
+            function initOtpInputs() {
+                document.querySelectorAll('[data-otp-container]').forEach(container => {
+                    const target = container.dataset.otpContainer;
+                    if (!target) return;
+                    const hidden = document.querySelector(`input[data-otp-hidden="${target}"]`);
+                    if (!hidden) return;
+                    const inputs = Array.from(container.querySelectorAll('input[data-otp-input]'));
+                    if (!inputs.length) return;
+
+                    const sync = () => hidden.value = inputs.map(i => i.value ?? '').join('');
+                    const syncFromHidden = () => {
+                        const value = (hidden.value || '').split('');
+                        inputs.forEach((input, index) => input.value = value[index] ?? '');
+                    };
+
+                    inputs.forEach((input, idx) => {
+                        input.addEventListener('focus', () => input.select());
+                        input.addEventListener('keydown', event => {
+                            if (event.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
+                            if (event.key === 'ArrowLeft' && idx > 0) { event.preventDefault(); inputs[idx - 1].focus(); }
+                            if (event.key === 'ArrowRight' && idx < inputs.length - 1) { event.preventDefault(); inputs[idx + 1].focus(); }
+                        });
+                        input.addEventListener('input', event => {
+                            const value = event.target.value.replace(/[^0-9]/g, '');
+                            event.target.value = value.slice(-1);
+                            sync();
+                            if (value.length && idx < inputs.length - 1) inputs[idx + 1].focus();
+                        });
+                        input.addEventListener('paste', event => {
+                            event.preventDefault();
+                            const pasted = (event.clipboardData?.getData('text') ?? '').replace(/[^0-9]/g, '');
+                            inputs.forEach((inp, index) => inp.value = pasted[index] ?? '');
+                            sync();
+                        });
+                    });
+
+                    syncFromHidden();
+                });
+            }
+
+            async function sendSetupCode(button, method) {
+                const form = button.closest('form');
+                if (!form) return;
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const statusEl = button.dataset.statusTarget ? document.querySelector(button.dataset.statusTarget) : null;
+                const original = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengirim...`;
+                if (statusEl) {
+                    statusEl.textContent = '';
+                    statusEl.classList.remove('text-success', 'text-danger');
+                }
+                let cooldownData = null;
+
+                try {
+                    const body = new URLSearchParams();
+                    body.append('method', method);
+                    const response = await fetch(sendUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': token ?? ''
+                        },
+                        body: body.toString()
+                    });
+                    const data = await response.json();
+                    if (response.ok && data?.success) {
+                        if (statusEl) {
+                            statusEl.textContent = data.message ?? 'Kode dikirim.';
+                            statusEl.classList.add('text-success');
+                        }
+                        if (data.devCode) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Kode dikirim',
+                                html: `<div class="fw-bold fs-4">${data.devCode}</div><small class="text-muted d-block mt-2">Dev mode.</small>`
+                            });
+                        } else {
+                            Swal.fire({ icon: 'success', title: 'Kode dikirim', text: data.message ?? 'Silakan cek email/SMS.' });
+                        }
+                        cooldownData = { seconds: data.cooldown ?? DEFAULT_COOLDOWN, message: data.message ?? 'Kode dikirim.' };
+                    } else {
+                        const message = data?.message ?? 'Gagal mengirim kode.';
+                        if (statusEl) {
+                            statusEl.textContent = message;
+                            statusEl.classList.add('text-danger');
+                        }
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: message });
+                        if (data?.remaining) {
+                            cooldownData = { seconds: data.remaining, message };
+                        }
+                    }
+                } catch {
+                    if (statusEl) {
+                        statusEl.textContent = 'Terjadi kesalahan jaringan.';
+                        statusEl.classList.add('text-danger');
+                    }
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan jaringan.' });
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = original;
+                    if (cooldownData && cooldownData.seconds > 0) {
+                        startCooldown(button, cooldownData.seconds, button.dataset.statusTarget, cooldownData.message);
+                    }
+                }
+            }
+
+            document.querySelectorAll('[data-send-setup-code]').forEach(button => {
+                const method = button.dataset.method;
+                button.addEventListener('click', () => sendSetupCode(button, method));
+            });
+
+            initOtpInputs();
+            initCooldownButtons();
+        })();
+    </script>
+}
