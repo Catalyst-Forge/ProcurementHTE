@@ -1,202 +1,149 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="id">
-<head>
+  <head>
     <meta charset="utf-8" />
     <title>Owner Estimate - WO {{ProcNum}}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
     <style>
-        body {
-            margin: 20px 25px;
-            font-family: "Segoe UI", Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
-        }
+      body {
+        margin: 20px 25px;
+        font-family: "Calibri", Arial, Helvetica, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+      }
 
-        h1, h2, h3, h4, h5 {
-            margin: 0;
-            padding: 0;
-        }
+      th,
+      td {
+        padding: 0 0.5rem !important;
+      }
 
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .fw-bold {
-            font-weight: 600;
-        }
-
-        .small {
-            font-size: 10px;
-        }
-
-        .mt-1 {
-            margin-top: 4px;
-        }
-
-        .mt-2 {
-            margin-top: 8px;
-        }
-
-        .mt-3 {
-            margin-top: 12px;
-        }
-
-        .mt-4 {
-            margin-top: 16px;
-        }
-
-        .mb-1 {
-            margin-bottom: 4px;
-        }
-
-        .mb-2 {
-            margin-bottom: 8px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            vertical-align: top;
-            padding: 4px 6px;
-        }
-
-        .bordered th,
-        .bordered td {
-            border: 1px solid #000;
-        }
-
-        .header-line {
-            border-bottom: 2px solid #000;
-            padding-bottom: 4px;
-            margin-bottom: 8px;
-        }
-
-        .footer {
-            margin-top: 20px;
-            font-size: 9px;
-            color: #666;
-        }
-
-        .sign-table td {
-            text-align: center;
-            font-size: 10px;
-        }
-
-        .sign-name {
-            margin-top: 40px;
-            font-weight: 600;
-            text-decoration: underline;
-        }
-
-        .sign-role {
-            margin-top: 2px;
-        }
+      @page {
+        size: A4;
+        margin: 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <header class="text-center py-3 border border-black border-bottom-0">
+      <h2 class="fw-bold h6">OWNER ESTIMATE</h2>
+    </header>
 
-    <div class="header-line text-center">
-        <h2 class="fw-bold">OWNER ESTIMATE</h2>
-        <div class="small mt-1">Work Order: <strong>{{ProcNum}}</strong></div>
-        <div class="small mt-1">{{Description}}</div>
+    <div class="row g-0 pe-3 border border-black border-bottom-0" style="padding-left: 2.5rem">
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">OE No.</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">{{ OeNumber }}</div>
+      </div>
+
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Proyek</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ JobTypeName }}</div>
+      </div>
+
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Dari</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">Transport & Logistics Manager</div>
+      </div>
+
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Tanggal</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ StartDate }}</div>
+      </div>
+
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Kepada</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">SCM Manager</div>
+      </div>
+
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Lokasi</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ ProjectRegion }}</div>
+      </div>
+
+      <div class="col-8 mb-1"></div>
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Pengiriman Tgl. diperlukan</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ EndDate }}</div>
+      </div>
+
+      <div class="col-8 row g-0 mb-1">Harap melaksanakan pekerjaan sebagai berikut:</div>
+      <div class="col-4 mb-1"></div>
+
+      <div class="col-12">
+        <p>{{ JobName }}</p>
+      </div>
     </div>
 
-    <table>
-        <tr>
-            <td style="width:18%;">OE No.</td>
-            <td style="width:2%;">:</td>
-            <td>OE-001/HTE/{{CurrentYear}}</td>
-            <td style="width:18%;">Tanggal</td>
-            <td style="width:2%;">:</td>
-            <td>{{CurrentDate}}</td>
+    <table class="table table-bordered border-black mb-0">
+      <thead>
+        <tr class="text-center">
+          <th style="width: 5%">No</th>
+          <th style="width: 45%">Item</th>
+          <th style="width: 10%">Qty</th>
+          <th style="width: 10%">Satuan</th>
+          <th style="width: 15%">Harga</th>
+          <th style="width: 15%">Harga Total</th>
         </tr>
+      </thead>
+
+      <tbody>
+        {{ PnlItemsTable }}
+      </tbody>
+
+      <tfoot>
         <tr>
-            <td>Proyek</td>
-            <td>:</td>
-            <td colspan="4">{{Description}}</td>
+          <td colspan="5" class="text-center fw-bold">TOTAL</td>
+          <td class="text-end fw-bold">{{ TotalRevenue }}</td>
         </tr>
-        <tr>
-            <td>Kepada</td>
-            <td>:</td>
-            <td>Bagian Pengadaan</td>
-            <td>Lokasi</td>
-            <td>:</td>
-            <td>Workshop Sunter PDSI</td>
-        </tr>
-        <tr>
-            <td>Tgl diperlukan</td>
-            <td>:</td>
-            <td>{{DateRequired}}</td>
-            <td>Requester</td>
-            <td>:</td>
-            <td>{{Requester}}</td>
-        </tr>
+      </tfoot>
     </table>
 
-    <div class="mt-3 mb-1 fw-bold">Rincian Owner Estimate</div>
-    <table class="bordered">
-        <thead>
-            <tr>
-                <th style="width:5%;">No</th>
-                <th style="width:45%;">Uraian</th>
-                <th style="width:10%;">Qty</th>
-                <th style="width:10%;">Satuan</th>
-                <th style="width:15%;" class="text-right">Harga</th>
-                <th style="width:15%;" class="text-right">Jumlah</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="text-center">1</td>
-                <td>Pengangkutan sesuai Work Order {{ProcNum}}</td>
-                <td class="text-center">1</td>
-                <td class="text-center">Lot</td>
-                <td class="text-right">{{Revenue}}</td>
-                <td class="text-right">{{Revenue}}</td>
-            </tr>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="5" class="text-right fw-bold">TOTAL</td>
-                <td class="text-right fw-bold">{{Revenue}}</td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div class="small mt-2">
-        Terbilang: <em>dua puluh dua juta tiga ratus ribu rupiah</em>
-        <!-- sementara static -->
+    <div class="ps-5 border border-black border-top-0">
+      Catatan: Reff Penawaran Harga {{ SelectedVendorName }} <br />
+      {{ NoLetter }}
     </div>
 
-    <div class="mt-3 small">
-        Catatan: Nilai OE di atas disusun berdasarkan estimasi biaya internal dan
-        penawaran mitra yang sejenis.
+    <div class="ps-5 border border-black border-top-0">
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Periode Pekerjaan</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">{{ StartDate }} s.d {{ EndDate }}</div>
+      </div>
     </div>
 
-    <table class="mt-4 sign-table">
-        <tr>
-            <td style="width:50%;">Diajukan oleh</td>
-            <td style="width:50%;">Disetujui oleh</td>
-        </tr>
-        <tr>
-            <td class="small">Assistant Manager HTE</td>
-            <td class="small">Manager Transport &amp; Logistic</td>
-        </tr>
-        <tr>
-            <td class="sign-name">Bagas Aulia</td>
-            <td class="sign-name">Arfinal Diputra</td>
-        </tr>
-    </table>
-
-    <div class="footer">
-        OE ini digenerate otomatis berdasarkan data Work Order dan perhitungan P&amp;L.
+    <div class="ps-5 border border-black border-top-0">
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Terbilang</div>
+        <div class="col-9"><strong>{{ RevenueTerbilang }}</strong></div>
+      </div>
     </div>
 
-</body>
+    <div class="border border-black border-top-0">&ThinSpace;</div>
+
+    <div class="border border-black border-top-0 text-center row g-0">
+      <div class="col-6">Diajukan oleh</div>
+      <div class="col-6">Disetujui oleh</div>
+    </div>
+
+    <div class="border border-black border-top-0 text-center row g-0" style="height: 7rem">
+      <div class="col-6">Assistant Manager</div>
+      <div class="col-6">Transport & Logistic Manager</div>
+    </div>
+
+    <div class="border border-black border-top-0 text-center row g-0">
+      <div class="col-6">{{ AsstManagerUserId }}</div>
+      <div class="col-6">{{ ManagerUserId }}</div>
+    </div>
+  </body>
 </html>

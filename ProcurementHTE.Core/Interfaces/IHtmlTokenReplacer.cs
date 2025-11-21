@@ -7,7 +7,8 @@ namespace ProcurementHTE.Core.Interfaces
         Task<string> ReplaceTokensAsync(
             string template,
             Procurement procurement,
-            CancellationToken ct = default
+            CancellationToken ct = default,
+            string? templateKey = null
         );
     }
 }

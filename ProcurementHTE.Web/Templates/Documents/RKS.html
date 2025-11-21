@@ -1,188 +1,900 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="id">
-<head>
-    <meta charset="utf-8" />
-    <title>Rencana Kerja &amp; Syarat-Syarat - WO {{ProcNum}}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RKS - Rencana Kerja dan Syarat-syarat</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+
     <style>
+      /* Custom CSS untuk styling yang tidak ada di Bootstrap */
+      body {
+        margin: 20px 25px;
+        font-family: "Calibri", Arial, Helvetica, sans-serif;
+        font-size: 11pt;
+        counter-reset: section;
+        line-height: 1.4;
+      }
+
+      /* Header Styling */
+      .document-header h1 {
+        font-size: 14pt;
+      }
+
+      .document-header h2 {
+        font-size: 12pt;
+      }
+
+      /* Section Counter */
+      .section {
+        counter-reset: subsection;
+        position: relative;
+      }
+
+      .section-title {
+        font-size: 11pt;
+        counter-increment: section;
+        margin-left: 0.8cm;
+      }
+
+      .section-title::before {
+        content: counter(section) ". ";
+        position: absolute;
+        left: 0;
+      }
+
+      .section-content {
+        font-size: 11pt;
+        text-align: justify;
+        margin-left: 0.8cm;
+      }
+
+      .section-content > p:first-child {
+        text-indent: 0;
+      }
+
+      /* Numbered List - Level 1 (X.Y) */
+      .numbered-list {
+        margin-left: 0.8cm;
+        list-style: none;
+        counter-reset: item;
+        padding-left: 0;
+      }
+
+      .numbered-list > li {
+        text-align: justify;
+        counter-increment: item;
+        position: relative;
+        padding-left: 1.1cm;
+      }
+
+      .numbered-list > li::before {
+        content: counter(section) "." counter(item) " ";
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+
+      /* Sub List - Level 2 (X.Y.Z) */
+      .sub-list {
+        list-style: none;
+        counter-reset: subitem;
+        padding-left: 0;
+      }
+
+      .sub-list > li {
+        counter-increment: subitem;
+        position: relative;
+        text-align: justify;
+        padding-left: 1.4cm;
+      }
+
+      .sub-list > li::before {
+        content: counter(section) "." counter(item) "." counter(subitem) ". ";
+        position: absolute;
+        left: 0;
+      }
+
+      /* Bullet List */
+      .bullet-list {
+        margin-left: 1.6cm;
+        list-style: disc;
+      }
+
+      .bullet-list li {
+        text-align: justify;
+      }
+
+      /* Table Styling */
+      .info-table td {
+        padding: 5px;
+        font-size: 11pt;
+        border: none;
+      }
+
+      /* Signature Section */
+      .signature-box {
+        width: 45%;
+      }
+
+      .signature-line {
+        margin-top: 80px;
+        border-bottom: 1px solid #000;
+      }
+
+      /* Contact Info */
+      .contact-info p {
+        font-size: 11pt;
+        margin-bottom: 5px;
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+        padding: 1.5cm;
+      }
+
+      /* Print Styles */
+      @media print {
         body {
-            margin: 20px 25px;
-            font-family: "Segoe UI", Arial, sans-serif;
-            font-size: 10.5px;
-            line-height: 1.5;
+          background: white;
         }
-
-        h1, h2, h3, h4, h5 {
-            margin: 0;
-            padding: 0;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .fw-bold {
-            font-weight: 600;
-        }
-
-        .small {
-            font-size: 10px;
-        }
-
-        .mt-1 {
-            margin-top: 4px;
-        }
-
-        .mt-2 {
-            margin-top: 8px;
-        }
-
-        .mt-3 {
-            margin-top: 12px;
-        }
-
-        .mt-4 {
-            margin-top: 16px;
-        }
-
-        .mb-1 {
-            margin-bottom: 4px;
-        }
-
-        .mb-2 {
-            margin-bottom: 8px;
-        }
-
-        p {
-            margin: 0 0 6px 0;
-            text-align: justify;
-        }
-
-        .section-title {
-            margin-top: 10px;
-            margin-bottom: 4px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .sign-table td {
-            text-align: center;
-            font-size: 10px;
-        }
-
-        .sign-name {
-            margin-top: 40px;
-            font-weight: 600;
-            text-decoration: underline;
-        }
-
-        .sign-role {
-            margin-top: 2px;
-        }
-
-        ol {
-            margin-top: 4px;
-            margin-bottom: 4px;
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="document-content">
+      <!-- Header -->
+      <div class="document-header text-center mb-4">
+        <h1 class="fw-bold text-uppercase mb-3">
+          RENCANA KERJA DAN SYARAT-SYARAT (RKS) <br />
+          PENYEDIAAN {{ JobName }}
+        </h1>
+      </div>
 
-    <div class="text-center">
-        <h2 class="fw-bold">RENCANA KERJA &amp; SYARAT-SYARAT (RKS)</h2>
-        <div class="small mt-1">PENGADAAN JASA PENGANGKUTAN</div>
-        <div class="small mt-1">Work Order: <strong>{{ProcNum}}</strong></div>
+      <!-- Section 1 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PENDAHULUAN</div>
+        <div class="section-content">
+          <p>
+            Sehubungan dengan kebutuhan operasional pemenuhan permintaan dari PT Pertamina Drilling Services Indonesia
+            (PT PDSI) dalam penyediaan Pengangkutan APD Crew RTO, Cooling Sytem & Peralatan H2S dan memperhatikan
+            keterbatasan armada Heavy Transport Equipment (HTE) yang tersedia, maka guna memenuhi ketepatan dan
+            kecepatan pelaksanaan pekerjaan, diperlukan pengadaan jasa {{ JobName }} kepada vendor yang berpengalaman,
+            memiliki sarana, dan kemampuan dalam memberikan jasa yang dimaksud.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">DEFINISI-DEFINISI</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Heavy Transport Equipment (HTE) atau Peralatan Angkutan Berat adalah seluruh alat atau kendaraan yang
+            digunakan untuk mengangkat, mengangkut, dan memindahkan barang atau perlengkapan selama proses mobilisasi
+            rig. HTE tersebut terdiri dari High Bed Trailer, Low Bed Trailer, dan Crane.
+          </li>
+
+          <li class="mb-1">
+            Mobilisasi atau moving adalah kegiatan pemindahan perangkat rig dari satu lokasi ke lokasi lainnya secara
+            aman, efisien, dan tepat waktu.
+          </li>
+
+          <li class="mb-1">
+            Lokasi Asal adalah titik atau tempat awal dimana peralatan dan/atau perangkat berada sebelum dilakukan
+            proses mobilisasi atau pemindahan ke lokasi tujuan.
+          </li>
+
+          <li class="mb-1">
+            Lokasi Tujuan adalah titik atau tempat akhir dari pekerjaan mobilisasi, yaitu lokasi di mana perangkat atau
+            peralatan akan ditempatkan dan digunakan setelah dipindahkan dari lokasi asal.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA adalah pihak pemberi pekerjaan dalam perjanjian ini, yaitu PT Patra Drilling Contractor atau
+            unit kerja terkait yang berwenang dalam pelaksanaan pekerjaan pengangkutan, mobilisasi, dan/atau penyewaan
+            peralatan.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA adalah pihak pelaksana pekerjaan berdasarkan perjanjian ini, yaitu vendor atau kontraktor yang
+            ditunjuk oleh PIHAK PERTAMA untuk melaksanakan pekerjaan pengangkutan, mobilisasi, dan/atau penyewaan
+            peralatan sesuai dengan ruang lingkup kerja yang telah ditetapkan.
+          </li>
+
+          <li class="mb-1">
+            TENAGA KERJA PIHAK KEDUA adalah individu yang dipekerjakan oleh PIHAK KEDUA, baik secara langsung maupun
+            tidak langsung, untuk mendukung pelaksanaan PEKERJAAN sebagaimana dimaksud dalam perjanjian ini.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">LINGKUP PEKERJAAN</div>
+        <div class="section-content">
+          <p>
+            Pekerjaan ini mencakup penyediaan jasa {{ JobName }}, sesuai dengan syarat-syarat yang harus dipenuhi oleh
+            PIHAK KEDUA sebagaimana dimaksud dalam Pasal 4 perjanjian ini.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">SYARAT-SYARAT YANG HARUS DIPENUHI OLEH PIHAK KEDUA</div>
+        <ol class="numbered-list">
+          <li class="mb-1">PIHAK KEDUA harus menyediakan alat berat sebagai berikut: {{ProcOffersList}}</li>
+
+          <li class="mb-1">
+            SURAT IZIN
+            <ol class="sub-list">
+              <li class="mb-1">
+                PIHAK KEDUA wajib mengurus seluruh persyaratan perizinan yang diperlukan untuk alat yang akan digunakan,
+                serta dokumen-dokumen yang dibutuhkan bagi tenaga kerja. Seluruh izin dan dokumen tersebut harus telah
+                selesai diurus dan siap digunakan sebelum pelaksanaan pekerjaan dimulai.
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">JANGKA WAKTU PELAKSANAAN</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Jangka waktu pelaksanaan pekerjaan adalah selama lima hari (5) kalender, terhitung sejak tanggal {{
+            StartDate }} sampai dengan {{ EndDate }}. Estimasi jangka waktu pelaksanaan untuk masing-masing lingkup
+            pekerjaan akan disesuaikan dengan kebutuhan di lapangan.
+          </li>
+
+          <li class="mb-1">
+            Apabila dianggap perlu, PIHAK PERTAMA berhak memperpanjang jangka waktu pelaksanaan pekerjaan berdasarkan
+            Surat Perjanjian Borongan ini untuk jangka waktu tertentu yang dihitung sejak tanggal berakhirnya
+            perjanjian, dengan penyesuaian nilai kontrak berupa penambahan biaya borongan.
+          </li>
+
+          <li class="mb-1">
+            Perpanjangan jangka waktu pelaksanaan pekerjaan dapat dilakukan melalui penandatanganan Surat Perjanjian
+            Borongan Tambahan (addendum), dengan lingkup pekerjaan, ketentuan, dan persyaratan yang sesuai dengan isi
+            Surat Perjanjian Borongan ini. PIHAK PERTAMA wajib memberitahukan kepada PIHAK KEDUA selambat-lambatnya 1
+            (satu) minggu sebelum berakhirnya jangka waktu Surat Perjanjian Borongan ini.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 6 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">HAK DAN KEWAJIBAN PIHAK PERTAMA</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            PIHAK PERTAMA berhak menolak pelaksanaan pekerjaan oleh PIHAK KEDUA apabila PIHAK KEDUA tidak memenuhi
+            syarat-syarat yang telah ditetapkan.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA berhak menolak tenaga kerja yang dianggap tidak memenuhi kualifikasi atau tidak mampu
+            melaksanakan pekerjaan dengan baik.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA berhak memperoleh penjelasan dari PIHAK KEDUA mengenai status alat yang digunakan dalam
+            pelaksanaan pekerjaan.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA berhak menolak segala biaya yang timbul akibat kesalahan PIHAK KEDUA dalam pengoperasian alat.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA berkewajiban melakukan pembayaran terhadap INVOICE yang diajukan oleh PIHAK KEDUA, sepanjang
+            INVOICE tersebut telah disetujui oleh PIHAK PERTAMA dan sesuai dengan ketentuan yang telah disepakati.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 7 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">HAK DAN KEWAJIBAN PIHAK KEDUA</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            PIHAK KEDUA berhak menagih dan/atau meminta pembayaran kepada PIHAK PERTAMA sesuai dengan harga yang telah
+            disepakati oleh kedua belah pihak.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib menyediakan alat berat sesuai dengan spesifikasi sebagaimana tercantum dalam butir 3.1 dan
+            3.2, serta sesuai dengan permintaan PIHAK PERTAMA.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA bertanggung jawab atas kerusakan atau kemusnahan peralatan/perlengkapan miliknya, serta atas
+            kecelakaan kerja yang menimpa tenaga kerja PIHAK KEDUA, sepanjang tidak disebabkan oleh kelalaian atau
+            kesalahan PIHAK PERTAMA.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA bertanggung jawab untuk membayar kerugian yang dialami PIHAK PERTAMA akibat kelalaian PIHAK
+            KEDUA, baik melalui pemotongan tagihan maupun mekanisme pembayaran atau penggantian lain yang disepakati
+            oleh Para Pihak.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib melakukan pemeliharaan terhadap seluruh peralatan yang digunakan dalam pelaksanaan
+            pekerjaan.
+          </li>
+
+          <li class="mb-1">
+            Dalam hal terjadi kerusakan peralatan milik PIHAK KEDUA yang tidak dapat diperbaiki dalam waktu 1 x 24 jam,
+            maka PIHAK KEDUA wajib mengganti peralatan tersebut dengan yang setara.
+          </li>
+
+          <li class="mb-1">
+            Dalam hal terjadi kerusakan yang diakibatkan oleh PIHAK KEDUA, maka seluruh biaya penggantian menjadi
+            tanggung jawab PIHAK KEDUA.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib menanggung seluruh biaya bahan bakar (BBM) yang digunakan selama pelaksanaan pekerjaan.
+          </li>
+
+          <li class="mb-1">
+            Tenaga kerja PIHAK KEDUA wajib mematuhi seluruh peraturan dan ketentuan yang berlaku di lokasi kerja milik
+            PIHAK PERTAMA maupun milik Klien PIHAK PERTAMA.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 8 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">DENDA/SANKSI</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            PIHAK KEDUA berkewajiban memindahkan peralatan milik PIHAK PERTAMA dari tempat asal ke lokasi pertama yang
+            telah ditentukan oleh PIHAK PERTAMA paling lambat dalam waktu 2 (dua) hari setelah penandatanganan Surat
+            Perintah Mulai Pelaksanaan (SPMP). Apabila pelaksanaan PEKERJAAN mengalami keterlambatan melewati jangka
+            waktu tersebut, maka PIHAK KEDUA dikenakan denda sebesar 1% (satu persen) per mil per hari dari nilai
+            kontrak untuk setiap hari keterlambatan, dengan maksimum denda sebesar 5% (lima persen). Dalam hal terjadi
+            kerusakan, PIHAK KEDUA wajib menanggung seluruh biaya ganti rugi.
+          </li>
+
+          <li class="mb-1">
+            Apabila PIHAK KEDUA tidak dapat atau gagal melaksanakan PEKERJAAN dengan baik dan terampil akibat sebab yang
+            berasal dari pihak atau dalam kekuasaan PIHAK KEDUA, maka PIHAK PERTAMA berhak memberikan peringatan
+            tertulis dengan menyebutkan secara rinci sebab-sebab kegagalan tersebut. Jika kegagalan tersebut menyebabkan
+            terhentinya PEKERJAAN, PIHAK KEDUA tidak berhak atas kompensasi selama masa penghentian pekerjaan. Apabila
+            dalam waktu 7 (tujuh) hari setelah penerimaan peringatan tertulis tersebut PIHAK KEDUA tidak melakukan
+            perbaikan, maka PIHAK PERTAMA berhak memutus Surat Perjanjian Borongan.
+          </li>
+
+          <li class="mb-1">
+            Denda maksimum kumulatif selama masa berlakunya KONTRAK adalah sebesar 5% (lima persen) dari nilai kontrak.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 9 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">HARGA BORONGAN</div>
+        <div class="section-content">
+          <p>
+            Harga borongan untuk pelaksanaan {{ JobTypeName }} oleh PIHAK KEDUA sebagaimana dimaksud dalam Surat
+            Perjanjian ini adalah sebesar {{ TotalRevenue }} (terbilang: {{ RevenueTerbilang }}). Harga tersebut belum
+            termasuk Pajak Pertambahan Nilai (PPN) sebesar 11%.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 10 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">TATA CARA PEMBAYARAN</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            PIHAK KEDUA wajib mengajukan tagihan (invoice) kepada PIHAK PERTAMA dengan melampirkan dokumen pendukung
+            asli sebagai dasar pembayaran atas pekerjaan yang telah dilaksanakan, sebagai berikut:
+            <ol class="sub-list">
+              <li class="mb-1">Kwitansi asli bermeterai cukup;</li>
+              <li class="mb-1">Invoice asli;</li>
+              <li class="mb-1">Faktur Pajak asli;</li>
+              <li class="mb-1">Salinan SPT Masa PPN periode sebelumnya;</li>
+              <li class="mb-1">Berita Acara (BA) sewa yang telah ditandatangani oleh kedua belah pihak;</li>
+              <li class="mb-1">Daftar hadir penggunaan alat (roll list/time sheet unit);</li>
+              <li class="mb-1">Salinan Kontrak/SPB.</li>
+            </ol>
+          </li>
+
+          <li class="mb-1">
+            Tagihan diajukan dalam dua rangkap, terdiri atas satu (1) asli dan satu (1) salinan. Tagihan tersebut
+            mencakup pembayaran atas pekerjaan yang telah dilaksanakan oleh PIHAK KEDUA dan telah dikurangi dengan denda
+            atas kekurangan peralatan dan/atau keterlambatan pelaksanaan pekerjaan (jika ada). PIHAK PERTAMA akan
+            melakukan pemeriksaan dan verifikasi terhadap tagihan, serta mengesahkan jumlah pembayaran yang layak
+            dibayarkan kepada PIHAK KEDUA.
+          </li>
+
+          <li class="mb-1">
+            Tata Cara Pembayaran<br />
+            Pembayaran kepada PIHAK KEDUA dilakukan melalui transfer bank ke rekening berikut:
+            <table class="info-table table-borderless mt-1">
+              <tr>
+                <td class="fw-bold p-0" style="width: 10rem">Bank</td>
+                <td class="p-0" style="width: 5%">:</td>
+                <td class="p-0"></td>
+              </tr>
+              <tr>
+                <td class="fw-bold p-0">Nomor Rekening</td>
+                <td class="p-0">:</td>
+                <td class="p-0"></td>
+              </tr>
+              <tr>
+                <td class="fw-bold p-0">Atas Nama</td>
+                <td class="p-0">:</td>
+                <td class="p-0"></td>
+              </tr>
+            </table>
+            <p class="mt-1 mb-0">
+              Segala biaya yang timbul dan/atau tuntutan yang berkaitan dengan proses pembayaran ini menjadi tanggungan
+              dan tanggung jawab PIHAK KEDUA sepenuhnya.
+            </p>
+          </li>
+
+          <li class="mb-1">
+            Setelah dokumen SP3 Invoice dari PIHAK PERTAMA ditandatangani oleh Manajemen PT Patra Drilling Contractor
+            (PT PDC), PIHAK PERTAMA akan mengembalikan invoice tersebut kepada PIHAK KEDUA untuk selanjutnya disampaikan
+            kembali ke loket keuangan PT PDC oleh PIHAK KEDUA.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 11 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PAJAK</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Dengan memperhatikan dan berpedoman pada peraturan perundang-undangan yang berlaku, Pajak Penghasilan (PPh),
+            apabila ada, menjadi beban dan tanggung jawab PIHAK KEDUA, serta akan dipungut dan disetor ke Kantor
+            Pelayanan Pajak oleh PIHAK PERTAMA.
+          </li>
+
+          <li class="mb-1">
+            Pajak Pertambahan Nilai (PPN) sebesar 11% (sebelas persen) yang timbul sehubungan dengan pelaksanaan Surat
+            Perjanjian ini menjadi beban PIHAK PERTAMA dan akan dibayarkan serta disetor ke Kantor Pelayanan Pajak oleh
+            PIHAK KEDUA.
+          </li>
+
+          <li class="mb-1">
+            Semua pajak dan/atau pungutan lainnya yang tidak disebutkan dalam ayat (1) dan (2) Pasal ini, namun timbul
+            sehubungan dengan pelaksanaan perjanjian ini, menjadi tanggung jawab PIHAK KEDUA sepenuhnya.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 12 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">ASURANSI</div>
+        <div class="section-content">
+          <p>
+            PIHAK KEDUA, atas biasa dan tanggungannya sendiri, wajib mengasuransikan objek sewa sebagaimana dimaksud
+            dalam Pasal 4. Selain itu, PIHAK KEDUA juga wajib menutuip polis asuransi untuk perlindungan terhadap
+            tanggung jawab kepada pihak ketiga selama masa berlaku Surat Perjanjian Borongan ini.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 13 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PEMUTUSAN SURAT PERJANJIAN BORONGAN</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Dengan mengesampingkan ketentuan Pasal 1266 dan Pasal 1267 Kitab Undang-Undang Hukup Perdata, PIHAK PERTAMA
+            berhak untuk memutuskan perjanjian ini secara sepihak, apabila:
+            <ul class="ps-3" style="list-style-type: initial">
+              <li>
+                PIHAK KEDUA tidak melaksanakan kewajibannya sebagaimana diatur dalam Pasal 8 Surat Perjanjian ini;
+              </li>
+              <li>
+                PIHAK KEDUA melakukan tindakan yang bertentangan atau tidak sesuai dengan ketentuan-ketentuan yang
+                tercantum dalam perjanjian ini;
+              </li>
+              <li>
+                PIHAK KEDUA memberikan keterangan yang tidak benar, yang merugikan atau berpotensi merugikan PIHAK
+                PERTAMA sehubungan dengan pelaksanaan perjanjian ini.
+              </li>
+            </ul>
+          </li>
+
+          <li class="mb-1">
+            Pemutusan dan/atau pembatal perjanjian sebagaimana dimaksud dalam ayat (1) cukup disampaikan secara tertulis
+            oleh PIHAK PERTAMA kepada PIHAK KEDUA tanpa memerlukan teguran atau somasi terlebih dahulu. Atas tindakan
+            tersebut, PIHAK PERTAMA dibebaskan dari segala bentuk tuntutan ganti rugi dalam bentuk apapun dari pihak
+            manapun.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 14 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">KEADAAN KAHAR</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            PIHAK PERTAMA maupun PIHAK KEDUA dibebaskan dari tanggung jawab atas kegagalan atau keterlambatan dalam
+            melaksanakan kewajiban berdasarkan Surat Perjanjian Borongan ini, apabila disebabkan oleh hal-hal di luar
+            kendali dan kemampuan wajar kedua belah pihak, serta bukan akibat kelalaian salah satu pihak. Keadaan
+            tersebut selanjutnya dalam Surat Perjanjian Borongan ini disebut sebagai Keadaan Kahar (Force Majeure).
+            Namun demikian, pembebasan tanggung jawab ini tidak berlaku terhadap kewajiban pembayaran yang telah timbul
+            sebelum terjadinya Keadaan Kahar.
+          </li>
+
+          <li class="mb-1">
+            Keadaan Kahar meliputi, namun tidak terbatas pada: kebijakan atau peraturan pemerintah, kebakaran, banjir,
+            gempa bumi, huru-hara, pemberontakan, perang, perang saudara, epidemi, kerusuhan, blokade, perselisihan
+            perburuhan, pemogokan, penutupan pabrik, dan karantina yang secara langsung memengaruhi pelaksanaan
+            pekerjaan dalam Surat Perjanjian Borongan ini.
+          </li>
+
+          <li class="mb-1">
+            Dalam hal terjadi Keadaan Kahar sebagaimana dimaksud pada ayat (1) dan (2) Pasal ini, pihak yang terdampak
+            wajib memberitahukan secara tertulis kepada pihak lainnya dalam waktu selambat-lambatnya 3 (tiga) hari
+            kalender sejak terjadinya Keadaan Kahar tersebut. Pemberitahuan tersebut harus disertai dengan penjelasan
+            mengenai sebab dan akibat Keadaan Kahar serta rencana baru penyelesaian pekerjaan.
+          </li>
+
+          <li class="mb-1">
+            Berdasarkan pemberitahuan dari PIHAK KEDUA sebagaimana dimaksud pada ayat (3), PIHAK PERTAMA akan memberikan
+            tanggapan berupa persetujuan atau penolakan secara tertulis dalam jangka waktu paling lambat 3 (tiga) hari
+            kalender.
+          </li>
+
+          <li class="mb-1">
+            Apabila Keadaan Kahar dinyatakan sah dan diterima oleh PIHAK PERTAMA, maka para pihak akan melakukan
+            negosiasi untuk menyepakati penyesuaian jadwal pelaksanaan pekerjaan, penyelesaian atas kerugian yang
+            timbul, serta kelanjutan pelaksanaan pekerjaan sesuai ketentuan dalam Surat Perjanjian Borongan ini.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 15 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PEKERJAAN TAMBAH/KURANG</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Dalam hal terjadi penambahan atau pengurangan pekerjaan selama pelaksanaan Surat Perjanjian Borongan ini,
+            maka perubahan tersebut akan dituangkan secara tertulis dalam bentuk Addendum, yang menjadi satu kesatuan
+            dan bagian yang tidak terpisahkan dari Surat Perjanjian Borongan ini.
+          </li>
+
+          <li class="mb-1">
+            Penambahan pekerjaan hanya dapat dilakukan apabila memenuhi ketentuan dan persyaratan sesuai dengan
+            peraturan perundang-undangan yang berlaku.
+          </li>
+
+          <li class="mb-1">
+            Sehubungan dengan adanya pekerjaan tambah atau kurang, nilai Jaminan Pelaksanaan (apabila ada) akan
+            disesuaikan sesuai perubahan nilai pekerjaan.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 16 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">KESEPAKATAN BERSAMA</div>
+        <div class="section-content">
+          <p>
+            Setiap kesepakatan antara PIHAK PERTAMA dan PIHAK KEDUA, maupun antara wakil dari masing-masing pihak,
+            termasuk kesepakatan yang telah dicapai sebelum penandatanganan Surat Perjanjian Borongan ini, hanya
+            dianggap sah dan mengikat apabila dicantumkan secara tertulis dalam ketentuan-ketentuan Surat Perjanjian
+            Borongan ini atau dituangkan dalam suatu Addendum yang ditandatangani oleh kedua belah pihak. Addendum
+            tersebut menjadi bagian yang tidak terpisahkan dari Surat Perjanjian Borongan ini.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 17 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">SUB-KONTRAK</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            PIHAK KEDUA dilarang mengalihkan, baik sebagian maupun seluruh PEKERJAAN, kepada pihak lain tanpa
+            persetujuan tertulis dari PIHAK PERTAMA. Dalam hal PIHAK PERTAMA memberikan persetujuan atas pelaksanaan
+            subkontrak, PIHAK KEDUA tetap bertanggung jawab penuh atas seluruh kewajiban, jaminan, serta tuntutan yang
+            timbul berdasarkan Surat Perjanjian Borongan ini.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib mengawasi seluruh subkontraktor yang ditunjuk serta menyimpan catatan lengkap mengenai
+            pelaksanaan PEKERJAAN dan biaya yang dikeluarkan oleh subkontraktor. Apabila diminta oleh PIHAK PERTAMA,
+            PIHAK KEDUA wajib menyerahkan catatan-catatan tersebut.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA berkewajiban bekerja sama dengan rekanan atau pemborong dari golongan ekonomi lemah setempat,
+            baik sebagai subkontraktor maupun sebagai pemasok barang/bahan dan jasa.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 18 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PERSYARATAN HEALTH SAFETY SECURITY ENVIRONMENT (HSSE)</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Selama proses operasi dan mobilisasi kendaraan angkutan berat serta crane, pengemudi wajib dilengkapi dengan
+            dokumen perizinan yang masih berlaku, serta perlengkapan sesuai ketentuan peraturan lalu lintas jalan raya.
+            Pengemudi juga harus menggunakan perlengkapan keselamatan kerja yang sesuai standar operasi pengeboran.
+            Bukti surat tilang tidak dapat dijadikan dasar sahnya dokumen kendaraan.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib mengasuransikan kendaraan dengan polis asuransi All Risk dan melengkapi setiap unit
+            kendaraan dengan perlengkapan keselamatan dan operasional, antara lain:
+            <ol class="sub-list">
+              <li>
+                Kendaraan
+
+                <ul class="ps-3" style="list-style-type: initial">
+                  <li>Ban Serep, dongkrak, kunci ban</li>
+                  <li>Segitiga pengaman, P3K, APAR</li>
+                  <li>Ember, senter, rotary lamp</li>
+                  <li>Jas hujan, payung</li>
+                  <li>Rantai pengikat (Ø 1/2", 6 meter) min. 4 buah</li>
+                  <li>Patok Pengaman (pipa besi Ø 2,5 in, tinggi ≥ 75 cm)</li>
+                  <li>Load binder Ø 1/2" min. 4 buah</li>
+                  <li>Safety belt untuk pengemudi dan penumpang</li>
+                </ul>
+              </li>
+
+              <li>
+                Tenaga kerja (Pengemudi, Kernet, Helper, Rigger, Operator)
+
+                <ul class="ps-3" style="list-style-type: initial">
+                  <li>Helm keselamatan, sepatu keselamatan, sarung tangan</li>
+                  <li>Kacamata pelindung, coverall, rompi, Scotch Light (untuk Rigger)</li>
+                </ul>
+              </li>
+
+              <li>
+                Alat berat
+
+                <ul class="ps-3" style="list-style-type: initial">
+                  <li>Wire rope sling (SWL 4, 7, 10 ton) bersertifikat, min. 4 pcs/ukuran</li>
+                  <li>Shackle (SWL 4, 6, 9 ton) bersertifikat, min. 4 pcs/ukuran</li>
+                  <li>Tag line, webbing sling (3 & 5 ton) min. 2 pcs</li>
+                  <li>Peralatan P3K, APAR, dongkrak, dan alat mekanik</li>
+                  <li>Anti two block, safety clip, alarm stopper boom</li>
+                  <li>Reverse move alarm, load indicator terkalibrasi</li>
+                  <li>Lampu, rotary lamp, alarm load limit berfungsi normal</li>
+                  <li>Load chart sesuai pabrikan terpasang di kabin</li>
+                  <li>Memenuhi standar internasional ASME 30.5 (2004)</li>
+                </ul>
+              </li>
+            </ol>
+          </li>
+
+          <li class="mb-1">
+            Setiap pesawat angkat wajib memiliki sertifikat MIGAS yang berlaku minimal 6 (enam) bulan sejak tanggal
+            pelaksanaan pekerjaan. Bila akan habis masa berlaku, PIHAK KEDUA wajib mengganti unit tersebut dengan unit
+            setara yang telah tersertifikasi.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA akan melakukan kegiatan Pre Job Activity dan pra-mobilisasi di lokasi PIHAK KEDUA sebelum
+            pekerjaan dimulai.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib mengikuti Tailgate Meeting dan Pre Job Safety Meeting di lokasi kerja bersama PIHAK
+            PERTAMA.
+          </li>
+
+          <li class="mb-1">Operator pesawat angkat harus memiliki sertifikat MIGAS sesuai kompetensi yang berlaku.</li>
+
+          <li class="mb-1">
+            Setiap unit crane wajib dilengkapi dengan satu orang Rigger bersertifikat MIGAS dan telah mengikuti
+            pelatihan Lifting & Rigging (dibuktikan dengan sertifikat).
+          </li>
+
+          <li class="mb-1">
+            Untuk kebutuhan operasional 24 jam, PIHAK KEDUA wajib menyediakan operator crane dan Rigger secara shift.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib menyediakan masing-masing satu pengawas lapangan (Truck Pusher) di lokasi lama dan baru
+            untuk mengoordinasikan proses moving/mobilisasi dan berkoordinasi dengan PIHAK PERTAMA.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib mengutamakan keselamatan, kesehatan kerja, dan perlindungan lingkungan dalam pelaksanaan
+            pekerjaan.
+          </li>
+
+          <li class="mb-1">
+            Tenaga kerja PIHAK KEDUA wajib sehat secara fisik (dibuktikan dengan hasil medical check-up maksimal 1 tahun
+            terakhir) dan berusia maksimal 55 tahun.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib menjaga lingkungan dari tumpahan minyak atau bahan kimia berbahaya, serta memastikan
+            kebersihan area kerja.
+          </li>
+
+          <li class="mb-1">
+            Pelaksanaan pekerjaan wajib mengacu pada ketentuan K3 dan lingkungan hidup dari pemerintah dan PIHAK
+            PERTAMA, termasuk:
+            <ul class="ps-3" style="list-style-type: initial">
+              <li>UU No. 22/2009 tentang Lalu Lintas</li>
+              <li>UU No. 32/2009 tentang Lingkungan Hidup</li>
+              <li>UU No. 1/1970 tentang Keselamatan Kerja</li>
+            </ul>
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib mematuhi seluruh ketentuan keselamatan kerja yang berlaku di lingkungan kerja PIHAK
+            PERTAMA.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib memahami dan mematuhi SOP serta sistem perizinan kerja (Work Permit) dari PIHAK PERTAMA.
+          </li>
+
+          <li class="mb-1">
+            Segala akibat yang timbul akibat kecelakaan menjadi tanggung jawab penuh PIHAK KEDUA. PIHAK KEDUA wajib
+            segera melaporkan setiap insiden sesuai prosedur PIHAK PERTAMA dan menanggung segala konsekuensi yang
+            timbul.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib menyediakan APD yang sesuai standar HSE PIHAK PERTAMA dan melakukan pengecekan berkala
+            terhadap kelayakan APD tersebut. 18.18 PIHAK PERTAMA c.q. Direktur Utama dapat menjatuhkan sanksi atau
+            pemutusan kontrak kepada PIHAK KEDUA berdasarkan pelanggaran terhadap ketentuan kontrak, termasuk tindakan
+            tidak etis, kriminal, atau pelanggaran HSE.
+          </li>
+
+          <li class="mb-1">
+            PIHAK PERTAMA c.q. Direktur Utama dapat menjatuhkan sanksi atau pemutusan kontrak kepada PIHAK KEDUA
+            berdasarkan pelanggaran terhadap ketentuan kontrak, termasuk tindakan tidak etis, kriminal, atau pelanggaran
+            HSE.
+          </li>
+
+          <li class="mb-1">
+            PIHAK KEDUA wajib memenuhi ketentuan Contractor Safety Management System (CSMS) PIHAK PERTAMA.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 19 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PEMBERITAHUAN DALAM PELAKSANAAN SURAT PERJANJIAN BORONGAN</div>
+        <div class="section-content">
+          <p>
+            Setiap dan segala bentuk pemberitahuan, instruksi, petunjuk, kesepakatan, serta persyaratan atau kehendak
+            lainnya yang berkaitan dengan pelaksanaan Surat Perjanjian Borongan ini hanya dianggap sah apabila
+            disampaikan secara tertulis dalam Bahasa Indonesia dan dikirimkan oleh salah satu pihak kepada pihak lainnya
+            melalui surat ke alamat yang telah disepakati bersama, sebagai berikut:
+          </p>
+          <p class="fw-bold mb-0">PIHAK PERTAMA</p>
+          <table class="info-table table-borderless mb-3">
+            <tr>
+              <td class="p-0" style="width: 10rem">Nama Perusahaan</td>
+              <td class="p-0" style="width: 5%">:</td>
+              <td class="p-0">PT Patra Drilling Contractor</td>
+            </tr>
+            <tr>
+              <td class="p-0">Alamat</td>
+              <td class="p-0">:</td>
+              <td class="p-0">Jalan Matraman Raya No. 87, Palmeriam, Jakarta Timur, 13140</td>
+            </tr>
+            <tr>
+              <td class="p-0 align-top">Telepon</td>
+              <td class="p-0 align-top">:</td>
+              <td class="p-0 align-top">(021) 22346817</td>
+            </tr>
+          </table>
+          <p class="fw-bold mb-0">PIHAK KEDUA</p>
+          <table class="info-table table-borderless mb-3">
+            <tr>
+              <td class="p-0" style="width: 10rem">Nama Perusahaan</td>
+              <td class="p-0" style="width: 5%">:</td>
+              <td class="p-0"></td>
+            </tr>
+            <tr>
+              <td class="p-0">Alamat</td>
+              <td class="p-0">:</td>
+              <td class="p-0"></td>
+            </tr>
+            <tr>
+              <td class="p-0 align-top">Telepon</td>
+              <td class="p-0 align-top">:</td>
+              <td class="p-0 align-top"></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 20 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PENYELESAIAN PERSELISIHAN</div>
+        <ol class="numbered-list">
+          <li class="mb-1">
+            Apabila dalam pelaksanaan Surat Perjanjian Borongan ini timbul perselisihan atau perbedaan pendapat, maka
+            pada prinsipnya kedua belah pihak sepakat untuk menyelesaikannya terlebih dahulu melalui musyawarah untuk
+            mencapai mufakat.
+          </li>
+
+          <li class="mb-1">
+            Apabila upaya penyelesaian secara musyawarah tidak membuahkan hasil dalam jangka waktu yang wajar, maka
+            perselisihan atau perbedaan pendapat tersebut akan diselesaikan melalui jalur hukum pada Pengadilan Negeri
+            Jakarta Pusat.
+          </li>
+        </ol>
+      </div>
+
+      <!-- Section 21 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">DOMISILI</div>
+        <div class="section-content">
+          <p>
+            Para Pihak sepakat untuk menetapkan domisili hukum yang tetap dan tidak berubah di Kantor Kepaniteraan
+            Pengadilan Negeri Jakarta Pusat.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 22 -->
+      <div class="section mb-3">
+        <div class="section-title fw-bold">PENGAWAS PELAKSANAAN PEKERJAAN</div>
+        <div class="section-content">
+          <p>Pengawas pelaksanaan PEKERJAAN dari PIHAK PERTAMA yang ditunjuk adalah sebagai berikut:</p>
+          <table class="info-table table-borderless mt-2">
+            <tr>
+              <td class="p-0" width="40%">Direksi Pekerjaan</td>
+              <td class="p-0" width="5%">:</td>
+              <td class="p-0">Transport & Logistic Manager</td>
+            </tr>
+            <tr>
+              <td class="p-0">Pengawas Pekerjaan</td>
+              <td class="p-0">:</td>
+              <td class="p-0">Assistant Manager</td>
+            </tr>
+            <tr>
+              <td class="p-0 align-top">Pengawas Lapangan</td>
+              <td class="p-0 align-top">:</td>
+              <td class="p-0 align-top">Analyst HTE & LTS<br />Project Leader</td>
+            </tr>
+          </table>
+          <p class="mt-2">
+            Pengawas dari PIHAK PERTAMA dapat dihubungi sewaktu-waktu oleh PIHAK KEDUA untuk keperluan konsultasi maupun
+            penyampaian laporan. PIHAK KEDUA beserta seluruh karyawannya wajib mematuhi setiap petunjuk dan instruksi
+            yang diberikan oleh Pengawas dari PIHAK PERTAMA.
+          </p>
+        </div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="d-flex justify-content-between mt-5 ms-4 ps-1">
+        <div class="signature-box">
+          <p class="invisible mb-1">&</p>
+          <p>
+            Dibuat oleh, <br />
+            Assistant Manager <br /><br /><br /><br /><br /><br />
+            Edo Pradipta
+          </p>
+        </div>
+        <div class="signature-box">
+          <p class="mb-1">Jakarta, {{ StartDate }}</p>
+          <p>
+            Disetujui oleh, <br />
+            Transport & Logistic Manager
+            <br /><br /><br /><br /><br /><br />
+            Arfinal Diputra
+          </p>
+        </div>
+      </div>
     </div>
-
-    <div class="section-title">I. Pendahuluan</div>
-    <p>
-        Rencana Kerja dan Syarat-Syarat (RKS) ini disusun sebagai acuan pelaksanaan
-        pekerjaan pengangkutan sehubungan dengan Work Order
-        <strong>{{ProcNum}}</strong>
-        dengan judul pekerjaan:
-        <strong>{{Description}}</strong>.
-    </p>
-
-    <div class="section-title">II. Lingkup Pekerjaan</div>
-    <p>
-        Lingkup pekerjaan meliputi penyediaan sarana angkutan beserta awak, termasuk
-        bahan bakar dan biaya penunjang lainnya, untuk kegiatan pengangkutan dari
-        lokasi awal hingga lokasi tujuan sebagaimana tercantum dalam Work Order.
-    </p>
-    <ol>
-        <li>Penyediaan unit kendaraan beserta sopir.</li>
-        <li>Pengaturan jadwal dan rute perjalanan.</li>
-        <li>Kepatuhan terhadap ketentuan HSSE yang berlaku.</li>
-    </ol>
-
-    <div class="section-title">III. Periode Pelaksanaan</div>
-    <p>
-        Pekerjaan dilaksanakan dalam jangka waktu <strong>5 (lima) hari kalender</strong>
-        terhitung sejak tanggal ditetapkan dalam Work Order. Untuk keperluan uji coba
-        sistem, periode ini ditetapkan secara statis:
-        <strong>01 Juli 2025 s.d 05 Juli 2025</strong>.
-    </p>
-
-    <div class="section-title">IV. Nilai Kontrak</div>
-    <p>
-        Nilai kontrak pekerjaan ini adalah sebesar:
-        <strong>{{SelectedVendorFinalOffer}}</strong>
-        (dua puluh dua juta tiga ratus ribu rupiah), yang merupakan nilai
-        penawaran final dari mitra:
-        <strong>{{SelectedVendorName}}</strong>.
-    </p>
-
-    <div class="section-title">V. Ketentuan Umum</div>
-    <p>
-        Ketentuan umum berikut disusun secara ringkas untuk keperluan template:
-    </p>
-    <ol>
-        <li>
-            Pihak kedua wajib melaksanakan pekerjaan sesuai ketentuan HSSE dan standar
-            operasi yang berlaku di lingkungan PDC.
-        </li>
-        <li>
-            Setiap keterlambatan yang disebabkan kelalaian pihak kedua dapat dikenakan
-            denda sesuai ketentuan kontrak.
-        </li>
-        <li>
-            Semua pajak dan biaya lain yang timbul akibat pelaksanaan pekerjaan ini
-            ditanggung sesuai kesepakatan dalam kontrak.
-        </li>
-    </ol>
-
-    <div class="section-title">VI. Penutup</div>
-    <p>
-        Dengan ditandatanganinya RKS ini, para pihak menyatakan telah membaca,
-        memahami, dan menyetujui seluruh isi dokumen sebagai bagian yang tidak terpisahkan
-        dari kontrak pengadaan jasa pengangkutan.
-    </p>
-
-    <div class="mt-3 text-right small">
-        Jakarta, {{CurrentDate}}
-    </div>
-
-    <table class="mt-3 sign-table">
-        <tr>
-            <td style="width:50%;">PIHAK PERTAMA</td>
-            <td style="width:50%;">PIHAK KEDUA</td>
-        </tr>
-        <tr>
-            <td class="small">PT PDC (Persero)</td>
-            <td class="small">{{SelectedVendorName}}</td>
-        </tr>
-        <tr>
-            <td class="sign-name">Arfinal Diputra</td>
-            <td class="sign-name">Nama Direktur Mitra</td>
-        </tr>
-        <tr>
-            <td class="sign-role small">Manager Transport &amp; Logistic</td>
-            <td class="sign-role small">Direktur</td>
-        </tr>
-    </table>
-
-</body>
+  </body>
 </html>

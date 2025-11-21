@@ -36,18 +36,8 @@ namespace ProcurementHTE.Core.Services
             CancellationToken ct = default
         )
         {
-            _logger.LogInformation(
-                "Generating Profit & Loss (Playwright) for Procurement: {ProcNum}",
-                procurement.ProcNum
-            );
+            return await GenerateByTemplateAsync("ProfitLoss", "Profit & Loss", procurement, ct);
 
-            var template = await _templateProvider.GetTemplateAsync("ProfitLoss", ct);
-            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct);
-            var pdf = await HtmlToPdfAsync(html, "Profit & Loss", ct);
-
-            _logger.LogInformation("PDF P&L generated, size={Size} bytes", pdf.Length);
-
-            return pdf;
         }
 
         public async Task<byte[]> GenerateMemorandumAsync(
@@ -221,7 +211,7 @@ namespace ProcurementHTE.Core.Services
         )
         {
             var template = await _templateProvider.GetTemplateAsync(templateKey, ct);
-            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct);
+            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct, templateKey);
 
             return await HtmlToPdfAsync(html, title, ct);
         }
@@ -245,7 +235,7 @@ namespace ProcurementHTE.Core.Services
                 {
                     Format = "A4",
                     PrintBackground = true,
-                    DisplayHeaderFooter = true,
+                    DisplayHeaderFooter = false,
                     Margin = new()
                     {
                         Top = "12mm",
