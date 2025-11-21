@@ -14,9 +14,15 @@ namespace ProcurementHTE.Core.Interfaces
         Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year);
 
         // Transaction DB
-        Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId);
-        Task StoreProfitLossAsync(ProfitLoss profitLoss);
-        Task RemoveSelectedVendorsAsync(string woId);
-        Task UpdateProfitLossAsync(ProfitLoss profitLoss);
+        Task StoreProfitLossAggregateAsync(
+            ProfitLoss profitLoss,
+            IEnumerable<string> selectedVendorIds,
+            IEnumerable<VendorOffer> vendorOffers
+        );
+        Task UpdateProfitLossAggregateAsync(
+            ProfitLoss profitLoss,
+            IEnumerable<string> selectedVendorIds,
+            IEnumerable<VendorOffer> vendorOffers
+        );
     }
 }

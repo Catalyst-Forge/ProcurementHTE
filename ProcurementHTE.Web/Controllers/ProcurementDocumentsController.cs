@@ -411,6 +411,7 @@ public class ProcurementDocumentsController : Controller
                 "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(procurementEntity),
                 "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(procurementEntity),
                 "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurementEntity),
+                "Profit & Loss" => await _docGenerator.GenerateProfitLossAsync(procurementEntity),
                 _ => throw new NotImplementedException(
                     $"Template untuk '{docType.Name}' belum tersedia"
                 ),

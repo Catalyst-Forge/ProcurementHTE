@@ -26,10 +26,21 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal OperatorCost { get; set; }
     }
 
+    public class VendorItemOffersDto
+    {
+        [Required, StringLength(450)]
+        public string VendorId { get; set; } = null!;
+
+        [MinLength(1)]
+        public List<VendorOfferPerItemDto> Items { get; set; } = [];
+    }
+
     public class VendorOfferPerItemDto
     {
         [Required, StringLength(450)]
         public string VendorId { get; set; } = null!;
+
+        public int Round { get; set; }
 
         [Required, StringLength(450)]
         public string ProcOfferId { get; set; } = null!;
@@ -39,6 +50,9 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         [MinLength(0)]
         public List<string> Letters { get; set; } = [];
+
+        public int Quantity { get; set; }
+        public int Trip { get; set; }
     }
 
     public class ProfitLossInputDto
@@ -54,9 +68,8 @@ namespace ProcurementHTE.Core.Models.DTOs
             ErrorMessage = "The field {0} must be a valid non-negative amount.")]
         public decimal? RealizationAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative distance.")]
-        public decimal? Distance { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -64,15 +77,6 @@ namespace ProcurementHTE.Core.Models.DTOs
         public List<string> SelectedVendorIds { get; set; } = [];
 
         public List<VendorItemOffersDto> Vendors { get; set; } = [];
-    }
-
-    public class VendorItemOffersDto
-    {
-        [Required, StringLength(450)]
-        public string VendorId { get; set; } = null!;
-
-        [MinLength(1)]
-        public List<VendorOfferPerItemDto> Items { get; set; } = [];
     }
 
     public class ProfitLossEditDto
@@ -91,9 +95,8 @@ namespace ProcurementHTE.Core.Models.DTOs
             ErrorMessage = "The field {0} must be a valid non-negative amount.")]
         public decimal? RealizationAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative distance.")]
-        public decimal? Distance { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -130,9 +133,8 @@ namespace ProcurementHTE.Core.Models.DTOs
             ErrorMessage = "The field {0} must be a valid non-negative amount.")]
         public decimal? RealizationAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative distance.")]
-        public decimal? Distance { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -185,5 +187,37 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         public List<string> SelectedVendorNames { get; set; } = [];
         public List<VendorComparisonDto> VendorComparisons { get; set; } = [];
+    }
+
+    public class ProfitLossNegotiationTablesDto
+    {
+        public string ProfitLossId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
+        public List<ProfitLossVendorNegotiationTableDto> Vendors { get; set; } = [];
+    }
+
+    public class ProfitLossVendorNegotiationTableDto {
+        public string VendorId { get; set; } = null!;
+        public string VendorName { get; set; } = null!;
+        public int MaxRound { get; set; }
+        public List<ProfitLossVendorRoundInfoDto> Rounds { get; set; } = [];
+        public List<ProfitLossVendorItemNegotiationDto> Items { get; set; } = [];
+        public decimal GrandTotal { get; set; }
+        public bool IsSelectedVendor { get; set; }
+    }
+
+    public class ProfitLossVendorRoundInfoDto {
+        public int Round { get; set; }
+        public string? LetterNumber { get; set; }
+    }
+
+    public class ProfitLossVendorItemNegotiationDto {
+        public string ProcOfferId { get; set; } = null!;
+        public string ItemName { get; set; } = null!;
+        public int Quantity { get; set; }
+        public int Trip { get; set; }
+        public List<decimal?> PricesPerRound { get; set; } = [];
+        public decimal? FinalPrice { get; set; }
+        public decimal? Total { get; set; }
     }
 }

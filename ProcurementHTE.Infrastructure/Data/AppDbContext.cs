@@ -447,9 +447,9 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity
-                .HasOne(profitLoss => profitLoss.SelectedVendor)
-                .WithMany()
-                .HasForeignKey(profitLoss => profitLoss.SelectedVendorId)
+                .HasMany(profitLoss => profitLoss.VendorOffers)
+                .WithOne(vendorOffer => vendorOffer.ProfitLoss)
+                .HasForeignKey(vendorOffer => vendorOffer.ProfitLossId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity

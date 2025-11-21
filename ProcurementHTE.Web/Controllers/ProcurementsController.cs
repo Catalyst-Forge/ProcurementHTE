@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,31 +9,49 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
+using System.Security.Claims;
 
 namespace ProcurementHTE.Web.Controllers
 {
     [Authorize]
-    public class ProcurementsController(
-        IProcurementService procurementService,
-        IVendorService vendorService,
-        IProfitLossService pnlService,
-        IVendorOfferService voService,
-        IDocumentGenerator documentGenerator,
-        IDocumentTypeService docTypeService,
-        IProcDocumentService procDocService,
-        ILogger<ProcurementsController> logger,
-        UserManager<User> userManager
-    ) : Controller
+    public class ProcurementsController : Controller
     {
-        private readonly IProcurementService _procurementService = procurementService;
-        private readonly IVendorService _vendorService = vendorService;
-        private readonly IProfitLossService _pnlService = pnlService;
-        private readonly IVendorOfferService _voService = voService;
-        private readonly IDocumentGenerator _documentGenerator = documentGenerator;
-        private readonly IDocumentTypeService _docTypeService = docTypeService;
-        private readonly IProcDocumentService _procDocService = procDocService;
-        private readonly ILogger<ProcurementsController> _logger = logger;
-        private readonly UserManager<User> _userManager = userManager;
+        #region Construct
+
+        private readonly IProcurementService _procurementService;
+        private readonly IVendorService _vendorService;
+        private readonly IProfitLossService _pnlService;
+        private readonly IVendorOfferService _voService;
+        private readonly IDocumentGenerator _documentGenerator;
+        private readonly IDocumentTypeService _docTypeService;
+        private readonly IProcDocumentService _procDocService;
+        private readonly ILogger<ProcurementsController> _logger;
+        private readonly UserManager<User> _userManager;
+
+        public ProcurementsController(
+            IProcurementService procurementService,
+            IVendorService vendorService,
+            IProfitLossService pnlService,
+            IVendorOfferService voService,
+            IDocumentGenerator documentGenerator,
+            IDocumentTypeService docTypeService,
+            IProcDocumentService procDocService,
+            ILogger<ProcurementsController> logger,
+            UserManager<User> userManager
+        )
+        {
+            _procurementService = procurementService;
+            _vendorService = vendorService;
+            _pnlService = pnlService;
+            _voService = voService;
+            _documentGenerator = documentGenerator;
+            _docTypeService = docTypeService;
+            _procDocService = procDocService;
+            _logger = logger;
+            _userManager = userManager;
+        }
+
+        #endregion
 
         #region CRUD Operations
 
@@ -167,7 +185,7 @@ namespace ProcurementHTE.Web.Controllers
         )
         {
             //ModelState.Remove(nameof(User));
-            ModelState.Remove("Procurement.ProcNum");
+            //ModelState.Remove("Procurement.ProcNum");
             //ModelState.Remove("Procurement.ProcurementId");
 
             RemoveDetailsValidation();
@@ -358,7 +376,7 @@ namespace ProcurementHTE.Web.Controllers
                 );
                 TempData["SuccessMessage"] = "Procurement updated successfully!";
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Details), new { id = editViewModel.ProcurementId });
             }
             catch (KeyNotFoundException ex)
             {
@@ -461,6 +479,7 @@ namespace ProcurementHTE.Web.Controllers
                         {
                             ProcOfferId = o.ProcOfferId,
                             ItemPenawaran = o.ItemPenawaran,
+                            Quantity = o.Qty,
                         })
                         .ToList(),
                 };
@@ -531,11 +550,6 @@ namespace ProcurementHTE.Web.Controllers
 
             try
             {
-                foreach (var key in Request.Form.Keys)
-                {
-                    _logger.LogWarning("FORM {Key} = {Val}", key, Request.Form[key]);
-                }
-
                 var dto = MapToDto(viewModel, selectedVendors);
                 var pnl = await _pnlService.SaveInputAndCalculateAsync(dto);
 
@@ -641,6 +655,8 @@ namespace ProcurementHTE.Web.Controllers
                                     ProcOfferId = it.ProcOfferId,
                                     Prices = it.Prices?.ToList() ?? [],
                                     Letters = it.Letters?.ToList() ?? [],
+                                    Quantity = it.Quantity,
+                                    Trip = it.Trip,
                                 })
                                 .ToList(),
                         })
@@ -663,9 +679,10 @@ namespace ProcurementHTE.Web.Controllers
                 };
 
                 ViewBag.ProcNum = procurement.ProcNum;
+                ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
                 _logger.LogInformation("? EditPnL view akan ditampilkan");
-                return View(vm);
+                return View("CreateProfitLoss", vm);
             }
             catch (Exception ex)
             {
@@ -681,21 +698,17 @@ namespace ProcurementHTE.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                var vendors = await _vendorService.GetAllVendorsAsync();
+                await RepopulateVendorChoices(viewModel);
                 var procurement = await _procurementService.GetProcurementByIdAsync(
                     viewModel.ProcurementId
                 );
-                viewModel.VendorChoices = vendors
-                    .Select(v => new VendorChoiceViewModel { Id = v.VendorId, Name = v.VendorName })
-                    .ToList();
-                viewModel.OfferItems = (procurement?.ProcOffers ?? [])
-                    .Select(x => new ProcOfferLiteVm
-                    {
-                        ProcOfferId = x.ProcOfferId,
-                        ItemPenawaran = x.ItemPenawaran,
-                    })
-                    .ToList();
-                return View(viewModel);
+                if (procurement != null)
+                {
+                    ViewBag.ProcNum = procurement.ProcNum;
+                    ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
+                }
+
+                return View("CreateProfitLoss", viewModel);
             }
 
             var distinctSelectedVendors = (viewModel.SelectedVendorIds ?? [])
@@ -731,8 +744,8 @@ namespace ProcurementHTE.Web.Controllers
             update.Vendors = BuildVendorOfferDtos(viewModel.Vendors, allowedVendorSet);
 
             await _pnlService.EditProfitLossAsync(update);
-            TempData["Success"] = "Profit & Loss updated successfully";
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = "Profit & Loss updated successfully";
+            return RedirectToAction(nameof(Details), new { id = viewModel.ProcurementId });
         }
 
         #endregion
@@ -859,8 +872,11 @@ namespace ProcurementHTE.Web.Controllers
                     {
                         VendorId = vendorId,
                         ProcOfferId = item.ProcOfferId!,
+                        Round = item.Round,
                         Prices = [],
                         Letters = [],
+                        Quantity = item.Quantity,
+                        Trip = item.Trip,
                     };
 
                     var prices = item.Prices ?? [];

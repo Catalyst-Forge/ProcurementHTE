@@ -14,8 +14,15 @@ namespace ProcurementHTE.Core.Models
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Price { get; set; }
 
+        [Required]
         [MaxLength(128)]
-        public string? NoLetter { get; set; }
+        public string NoLetter { get; set; } = null!;
+
+        [Required]
+        public int Quantity { get; set; }
+
+        [Required]
+        public int Trip { get; set; }
 
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -24,6 +31,7 @@ namespace ProcurementHTE.Core.Models
         public string ProcurementId { get; set; } = null!;
         public string ProcOfferId { get; set; } = null!;
         public string VendorId { get; set; } = null!;
+        public string ProfitLossId { get; set; } = null!;
 
         [ForeignKey("ProcurementId")]
         public Procurement Procurement { get; set; } = default!;
@@ -33,5 +41,8 @@ namespace ProcurementHTE.Core.Models
 
         [ForeignKey("VendorId")]
         public Vendor Vendor { get; set; } = default!;
+
+        [ForeignKey("ProfitLossId")]
+        public ProfitLoss ProfitLoss { get; set; } = default!;
     }
 }

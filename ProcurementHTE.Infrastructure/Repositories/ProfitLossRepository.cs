@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -16,20 +16,18 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public Task<ProfitLoss?> GetByIdAsync(string profitLossId)
         {
             return _context
-                .ProfitLosses.Include(p => p.Items)
-                .Include(p => p.Procurement)
-                .ThenInclude(wo => wo.ProcOffers)
-                .FirstOrDefaultAsync(p => p.ProfitLossId == profitLossId);
+                .ProfitLosses.Include(pnl => pnl.Items)
+                .ThenInclude(item => item.ProcOffer)
+                .FirstOrDefaultAsync(pnl => pnl.ProfitLossId == profitLossId);
         }
 
-        public async Task<ProfitLoss?> GetByProcurementAsync(string woId)
+        public async Task<ProfitLoss?> GetByProcurementAsync(string procurementId)
         {
             return await _context
-                .ProfitLosses.Include(p => p.Items)
-                .Include(p => p.Procurement)
-                .ThenInclude(wo => wo.ProcOffers)
+                .ProfitLosses.Include(pnl => pnl.Items)
+                .ThenInclude(item => item.ProcOffer)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.ProcurementId == woId);
+                .FirstOrDefaultAsync(pnl => pnl.ProcurementId == procurementId);
         }
 
         public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string procurementId)
@@ -44,9 +42,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return await _context
                 .ProfitLosses.AsNoTracking()
-                .Include(p => p.Items)
-                .Where(p => p.ProcurementId == procurementId)
-                .OrderByDescending(p => p.CreatedAt)
+                .Include(pnl => pnl.Items)
+                    .ThenInclude(item => item.ProcOffer)
+                .Include(pl => pl.VendorOffers)
+                    .ThenInclude(vo => vo.Vendor)
+                .Include(pl => pl.VendorOffers)
+                    .ThenInclude(vo => vo.ProcOffer)
+                .Where(pnl => pnl.ProcurementId == procurementId)
+                .OrderByDescending(pnl => pnl.CreatedAt)
                 .FirstOrDefaultAsync();
         }
 
@@ -77,42 +80,97 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task StoreProfitLossAsync(ProfitLoss profitLoss)
+        public async Task StoreProfitLossAggregateAsync(
+            ProfitLoss profitLoss,
+            IEnumerable<string> selectedVendorIds,
+            IEnumerable<VendorOffer> vendorOffers
+        )
         {
-            await _context.ProfitLosses.AddAsync(profitLoss);
-            await _context.SaveChangesAsync();
+            ArgumentNullException.ThrowIfNull(profitLoss);
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await RemoveExistingSelectedVendorsAsync(profitLoss.ProcurementId);
+                await AddSelectedVendorsAsync(profitLoss.ProcurementId, selectedVendorIds);
+
+                await _context.ProfitLosses.AddAsync(profitLoss);
+
+                var offers = vendorOffers?.ToList() ?? [];
+                if (offers.Count > 0)
+                    await _context.VendorOffers.AddRangeAsync(offers);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async Task StoreSelectedVendorsAsync(string woId, IEnumerable<string> vendorId)
+        public async Task UpdateProfitLossAggregateAsync(
+            ProfitLoss profitLoss,
+            IEnumerable<string> selectedVendorIds,
+            IEnumerable<VendorOffer> vendorOffers
+        )
         {
-            var rows = vendorId
+            ArgumentNullException.ThrowIfNull(profitLoss);
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await RemoveExistingSelectedVendorsAsync(profitLoss.ProcurementId);
+                await AddSelectedVendorsAsync(profitLoss.ProcurementId, selectedVendorIds);
+
+                var oldOffers = await _context
+                    .VendorOffers.Where(o => o.ProcurementId == profitLoss.ProcurementId)
+                    .ToListAsync();
+                if (oldOffers.Count > 0)
+                    _context.VendorOffers.RemoveRange(oldOffers);
+
+                var offers = vendorOffers?.ToList() ?? [];
+                if (offers.Count > 0)
+                    await _context.VendorOffers.AddRangeAsync(offers);
+
+                _context.ProfitLosses.Update(profitLoss);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        private async Task RemoveExistingSelectedVendorsAsync(string procurementId)
+        {
+            var existing = await _context
+                .ProfitLossSelectedVendors.Where(item => item.ProcurementId == procurementId)
+                .ToListAsync();
+
+            if (existing.Count > 0)
+                _context.ProfitLossSelectedVendors.RemoveRange(existing);
+        }
+
+        private Task AddSelectedVendorsAsync(string procurementId, IEnumerable<string> selectedIds)
+        {
+            var rows = selectedIds
                 .Distinct()
                 .Select(vendor => new ProfitLossSelectedVendor
                 {
-                    ProcurementId = woId,
+                    ProcurementId = procurementId,
                     VendorId = vendor,
-                });
+                })
+                .ToList();
 
-            await _context.ProfitLossSelectedVendors.AddRangeAsync(rows);
-            await _context.SaveChangesAsync();
-        }
+            if (rows.Count == 0)
+                return Task.CompletedTask;
 
-        public Task UpdateProfitLossAsync(ProfitLoss profitLoss)
-        {
-            _context.ProfitLosses.Update(profitLoss);
-            return _context.SaveChangesAsync();
-        }
-
-        public async Task RemoveSelectedVendorsAsync(string woId)
-        {
-            var olds = await _context
-                .ProfitLossSelectedVendors.Where(item => item.ProcurementId == woId)
-                .ToListAsync();
-            if (olds.Count > 0)
-            {
-                _context.RemoveRange(olds);
-                await _context.SaveChangesAsync(); // ⬅️ tambahkan save agar bersih benar
-            }
+            return _context.ProfitLossSelectedVendors.AddRangeAsync(rows);
         }
     }
 }

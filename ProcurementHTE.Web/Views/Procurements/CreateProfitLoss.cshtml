@@ -1,17 +1,34 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @using System.Globalization
+@using System.Collections.Generic
+@using System.Linq
 @model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
 @{
-    ViewData["Title"] = "Create Profit & Loss";
+    var isEdit = Model is ProcurementHTE.Web.Models.ViewModels.ProfitLossEditViewModel;
+    var editModel = isEdit ? (ProcurementHTE.Web.Models.ViewModels.ProfitLossEditViewModel)Model : null;
+    var pageTitle = isEdit ? "Edit Profit & Loss" : "Create Profit & Loss";
+    var submitLabel = isEdit ? "Update Profit & Loss" : "Save & Calculate";
+    ViewData["Title"] = pageTitle;
+    var selectedVendorSet = new HashSet<string>(
+        Model.SelectedVendorIds ?? new List<string>(),
+        StringComparer.OrdinalIgnoreCase
+    );
 }
 
-<form asp-action="CreateProfitLossPost" asp-controller="Procurements" method="post" id="pl-form">
+<form asp-action="@(isEdit ? "EditProfitLoss" : "CreateProfitLossPost")"
+      asp-controller="Procurements"
+      method="post"
+      id="pl-form">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="ProcurementId" />
+    @if (isEdit && editModel != null)
+    {
+        <input type="hidden" name="ProfitLossId" value="@editModel.ProfitLossId" />
+    }
 
     <header class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h1 class="h3 mb-1">Create Profit &amp; Loss</h1>
+            <h1 class="h3 mb-1">@pageTitle</h1>
             <p class="text-muted small mb-0">
                 Procurement: <strong>@ViewBag.ProcNum</strong> &middot; Issued: @ViewBag.IssueDate
             </p>
@@ -28,7 +45,7 @@
         <div class="alert alert-warning small">@TempData["WarningMessage"]</div>
     }
 
-    <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 
     <div class="row g-3">
         <!-- ================= VENDOR LIST ================= -->
@@ -45,7 +62,7 @@
                                            type="checkbox"
                                            name="SelectedVendorIds"
                                            value="@vendor.Id"
-                                           id="vendor_@vendor.Id" />
+                                           id="vendor_@vendor.Id" @(selectedVendorSet.Contains(vendor.Id) ? "checked" : null) />
                                     <label class="form-check-label" for="vendor_@vendor.Id">
                                         @vendor.Name
                                     </label>
@@ -53,6 +70,7 @@
                             </div>
                         }
                     </div>
+                    <span asp-validation-for="SelectedVendorIds" class="text-danger"></span>
                 </fieldset>
             </div>
         </section>
@@ -68,39 +86,22 @@
                         <div class="col-md-4">
                             <label asp-for="AccrualAmount" class="form-label"></label>
                             <div class="input-group">
-                                <span class="input-group-text">Rp.</span>
-                                <input asp-for="AccrualAmount"
-                                       class="form-control text-end"
-                                       inputmode="numeric"
-                                       type="text"
-                                       data-format-currency />
+                                <span class="input-group-text">Rp</span>
+                                <input asp-for="AccrualAmount" class="form-control text-end" data-format-currency inputmode="numeric" />
                             </div>
-                            <span class="text-danger" asp-validation-for="AccrualAmount"></span>
+                            @* <span class="text-danger" asp-validation-for="AccrualAmount"></span> *@
                         </div>
-
-                        <!-- Realization -->
                         <div class="col-md-4">
                             <label asp-for="RealizationAmount" class="form-label"></label>
                             <div class="input-group">
-                                <span class="input-group-text">Rp.</span>
-                                <input asp-for="RealizationAmount"
-                                       class="form-control text-end"
-                                       inputmode="numeric"
-                                       type="text"
-                                       data-format-currency />
+                                <span class="input-group-text">Rp</span>
+                                <input asp-for="RealizationAmount" class="form-control text-end" data-format-currency inputmode="numeric" />
                             </div>
-                            <span class="text-danger" asp-validation-for="RealizationAmount"></span>
+                            @* <span class="text-danger" asp-validation-for="RealizationAmount"></span> *@
                         </div>
-
-                        <!-- Distance (tanpa currency) -->
                         <div class="col-md-4">
                             <label asp-for="Distance" class="form-label"></label>
-                            <div class="input-group">
-                                <input asp-for="Distance"
-                                       class="form-control text-end"
-                                       inputmode="numeric" />
-                                <span class="input-group-text">KM</span>
-                            </div>
+                            <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
                             <span class="text-danger" asp-validation-for="Distance"></span>
                         </div>
                     </div>
@@ -132,8 +133,9 @@
                                 @for (var i = 0; i < Model.Items.Count; i++) {
                                     var procOfferId = Model.Items[i].ProcOfferId;
                                     var itemName = Model.OfferItems.FirstOrDefault(x => x.ProcOfferId == procOfferId)?.ItemPenawaran;
+                                    var quantityItem = Model.OfferItems.FirstOrDefault(item => item.ProcOfferId == procOfferId)?.Quantity;
 
-                                    <tr data-item-row>
+                                    <tr data-item-row data-proc-offer-id="@procOfferId">
                                         <input type="hidden" name="Items.Index" value="@i" />
                                         <input type="hidden" name="Items[@i].ProcOfferId" value="@procOfferId" />
 
@@ -141,27 +143,30 @@
 
                                         <td class="text-end">
                                             <div class="input-group input-group-sm">
-                                                <input class="form-control text-end"
-                                                       name="Items[@i].Quantity"
-                                                       data-quantity
-                                                       type="number"
-                                                       inputmode="numeric"
-                                                       autocomplete="off"
-                                                       value="@Model.Items[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
+                                                @if (isEdit && editModel != null) {
+                                                    <input class="form-control text-end"
+                                                           asp-for="Items[@i].Quantity"
+                                                           data-quantity />
+                                                } else {
+                                                    <input class="form-control text-end"
+                                                           name="Items[@i].Quantity"
+                                                           data-quantity
+                                                           value="@quantityItem" />
+                                                }
                                             </div>
+                                            <span class="text-danger small field-validation-valid" asp-validation-for="Items[@i].Quantity"></span>
                                         </td>
 
                                         <td class="text-end">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">Rp</span>
                                                 <input class="form-control text-end"
-                                                       name="Items[@i].TarifAwal"
+                                                       asp-for="Items[@i].TarifAwal"
                                                        data-tarif-awal
                                                        data-format-currency 
-                                                       type="text"
-                                                       inputmode="numeric"
                                                        autocomplete="off"
-                                                       value="@Model.Items[i].TarifAwal.ToString(CultureInfo.InvariantCulture)" />
+                                                       inputmode="numeric" />
+                                                @* <span class="text-danger" asp-validation-for="Items[@i].TarifAwal"></span> *@
                                             </div>
                                         </td>
 
@@ -169,34 +174,35 @@
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">Rp</span>
                                                 <input class="form-control text-end"
-                                                       name="Items[@i].TarifAdd"
+                                                       asp-for="Items[@i].TarifAdd"
                                                        data-tarif-add
                                                        data-format-currency
-                                                       type="text"
-                                                       inputmode="numeric"
                                                        autocomplete="off"
-                                                       value="@Model.Items[i].TarifAdd.ToString(CultureInfo.InvariantCulture)" />
+                                                       inputmode="numeric" />
+                                                @* <span class="text-danger" asp-validation-for="Items[@i].TarifAdd"></span> *@
                                             </div>
                                         </td>
 
                                         <td class="text-end">
                                             <input class="form-control form-control-sm text-end"
-                                                   name="Items[@i].KmPer25"
-                                                   data-km
-                                                   type="number"
-                                                   inputmode="numeric"
-                                                   min="0"
-                                                   value="@Model.Items[i].KmPer25.ToString(CultureInfo.InvariantCulture)"
+                                                   asp-for="Items[@i].KmPer25"
+                                                   data-km 
                                                    readonly />
                                         </td>
 
 
                                         <td class="text-end">
-                                            <input class="form-control form-control-sm text-end" data-operator readonly />
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Rp</span>
+                                                <input class="form-control form-control-sm text-end" data-operator readonly />
+                                            </div>
                                         </td>
 
                                         <td class="text-end">
-                                            <input class="form-control form-control-sm text-end fw-semibold" data-rev readonly />
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Rp</span>
+                                                <input class="form-control form-control-sm text-end fw-semibold" data-rev readonly />
+                                            </div>
                                         </td>
                                     </tr>
                                 }
@@ -204,10 +210,10 @@
 
                             <tfoot class="table-light">
                                 <tr>
-                                    <th colspan="5" class="text-end">TOTAL</th>
-                                    <th class="text-end">
+                                    <th colspan="6" class="text-end">TOTAL</th>
+                                    @* <th class="text-end">
                                         <input id="operatorCost" class="form-control form-control-sm text-end" readonly />
-                                    </th>
+                                    </th> *@
                                     <th class="text-end">
                                         <input id="revenue" class="form-control form-control-sm text-end fw-bold" readonly />
                                     </th>
@@ -215,7 +221,7 @@
                             </tfoot>
                         </table>
                     </div>
-                    <small class="text-muted">Operator cost per item = <em>Additional Rate × KM/25</em>, Revenue per item = <em>400 km Rate + Operator Cost</em></small>
+                    <small class="text-muted">KM/25 = (Distance - 400) × 25 <br /> Operator cost per item = <em>Additional Rate × KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
                 </fieldset>
             </div>
         </section>
@@ -264,7 +270,7 @@
 
         <!-- ================= ACTION ================= -->
         <div class="col-12 d-flex justify-content-end gap-2 mb-3">
-            <button type="submit" class="btn btn-primary">Save &amp; Calculate</button>
+            <button type="submit" class="btn btn-primary">@submitLabel</button>
         </div>
     </div>
 </form>
@@ -283,12 +289,44 @@
                 .Select(i => new { procOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran })
         );
         var procItemsJsonLiteral = System.Text.Json.JsonSerializer.Serialize(procItemsJson);
+
+        var vendorPresetJson = System.Text.Json.JsonSerializer.Serialize(
+            (Model.Vendors ?? new List<ProcurementHTE.Web.Models.ViewModels.VendorItemOfferInputVm>())
+                .Where(v => !string.IsNullOrWhiteSpace(v.VendorId))
+                .Select(v => new
+                {
+                    vendorId = v.VendorId,
+                    items = (v.Items ?? new List<ProcurementHTE.Web.Models.ViewModels.VendorOfferPerItemInputVm>())
+                        .Select(item => new
+                        {
+                            procOfferId = item.ProcOfferId,
+                            quantity = item.Quantity,
+                            trip = item.Trip,
+                            prices = item.Prices ?? new List<decimal>(),
+                            letters = item.Letters ?? new List<string>()
+                        })
+                        .ToList()
+                })
+        );
+        var vendorPresetJsonLiteral = System.Text.Json.JsonSerializer.Serialize(vendorPresetJson);
+
+        var modelStateErrorsJson = System.Text.Json.JsonSerializer.Serialize(
+            ViewData.ModelState
+                .Where(kvp => kvp.Value?.Errors?.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).FirstOrDefault() ?? string.Empty
+                )
+        );
+        var modelStateErrorsLiteral = System.Text.Json.JsonSerializer.Serialize(modelStateErrorsJson);
     }
 
     <script>
         // --- data server ---
         const vendorsAll = JSON.parse(@Html.Raw(vendorChoicesJsonLiteral));
         const procItems = JSON.parse(@Html.Raw(procItemsJsonLiteral));
+        const presetVendors = JSON.parse(@Html.Raw(vendorPresetJsonLiteral));
+        const modelStateErrors = JSON.parse(@Html.Raw(modelStateErrorsLiteral));
 
         // helpers
         const fmtClean = n => { 
@@ -446,6 +484,34 @@
             recalcSummary();
         }
 
+        function recalcKmPer25FromDistance() {
+            const distanceInput = document.getElementById("Distance")
+            if (!distanceInput) return;
+
+            const raw =(distanceInput.value || '').toString().replace(',', '.');
+            const distance = parseFloat(raw);
+            if (isNaN(distance)) {
+                getAll('[data-km]').forEach(input => {
+                    input.value = '';
+                });
+
+                recalcHeader();
+                return;
+            }
+
+            let kmPer25 = (distance - 400) / 25;
+            if (!Number.isFinite(kmPer25) || kmPer25 < 0) {
+                kmPer25 = 0;
+            }
+
+            kmPer25 = Math.round(kmPer25 * 100) / 100;
+
+            getAll('[data-km]').forEach(input => {
+                input.value = kmPer25;
+            })
+
+            recalcHeader();
+        }
 
         document.addEventListener('input', e => {
             if (e.target.matches(currencySelector)) {
@@ -531,7 +597,7 @@
             recalcSummary();
         }
 
-        document.querySelectorAll('input[name="SelectedVendorIds"]').forEach(cb => cb.addEventListener('change', updateVendorBlocks));
+        getAll('input[name="SelectedVendorIds"]').forEach(cb => cb.addEventListener('change', updateVendorBlocks));
 
         function getVendorItemIds(card) {
             return [...card.querySelectorAll('[data-item-block]')]
@@ -558,11 +624,17 @@
             );
         }
 
-        function addItemToVendor(card, presetItem) {
+        function addItemToVendor(card, presetItem, forceNew = false) {
             const idx = card.dataset.vendorIndex;
             if (idx === undefined) return;
             const host = card.querySelector('[data-itemhost]');
             if (!host) return;
+
+            const existingBlock = host.querySelector('[data-item-block]');
+            if (existingBlock && !forceNew) {
+                existingBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
 
             let itemInfo;
             if (presetItem?.procOfferId) {
@@ -570,171 +642,376 @@
             } else {
                 itemInfo = nextAvailableProcItem(card);
                 if (!itemInfo) {
-                    alert('All offer items already added for this vendor.');
-                    return;
+                    if (!procItems.length) {
+                        alert('No offer items (ProcOffer) are available.');
+                        return;
+                    }
+                    itemInfo = procItems[0];
                 }
             }
 
             const block = buildVendorItemBlock(card, itemInfo, presetItem);
             if (!block) return;
             host.appendChild(block);
-            refreshItemSelects(card);
             reindexVendorItems(card);
             recalcSummary();
         }
 
         function buildVendorItemBlock(card, itemInfo, presetItem) {
             const block = document.createElement('div');
-            block.className = 'border rounded-3 p-2 mb-3';
             block.dataset.itemBlock = '';
             block.dataset.procOfferId = itemInfo.procOfferId;
             block.innerHTML = `
-                <div class="row g-2 align-items-center">
-                    <div class="col">
-                        <label class="form-label form-label-sm mb-1">Offer Item</label>
-                        <select class="form-select form-select-sm" data-item-select></select>
-                    </div>
-                    <div class="col-auto d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-addround>+ Round</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>Remove</button>
-                    </div>
-                </div>
                 <input type="hidden" data-proc-input value="${itemInfo.procOfferId}" />
                 <div class="mt-2 vstack gap-2" data-rounds></div>
             `;
 
-            const select = block.querySelector('[data-item-select]');
-            const populateOptions = (currentId) => {
-                const options = availableProcItemsForCard(card, currentId);
-                if (options.length === 0) {
-                    select.innerHTML = '<option value="">No items available</option>';
-                    select.value = '';
-                    return false;
-                }
-
-                select.innerHTML = options
-                    .map(item => `<option value="${item.procOfferId}">${item.itemPenawaran || item.procOfferId}</option>`)
-                    .join('');
-
-                if (currentId && options.some(item => item.procOfferId === currentId)) {
-                    select.value = currentId;
-                } else {
-                    select.value = options[0].procOfferId;
-                }
-
-                block.dataset.procOfferId = select.value;
-                hiddenInput.value = select.value;
-                return true;
-            };
-
             const hiddenInput = block.querySelector('[data-proc-input]');
-            if (!populateOptions(itemInfo.procOfferId)) {
-                block.remove();
-                return null;
-            }
-
-            select.addEventListener('change', () => {
-                block.dataset.procOfferId = select.value;
-                hiddenInput.value = select.value;
-                refreshItemSelects(card);
-                reindexVendorItems(card);
-                recalcSummary();
-            });
-
             const rounds = block.querySelector('[data-rounds]');
-            const addRoundRow = (priceValue = '', letterValue = '') => {
+            const addRoundRow = (letterValue = '', roundPreset = null) => {
                 const row = document.createElement('div');
-                row.className = 'input-group input-group-sm';
                 row.dataset.roundRow = '1';
+
                 row.innerHTML = `
-                    <span class="input-group-text">No</span>
-                    <input class="form-control form-control-sm"
-                           type="text"
-                           data-letter
-                           placeholder="No Letter"
-                           value="${letterValue ?? ''}" />
-                    <span class="input-group-text">Rp</span>
-                    <input class="form-control text-end"
-                           type="text"
-                           inputmode="numeric"
-                           autocomplete="off"
-                           data-price
-                           data-format-currency
-                           value="${priceValue ?? ''}" />
-                    <button type="button" class="btn btn-outline-danger" data-delround>Remove</button>`;
+                    <div class="d-flex gap-2 mb-1">
+                        <div class="flex-grow-1">
+                            <input class="form-control form-control-sm border-warning"
+                                asp-for="NoLetter"
+                                type="text"
+                                data-letter
+                                placeholder="No Letter"
+                                value="${letterValue ?? ''}" />
+                                <span class="text-danger small field-validation-valid" data-valmsg-letter data-valmsg-replace="true"></span>
+                        </div>
+                        <button type="button"
+                            class="btn btn-outline-primary btn-sm"
+                            data-add-item>
+                            Add item
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-delround>Remove Round</button>
+                    </div>
+                    <table class="table table-sm mb-2">
+                        <thead class="table-info">
+                            <tr>
+                                <th scope="col" style="min-width: 220px">Item</th>
+                                <th scope="col" style="width: 140px" class="text-end">Quantity</th>
+                                <th scope="col" style="width: 140px" class="text-end">Trip</th>
+                                <th scope="col" style="width: 180px" class="text-end">Harga Penawaran</th>
+                                <th scope="col" style="width: 180px" class="text-end">Total</th>
+                                <th scope="col" style="width: 100px" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody data-round-body></tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="4" class="text-end">Total</td>
+                                <td colspan="2" class="">
+                                    <input class="form-control text-end" data-format-currency data-round-total readonly />
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                `;
 
                 rounds.appendChild(row);
-                const priceInput = row.querySelector('[data-price]');
-                bindCurrencyInput(priceInput);
-                updateCurrencyInput(priceInput);
+                
+                const letterInput = row.querySelector('[data-letter]');
+                if (letterInput) {
+                    letterInput.value = letterValue ?? '';
+                }
+                
+                const addItemBtn = row.querySelector('[data-add-item]')
+                if (addItemBtn) {
+                    addItemBtn.addEventListener('click', () => {
+                        addRoundItemRow(row);
+                    })
+                }
+
+                recalcRoundTotals(row);
                 row.querySelector('[data-delround]').addEventListener('click', () => {
                     row.remove();
                     reindexVendorItems(card);
                     recalcSummary();
                 });
+
+                if (roundPreset) {
+                    addRoundItemRow(row, roundPreset);
+                }
+
                 return row;
             };
+            block._addRoundRow = preset => addRoundRow('', preset);
 
+            const addRoundButton = block.querySelector('[data-item-add-round]');
+            if (addRoundButton) {
+                addRoundButton.addEventListener('click', () => {
+                    addRoundRow('', { procOfferId: block.dataset.procOfferId });
+                    reindexVendorItems(card);
+                    recalcSummary();
+                });
+            }
+
+            const removeItemButton = block.querySelector('[data-remove-item]');
+            if (removeItemButton) {
+                removeItemButton.addEventListener('click', () => {
+                    block.remove();
+                    reindexVendorItems(card);
+                    recalcSummary();
+                });
+            }
+
+            function addRoundItemRow(roundRow, presetRow) {
+                if (!roundRow) return null;
+
+                const tbody = roundRow.querySelector('[data-round-body]')
+                if (!tbody) return null;
+
+                const pdcRows = getAll('#pdcItems [data-item-row]');
+                if (!pdcRows.length) {
+                    alert("Belum ada item di tagihan PDC!")
+                    return null;
+                }
+
+                let optionsHtml = '<option value="">-- Pilih item --</option>'
+                pdcRows.forEach((pdcRow, idx) => {
+                    const procId = pdcRow.dataset.procOfferId || '';
+                    const nameCell = pdcRow.querySelector('[data-item-name]') || pdcRow.querySelector('td');
+                    const rawName = nameCell ? (nameCell.textContent || '').trim() : `Item ${idx + 1}`;
+                    const safeName = rawName.replace(/"/g, '&quot;');
+                    const optionValue = procId || `row-${idx}`;
+
+                    optionsHtml += `<option value="${optionValue}" data-proc-offer-id="${procId}">${safeName}</option>`;
+                });
+
+                const tr = document.createElement('tr')
+                tr.dataset.roundItemRow = '1'
+                tr.innerHTML = `
+                    <td>
+                        <select class="form-select form-select-sm" data-item-select>
+                            ${optionsHtml}
+                        </select>
+                    </td>
+                    <td class="text-end">
+                        <div class="input-group input-group-sm">
+                            <input class="form-control text-end"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                data-qty
+                                readonly />
+                        </div>
+                        <span class="text-danger small field-validation-valid" data-valmsg-qty data-valmsg-replace="true"></span>
+                    </td>
+                    <td class="text-end">
+                        <div class="input-group input-group-sm">
+                            <input class="form-control text-end"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                data-trip />
+                        </div>
+                        <span class="text-danger small field-validation-valid" data-valmsg-trip data-valmsg-replace="true"></span>
+                    </td>
+                    <td class="text-end">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Rp</span>
+                            <input class="form-control text-end"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                data-offer-price
+                                data-format-currency />
+                        </div>
+                        <span class="text-danger small field-validation-valid" data-valmsg-price data-valmsg-replace="true"></span>
+                    </td>
+                    <td class="text-end">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Rp</span>
+                            <input class="form-control text-end"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                data-item-total
+                                data-format-currency
+                                readonly />
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-round-item>
+                            <i class="bi bi-trash"></i> Hapus
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+
+                const select = tr.querySelector('[data-item-select]')
+                const qtyInput = tr.querySelector("[data-qty]")
+                const tripInput = tr.querySelector('[data-trip]')
+                const priceInput = tr.querySelector('[data-offer-price]')
+                const removeBtn = tr.querySelector('[data-remove-round-item]')
+
+                bindCurrencyInputs(tr)
+
+                if (select && qtyInput) {
+                    select.addEventListener('change', () => {
+                        const selectedOption = select.selectedOptions?.[0];
+                        const rawValue = select.value || '';
+                        const selectedProcId = (
+                            selectedOption?.dataset?.procOfferId
+                            ?? rawValue
+                        ).toLowerCase();
+
+                        if (!selectedProcId) {
+                            qtyInput.value = '';
+                            recalcRoundTotals(roundRow);
+                            return;
+                        }
+
+                        const pdcMatch = [...pdcRows].find(
+                            row => (row.dataset.procOfferId ?? '').toLowerCase() === selectedProcId
+                        );
+
+                        let qty = 0;
+                        if (pdcMatch) {
+                            const qtyField = pdcMatch.querySelector('[data-quantity]');
+                            qty = qtyField ? numberValue(qtyField) : qty;
+                        } else {
+                            const offerMatch = procItems.find(item => item.procOfferId === procOfferId);
+                            qty = offerMatch ? offerMatch.quantity ?? offerMatch.Quantity ?? 0 : 0;
+                        }
+
+                        qtyInput.value = qty.toString();
+
+                        const tripInput = tr.querySelector('[data-trip]');
+                        if (!pdcMatch && tripInput && !tripInput.value) {
+                            const offerMatch = procItems.find(
+                                item => (item.procOfferId ?? '').toLowerCase() === selectedProcId
+                            );
+                            const tripVal = offerMatch?.trip ?? offerMatch?.Trip;
+                            if (tripVal !== undefined && tripVal !== null) {
+                                tripInput.value = tripVal ?? '';
+                            }
+                        }
+
+                        recalcRoundTotals(roundRow);
+                    })
+                }
+
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        tr.remove();
+                        recalcRoundTotals(roundRow);
+                        // Reindex after removal
+                        const card = roundRow.closest('.card[data-vendor-id]');
+                        if (card) reindexVendorItems(card);
+                    });
+                }
+
+                [tripInput, priceInput].forEach(input => {
+                    if (!input) return;
+
+                    ['input', 'change', 'blur'].forEach(evt => {
+                        input.addEventListener(evt, () => {
+                            setTimeout(() => recalcRoundTotals(roundRow), 0);
+                        });
+                    });
+                });
+
+                recalcRoundTotals(roundRow);
+                
+                // Reindex immediately after adding
+                const card = roundRow.closest('.card[data-vendor-id]');
+                if (card) reindexVendorItems(card);
+                
+                if (presetRow) {
+                    const targetProc =
+                        (presetRow.procOfferId
+                            ?? block?.dataset?.procOfferId
+                            ?? '').toLowerCase();
+
+                    if (select && targetProc) {
+                        const match = procItems.find(
+                            item =>
+                                (item.procOfferId ?? '').toLowerCase() === targetProc
+                        );
+                        if (match) {
+                            select.value = match.procOfferId;
+                            select.dispatchEvent(new Event('change'));
+                        }
+                    }
+
+                    if (tripInput && presetRow.trip !== undefined && presetRow.trip !== null) {
+                        tripInput.value = presetRow.trip;
+                    }
+
+                    if (priceInput && presetRow.priceValue !== undefined && presetRow.priceValue !== null) {
+                        setCurrencyDisplay(priceInput, presetRow.priceValue?.toString() ?? '');
+                    }
+                }
+
+                recalcRoundTotals(roundRow);
+                
+                return tr;
+            }
+
+            function recalcRoundTotals(roundRow) {
+                if (!roundRow) return;
+
+                let roundTotal = 0;
+
+                roundRow.querySelectorAll('tbody tr').forEach(tr => {
+                    const qtyInput = tr.querySelector('[data-qty]')
+                    const tripInput = tr.querySelector('[data-trip]')
+                    const priceInput = tr.querySelector('[data-offer-price]')
+                    const totalInput = tr.querySelector('[data-item-total]')
+
+                    const qty = qtyInput ? numberValue(qtyInput) : 0;
+                    const trip = tripInput ?numberValue(tripInput) : 0;
+                    const price = priceInput ? numberValue(priceInput) : 0;
+
+                    const itemTotal = qty * trip * price;
+                    roundTotal += itemTotal;
+
+                    if (totalInput) {
+                        totalInput.dataset.rawValue = itemTotal.toString();
+                        totalInput.value = fmtClean(itemTotal);
+                    }
+                });
+
+                const totalSpan = roundRow.querySelector('[data-round-total]');
+                if (totalSpan) {
+                    totalSpan.value = roundTotal;
+                    totalSpan.dataset.rawValue = roundTotal.toString();
+                }
+
+                recalcSummary();
+            }
+
+            const defaultProcOfferId = itemInfo?.procOfferId ?? '';
             const presetRounds =
                 Array.isArray(presetItem?.prices) && presetItem.prices.length > 0
                     ? presetItem.prices.map((price, index) => ({
                           priceValue: price,
-                          letterValue: presetItem.letters?.[index] ?? ''
+                          letterValue: presetItem.letters?.[index] ?? '',
+                          quantity: presetItem.quantity,
+                          trip: presetItem.trip,
+                          procOfferId: presetItem.procOfferId ?? defaultProcOfferId,
                       }))
-                    : [{ priceValue: '', letterValue: '' }];
+                    : [
+                          {
+                              priceValue: '',
+                              letterValue: '',
+                              procOfferId: defaultProcOfferId,
+                              quantity: presetItem?.quantity,
+                              trip: presetItem?.trip,
+                          },
+                      ];
 
-            presetRounds.forEach(r => addRoundRow(r.priceValue, r.letterValue));
+            presetRounds.forEach(r => addRoundRow(r.letterValue, r));
 
-            block.querySelector('[data-addround]').addEventListener('click', () => {
-                addRoundRow();
-                reindexVendorItems(card);
-                recalcSummary();
-            });
-
-            block.querySelector('[data-remove-item]').addEventListener('click', () => {
-                block.remove();
-                refreshItemSelects(card);
-                reindexVendorItems(card);
-                recalcSummary();
-            });
 
             return block;
-        }
-
-        function refreshItemSelects(card) {
-            card.querySelectorAll('[data-item-block]').forEach(block => {
-                const select = block.querySelector('[data-item-select]');
-                const hiddenInput = block.querySelector('[data-proc-input]');
-                if (!select) return;
-
-                const currentId = block.dataset.procOfferId;
-                const options = availableProcItemsForCard(card, currentId);
-
-                if (options.length === 0) {
-                    select.innerHTML = '<option value="">No items available</option>';
-                    select.value = '';
-                    block.dataset.procOfferId = '';
-                    if (hiddenInput) hiddenInput.value = '';
-                    return;
-                }
-
-                select.innerHTML = options
-                    .map(item => `<option value="${item.procOfferId}">${item.itemPenawaran || item.procOfferId}</option>`)
-                    .join('');
-
-                if (currentId && options.some(item => item.procOfferId === currentId)) {
-                    select.value = currentId;
-                } else {
-                    select.value = options[0].procOfferId;
-                    block.dataset.procOfferId = select.value;
-                    if (hiddenInput) hiddenInput.value = select.value;
-                }
-            });
-
-            const addItemBtn = card.querySelector('[data-add-item]');
-            if (addItemBtn) {
-                addItemBtn.disabled = availableProcItemsForCard(card, null).length === 0;
-            }
         }
 
         function reindexVendorItems(card) {
@@ -751,23 +1028,65 @@
 
                 block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
                     const letter = row.querySelector('[data-letter]');
-                    const price = row.querySelector('[data-price]');
                     if (letter) {
                         letter.name = `Vendors[${idx}].Items[${itemIdx}].Letters[${roundIdx}]`;
                     }
-                    if (price) {
-                        price.name = `Vendors[${idx}].Items[${itemIdx}].Prices[${roundIdx}]`;
-                    }
+                    
+                    // Update all round item rows
+                    row.querySelectorAll('[data-round-item-row]').forEach((itemRow, itemRowIdx) => {
+                        const qtyInput = itemRow.querySelector('[data-qty]');
+                        const tripInput = itemRow.querySelector('[data-trip]');
+                        const priceInput = itemRow.querySelector('[data-offer-price]');
+                        const qtyValMsg = itemRow.querySelector('[data-valmsg-qty]');
+                        const tripValMsg = itemRow.querySelector('[data-valmsg-trip]');
+                        const priceValMsg = itemRow.querySelector('[data-valmsg-price]');
+
+                        if (qtyInput) {
+                            qtyInput.name = `Vendors[${idx}].Items[${itemIdx}].Quantity`;
+                            if (qtyValMsg) {
+                                qtyValMsg.setAttribute('data-valmsg-for', qtyInput.name);
+                                if (modelStateErrors[qtyInput.name]) {
+                                    qtyValMsg.textContent = modelStateErrors[qtyInput.name];
+                                    qtyValMsg.classList.remove('field-validation-valid');
+                                    qtyValMsg.classList.add('field-validation-error');
+                                }
+                            }
+                        }
+                        if (tripInput) {
+                            tripInput.name = `Vendors[${idx}].Items[${itemIdx}].Trip`;
+                            if (tripValMsg) {
+                                tripValMsg.setAttribute('data-valmsg-for', tripInput.name);
+                                if (modelStateErrors[tripInput.name]) {
+                                    tripValMsg.textContent = modelStateErrors[tripInput.name];
+                                    tripValMsg.classList.remove('field-validation-valid');
+                                    tripValMsg.classList.add('field-validation-error');
+                                }
+                            }
+                        }
+                        if (priceInput) {
+                            priceInput.name = `Vendors[${idx}].Items[${itemIdx}].Prices[${roundIdx}]`;
+                            if (priceValMsg) {
+                                priceValMsg.setAttribute('data-valmsg-for', priceInput.name);
+                                if (modelStateErrors[priceInput.name]) {
+                                    priceValMsg.textContent = modelStateErrors[priceInput.name];
+                                    priceValMsg.classList.remove('field-validation-valid');
+                                    priceValMsg.classList.add('field-validation-error');
+                                }
+                            }
+                        }
+                    });
                 });
             });
         }
 
-        function addVendor() {
+        function addVendor(presetVendor) {
             const av = availableVendors();
-            if (!av.length) { alert('Select a vendor first.'); return; }
-            if (procItems.length === 0) { alert('No offer items (ProcOffer) are available.'); return; }
+            const vendorIdPreset = presetVendor?.vendorId;
+            if (!vendorIdPreset && !av.length) { alert('Select a vendor first.'); return; }
+            if (!procItems.length && !presetVendor) { alert('No offer items (ProcOffer) are available.'); return; }
 
-            const vendorId = av[0].id;
+            const vendorId = vendorIdPreset ?? (av[0]?.id ?? '');
+            if (!vendorId) { alert('Select a vendor first.'); return; }
             const idx = vendorIdx++;
             const card = document.createElement('div');
 
@@ -776,13 +1095,13 @@
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-md-5">
-                            <label class="form-label">Vendor</label>
+                            <label class="form-label fw-semibold">Vendor</label>
                             <select name="Vendors[${idx}].VendorId" class="form-select"></select>
                         </div>
                         <div class="col-md-7">
                             <div class="hstack gap-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-add-item>
-                                    <i class="bi bi-plus-lg"></i> Add Item
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-add-round>
+                                    <i class="bi bi-plus-lg"></i> Add Round
                                 </button>
                                 <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-del>
                                     <i class="bi bi-trash"></i> Remove Vendor
@@ -790,7 +1109,12 @@
                             </div>
                         </div>
                     </div>
+                    <hr />
                     <div class="mt-3" data-itemhost></div>
+                    <div class="d-flex justify-content-end mt-3 py-2 gap-5 border-top border-bottom">
+                        <div class="fw-semibold">Final Round</div>
+                        <div><span data-format-currency data-vendor-total>0</span></div>
+                    </div>
                 </div>
             `;
 
@@ -800,24 +1124,52 @@
             const select = card.querySelector('select');
 
             refreshCardVendorOptions(card);
-            select.value = vendorId;
+            if (vendorIdPreset && [...select.options].some(opt => opt.value === vendorIdPreset)) {
+                select.value = vendorIdPreset;
+                card.dataset.vendorId = vendorIdPreset;
+            } else {
+                select.value = vendorId;
+            }
             select.addEventListener('change', () => {
                 card.dataset.vendorId = select.value;
                 updateVendorBlocks();
             });
 
-            card.querySelector('[data-add-item]').addEventListener('click', () => {
-                addItemToVendor(card);
-            });
+            const addRoundBtn = card.querySelector('[data-add-round]');
+            if (addRoundBtn) {
+                addRoundBtn.addEventListener('click', () => {
+                    let blocks = card.querySelectorAll('[data-item-block]');
+                    if (!blocks.length) {
+                        addItemToVendor(card, null, true);
+                        blocks = card.querySelectorAll('[data-item-block]');
+                    }
+
+                    blocks.forEach(block => {
+                        if (typeof block._addRoundRow === 'function') {
+                            block._addRoundRow({ procOfferId: block.dataset.procOfferId });
+                        }
+                    });
+
+                    reindexVendorItems(card);
+                    recalcSummary();
+                });
+            }
 
             card.querySelector('[data-del]').addEventListener('click', () => {
                 card.remove();
                 updateVendorBlocks();
             });
             updateVendorBlocks();
+            
+            const presetItems = Array.isArray(presetVendor?.items) ? presetVendor.items : [];
+            if (presetItems.length) {
+                presetItems.forEach(item => addItemToVendor(card, item));
+            } else {
+                addItemToVendor(card);
+            }
         }
 
-        document.getElementById('btnAddVendor').addEventListener('click', addVendor);
+        document.getElementById('btnAddVendor').addEventListener('click', () => addVendor());
 
         // ===== Summary (Σ last round / item) =====
         function recalcSummary() {
@@ -832,44 +1184,19 @@
                 const sel = card.querySelector('select');
                 const vendorName = getVendorName(sel);
 
-                let vendorTotal = 0;
-                let complete = true;
-                card.querySelectorAll('[data-item-block]').forEach(block => {
-                    if (!complete) return;
+                let vendorTotal = getVendorBestTotal(card);
+                if (!vendorTotal || !isFinite(vendorTotal)) {
+                    return;
+                }
 
-                    const inputs = block.querySelectorAll('[data-price]');
-                    if (!inputs.length) {
-                        complete = false;
-                        return;
-                    }
-
-                    // ⬇️ NEW: pakai harga TERENDAH dari semua ronde di item ini
-                    let best = Infinity;
-                    inputs.forEach(inp => {
-                        const rawVal = inp.dataset?.rawValue;
-                        const val = rawVal && rawVal.length
-                            ? parseFloat(rawVal)
-                            : parseFloat(digitsOnly(inp.value)) || 0;
-
-                        if (val > 0 && val < best) {
-                            best = val;
-                        }
-                    });
-
-                    // kalau belum ada harga valid > 0, anggap belum lengkap
-                    if (!(best > 0 && isFinite(best))) {
-                        complete = false;
-                        return;
-                    }
-
-                    vendorTotal += best;
-                });
-
-
-                if (!complete || vendorTotal <= 0) return;
-
+                const totalPenawaranNode = card.querySelector('[data-vendor-total]')
+                if (totalPenawaranNode) {
+                    totalPenawaranNode.textContent = fmtClean(vendorTotal)
+                    totalPenawaranNode.dataset.rawValue = vendorTotal.toString();
+                }
+                
                 const profit = revenue - vendorTotal;
-                const pct = revenue ? (profit / revenue) * 100 : 0;
+                const pct = revenue > 0 ? (profit / revenue) * 100 : 0;
                 const tr = document.createElement('tr');
                 tr.dataset.totalRaw = vendorTotal.toString();
                 tr.innerHTML = `
@@ -884,28 +1211,61 @@
             if (rows.length){
                 rows.forEach(row => row.classList.remove('table-success'));
                 const best = rows.reduce((bestRow, current) => {
-                    const bestVal = parseInt(bestRow.dataset.totalRaw || '0', 10) || 0;
-                    const currentVal = parseInt(current.dataset.totalRaw || '0', 10) || 0;
+                    const bestVal = parseFloat(bestRow.dataset.totalRaw || '0') || 0;
+                    const currentVal = parseFloat(current.dataset.totalRaw || '0') || 0;
                     return currentVal < bestVal ? current : bestRow;
                 }, rows[0]);
                 best.classList.add('table-success');
             }
         }
 
+        function getVendorBestTotal(card) {
+            const spans = card.querySelectorAll('[data-round-total]')
+            if (!spans.length) return 0;
+
+            let best = Number.POSITIVE_INFINITY;
+            let hasValid = false;
+
+            spans.forEach(span => {
+                const raw = span.dataset?.rawValue ?? digitsOnly(span.textContent || '');
+                const val = parseFloat(raw);
+                if (!isNaN(val) && val > 0) {
+                    hasValid = true;
+                    if (val < best) best = val;
+                }
+            })
+
+            return hasValid ? best : 0;
+        }
+
         // init
         (function init(){
             bindCurrencyInputs(document);
             document.querySelectorAll(currencySelector).forEach(input => updateCurrencyInput(input));
+
+            const distanceInput = document.getElementById("Distance")
+            if (distanceInput) {
+                distanceInput.addEventListener('input', recalcKmPer25FromDistance);
+                distanceInput.addEventListener('change', recalcKmPer25FromDistance);
+
+                if (distanceInput.value) {
+                    recalcKmPer25FromDistance();
+                }
+            }
+            
             recalcHeader();
             updateVendorBlocks();
-
-            const distanceInput = document.querySelector('input[name="Distance"]');
-            if (distanceInput) {
-                distanceInput.addEventListener('input', () => {
-                    recalcHeader();
+            if (Array.isArray(presetVendors) && presetVendors.length) {
+                presetVendors.forEach(vendor => {
+                    if (vendor?.vendorId) {
+                        const checkbox = document.getElementById('vendor_' + vendor.vendorId);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    }
+                    addVendor(vendor);
                 });
             }
-
             const form = document.getElementById('pl-form');
             if (form) {
                 form.addEventListener('submit', () => {
@@ -916,34 +1276,6 @@
             }
         })();
 
-    </script>
-
-    <!-- ✅ Override jQuery validate "number" khusus untuk input currency (Accrual & Realization) -->
-    <script>
-        $(function () {
-            if (!$.validator || !$.validator.methods || !$.validator.methods.number) {
-                return;
-            }
-
-            const originalNumberMethod = $.validator.methods.number;
-
-            $.validator.methods.number = function (value, element) {
-                // Hanya adjust untuk input yang pakai data-format-currency
-                if ($(element).is('[data-format-currency]')) {
-                    const normalized = value
-                        .replace(/\./g, '')   // "1.000.000" -> "1000000"
-                        .replace(',', '.');   // koma jadi titik kalau ada
-
-                    if (normalized.trim() === '') {
-                        return this.optional(element);
-                    }
-
-                    return originalNumberMethod.call(this, normalized, element);
-                }
-
-                // Field lain: pakai aturan default
-                return originalNumberMethod.call(this, value, element);
-            };
-        });
+        
     </script>
 }
