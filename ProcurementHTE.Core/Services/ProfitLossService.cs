@@ -387,13 +387,6 @@ namespace ProcurementHTE.Core.Services
                 StringComparer.OrdinalIgnoreCase
             );
 
-            decimal kmFromDistance = 0m;
-            if (dto.Distance.HasValue && dto.Distance.Value > 0m)
-            {
-                var distance = dto.Distance.Value;
-                kmFromDistance = distance > 400m ? (distance - 400m) / 25m : 0m;
-            }
-
             decimal opTotal = 0m;
             decimal revTotal = 0m;
 
@@ -410,15 +403,13 @@ namespace ProcurementHTE.Core.Services
                     itemsByOffer[it.ProcOfferId] = entity;
                 }
 
-                var kmPer25 = kmFromDistance > 0m ? kmFromDistance : it.KmPer25;
-
-                var operatorCost = it.TarifAdd * kmPer25;
+                var operatorCost = it.TarifAdd * it.KmPer25;
                 var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
 
                 entity.Quantity = it.Quantity;
                 entity.TarifAwal = it.TarifAwal;
                 entity.TarifAdd = it.TarifAdd;
-                entity.KmPer25 = kmPer25;
+                entity.KmPer25 = it.KmPer25;
                 entity.OperatorCost = operatorCost;
                 entity.Revenue = revenue;
 
@@ -448,10 +439,8 @@ namespace ProcurementHTE.Core.Services
             pnl.NoLetterSelectedVendor = selectedLetter;
             pnl.Profit = revTotal - bestTotal;
             pnl.ProfitPercent = revTotal > 0 ? (pnl.Profit / revTotal) * 100m : 0m;
-
-            // Biarkan null jika user tidak mengisi; summary akan fallback
-            pnl.AccrualAmount = dto.AccrualAmount;
-            pnl.RealizationAmount = dto.RealizationAmount;
+            pnl.AccrualAmount = accrualAmount;
+            pnl.RealizationAmount = realizationAmount;
             pnl.Distance = dto.Distance;
             pnl.UpdatedAt = DateTime.Now;
 
@@ -558,24 +547,15 @@ namespace ProcurementHTE.Core.Services
             decimal operatorCostTotal,
             decimal revenueTotal,
             List<ProfitLossItem> item
-        ) ComputeItems(List<ProfitLossItemInputDto> input, decimal distance)
+        ) ComputeItems(List<ProfitLossItemInputDto> input)
         {
             var items = new List<ProfitLossItem>();
             decimal opTotal = 0m,
                 revTotal = 0m;
 
-            // Hitung KmPer25 otomatis dari Distance jika diisi; jika tidak, pakai nilai per-item
-            decimal kmFromDistance = 0m;
-            if (distance > 0m)
-            {
-                kmFromDistance = distance > 400m ? (distance - 400m) / 25m : 0m;
-            }
-
             foreach (var it in input)
             {
-                var kmPer25 = kmFromDistance > 0m ? kmFromDistance : it.KmPer25;
-
-                var operatorCost = it.TarifAdd * kmPer25;
+                var operatorCost = it.TarifAdd * it.KmPer25;
                 var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
 
                 items.Add(
@@ -585,7 +565,7 @@ namespace ProcurementHTE.Core.Services
                         Quantity = it.Quantity,
                         TarifAwal = it.TarifAwal,
                         TarifAdd = it.TarifAdd,
-                        KmPer25 = kmPer25,
+                        KmPer25 = it.KmPer25,
                         OperatorCost = operatorCost,
                         Revenue = revenue,
                     }
@@ -597,7 +577,6 @@ namespace ProcurementHTE.Core.Services
 
             return (opTotal, revTotal, items);
         }
-
 
         private static (
             string vendorId,

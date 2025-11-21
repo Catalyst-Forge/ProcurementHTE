@@ -11,7 +11,8 @@ namespace ProcurementHTE.Core.Interfaces
             int pageSize,
             string? search,
             ISet<string> fields,
-            CancellationToken ct
+            CancellationToken ct,
+            string? userId = null
         );
         Task<Procurement?> GetProcurementByIdAsync(string id);
         Task<IReadOnlyList<Procurement>> GetMyRecentProcurementAsync(

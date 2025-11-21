@@ -25,13 +25,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
             int pageSize,
             string? search,
             ISet<string> fields,
-            CancellationToken ct
+            CancellationToken ct,
+            string? userId
         )
         {
             var query = BuildBaseQuery();
 
             if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
                 query = ApplySearchFilter(query, search.Trim(), fields);
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(proc => proc.UserId == userId);
+            }
 
             return await query.ToPagedResultAsync(
                 page,
@@ -294,33 +300,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
             ISet<string> fields
         )
         {
-            //var predicates = new List<Func<Procurement, bool>>();
-
-            //if (fields.Contains("ProcNum"))
-            //    predicates.Add(wo => wo.ProcNum != null && wo.ProcNum.Contains(searchTerm));
-
-            //if (fields.Contains("Description"))
-            //    predicates.Add(wo => wo.Description != null && wo.Description.Contains(searchTerm));
-
-            //if (fields.Contains("SpkNumber"))
-            //    predicates.Add(wo => wo.SpkNumber != null && wo.SpkNumber.Contains(searchTerm));
-
-            //if (fields.Contains("WBS"))
-            //    predicates.Add(wo => wo.WBS != null && wo.WBS.Contains(searchTerm));
-
-            //if (fields.Contains("GlAccount"))
-            //    predicates.Add(wo => wo.GlAccount != null && wo.GlAccount.Contains(searchTerm));
-
-            //if (fields.Contains("Status"))
-            //    predicates.Add(wo =>
-            //        wo.Status != null && wo.Status.StatusName.Contains(searchTerm)
-            //    );
-
-            //if (predicates.Count == 0)
-            //    return query;
-
-            //return query.Where(wo => predicates.Any(p => p(wo)));
-
             bool byProcNum = fields.Contains("ProcNum", StringComparer.OrdinalIgnoreCase);
             bool byWonum = fields.Contains("Wonum", StringComparer.OrdinalIgnoreCase);
             bool byJobName = fields.Contains("JobName", StringComparer.OrdinalIgnoreCase);

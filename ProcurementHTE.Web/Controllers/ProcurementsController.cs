@@ -62,7 +62,8 @@ namespace ProcurementHTE.Web.Controllers
             int pageSize = 10,
             string? search = null,
             string? fields = null,
-            CancellationToken ct = default
+            CancellationToken ct = default,
+            string? userId = null
         )
         {
             var allowed = new[] { 10, 25, 50, 100 };
@@ -73,12 +74,15 @@ namespace ProcurementHTE.Web.Controllers
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+            var user = _userManager.GetUserId(User);
+
             var procurements = await _procurementService.GetAllProcurementWithDetailsAsync(
                 page,
                 pageSize,
                 search,
                 selectedFields,
-                ct
+                ct,
+                user
             );
             ViewBag.RouteData = new RouteValueDictionary
             {

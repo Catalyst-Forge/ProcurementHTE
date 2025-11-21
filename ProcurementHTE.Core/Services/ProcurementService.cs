@@ -22,10 +22,11 @@ public class ProcurementService : IProcurementService
         int pageSize,
         string? search,
         ISet<string> fields,
-        CancellationToken ct
+        CancellationToken ct,
+        string? userId
     )
     {
-        return _procurementRepository.GetAllAsync(page, pageSize, search, fields, ct);
+        return _procurementRepository.GetAllAsync(page, pageSize, search, fields, ct, userId);
     }
 
     public async Task<Procurement?> GetProcurementByIdAsync(string id)
