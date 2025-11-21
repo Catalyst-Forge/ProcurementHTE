@@ -8,5 +8,6 @@
         public string? Description { get; set; }
         public string? GeneratedByUserId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string? ProcDocumentId { get; set; }
     }
 }

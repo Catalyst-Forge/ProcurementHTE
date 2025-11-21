@@ -50,7 +50,7 @@ namespace ProcurementHTE.Core.Authorization.Handlers
             if (config is null || config.DocumentApprovals is null || config.DocumentApprovals.Count == 0)
                 return;
 
-            const decimal ThreshHoldVP = 500_000_000m;
+            const decimal ThreshHoldVP = 300_000_000m;
             bool needVP = resource.TotalPenawaran > ThreshHoldVP;
 
             var configured = config

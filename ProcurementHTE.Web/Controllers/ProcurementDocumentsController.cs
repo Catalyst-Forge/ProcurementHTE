@@ -298,31 +298,27 @@ public class ProcurementDocumentsController : Controller
         return RedirectToAction(nameof(Index), new { procurementId });
     }
 
-    // POST: /ProcurementDocuments/SendApproval
-    [HttpPost("SendApproval")]
+    // POST: /ProcurementDocuments/SendApprovalPerDoc
+    [HttpPost("SendApprovalPerDoc")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendApproval([FromForm] string procurementId)
+    public async Task<IActionResult> SendApprovalPerDoc([FromForm] string procDocumentId, [FromForm] string procurementId)
     {
+        if (string.IsNullOrWhiteSpace(procDocumentId))
+        {
+            TempData["error"] = "Invalid document.";
+            return RedirectToAction(nameof(Index), new { procurementId });
+        }
         try
         {
             var userId = User?.Identity?.Name ?? "-";
-            var ok = await _docSvc.CanSendApprovalAsync(procurementId);
-            if (!ok)
-            {
-                TempData["error"] = "Mandatory documents are not yet complete.";
-                return RedirectToAction(nameof(Index), new { procurementId });
-            }
-
-            await _docSvc.SendApprovalAsync(procurementId, userId, HttpContext.RequestAborted);
-            TempData["success"] =
-                "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
+            await _docSvc.SendApprovalAsync(procDocumentId, userId, HttpContext.RequestAborted);
+            TempData["success"] = "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] SendApproval gagal untuk Procurement={Procurement}", procurementId);
-            TempData["error"] = "Failed to send approval.";
+            _logger.LogError(ex, "[ProcDocs] SendApprovalPerDoc gagal: doc={Doc}", procDocumentId);
+            TempData["error"] = ex.Message;
         }
-
         return RedirectToAction(nameof(Index), new { procurementId });
     }
 
@@ -381,7 +377,7 @@ public class ProcurementDocumentsController : Controller
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Generate(string procurementId, string documentTypeId)
+    public async Task<IActionResult> Generate(string procurementId, string documentTypeId, string? procDocumentId)
     {
         try
         {
@@ -434,6 +430,7 @@ public class ProcurementDocumentsController : Controller
                     GeneratedByUserId = User.FindFirst(
                         System.Security.Claims.ClaimTypes.NameIdentifier
                     )?.Value,
+                    ProcDocumentId = procDocumentId,
                 }
             );
 

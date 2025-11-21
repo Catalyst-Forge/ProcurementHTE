@@ -371,3 +371,5 @@ FodyWeavers.xsd
 /minio-policy.json
 .dotnet-tools
 .config/dotnet-tools.json
+/ProcurementHTE.Core.Tests
+/ProcurementHTE.Core.Tests/ProcurementHTE.Core.Tests.csproj

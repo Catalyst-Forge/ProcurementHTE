@@ -6,13 +6,19 @@ namespace ProcurementHTE.Core.Services {
     public class ProcDocApprovalFlowService : IProcDocApprovalFlowService {
         private readonly IProcDocApprovalFlowRepository _flowRepository;
         private readonly ILogger<ProcDocApprovalFlowService> _logger;
+        private readonly Microsoft.AspNetCore.Identity.RoleManager<ProcurementHTE.Core.Models.Role> _roleManager;
 
-        public ProcDocApprovalFlowService(IProcDocApprovalFlowRepository flowRepository, ILogger<ProcDocApprovalFlowService> logger) {
+        public ProcDocApprovalFlowService(
+            IProcDocApprovalFlowRepository flowRepository,
+            ILogger<ProcDocApprovalFlowService> logger,
+            Microsoft.AspNetCore.Identity.RoleManager<ProcurementHTE.Core.Models.Role> roleManager)
+        {
             _flowRepository = flowRepository;
             _logger = logger;
+            _roleManager = roleManager;
         }
 
-        public async Task GenerateFlowAsync(string woId, string procDocumentId) {
+        public async Task GenerateFlowAsync(string woId, string procDocumentId, IEnumerable<string>? extraRoleNames = null) {
             var doc = await _flowRepository.GetDocumentWithProcurementAsync(procDocumentId);
             if (doc == null || doc.Procurement == null)
                 throw new InvalidOperationException("Document atau Work Order tidak ditemukan");
@@ -34,7 +40,7 @@ namespace ProcurementHTE.Core.Services {
                 return;
             }
 
-            var flows = new List<ProcDocumentApprovals>(approvalsMaster.Count);
+            var flows = new List<ProcDocumentApprovals>(approvalsMaster.Count + (extraRoleNames?.Count() ?? 0));
             foreach (var approval in approvalsMaster) {
                 flows.Add(new ProcDocumentApprovals {
                     ProcDocumentId = procDocumentId,
@@ -44,6 +50,28 @@ namespace ProcurementHTE.Core.Services {
                     SequenceOrder = approval.SequenceOrder,
                     Status = "Pending"
                 });
+            }
+
+            // Append extra role names as a new level (maxLevel + 1)
+            if (extraRoleNames != null && extraRoleNames.Any()) {
+                var maxLevel = approvalsMaster.Max(a => a.Level);
+                int seq = 1;
+                foreach (var roleName in extraRoleNames) {
+                    if (string.IsNullOrWhiteSpace(roleName)) continue;
+                    var role = await _roleManager.FindByNameAsync(roleName);
+                    if (role == null) {
+                        _logger.LogWarning("Role '{RoleName}' not found, skipping append.", roleName);
+                        continue;
+                    }
+                    flows.Add(new ProcDocumentApprovals {
+                        ProcDocumentId = procDocumentId,
+                        ProcurementId = woId,
+                        RoleId = role.Id,
+                        Level = maxLevel + 1,
+                        SequenceOrder = seq++,
+                        Status = "Pending"
+                    });
+                }
             }
 
             await _flowRepository.AddApprovalsAsync(flows);
