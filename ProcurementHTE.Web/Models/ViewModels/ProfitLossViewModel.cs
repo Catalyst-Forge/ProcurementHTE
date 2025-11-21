@@ -17,7 +17,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? Distance { get; set; }
+        public decimal Distance { get; set; }
 
         [DisplayName("Daftar Item P&L")]
         [MinLength(1)]
@@ -29,6 +29,8 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public IEnumerable<VendorChoiceViewModel> VendorChoices { get; set; } = [];
 
         [DisplayName("Vendor yang disertakan")]
+        [Required(ErrorMessage = "Pilih minimal 1 vendor")]
+        [MinLength(1, ErrorMessage = "Pilih minimal 1 vendor")]
         public List<string> SelectedVendorIds { get; set; } = [];
 
         public List<ProcOfferLiteVm> OfferItems { get; set; } = [];
@@ -41,6 +43,9 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         [Required]
         public string ItemPenawaran { get; set; } = null!;
+
+        [Required]
+        public decimal Quantity { get; set; }
     }
 
     public class ItemTariffInputVm
@@ -59,8 +64,8 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public decimal TarifAdd { get; set; }
 
         [DisplayName("KM per 25 km")]
-        [Range(0, int.MaxValue)]
-        public int KmPer25 { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal KmPer25 { get; set; }
 
         [DisplayName("Biaya Operator (Item)")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -81,11 +86,17 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [Required, StringLength(450)]
         public string ProcOfferId { get; set; } = null!;
 
+        public int Round { get; set; }
+
         [MinLength(0)]
         public List<decimal> Prices { get; set; } = [];
 
         [MinLength(0)]
         public List<string> Letters { get; set; } = [];
+
+        public int Quantity { get; set; }
+
+        public int Trip { get; set; }
     }
 
     public class VendorChoiceViewModel
@@ -141,7 +152,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
             int Quantity,
             decimal TarifAwal,
             decimal TarifAdd,
-            int KmPer25,
+            decimal KmPer25,
             decimal OperatorCost,
             decimal Revenue
         )> Items { get; set; } = [];

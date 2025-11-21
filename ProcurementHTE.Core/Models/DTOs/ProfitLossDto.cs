@@ -15,17 +15,28 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal TarifAdd { get; set; }
 
-        [Range(0, 1000)]
-        public int KmPer25 { get; set; }
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal KmPer25 { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal OperatorCost { get; set; }
+    }
+
+    public class VendorItemOffersDto
+    {
+        [Required, StringLength(450)]
+        public string VendorId { get; set; } = null!;
+
+        [MinLength(1)]
+        public List<VendorOfferPerItemDto> Items { get; set; } = [];
     }
 
     public class VendorOfferPerItemDto
     {
         [Required, StringLength(450)]
         public string VendorId { get; set; } = null!;
+
+        public int Round { get; set; }
 
         [Required, StringLength(450)]
         public string ProcOfferId { get; set; } = null!;
@@ -35,6 +46,9 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         [MinLength(0)]
         public List<string> Letters { get; set; } = [];
+
+        public int Quantity { get; set; }
+        public int Trip { get; set; }
     }
 
     public class ProfitLossInputDto
@@ -49,7 +63,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? Distance { get; set; }
+        public decimal Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -57,15 +71,6 @@ namespace ProcurementHTE.Core.Models.DTOs
         public List<string> SelectedVendorIds { get; set; } = [];
 
         public List<VendorItemOffersDto> Vendors { get; set; } = [];
-    }
-
-    public class VendorItemOffersDto
-    {
-        [Required, StringLength(450)]
-        public string VendorId { get; set; } = null!;
-
-        [MinLength(1)]
-        public List<VendorOfferPerItemDto> Items { get; set; } = [];
     }
 
     public class ProfitLossEditDto
@@ -83,7 +88,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? Distance { get; set; }
+        public decimal Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -118,7 +123,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? Distance { get; set; }
+        public decimal Distance { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -162,12 +167,44 @@ namespace ProcurementHTE.Core.Models.DTOs
             int Quantity,
             decimal TarifAwal,
             decimal TarifAdd,
-            int KmPer25,
+            decimal KmPer25,
             decimal OperatorCost,
             decimal Revenue
         )> Items { get; set; } = [];
 
         public List<string> SelectedVendorNames { get; set; } = [];
         public List<VendorComparisonDto> VendorComparisons { get; set; } = [];
+    }
+
+    public class ProfitLossNegotiationTablesDto
+    {
+        public string ProfitLossId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
+        public List<ProfitLossVendorNegotiationTableDto> Vendors { get; set; } = [];
+    }
+
+    public class ProfitLossVendorNegotiationTableDto {
+        public string VendorId { get; set; } = null!;
+        public string VendorName { get; set; } = null!;
+        public int MaxRound { get; set; }
+        public List<ProfitLossVendorRoundInfoDto> Rounds { get; set; } = [];
+        public List<ProfitLossVendorItemNegotiationDto> Items { get; set; } = [];
+        public decimal GrandTotal { get; set; }
+        public bool IsSelectedVendor { get; set; }
+    }
+
+    public class ProfitLossVendorRoundInfoDto {
+        public int Round { get; set; }
+        public string? LetterNumber { get; set; }
+    }
+
+    public class ProfitLossVendorItemNegotiationDto {
+        public string ProcOfferId { get; set; } = null!;
+        public string ItemName { get; set; } = null!;
+        public int Quantity { get; set; }
+        public int Trip { get; set; }
+        public List<decimal?> PricesPerRound { get; set; } = [];
+        public decimal? FinalPrice { get; set; }
+        public decimal? Total { get; set; }
     }
 }

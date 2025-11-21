@@ -15,8 +15,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string woId)
         {
             return await _context
-                .VendorOffers
-                .Where(offer => offer.ProcurementId == woId)
+                .VendorOffers.Where(offer => offer.ProcurementId == woId)
                 .OrderBy(offer => offer.VendorId)
                 .ThenBy(offer => offer.Round)
                 .AsNoTracking()
