@@ -1,4 +1,20 @@
-﻿<!DOCTYPE html>
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var hideSidebar = ViewData["HideSidebar"] is true;
+    var hideNavbar = ViewData["HideNavbar"] is true;
+    var hideFooter = ViewData["HideFooter"] is true;
+    var disableHxBoost = ViewData["DisableHxBoost"] is true;
+    var bodyClass = "mb-0 min-vh-100";
+    if (ViewData["BodyClass"] is string customBodyClass && !string.IsNullOrWhiteSpace(customBodyClass))
+    {
+        bodyClass = $"{bodyClass} {customBodyClass}".Trim();
+    }
+    var layoutRowClass = hideSidebar ? "row g-0 w-100" : "row g-0 flex-nowrap";
+    var contentColumnClass = hideSidebar ? "col-12" : "col";
+    var hxBoostValue = disableHxBoost ? "false" : "true";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -12,38 +28,62 @@
     @RenderSection("HeadScripts", required: false)
 </head>
 
-<body class="mb-0 min-vh-100" data-active-page="@ViewBag.ActivePage">
-    <div class="row g-0 flex-nowrap">
-        <div class="col-9 col-md-3 col-xl-2 offcanvas-md offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
-            <partial name="Partials/_Sidebar" />
-        </div>
+<body class="@bodyClass" data-active-page="@ViewBag.ActivePage" data-active-controller="@currentController" data-active-action="@currentAction">
+    <div class="@layoutRowClass">
+        @if (!hideSidebar)
+        {
+            <div class="col-9 col-md-3 col-xl-2 offcanvas-md offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
+                <partial name="Partials/_Sidebar" />
+            </div>
+        }
 
-        <div class="col position-relative content">
-            <header class="sticky-top">
-                <partial name="Partials/_Navbar" />
-            </header>
+        <div class="@contentColumnClass position-relative content">
+            @if (!hideNavbar)
+            {
+                <header class="sticky-top">
+                    <partial name="Partials/_Navbar" />
+                </header>
+            }
 
-            <div class="container-fluid gx-8 mb-5">
-                <main role="main" class="pb-3">
+            <div class="container-fluid gx-8 mb-5 position-relative">
+                <div id="content-loading" class="content-loading-indicator htmx-indicator">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <main id="app-content"
+                      role="main"
+                      class="pb-3"
+                      hx-boost="@hxBoostValue"
+                      hx-target="#app-content"
+                      hx-indicator="#content-loading"
+                      hx-push-url="true">
                     @RenderBody()
                 </main>
             </div>
 
-            <footer class="border-top footer text-muted">
-                <div class="container">
-                    &copy; 2025 - Procurement HTE
-                </div>
-            </footer>
+            @if (!hideFooter)
+            {
+                <footer class="border-top footer text-muted">
+                    <div class="container">
+                        &copy; 2025 - Procurement HTE
+                    </div>
+                </footer>
+            }
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @await Html.PartialAsync("_SweetAlerts")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @* Render section Scripts HANYA SEKALI di akhir body *@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

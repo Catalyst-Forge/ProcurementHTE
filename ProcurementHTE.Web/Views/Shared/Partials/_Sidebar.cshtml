@@ -1,6 +1,27 @@
-<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top">
+﻿<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top" hx-boost="true" hx-target="#app-content" hx-push-url="true" hx-indicator="#content-loading">
+    @{
+        // Map controllers → menu groups so Html.ActiveClass/CollapseState can highlight new entries consistently.
+        var procurementControllers = new[] { "Procurements", "ProcurementDocuments", "Vendors" };
+        var procurementMenuShowClass = Html.CollapseState(controllers: procurementControllers);
+        var procurementMenuOpen = !string.IsNullOrEmpty(procurementMenuShowClass);
+        var procurementMenuExpanded = procurementMenuOpen ? "true" : "false";
+        var procurementMenuChevronClass = procurementMenuOpen ? "rotate" : string.Empty;
+
+        var procurementSettingsControllers = new[] { "JobType", "DocumentType", "DocumentApprovals", "JobTypeDocument" };
+        var procurementSettingsShowClass = Html.CollapseState(controllers: procurementSettingsControllers);
+        var procurementSettingsOpen = !string.IsNullOrEmpty(procurementSettingsShowClass);
+        var procurementSettingsExpanded = procurementSettingsOpen ? "true" : "false";
+        var procurementSettingsChevronClass = procurementSettingsOpen ? "rotate" : string.Empty;
+
+        var masterDataControllers = new[] { "JobType", "DocumentType" };
+        var masterDataShowClass = Html.CollapseState(controllers: masterDataControllers);
+        var masterDataOpen = !string.IsNullOrEmpty(masterDataShowClass);
+        var masterDataExpanded = masterDataOpen ? "true" : "false";
+        var masterDataChevronClass = masterDataOpen ? "rotate" : string.Empty;
+    }
+
     <div class="d-flex w-100 justify-content-between">
-        <a asp-controller="Home" asp-action="Index" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">HTE</a>
+        <a href="@(Url.Content("~/"))" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">HTE</a>
         <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
     </div>
 
@@ -8,7 +29,13 @@
 
     <ul class="nav flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100">
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1" asp-controller="Dashboard" asp-action="Index" data-page="Dashboard">
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Dashboard" }, actions: new[] { "Index" }))"
+              
+               data-nav-controller="Dashboard"
+               data-nav-action="Index"
+               asp-controller="Dashboard"
+               asp-action="Index"
+               data-page="Dashboard">
                 <i class="bi bi-grid"></i> <span class="ms-1">Dashboard</span>
             </a>
         </li>
@@ -19,19 +46,24 @@
                data-bs-toggle="collapse"
                href="#procurementSubmenu"
                role="button"
-               aria-expanded="false"
+               aria-expanded="@procurementMenuExpanded"
                aria-controls="procurementSubmenu">
                 <div>
                     <i class="bi bi-briefcase"></i>
                     <span class="ms-1">Procurements</span>
                 </div>
-                <i class="bi bi-chevron-down small"></i>
+                <i class="bi bi-chevron-down small @procurementMenuChevronClass"></i>
             </a>
 
-            <div class="collapse submenu" id="procurementSubmenu">
+            <div class="collapse submenu @procurementMenuShowClass" id="procurementSubmenu" data-nav-collapse="Procurements,ProcurementDocuments,Vendors">
                 <ul class="list-unstyled fw-normal pb-1 small ps-4">
                     <li>
-                        <a class="nav-link link-secondary rounded-1" asp-controller="Procurements" asp-action="Index" data-page="Index Procurements">
+                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Procurements" }))"
+                          
+                           data-nav-controller="Procurements"
+                           asp-controller="Procurements"
+                           asp-action="Index"
+                           data-page="Index Procurements">
                             Procurements
                         </a>
                     </li>
@@ -41,7 +73,12 @@
             </a>
           </li> *@
                     <li>
-                        <a class="nav-link link-secondary rounded-1" asp-controller="Vendors" asp-action="Index" data-page="Vendors">
+                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Vendors" }))"
+                          
+                           data-nav-controller="Vendors"
+                           asp-controller="Vendors"
+                           asp-action="Index"
+                           data-page="Vendors">
                             Vendors
                         </a>
                     </li>
@@ -55,38 +92,48 @@
                data-bs-toggle="collapse"
                href="#procurementSettingSubmenu"
                role="button"
-               aria-expanded="false"
+               aria-expanded="@procurementSettingsExpanded"
                aria-controls="procurementSettingSubmenu">
                 <div>
                     <i class="bi bi-gear-fill"></i>
                     <span class="ms-1">Procurement Settings</span>
                 </div>
-                <i class="bi bi-chevron-down small"></i>
+                <i class="bi bi-chevron-down small @procurementSettingsChevronClass"></i>
             </a>
 
             @* Master Data Menu *@
-            <div class="collapse submenu" id="procurementSettingSubmenu">
+            <div class="collapse submenu @procurementSettingsShowClass" id="procurementSettingSubmenu" data-nav-collapse="JobType,DocumentType,DocumentApprovals,JobTypeDocument">
                 <ul class="list-unstyled fw-normal pb-1 small ps-4">
                     <li>
                         <a class="nav-link link-secondary rounded-1 d-flex align-items-center"
                            data-bs-toggle="collapse"
                            href="#masterDataSubmenu"
                            role="button"
-                           aria-expanded="false"
+                           aria-expanded="@masterDataExpanded"
                            aria-controls="masterDataSubmenu">
                             <span>Master Data</span>
-                            <i class="bi bi-chevron-down small ms-auto"></i>
+                            <i class="bi bi-chevron-down small ms-auto @masterDataChevronClass"></i>
                         </a>
 
-                        <div class="collapse submenu" id="masterDataSubmenu">
+                        <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="JobType,DocumentType">
                             <ul class="list-unstyled fw-normal pb-1 ps-4 small">
                                 <li>
-                                    <a class="nav-link link-secondary rounded-1" asp-controller="JobType" asp-action="Index" data-page="Index Procurement Types">
+                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobType" }))"
+                                      
+                                       data-nav-controller="JobType"
+                                       asp-controller="JobType"
+                                       asp-action="Index"
+                                       data-page="Index Procurement Types">
                                         Procurement Types
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="nav-link link-secondary rounded-1" asp-controller="DocumentType" asp-action="Index" data-page="Index Document Types">
+                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentType" }))"
+                                      
+                                       data-nav-controller="DocumentType"
+                                       asp-controller="DocumentType"
+                                       asp-action="Index"
+                                       data-page="Index Document Types">
                                         Document Types
                                     </a>
                                 </li>
@@ -96,7 +143,7 @@
 
                     @* Rules & Mapping Menu *@
                     @* <li>
-            <a class="nav-link link-secondary rounded-1 d-flex align-items-center"
+            <a class="nav-link link-secondary rounded-1 d-flex alignments-center"
               data-bs-toggle="collapse"
               href="#rulesAndMappingSubmenu"
               role="button"
@@ -126,7 +173,12 @@
         </li>
 
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1" asp-controller="Approvals" asp-action="Index" data-page="Documents">
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Approvals" }))"
+              
+               data-nav-controller="Approvals"
+               asp-controller="Approvals"
+               asp-action="Index"
+               data-page="Documents">
                 <i class="bi bi-file-earmark"></i> <span class="ms-1">Approval Documents</span>
             </a>
         </li>
@@ -135,7 +187,12 @@
         @if (User.IsInRole("Admin"))
         {
             <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1" asp-controller="UserManagement" asp-action="Index" data-page="User Management">
+                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "UserManagement" }))"
+                  
+                   data-nav-controller="UserManagement"
+                   asp-controller="UserManagement"
+                   asp-action="Index"
+                   data-page="User Management">
                     <i class="bi bi-people"></i> <span class="ms-1">User Management</span>
                 </a>
             </li>
@@ -144,7 +201,13 @@
         <hr class="mt-auto w-100" />
 
         <li class="nav-item w-100 pb-4">
-            <a class="nav-link link-secondary rounded-1" asp-controller="Account" asp-action="Settings" data-page="Settings">
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Account" }, actions: new[] { "Settings" }))"
+              
+               data-nav-controller="Account"
+               data-nav-action="Settings"
+               asp-controller="Account"
+               asp-action="Settings"
+               data-page="Settings">
                 <i class="bi bi-gear"></i> <span class="ms-1">Settings</span>
             </a>
         </li>

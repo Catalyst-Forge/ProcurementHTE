@@ -6,7 +6,7 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
 
-namespace ProcurementHTE.Web.Controllers;
+namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 [Authorize]
 public class ProcurementDocumentsController : Controller
@@ -93,7 +93,7 @@ public class ProcurementDocumentsController : Controller
         {
             _logger.LogError(ex, "[ProcDocs] Error load Index for Procurement={Procurement}.", procurementId);
             TempData["error"] = "Failed to load document list.";
-            return RedirectToAction("Error", "Home");
+            return RedirectToAction("Index", "Error");
         }
     }
 

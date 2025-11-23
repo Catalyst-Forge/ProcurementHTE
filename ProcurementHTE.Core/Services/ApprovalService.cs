@@ -66,8 +66,18 @@ namespace ProcurementHTE.Core.Services
             var userRoleNames = await _approvalRepository.GetUserRoleNamesAsync(currentUser.Id, ct);
 
             var roleHit = gate.RequiredRoles.FirstOrDefault(r =>
-                !string.IsNullOrWhiteSpace(r.RoleName) &&
-                userRoleNames.Contains(r.RoleName!, StringComparer.OrdinalIgnoreCase));
+            {
+                var roleMatches = !string.IsNullOrWhiteSpace(r.RoleName)
+                    && userRoleNames.Contains(r.RoleName!, StringComparer.OrdinalIgnoreCase);
+                if (!roleMatches)
+                    return false;
+
+                if (!string.IsNullOrWhiteSpace(r.ApproverId)
+                    && !string.Equals(r.ApproverId, currentUser.Id, StringComparison.Ordinal))
+                    return false;
+
+                return true;
+            });
 
             if (roleHit == null)
                 return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
@@ -193,8 +203,18 @@ namespace ProcurementHTE.Core.Services
             var userRoleNames = await _approvalRepository.GetUserRoleNamesAsync(currentUser.Id, ct);
 
             var roleHit = gate.RequiredRoles.FirstOrDefault(r =>
-                !string.IsNullOrWhiteSpace(r.RoleName) &&
-                userRoleNames.Contains(r.RoleName!, StringComparer.OrdinalIgnoreCase));
+            {
+                var roleMatches = !string.IsNullOrWhiteSpace(r.RoleName)
+                    && userRoleNames.Contains(r.RoleName!, StringComparer.OrdinalIgnoreCase);
+                if (!roleMatches)
+                    return false;
+
+                if (!string.IsNullOrWhiteSpace(r.ApproverId)
+                    && !string.Equals(r.ApproverId, currentUser.Id, StringComparison.Ordinal))
+                    return false;
+
+                return true;
+            });
 
             if (roleHit == null)
                 return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
@@ -250,6 +270,8 @@ namespace ProcurementHTE.Core.Services
                     SequenceOrder = c.SequenceOrder,
                     RoleName = c.RoleName,
                     Status = c.Status,
+                    AssignedApproverUserId = c.AssignedApproverUserId,
+                    AssignedApproverFullName = c.AssignedApproverFullName,
                     ApproverUserId = c.ApproverUserId,
                     ApproverFullName = c.ApproverFullName,
                     ApprovedAt = c.ApprovedAt,

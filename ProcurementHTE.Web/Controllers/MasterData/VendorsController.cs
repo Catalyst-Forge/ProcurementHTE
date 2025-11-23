@@ -1,20 +1,28 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Filters;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.MasterData
 {
     [Authorize]
     public class VendorsController : Controller
     {
         private readonly IVendorService _vendorService;
+        private const string ActivePageName = "Vendors";
 
         public VendorsController(IVendorService vendorService)
         {
             _vendorService = vendorService;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            ViewBag.ActivePage = ActivePageName;
+            base.OnActionExecuting(context);
         }
 
         // GET: Vendors
@@ -43,7 +51,7 @@ namespace ProcurementHTE.Web.Controllers
             );
             ViewBag.RouteData = new RouteValueDictionary
             {
-                ["ActivePage"] = "Vendors",
+                ["ActivePage"] = ActivePageName,
                 ["search"] = search,
                 ["fields"] = string.Join(',', selectedFields),
                 ["pageSize"] = pageSize,

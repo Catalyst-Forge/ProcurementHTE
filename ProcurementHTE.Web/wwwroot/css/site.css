@@ -115,6 +115,21 @@ body {
   margin-bottom: 60px;
 }
 
+.content-loading-indicator {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(1px);
+  align-items: center;
+  justify-content: center;
+}
+
+.htmx-indicator {
+  display: none;
+}
+
 a {
   color: #00bfff;
 }
@@ -340,4 +355,77 @@ a {
 
 .twofactor-pending-card form {
   width: 100%;
+}
+
+/* Error page */
+.app-error-page {
+  min-height: calc(100vh - 120px);
+  background: linear-gradient(135deg, rgba(0, 112, 243, 0.04), rgba(15, 23, 42, 0.02));
+}
+
+.app-error-illustration {
+  background-color: #fff;
+}
+
+.app-error-illustration svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.app-error-code {
+  font-weight: 600;
+  letter-spacing: 0.2rem;
+  text-transform: uppercase;
+}
+
+.app-error-title {
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.app-error-description {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.app-error-actions .btn-link {
+  color: #475569;
+}
+
+.app-error-meta {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.app-error-meta-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.app-error-meta-item:last-child {
+  margin-bottom: 0;
+}
+
+.app-error-meta-item .label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+}
+
+.app-error-meta-item .value {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+@media (max-width: 992px) {
+  .app-error-page {
+    min-height: auto;
+  }
+
+  .app-error-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

@@ -181,6 +181,7 @@ namespace ProcurementHTE.Infrastructure.Data
                         Email = u.Email,
                         NormalizedEmail = u.Email.ToUpperInvariant(),
                         EmailConfirmed = true,
+                        LockoutEnabled = true,
                         FirstName = u.Username,
                         LastName = "Seeder",
                         JobTitle = u.Role,

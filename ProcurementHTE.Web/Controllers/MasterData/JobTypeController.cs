@@ -1,20 +1,28 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Filters;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.MasterData
 {
     [Authorize]
     public class JobTypeController : Controller
     {
         private readonly IJobTypeService _jobTypeService;
+        private const string ActivePageName = "Index Work Order Types";
 
         public JobTypeController(IJobTypeService jobTypeService)
         {
             _jobTypeService = jobTypeService;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            ViewBag.ActivePage = ActivePageName;
+            base.OnActionExecuting(context);
         }
 
         // GET: JobType
@@ -43,7 +51,7 @@ namespace ProcurementHTE.Web.Controllers
             );
             ViewBag.RouteData = new RouteValueDictionary
             {
-                ["ActivePage"] = "Index Work Order Types",
+                ["ActivePage"] = ActivePageName,
                 ["search"] = search,
                 ["fields"] = string.Join(',', selectedFields),
                 ["pageSize"] = pageSize,

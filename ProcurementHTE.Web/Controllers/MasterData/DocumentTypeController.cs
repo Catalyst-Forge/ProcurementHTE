@@ -1,19 +1,27 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Filters;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.MasterData
 {
     [Authorize]
     public class DocumentTypeController : Controller
     {
         private readonly IDocumentTypeService _documentTypeService;
+        private const string ActivePageName = "Index Document Types";
 
         public DocumentTypeController(IDocumentTypeService documentTypeService)
         {
             _documentTypeService = documentTypeService;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            ViewBag.ActivePage = ActivePageName;
+            base.OnActionExecuting(context);
         }
 
         // GET: DocumentType
@@ -42,7 +50,7 @@ namespace ProcurementHTE.Web.Controllers
             );
             ViewBag.RouteData = new RouteValueDictionary
             {
-                ["ActivePage"] = "Index Document Types",
+                ["ActivePage"] = ActivePageName,
                 ["search"] = search,
                 ["fields"] = string.Join(',', selectedFields),
                 ["pageSize"] = pageSize,
@@ -64,7 +72,9 @@ namespace ProcurementHTE.Web.Controllers
         )
         {
             if (!ModelState.IsValid)
+            {
                 return View(documentType);
+            }
             try
             {
                 await _documentTypeService.AddDocumentTypeAsync(documentType);
@@ -102,7 +112,9 @@ namespace ProcurementHTE.Web.Controllers
                 return NotFound();
             }
             if (!ModelState.IsValid)
+            {
                 return View(documentType);
+            }
             try
             {
                 await _documentTypeService.EditDocumentTypeAsync(documentType, id);

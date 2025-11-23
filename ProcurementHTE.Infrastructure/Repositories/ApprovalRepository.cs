@@ -32,7 +32,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ThenInclude(d => d.DocumentType)
                 .Include(a => a.Procurement)
                 .Include(a => a.Role)
-                .Where(a => a.Status == "Pending" && roles.Contains(a.RoleId))
+                .Include(a => a.AssignedApprover)
+                .Where(a =>
+                    a.Status == "Pending"
+                    && roles.Contains(a.RoleId)
+                    && (a.AssignedApproverId == null || a.AssignedApproverId == user.Id))
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -233,6 +237,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var doc = await _context
                 .ProcDocuments.Include(d => d.Approvals)!
                 .ThenInclude(a => a.Role)
+                .Include(d => d.Approvals)!
+                .ThenInclude(a => a.AssignedApprover)
                 .FirstOrDefaultAsync(d => d.QrText == qrText, ct);
 
             return BuildGate(doc);
@@ -247,6 +253,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ProcDocumentApprovals.Include(a => a.ProcDocument)!
                 .ThenInclude(d => d.Approvals)!
                 .ThenInclude(a => a.Role)
+                .Include(a => a.ProcDocument)!
+                .ThenInclude(d => d.Approvals)!
+                .ThenInclude(a => a.AssignedApprover)
                 .FirstOrDefaultAsync(a => a.ProcDocumentApprovalId == procDocumentApprovalId, ct);
 
             return BuildGate(approval?.ProcDocument);
@@ -280,10 +289,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         a.Status == "Pending" && a.Level == minLevel && a.SequenceOrder == minSeq
                     )
                     .Select(a => new RoleInfoDto
-                    { // <— dari Core.DTOs
+                    { // < dari Core.DTOs
                         RoleId = a.RoleId,
                         RoleName = a.Role?.Name,
                         ProcDocumentApprovalId = a.ProcDocumentApprovalId,
+                        ApproverId = a.AssignedApproverId,
+                        ApproverFullName = a.AssignedApprover != null
+                            ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
+                            : null,
                     }),
             ];
 
@@ -477,6 +490,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await _context
                 .ProcDocumentApprovals.Where(x => x.ProcDocumentId == procDocumentId)
                 .Include(x => x.Role)
+                .Include(x => x.AssignedApprover)
                 .Include(x => x.Approver) // supaya full name bisa diambil
                 .OrderBy(x => x.Level)
                 .ThenBy(x => x.SequenceOrder)
@@ -487,7 +501,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     SequenceOrder = x.SequenceOrder,
                     RoleId = x.RoleId,
                     RoleName = x.Role.Name,
-                    Status = x.Status, // <— PENTING
+                    Status = x.Status, // < PENTING
+                    AssignedApproverUserId = x.AssignedApproverId,
+                    AssignedApproverFullName = x.AssignedApprover != null
+                        ? (x.AssignedApprover.FullName ?? x.AssignedApprover.UserName)
+                        : null,
                     ApproverUserId = x.ApproverId,
                     ApproverFullName =
                         x.Approver != null ? (x.Approver.FullName ?? x.Approver.UserName) : null,
@@ -521,6 +539,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var approvals = await _context
                 .ProcDocumentApprovals.AsNoTracking()
                 .Include(a => a.Role)
+                .Include(a => a.AssignedApprover)
                 .Where(a => a.ProcDocumentId == procDocumentId)
                 .ToListAsync(ct);
 
@@ -552,6 +571,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     ProcDocumentApprovalId = a.ProcDocumentApprovalId,
                     Level = a.Level,
                     SequenceOrder = a.SequenceOrder,
+                    ApproverId = a.AssignedApproverId,
+                    ApproverFullName = a.AssignedApprover != null
+                        ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
+                        : null,
                 })
                 .ToList();
 

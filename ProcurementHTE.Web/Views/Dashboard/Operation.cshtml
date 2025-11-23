@@ -1,0 +1,10 @@
+@model ProcurementHTE.Web.Models.ViewModels.DashboardSummaryViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+@await Html.PartialAsync("~/Views/Dashboard/Partials/_GeneralDashboardContent.cshtml", Model)
+
+@section Scripts {
+    @await Html.PartialAsync("~/Views/Dashboard/Partials/_DashboardChartsScripts.cshtml", Model)
+}

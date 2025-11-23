@@ -1,4 +1,4 @@
-﻿//using AspNetCoreGeneratedDocument;
+//using AspNetCoreGeneratedDocument;
 //using Microsoft.AspNetCore.Mvc;
 //using Microsoft.AspNetCore.Mvc.Rendering;
 //using ProcurementHTE.Core.Interfaces;
@@ -7,7 +7,7 @@
 //using ProcurementHTE.Infrastructure.Repositories;
 //using ProcurementHTE.Web.Models.ViewModels;
 
-//namespace ProcurementHTE.Web.Controllers
+//namespace ProcurementHTE.Web.Controllers.ProcurementModule
 //{
 //    public class ProfitLossController : Controller
 //    {

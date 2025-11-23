@@ -52,7 +52,13 @@
         <section class="col-12" aria-labelledby="vendor-section-title">
             <div class="card shadow-sm p-2">
                 <fieldset class="card-body">
-                    <legend class="card-title fw-semibold" id="vendor-section-title">Select Participating Vendors</legend>
+                    <legend class="card-title fw-semibold d-flex flex-wrap justify-content-between align-items-center gap-2" id="vendor-section-title">
+                        <span>Select Participating Vendors</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleVendors">
+                            <i class="bi bi-check2-square me-1"></i>
+                            <span data-label-checked="Uncheck All" data-label-unchecked="Check All">Check All</span>
+                        </button>
+                    </legend>
                     <hr />
                     <div class="row row-cols-2 row-cols-md-3 g-3">
                         @foreach (var vendor in Model.VendorChoices) {
@@ -339,6 +345,7 @@
         const getAll = sel => document.querySelectorAll(sel);
         const currencySelector = '[data-format-currency]';
         const thousandGroupRegex = /\B(?=(\d{3})+(?!\d))/g;
+        const vendorCheckboxSelector = 'input[name="SelectedVendorIds"]';
 
         const cleanDecimal = val => {
             const num = parseFloat(val);
@@ -346,6 +353,48 @@
         };
 
         const digitsOnly = value => (value ?? '').toString().replace(/\D/g, '');
+
+        // region: vendor select toggle
+        const toggleVendorBtn = document.getElementById('btnToggleVendors');
+        function syncToggleButtonLabel(allChecked) {
+            const labelSpan = toggleVendorBtn?.querySelector('span[data-label-checked]');
+            if (!labelSpan) return;
+            const nextLabel = allChecked
+                ? labelSpan.getAttribute('data-label-checked')
+                : labelSpan.getAttribute('data-label-unchecked');
+            labelSpan.textContent = nextLabel || (allChecked ? 'Uncheck All' : 'Check All');
+            const icon = toggleVendorBtn.querySelector('i');
+            if (icon) {
+                icon.className = allChecked ? 'bi bi-square me-1' : 'bi bi-check2-square me-1';
+            }
+        }
+
+        function setVendorCheckboxes(state) {
+            document.querySelectorAll(vendorCheckboxSelector).forEach(cb => {
+                if (!cb.disabled) {
+                    cb.checked = state;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        toggleVendorBtn?.addEventListener('click', () => {
+            const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector))
+                .filter(cb => !cb.disabled);
+            const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+            const nextState = !allChecked;
+            setVendorCheckboxes(nextState);
+            syncToggleButtonLabel(nextState);
+        });
+
+        // initial label
+        (() => {
+            const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector))
+                .filter(cb => !cb.disabled);
+            const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+            syncToggleButtonLabel(allChecked);
+        })();
+        // endregion
 
         function setCurrencyDisplay(input, rawValue) {
             if (!input) return;

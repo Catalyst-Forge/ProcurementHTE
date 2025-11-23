@@ -21,6 +21,8 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string? RoleId { get; set; }
         public string? RoleName { get; set; }
         public string? Status { get; set; }
+        public string? AssignedApproverUserId { get; set; }
+        public string? AssignedApproverFullName { get; set; }
         public string? ApproverUserId { get; set; }
         public string? ApproverFullName { get; set; }
         public DateTime? ApprovedAt { get; set; }

@@ -421,6 +421,12 @@ public class AppDbContext : IdentityDbContext<User, Role, string>
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
+                .HasOne(documentApproval => documentApproval.AssignedApprover)
+                .WithMany()
+                .HasForeignKey(documentApproval => documentApproval.AssignedApproverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
                 .HasOne(documentApproval => documentApproval.Approver)
                 .WithMany()
                 .HasForeignKey(documentApproval => documentApproval.ApproverId)

@@ -17,7 +17,7 @@ using ProcurementHTE.Web.Constants;
 using ProcurementHTE.Web.Helpers;
 using ProcurementHTE.Web.Models.Account;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.Account
 {
     [Authorize]
     public class AccountController : Controller

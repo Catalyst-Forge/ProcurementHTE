@@ -7,6 +7,16 @@ namespace ProcurementHTE.Core.Services {
         private readonly IProcDocApprovalFlowRepository _flowRepository;
         private readonly ILogger<ProcDocApprovalFlowService> _logger;
         private readonly Microsoft.AspNetCore.Identity.RoleManager<ProcurementHTE.Core.Models.Role> _roleManager;
+        private static readonly IReadOnlyDictionary<string, Func<Procurement, string?>> RoleApproverSelectors =
+            new Dictionary<string, Func<Procurement, string?>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Manager Transport & Logistic"] = proc => proc.ManagerUserId,
+                ["Assistant Manager HTE"] = proc => proc.AssistantManagerUserId,
+                ["Analyst HTE & LTS"] = proc => proc.AnalystHteUserId,
+                ["PIC Operations"] = proc => proc.PicOpsUserId,
+                ["PIC Operation"] = proc => proc.PicOpsUserId,
+                ["Operation"] = proc => proc.PicOpsUserId
+            };
 
         public ProcDocApprovalFlowService(
             IProcDocApprovalFlowRepository flowRepository,
@@ -42,10 +52,12 @@ namespace ProcurementHTE.Core.Services {
 
             var flows = new List<ProcDocumentApprovals>(approvalsMaster.Count + (extraRoleNames?.Count() ?? 0));
             foreach (var approval in approvalsMaster) {
+                var assignedApproverId = ResolveAssignedApproverId(approval, doc.Procurement);
                 flows.Add(new ProcDocumentApprovals {
                     ProcDocumentId = procDocumentId,
                     ProcurementId = woId,
                     RoleId = approval.RoleId,
+                    AssignedApproverId = assignedApproverId,
                     Level = approval.Level,
                     SequenceOrder = approval.SequenceOrder,
                     Status = "Pending"
@@ -79,6 +91,27 @@ namespace ProcurementHTE.Core.Services {
             await _flowRepository.SaveChangesAsync();
 
             _logger.LogInformation("Generate approval flow berhasil untuk ProcDocumentId={ProcDocumentId}", procDocumentId);
+        }
+
+        private string? ResolveAssignedApproverId(DocumentApprovals approval, Procurement procurement) {
+            var roleName = approval.Role?.Name;
+            if (string.IsNullOrWhiteSpace(roleName) || procurement == null) {
+                return null;
+            }
+
+            if (RoleApproverSelectors.TryGetValue(roleName, out var selector)) {
+                var userId = selector(procurement);
+                if (string.IsNullOrWhiteSpace(userId)) {
+                    _logger.LogWarning(
+                        "Procurement {ProcurementId} has no user mapped for role {Role}",
+                        procurement.ProcurementId,
+                        roleName);
+                }
+                return string.IsNullOrWhiteSpace(userId) ? null : userId;
+            }
+
+            _logger.LogDebug("No approver mapping configured for role {RoleName}.", roleName);
+            return null;
         }
     }
 }

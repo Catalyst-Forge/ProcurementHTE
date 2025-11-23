@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,22 +11,25 @@ using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Web.Models.Admin;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.Account
 {
     // Hanya role Admin yang boleh akses
     [Authorize(Roles = "Admin")]
     public class UserManagementController : Controller
     {
         private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly ILogger<UserManagementController> _logger;
 
         public UserManagementController(
             UserManager<User> userManager,
+            SignInManager<User> signInManager,
             RoleManager<Role> roleManager,
             ILogger<UserManagementController> logger)
         {
             _userManager = userManager;
+            _signInManager = signInManager;
             _roleManager = roleManager;
             _logger = logger;
         }
@@ -193,7 +197,8 @@ namespace ProcurementHTE.Web.Controllers
                     JobTitle = model.Form.JobTitle,
                     PhoneNumber = model.Form.PhoneNumber,
                     IsActive = model.Form.IsActive,
-                    EmailConfirmed = true // bisa disesuaikan kebutuhan
+                    EmailConfirmed = true, // bisa disesuaikan kebutuhan
+                    LockoutEnabled = true
                 };
 
                 var password = model.GeneratedPassword ?? GeneratePassword();
@@ -299,6 +304,8 @@ namespace ProcurementHTE.Web.Controllers
 
             try
             {
+                var wasActive = user.IsActive;
+
                 user.FirstName = model.Form.FirstName;
                 string? LastName = model.Form.LastName;
                 user.Email = model.Form.Email;
@@ -325,6 +332,8 @@ namespace ProcurementHTE.Web.Controllers
 
                 var rolesToAdd = selectedRoles.Except(currentRoles).ToList();
                 var rolesToRemove = currentRoles.Except(selectedRoles).ToList();
+
+                var rolesChanged = false;
 
                 if (rolesToAdd.Any())
                 {
@@ -356,6 +365,22 @@ namespace ProcurementHTE.Web.Controllers
                     }
                 }
 
+                rolesChanged = rolesToAdd.Any() || rolesToRemove.Any();
+                if (rolesChanged || wasActive != user.IsActive)
+                {
+                    await RefreshUserSessionStateAsync(user, user.IsActive);
+                }
+
+                var editingSelf = string.Equals(_userManager.GetUserId(User), user.Id, StringComparison.OrdinalIgnoreCase);
+                if (editingSelf)
+                {
+                    var stillAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+                    if (!stillAdmin)
+                    {
+                        return RedirectToForbidden();
+                    }
+                }
+
                 TempData["SuccessMessage"] = $"User {user.UserName} berhasil diperbarui.";
                 return RedirectToAction(nameof(Index));
             }
@@ -383,6 +408,7 @@ namespace ProcurementHTE.Web.Controllers
 
             user.IsActive = !user.IsActive;
             await _userManager.UpdateAsync(user);
+            await RefreshUserSessionStateAsync(user, user.IsActive);
 
             TempData["SuccessMessage"] = $"Status user {user.UserName} diubah menjadi {(user.IsActive ? "Aktif" : "Tidak Aktif")}.";
             return RedirectToAction(nameof(Index));
@@ -401,6 +427,40 @@ namespace ProcurementHTE.Web.Controllers
                 .ToListAsync();
 
             return roles;
+        }
+
+        private IActionResult RedirectToForbidden()
+        {
+            var redirectUrl =
+                Url.Action("Status", "Error", new { statusCode = StatusCodes.Status403Forbidden }) ??
+                "/Error/403";
+
+            if (Request.Headers.ContainsKey("HX-Request"))
+            {
+                Response.Headers["HX-Redirect"] = redirectUrl;
+                return new EmptyResult();
+            }
+
+            return Redirect(redirectUrl);
+        }
+
+        private async Task RefreshUserSessionStateAsync(User targetUser, bool stillActive)
+        {
+            if (!stillActive)
+            {
+                await _userManager.UpdateSecurityStampAsync(targetUser);
+                return;
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+            if (!string.IsNullOrEmpty(currentUserId) && currentUserId == targetUser.Id)
+            {
+                await _signInManager.RefreshSignInAsync(targetUser);
+            }
+            else
+            {
+                await _userManager.UpdateSecurityStampAsync(targetUser);
+            }
         }
 
         // Password random sederhana (boleh kamu ganti dengan aturan yang kamu mau)

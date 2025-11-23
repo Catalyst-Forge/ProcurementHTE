@@ -217,14 +217,16 @@ namespace ProcurementHTE.Core.Services
                 {
                     var allVendor = await _vendorRepo.GetAllAsync();
                     var selectVendor = await _pnlRepo.GetSelectedVendorsAsync(pnl.ProcurementId);
-                    var vendorNames = selectVendor
-                        .Select(row =>
-                            allVendor.FirstOrDefault(v => v.VendorId == row.VendorId)?.VendorName
-                        )
+
+                    var participatingVendors = selectVendor
+                        .Select(row => allVendor.FirstOrDefault(v => v.VendorId == row.VendorId))
+                        .Where(v => v != null)
+                        .Cast<Vendor>()
                         .ToList();
+
                     var vendorCount = allVendor.Count();
-                    var selectedVendorCount = selectVendor.Count();
-                    var vendorList = GenerateVendorNameList(allVendor);
+                    var selectedVendorCount = participatingVendors.Count;
+                    var vendorList = GenerateVendorNameList(participatingVendors);
 
                     html = ReplaceToken(html, "VendorList", vendorList);
                     html = ReplaceToken(
@@ -236,7 +238,7 @@ namespace ProcurementHTE.Core.Services
                     html = ReplaceToken(
                         html,
                         "SelectedVendorCountTerbilang",
-                        vendorCount.ToTerbilang()
+                        selectedVendorCount.ToTerbilang()
                     );
 
                     var vendor = await _vendorRepo.GetByIdAsync(pnl.SelectedVendorId);
@@ -419,41 +421,27 @@ namespace ProcurementHTE.Core.Services
 
         private static string GenerateVendorNameList(ICollection<Vendor> vendorList)
         {
+            if (vendorList == null || vendorList.Count == 0)
+            {
+                return "<p class='text-muted mb-0'>Tidak ada vendor.</p>";
+            }
+
             var sb = new StringBuilder();
-            int itemsPerColumn = 5;
 
             var items = vendorList
-                .Select((v, i) => (object)new { No = i + 1, Name = v.VendorName })
+                .Select((v, i) => new { No = i + 1, Name = v.VendorName ?? "-" })
                 .ToList();
 
-            var columns = new List<List<object>>();
-            for (int i = 0; i < items.Count; i += itemsPerColumn)
+            sb.AppendLine("<div class='vendor-list mb-3'>");
+
+            foreach (var item in items)
             {
-                columns.Add(items.Skip(i).Take(itemsPerColumn).ToList());
+                sb.AppendLine("  <div class='vendor-item'>");
+                sb.AppendLine($"    <div class='vendor-item-no'>{item.No}</div>");
+                sb.AppendLine($"    <div class='vendor-item-name'>{item.Name}</div>");
+                sb.AppendLine("  </div>");
             }
 
-            sb.AppendLine("<div class='d-flex mb-3'>");
-
-            foreach (var col in columns)
-            {
-                sb.AppendLine("<div class='d-flex flex-column w-100'>");
-
-                foreach (var obj in col)
-                {
-                    dynamic item = obj;
-
-                    sb.AppendLine("<div class='d-flex border-table'>");
-                    sb.AppendLine(
-                        $"  <div class='p-1 text-center' style='width: 2rem'>{item.No}</div>"
-                    );
-                    sb.AppendLine(
-                        $"  <div class='p-1 border-start border-black'>{item.Name}</div>"
-                    );
-                    sb.AppendLine("</div>");
-                }
-
-                sb.AppendLine("</div>");
-            }
             sb.AppendLine("</div>");
 
             return sb.ToString();

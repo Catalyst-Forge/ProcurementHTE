@@ -18,6 +18,8 @@ public class ProcDocumentApprovals
     [Required]
     public string RoleId { get; set; } = default!;
 
+    public string? AssignedApproverId { get; set; }
+
     public string? ApproverId { get; set; }
 
     [Required]
@@ -41,6 +43,9 @@ public class ProcDocumentApprovals
 
     [ForeignKey(nameof(RoleId))]
     public Role Role { get; set; } = default!;
+
+    [ForeignKey(nameof(AssignedApproverId))]
+    public User? AssignedApprover { get; set; }
 
     [ForeignKey(nameof(ApproverId))]
     public User? Approver { get; set; }

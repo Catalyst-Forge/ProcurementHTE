@@ -1,0 +1,21 @@
+@{
+    var activePage = ViewBag.ActivePage as string ?? string.Empty;
+    var title = ViewData["Title"]?.ToString() ?? "Procurement HTE";
+    var documentTitle = string.IsNullOrWhiteSpace(title)
+        ? "Procurement HTE"
+        : $"{title} - Procurement HTE";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+}
+
+<div data-partial-root="true"
+     data-partial-title="@title"
+     data-partial-document-title="@documentTitle"
+     data-partial-active-page="@activePage"
+     data-partial-controller="@currentController"
+     data-partial-action="@currentAction">
+    @RenderBody()
+</div>
+
+@await RenderSectionAsync("HeadScripts", required: false)
+@await RenderSectionAsync("Scripts", required: false)

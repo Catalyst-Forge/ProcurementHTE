@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Interfaces;
@@ -11,13 +12,14 @@ using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
 using System.Security.Claims;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.ProcurementModule
 {
     [Authorize]
     public class ProcurementsController : Controller
     {
         #region Construct
 
+        private const string ActivePageName = "Index Procurements";
         private readonly IProcurementService _procurementService;
         private readonly IVendorService _vendorService;
         private readonly IProfitLossService _pnlService;
@@ -49,6 +51,12 @@ namespace ProcurementHTE.Web.Controllers
             _procDocService = procDocService;
             _logger = logger;
             _userManager = userManager;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            ViewBag.ActivePage = ActivePageName;
+            base.OnActionExecuting(context);
         }
 
         #endregion
@@ -86,7 +94,7 @@ namespace ProcurementHTE.Web.Controllers
             );
             ViewBag.RouteData = new RouteValueDictionary
             {
-                ["ActivePage"] = "Index Procurements",
+                ["ActivePage"] = ActivePageName,
                 ["search"] = search,
                 ["fields"] = string.Join(',', selectedFields),
                 ["pageSize"] = pageSize,

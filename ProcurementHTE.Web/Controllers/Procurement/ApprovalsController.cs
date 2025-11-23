@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Web.Controllers {
+namespace ProcurementHTE.Web.Controllers.ProcurementModule {
     [Authorize]
     public class ApprovalsController : Controller {
         private readonly IApprovalService _approvalService;

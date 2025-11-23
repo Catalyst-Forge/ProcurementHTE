@@ -18,7 +18,7 @@ using ProcurementHTE.Web.Models.Auth;
 using ProcurementHTE.Web.Options;
 using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
-namespace ProcurementHTE.Web.Controllers
+namespace ProcurementHTE.Web.Controllers.Account
 {
     public class AuthController(
         UserManager<User> userManager,
@@ -59,7 +59,7 @@ namespace ProcurementHTE.Web.Controllers
         {
             if (User.Identity?.IsAuthenticated ?? false)
             {
-                return RedirectToAction("Index", "Dashboard");
+                return Redirect("~/");
             }
             ViewData["ReturnUrl"] = returnUrl;
             return View();
@@ -1140,7 +1140,7 @@ namespace ProcurementHTE.Web.Controllers
         public IActionResult RecoveryReset()
         {
             if (!NeedsRecoveryReset())
-                return RedirectToAction("Index", "Dashboard");
+                return Redirect("~/");
 
             return View(new RecoveryResetViewModel());
         }
@@ -1151,7 +1151,7 @@ namespace ProcurementHTE.Web.Controllers
         public async Task<IActionResult> RecoveryReset(RecoveryResetViewModel model)
         {
             if (!NeedsRecoveryReset())
-                return RedirectToAction("Index", "Dashboard");
+                return Redirect("~/");
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -1174,7 +1174,7 @@ namespace ProcurementHTE.Web.Controllers
                 HttpContext.Session.Remove(RecoveryResetSessionKey);
                 await _signInManager.RefreshSignInAsync(user);
                 TempData["SuccessMessage"] = "Password berhasil diperbarui.";
-                return RedirectToAction("Index", "Dashboard");
+                return Redirect("~/");
             }
             catch (Exception ex)
             {
@@ -1273,7 +1273,7 @@ namespace ProcurementHTE.Web.Controllers
             await _signInManager.SignOutAsync();
             _logger.LogInformation("User logged out");
 
-            return RedirectToAction("Index", "Dashboard");
+            return Redirect("~/");
         }
 
         /*
@@ -1281,14 +1281,18 @@ namespace ProcurementHTE.Web.Controllers
          */
         public IActionResult AccessDenied()
         {
-            return View();
+            return RedirectToAction(
+                "Status",
+                "Error",
+                new { statusCode = StatusCodes.Status403Forbidden }
+            );
         }
 
         public async Task<IActionResult> Refresh()
         {
             var user = await _userManager.GetUserAsync(User);
             await _signInManager.RefreshSignInAsync(user!); // ? rebuild principal + cookie
-            return RedirectToAction("Index", "Dashboard");
+            return Redirect("~/");
         }
 
         private void PopulateForgotPasswordDevHints(string? emailCodeOverride = null, string? smsCodeOverride = null)
@@ -1585,8 +1589,9 @@ namespace ProcurementHTE.Web.Controllers
             }
             else
             {
-                return RedirectToAction("Index", "Dashboard");
+                return Redirect("~/");
             }
         }
     }
 }
+
