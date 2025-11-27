@@ -243,15 +243,16 @@ jobs:
             #  DETERMINISTIC CONTAINER SELECTION (CANNOT RETURN MULTILINE)
             # ============================================================
             get_single_container() {
-              # 1) Jika MSSQL_CONTAINER ditentukan -> exact match
+              # 1) Jika MSSQL_CONTAINER ditentukan -> cari by name (no strict anchor)
               if [ -n "${MSSQL_CONTAINER:-}" ]; then
-                local exact="$($DOCKER ps -q -f id=\"$MSSQL_CONTAINER\")"
-                [ -n "$exact" ] || exact="$($DOCKER ps -q -f name=\"^${MSSQL_CONTAINER}$\")"
-                if [ -n "$exact" ]; then
-                  echo "$exact"
+                local by_name
+                by_name="$($DOCKER ps -q -f name="$MSSQL_CONTAINER" | tr -s '\n' ' ')"
+                if [ -n "$by_name" ]; then
+                  echo "$by_name" | awk '{print $1}'
                   return 0
                 fi
-                echo "[WARN] MSSQL_CONTAINER='$MSSQL_CONTAINER' not found, fallback to image search."
+                echo "[WARN] MSSQL_CONTAINER='$MSSQL_CONTAINER' not found by name. Available containers:"
+                $DOCKER ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
               fi
 
               # 2) Cari SQL container berdasarkan image
@@ -259,7 +260,8 @@ jobs:
               sql_list="$($DOCKER ps -q -f ancestor=mcr.microsoft.com/mssql/server | tr -s '\n' ' ')"
 
               if [ -z "$sql_list" ]; then
-                echo "[ERR] No SQL Server container running."
+                echo "[ERR] No SQL Server container running. Current containers:"
+                $DOCKER ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
                 return 1
               fi
 
