@@ -2,7 +2,7 @@ name: CI & Deploy ProcurementHTE (.dll + EF SQL script)
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -22,7 +22,7 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
 
       - name: Cache NuGet
         uses: actions/cache@v4
@@ -58,7 +58,7 @@ jobs:
       - name: Publish + generate Migrations.sql (idempotent)
         shell: bash
         env:
-          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # jika DesignTimeDbContextFactory perlu
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }} # jika DesignTimeDbContextFactory perlu
         run: |
           set -e
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
@@ -84,13 +84,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}         # contoh: /var/www/ProcurementHTE
-      APP_SERVICE: ${{ vars.APP_SERVICE }}       # contoh: procurementhte.service
-      DB_USER: ${{ secrets.DB_USER }}            # contoh: sa
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }} # contoh: /var/www/ProcurementHTE
+      APP_SERVICE: ${{ vars.APP_SERVICE }} # contoh: procurementhte.service
+      DB_USER: ${{ secrets.DB_USER }} # contoh: sa
       DB_PASS: ${{ secrets.DB_PASS }}
-      DB_NAME: ${{ vars.DB_NAME }}               # kalau kosong, di-script kita kasih default
-      DB_PORT: ${{ vars.DB_PORT }}               # kalau kosong, di-script kita kasih default 1433
-      MSSQL_CONTAINER: mssql-proc                # nama container kamu
+      DB_NAME: ${{ vars.DB_NAME }} # kalau kosong, di-script kita kasih default
+      DB_PORT: ${{ vars.DB_PORT }} # kalau kosong, di-script kita kasih default 1433
+      MSSQL_CONTAINER: mssql-proc # nama container kamu
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -106,6 +106,36 @@ jobs:
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "RDIR=/releases/${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "Done: $RELEASE_NAME"
+
+      - name: Prepare /var/www permissions (safe + auto-detect sudo)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR
+          script: |
+            set -Eeuo pipefail
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty}"
+
+            echo "[INFO] Preparing DEPLOY_DIR=$DEPLOY_DIR"
+
+            # Ensure base directory exists (no root required)
+            install -d -m 755 "$DEPLOY_DIR" || mkdir -p "$DEPLOY_DIR"
+
+            # Try making sure permissions work
+            if sudo -n true 2>/dev/null; then
+              echo "[INFO] sudo detected — fixing ownership"
+              sudo mkdir -p "$DEPLOY_DIR"
+              sudo chown -R "$(whoami):$(whoami)" "$DEPLOY_DIR"
+            else
+              echo "[WARN] sudo NOT available — using default ownership"
+            fi
+
+            echo "[INFO] After prepare:"
+            ls -ld "$DEPLOY_DIR"
 
       - name: Create release dir on server
         uses: appleboy/ssh-action@v1.2.0
@@ -162,7 +192,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
           envs: DEPLOY_DIR,RELEASE_NAME
-        # (no script_stop here; biar warning Migrations.sql tidak blokir)
+          # (no script_stop here; biar warning Migrations.sql tidak blokir)
           script: |
             set -Eeuo pipefail
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
@@ -300,7 +330,7 @@ jobs:
             sudo systemctl daemon-reload || true
             sudo systemctl restart "$APP_SERVICE"
             sudo systemctl --no-pager --full status "$APP_SERVICE" || true
-            
+
       - name: Smoke check (wait until 5159 is ready)
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -312,7 +342,7 @@ jobs:
           envs: APP_SERVICE
           script: |
             set -Eeuo pipefail
-      
+
             echo "[INFO] waiting up to 60s for Kestrel :5159 ..."
             deadline=$((SECONDS+60))
             while [ $SECONDS -lt $deadline ]; do
@@ -323,13 +353,12 @@ jobs:
               fi
               sleep 1
             done
-      
+
             echo "[ERR] 5159 not listening after 60s. Open dotnet ports:"
             ss -tlnp | grep -E '(:5159|dotnet)' || true
-      
+
             echo "=== systemd status ==="
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
             echo "=== last 200 logs ==="
             sudo -n journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
             exit 1
-
