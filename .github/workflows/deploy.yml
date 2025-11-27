@@ -161,6 +161,9 @@ jobs:
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             install -d -m 755 "$RELEASE" || mkdir -p "$RELEASE"
 
+            # App expects Templates/Documents to exist at runtime; create it here to avoid permission issues
+            install -d -m 755 "$RELEASE/Templates/Documents" || mkdir -p "$RELEASE/Templates/Documents"
+
             # Write release path for downstream steps
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
