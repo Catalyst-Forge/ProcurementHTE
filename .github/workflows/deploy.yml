@@ -202,7 +202,7 @@ jobs:
             test -f "$RELEASE/Migrations.sql" || echo "[WARN] Migrations.sql not found (no DB changes?)"
             echo "[OK] Found DLL & (maybe) Migrations.sql"
 
-      - name: Apply DB migrations (Docker-only + auto-baseline)
+      - name: Apply DB migrations (simplified-safe)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -214,99 +214,98 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
-            # default kalau env kosong
+
             : "${DB_NAME:=ProcurementHTE}"
             : "${DB_PORT:=1433}"
 
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
             MIG="$RELEASE/Migrations.sql"
-            [ -s "$MIG" ] || { echo "[INFO] No migrations to apply (file missing or empty)"; exit 0; }
 
+            # Skip jika file kosong / tidak ada
+            [ -s "$MIG" ] || { echo "[INFO] Skip: no migrations."; exit 0; }
+
+            # --- Docker detection ---
             DOCKER="docker"
             if ! $DOCKER info >/dev/null 2>&1; then
               if command -v sudo >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
                 DOCKER="sudo docker"
               else
-                echo "[ERR] Docker not accessible"; exit 1
+                echo "[ERR] Docker unavailable"; exit 1
               fi
             fi
 
-            # Lock ke container SQL
+            # --- Find container ---
             CID=""
             if [ -n "${MSSQL_CONTAINER:-}" ]; then
               CID="$($DOCKER ps -q -f id="$MSSQL_CONTAINER")"
               [ -n "$CID" ] || CID="$($DOCKER ps -q -f name="$MSSQL_CONTAINER")"
             fi
-            [ -n "$CID" ] || { echo "[ERR] SQL container not found (MSSQL_CONTAINER='${MSSQL_CONTAINER:-}')."; exit 1; }
+            [ -n "$CID" ] || { echo "[ERR] SQL container not found"; exit 1; }
             echo "[INFO] SQL container: $CID"
 
-            # Temukan sqlcmd di dalam container
+            # --- Find sqlcmd ---
             BIN="$(
-              $DOCKER exec "$CID" bash -lc '
+              $DOCKER exec "$CID" sh -lc '
                 for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
                   if command -v "$b" >/dev/null 2>&1; then echo "$b"; exit 0; fi
                 done; exit 1
               '
             )"
 
-            # Cek kondisi DB
-            HAS_HIST="$(
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-                $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -h -1 -W \
-                  -Q \"SET NOCOUNT ON; SELECT CASE WHEN OBJECT_ID('__EFMigrationsHistory') IS NULL THEN 0 ELSE 1 END\" \
-                  | tr -d '\r'
+            # --- Check DB state ---
+            RUNQ() {
+              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" sh -lc "
+                $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" \
+                -C -h -1 -W -Q \"SET NOCOUNT ON; $1\" | tr -d '\r'
               "
-            )"
-            TABLES_COUNT="$(
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-                $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -h -1 -W \
-                  -Q \"SET NOCOUNT ON; SELECT COUNT(*) FROM sys.tables\" \
-                  | tr -d '\r'
-              "
-            )"
+            }
 
-            echo "[INFO] HasHistory=${HAS_HIST:-?}, Tables=${TABLES_COUNT:-?}"
+            HAS_HIST="$(RUNQ "SELECT CASE WHEN OBJECT_ID('__EFMigrationsHistory') IS NULL THEN 0 ELSE 1 END")"
+            TABLES_COUNT="$(RUNQ "SELECT COUNT(*) FROM sys.tables")"
 
-            # One-time baseline: DB sudah ada tabel tapi belum ada history
-            if [ "${HAS_HIST:-0}" = "0" ] && [ "${TABLES_COUNT:-0}" -gt 0 ]; then
-              echo "[INFO] Baseline __EFMigrationsHistory (one-time)..."
+            echo "[INFO] HasHistory=$HAS_HIST, Tables=$TABLES_COUNT"
+
+            # --- One-time baseline ---
+            if [ "$HAS_HIST" = "0" ] && [ "$TABLES_COUNT" -gt 0 ]; then
+              echo "[INFO] Baseline start..."
+
               BASE="$RELEASE/_BaselineEF.sql"
               : > "$BASE"
 
-              # Tulis header baseline tanpa heredoc (aman YAML)
+              # Header baseline (tanpa heredoc)
               printf "%s\n" \
-              "IF OBJECT_ID(N'__EFMigrationsHistory') IS NULL" \
-              "BEGIN" \
-              "    CREATE TABLE [__EFMigrationsHistory] (" \
-              "        [MigrationId] nvarchar(150) NOT NULL," \
-              "        [ProductVersion] nvarchar(32) NOT NULL," \
-              "        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])" \
-              "    );" \
-              "END;" \
-              "GO" >> "$BASE"
+                "IF OBJECT_ID(N'__EFMigrationsHistory') IS NULL" \
+                "BEGIN" \
+                "    CREATE TABLE [__EFMigrationsHistory] (" \
+                "        [MigrationId] nvarchar(150) NOT NULL," \
+                "        [ProductVersion] nvarchar(32) NOT NULL," \
+                "        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])" \
+                "    );" \
+                "END;" \
+                "GO" >> "$BASE"
 
-              # Tambah INSERT idempotent dari Migrations.sql
+              # Ambil history dari Migrations.sql
               awk '
                 match($0, /INSERT INTO \[__EFMigrationsHistory\] \(\[MigrationId\], \[ProductVersion\]\) VALUES \(N'\''([^'\'']*)'\'', '\''([^'\'']*)'\''\)/, a) {
-                  printf "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'\''%s'\'') INSERT INTO [__EFMigrationsHistory] ([MigrationId],[ProductVersion]) VALUES (N'\''%s'\'', '\''%s'\'');\n", a[1], a[1], a[2]
+                  printf "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId]=N'\''%s'\'') INSERT INTO [__EFMigrationsHistory] ([MigrationId],[ProductVersion]) VALUES (N'\''%s'\'','\''%s'\'');\n", a[1], a[1], a[2]
                 }
               ' "$MIG" >> "$BASE"
 
-              # Jalankan baseline
               $DOCKER cp "$BASE" "$CID:/tmp/_BaselineEF.sql"
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
+              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" sh -lc "
                 $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -b -i /tmp/_BaselineEF.sql
               "
+
               echo "[OK] Baseline done."
             fi
 
-            # Apply Migrations.sql
-            echo "[INFO] Apply Migrations.sql..."
+            # --- Apply migrations ---
+            echo "[INFO] Applying migrations..."
             $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
-            $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
+            $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" sh -lc "
               $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -b -i /tmp/mig.sql
             "
-            echo "[OK] DB migrations applied."
+            echo "[OK] Migrations applied."
 
       - name: Activate & restart service
         uses: appleboy/ssh-action@v1.2.0
