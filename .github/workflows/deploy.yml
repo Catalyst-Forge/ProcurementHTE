@@ -2,7 +2,7 @@ name: CI & Deploy ProcurementHTE (.dll + EF SQL script)
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -22,7 +22,7 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
 
       - name: Cache NuGet
         uses: actions/cache@v4
@@ -58,7 +58,7 @@ jobs:
       - name: Publish + generate Migrations.sql (idempotent)
         shell: bash
         env:
-          EF_CONNECTION: ${{ secrets.DB_CONNECTION }}   # jika DesignTimeDbContextFactory perlu
+          EF_CONNECTION: ${{ secrets.DB_CONNECTION }} # jika DesignTimeDbContextFactory perlu
         run: |
           set -e
           dotnet publish ProcurementHTE.Web/ProcurementHTE.Web.csproj -c Release -o out
@@ -84,13 +84,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}         # contoh: /var/www/ProcurementHTE
-      APP_SERVICE: ${{ vars.APP_SERVICE }}       # contoh: procurementhte.service
-      DB_USER: ${{ secrets.DB_USER }}            # contoh: sa
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }} # contoh: /var/www/ProcurementHTE
+      APP_SERVICE: ${{ vars.APP_SERVICE }} # contoh: procurementhte.service
+      DB_USER: ${{ secrets.DB_USER }} # contoh: sa
       DB_PASS: ${{ secrets.DB_PASS }}
-      DB_NAME: ${{ vars.DB_NAME }}               # kalau kosong, di-script kita kasih default
-      DB_PORT: ${{ vars.DB_PORT }}               # kalau kosong, di-script kita kasih default 1433
-      MSSQL_CONTAINER: mssql-proc                # nama container kamu
+      DB_NAME: ${{ vars.DB_NAME }} # kalau kosong, di-script kita kasih default
+      DB_PORT: ${{ vars.DB_PORT }} # kalau kosong, di-script kita kasih default 1433
+      MSSQL_CONTAINER: mssql-proc # nama container kamu
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -106,6 +106,36 @@ jobs:
           echo "RELEASE_NAME=${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "RDIR=/releases/${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "Done: $RELEASE_NAME"
+
+      - name: Prepare /var/www permissions (safe + auto-detect sudo)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR
+          script: |
+            set -Eeuo pipefail
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty}"
+
+            echo "[INFO] Preparing DEPLOY_DIR=$DEPLOY_DIR"
+
+            # Ensure base directory exists (no root required)
+            install -d -m 755 "$DEPLOY_DIR" || mkdir -p "$DEPLOY_DIR"
+
+            # Try making sure permissions work
+            if sudo -n true 2>/dev/null; then
+              echo "[INFO] sudo detected - fixing ownership"
+              sudo mkdir -p "$DEPLOY_DIR"
+              sudo chown -R "$(whoami):$(whoami)" "$DEPLOY_DIR"
+            else
+              echo "[WARN] sudo NOT available - using default ownership"
+            fi
+
+            echo "[INFO] After prepare:"
+            ls -ld "$DEPLOY_DIR"
 
       - name: Create release dir on server
         uses: appleboy/ssh-action@v1.2.0
@@ -123,14 +153,25 @@ jobs:
             : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
 
             echo "[INFO] DEPLOY_DIR=$DEPLOY_DIR, RELEASE_NAME=$RELEASE_NAME"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/releases"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/publish"
+            # Create directories as the SSH user (avoid install -o/-g which requires root)
+            install -d -m 755 "$DEPLOY_DIR" || mkdir -p "$DEPLOY_DIR"
+            install -d -m 755 "$DEPLOY_DIR/releases" || mkdir -p "$DEPLOY_DIR/releases"
+            install -d -m 755 "$DEPLOY_DIR/publish" || mkdir -p "$DEPLOY_DIR/publish"
 
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$RELEASE"
+            install -d -m 755 "$RELEASE" || mkdir -p "$RELEASE"
+
+            # App expects Templates/Documents to exist at runtime; create it here to avoid permission issues
+            install -d -m 755 "$RELEASE/Templates/Documents" || mkdir -p "$RELEASE/Templates/Documents"
+
+            # Write release path for downstream steps
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
+
+            # If the SSH user can sudo without a password, set ownership to the SSH user (optional)
+            if sudo -n true 2>/dev/null; then
+              sudo chown -R "$(whoami):$(whoami)" "$DEPLOY_DIR" || true
+            fi
 
       - name: Upload release files (DLL + Migrations.sql)
         uses: appleboy/scp-action@v0.1.7
@@ -154,7 +195,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
           envs: DEPLOY_DIR,RELEASE_NAME
-        # (no script_stop here; biar warning Migrations.sql tidak blokir)
+          # (no script_stop here; biar warning Migrations.sql tidak blokir)
           script: |
             set -Eeuo pipefail
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
@@ -176,6 +217,7 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
+
             # default kalau env kosong
             : "${DB_NAME:=ProcurementHTE}"
             : "${DB_PORT:=1433}"
@@ -193,16 +235,49 @@ jobs:
               fi
             fi
 
-            # Lock ke container SQL
-            CID=""
-            if [ -n "${MSSQL_CONTAINER:-}" ]; then
-              CID="$($DOCKER ps -q -f id="$MSSQL_CONTAINER")"
-              [ -n "$CID" ] || CID="$($DOCKER ps -q -f name="$MSSQL_CONTAINER")"
-            fi
-            [ -n "$CID" ] || { echo "[ERR] SQL container not found (MSSQL_CONTAINER='${MSSQL_CONTAINER:-}')."; exit 1; }
-            echo "[INFO] SQL container: $CID"
+            # ============================================================
+            #  DETERMINISTIC CONTAINER SELECTION (CANNOT RETURN MULTILINE)
+            # ============================================================
+            get_single_container() {
+              # 1) Jika MSSQL_CONTAINER ditentukan -> exact match
+              if [ -n "${MSSQL_CONTAINER:-}" ]; then
+                local exact="$($DOCKER ps -q -f id=\"$MSSQL_CONTAINER\")"
+                [ -n "$exact" ] || exact="$($DOCKER ps -q -f name=\"^${MSSQL_CONTAINER}$\")"
+                [ -n "$exact" ] && echo "$exact" && return 0
 
-            # Temukan sqlcmd di dalam container
+                echo "[ERR] MSSQL_CONTAINER='$MSSQL_CONTAINER' not found."
+                return 1
+              fi
+
+              # 2) Cari SQL container berdasarkan image
+              local sql_list
+              sql_list="$($DOCKER ps -q -f ancestor=mcr.microsoft.com/mssql/server | tr -s '\n' ' ')"
+
+              if [ -z "$sql_list" ]; then
+                echo "[ERR] No SQL Server container running."
+                return 1
+              fi
+
+              # 3) Validasi hanya satu
+              local count
+              count=$(echo "$sql_list" | wc -w)
+
+              if [ "$count" -gt 1 ]; then
+                echo "[ERR] Multiple SQL containers detected:"
+                $DOCKER ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
+                echo "[HINT] Set MSSQL_CONTAINER in GitHub secrets."
+                return 1
+              fi
+
+              echo "$sql_list"
+            }
+
+            CID="$(get_single_container)" || exit 1
+            echo "[INFO] SQL container selected: $CID"
+
+            # ============================================================
+            #  FIND SQLCMD INSIDE CONTAINER (GUARANTEED SINGLE-LINE)
+            # ============================================================
             BIN="$(
               $DOCKER exec "$CID" bash -lc '
                 for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
@@ -211,7 +286,9 @@ jobs:
               '
             )"
 
-            # Cek kondisi DB
+            # ============================================================
+            #  CHECK DATABASE STATE
+            # ============================================================
             HAS_HIST="$(
               $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
                 $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -h -1 -W \
@@ -219,6 +296,7 @@ jobs:
                   | tr -d '\r'
               "
             )"
+
             TABLES_COUNT="$(
               $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
                 $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -h -1 -W \
@@ -229,14 +307,15 @@ jobs:
 
             echo "[INFO] HasHistory=${HAS_HIST:-?}, Tables=${TABLES_COUNT:-?}"
 
-            # Jangan auto-baseline: jika history hilang tapi tabel sudah ada, hentikan supaya tidak skip migration
+            # Stop kalau DB sudah berisi tabel tapi __EFMigrationsHistory belum ada
             if [ "${HAS_HIST:-0}" = "0" ] && [ "${TABLES_COUNT:-0}" -gt 0 ]; then
-              echo "[ERR] __EFMigrationsHistory tidak ada tapi tabel sudah terisi. Stop agar tidak dianggap sudah migrate."
-              echo "[HINT] Buat baseline manual atau pastikan DB kosong lalu jalankan lagi."
+              echo "[ERR] __EFMigrationsHistory missing but tables exist. Do manual baseline then rerun."
               exit 1
             fi
 
-            # Apply Migrations.sql
+            # ============================================================
+            #  APPLY MIGRATIONS
+            # ============================================================
             echo "[INFO] Apply Migrations.sql..."
             $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
             $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
@@ -266,7 +345,7 @@ jobs:
             sudo systemctl daemon-reload || true
             sudo systemctl restart "$APP_SERVICE"
             sudo systemctl --no-pager --full status "$APP_SERVICE" || true
-            
+
       - name: Smoke check (wait until 5159 is ready)
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -278,7 +357,7 @@ jobs:
           envs: APP_SERVICE
           script: |
             set -Eeuo pipefail
-      
+
             echo "[INFO] waiting up to 60s for Kestrel :5159 ..."
             deadline=$((SECONDS+60))
             while [ $SECONDS -lt $deadline ]; do
@@ -289,13 +368,12 @@ jobs:
               fi
               sleep 1
             done
-      
+
             echo "[ERR] 5159 not listening after 60s. Open dotnet ports:"
             ss -tlnp | grep -E '(:5159|dotnet)' || true
-      
+
             echo "=== systemd status ==="
             sudo -n systemctl --no-pager --full status "$APP_SERVICE" || true
             echo "=== last 200 logs ==="
             sudo -n journalctl -u "$APP_SERVICE" -n 200 --no-pager || true
             exit 1
-
