@@ -164,7 +164,7 @@ jobs:
             test -f "$RELEASE/Migrations.sql" || echo "[WARN] Migrations.sql not found (no DB changes?)"
             echo "[OK] Found DLL & (maybe) Migrations.sql"
 
-      - name: Apply DB migrations (Docker-only + auto-baseline)
+      - name: Apply DB migrations (Docker-only)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -229,37 +229,11 @@ jobs:
 
             echo "[INFO] HasHistory=${HAS_HIST:-?}, Tables=${TABLES_COUNT:-?}"
 
-            # One-time baseline: DB sudah ada tabel tapi belum ada history
+            # Jangan auto-baseline: jika history hilang tapi tabel sudah ada, hentikan supaya tidak skip migration
             if [ "${HAS_HIST:-0}" = "0" ] && [ "${TABLES_COUNT:-0}" -gt 0 ]; then
-              echo "[INFO] Baseline __EFMigrationsHistory (one-time)..."
-              BASE="$RELEASE/_BaselineEF.sql"
-              : > "$BASE"
-
-              # Tulis header baseline tanpa heredoc (aman YAML)
-              printf "%s\n" \
-              "IF OBJECT_ID(N'__EFMigrationsHistory') IS NULL" \
-              "BEGIN" \
-              "    CREATE TABLE [__EFMigrationsHistory] (" \
-              "        [MigrationId] nvarchar(150) NOT NULL," \
-              "        [ProductVersion] nvarchar(32) NOT NULL," \
-              "        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])" \
-              "    );" \
-              "END;" \
-              "GO" >> "$BASE"
-
-              # Tambah INSERT idempotent dari Migrations.sql
-              awk '
-                match($0, /INSERT INTO \[__EFMigrationsHistory\] \(\[MigrationId\], \[ProductVersion\]\) VALUES \(N'\''([^'\'']*)'\'', '\''([^'\'']*)'\''\)/, a) {
-                  printf "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'\''%s'\'') INSERT INTO [__EFMigrationsHistory] ([MigrationId],[ProductVersion]) VALUES (N'\''%s'\'', '\''%s'\'');\n", a[1], a[1], a[2]
-                }
-              ' "$MIG" >> "$BASE"
-
-              # Jalankan baseline
-              $DOCKER cp "$BASE" "$CID:/tmp/_BaselineEF.sql"
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-                $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -b -i /tmp/_BaselineEF.sql
-              "
-              echo "[OK] Baseline done."
+              echo "[ERR] __EFMigrationsHistory tidak ada tapi tabel sudah terisi. Stop agar tidak dianggap sudah migrate."
+              echo "[HINT] Buat baseline manual atau pastikan DB kosong lalu jalankan lagi."
+              exit 1
             fi
 
             # Apply Migrations.sql
