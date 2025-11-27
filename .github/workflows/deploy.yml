@@ -286,6 +286,12 @@ jobs:
               '
             )"
 
+            # Pastikan DB ada (create jika hilang)
+            $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
+              $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -C \
+                -Q \"IF DB_ID('${DB_NAME}') IS NULL CREATE DATABASE [${DB_NAME}];\"
+            "
+
             # ============================================================
             #  CHECK DATABASE STATE
             # ============================================================
@@ -319,7 +325,7 @@ jobs:
             echo "[INFO] Apply Migrations.sql..."
             $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
             $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-              $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -b -i /tmp/mig.sql
+              $BIN -I -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -b -V16 -i /tmp/mig.sql
             "
             echo "[OK] DB migrations applied."
 
