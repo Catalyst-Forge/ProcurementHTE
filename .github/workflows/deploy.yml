@@ -90,7 +90,7 @@ jobs:
       DB_PASS: ${{ secrets.DB_PASS }}
       DB_NAME: ${{ vars.DB_NAME }} # kalau kosong, di-script kita kasih default
       DB_PORT: ${{ vars.DB_PORT }} # kalau kosong, di-script kita kasih default 1433
-      MSSQL_CONTAINER: mssql-proc # nama container kamu
+      MSSQL_CONTAINER: ${{ vars.MSSQL_CONTAINER }} # nama container SQL (set di repo/env vars)
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -219,6 +219,8 @@ jobs:
           script: |
             set -Eeuo pipefail
             set -x
+
+            echo "[INFO] MSSQL_CONTAINER='${MSSQL_CONTAINER:-<not set>}' DB_NAME='${DB_NAME:-ProcurementHTE}' DB_PORT='${DB_PORT:-1433}'"
 
             # default kalau env kosong
             : "${DB_NAME:=ProcurementHTE}"
