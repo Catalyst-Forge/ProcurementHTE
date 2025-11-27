@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Core.Utils;
 
 namespace ProcurementHTE.Core.Services
@@ -19,21 +18,18 @@ namespace ProcurementHTE.Core.Services
         private readonly IProfitLossRepository _pnlRepo;
         private readonly IVendorRepository _vendorRepo;
         private readonly UserManager<User> _userManager;
-        private readonly ILogger<HtmlTokenReplacer> _logger;
 
         public HtmlTokenReplacer(
             IProcurementRepository procurementRepository,
             IProfitLossRepository pnlRepo,
             IVendorRepository vendorRepo,
-            UserManager<User> userManager,
-            ILogger<HtmlTokenReplacer> logger
+            UserManager<User> userManager
         )
         {
             _procRepo = procurementRepository;
             _pnlRepo = pnlRepo;
             _vendorRepo = vendorRepo;
             _userManager = userManager;
-            _logger = logger;
         }
 
         #endregion

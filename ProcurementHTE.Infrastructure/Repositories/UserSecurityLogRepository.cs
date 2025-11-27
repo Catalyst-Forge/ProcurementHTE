@@ -30,8 +30,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             take = Math.Clamp(take, 1, 100);
 
             return await _context
-                .UserSecurityLogs
-                .AsNoTracking()
+                .UserSecurityLogs.AsNoTracking()
                 .Where(log => log.UserId == userId)
                 .OrderByDescending(log => log.CreatedAt)
                 .Take(take)

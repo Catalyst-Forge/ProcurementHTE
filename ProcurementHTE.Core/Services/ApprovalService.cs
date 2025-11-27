@@ -1,11 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Core.Models.DTOs;       // GateInfoDto, RoleInfoDto
+using ProcurementHTE.Core.Models.DTOs; // GateInfoDto, RoleInfoDto
 using static ProcurementHTE.Core.Utils.ApprovalServiceHelper;
 
 namespace ProcurementHTE.Core.Services
@@ -14,21 +10,20 @@ namespace ProcurementHTE.Core.Services
     {
         private readonly IApprovalRepository _approvalRepository;
         private readonly IProcurementService _woService;
-        private readonly ILogger<ApprovalService> _logger;
 
         public ApprovalService(
             IApprovalRepository approvalRepository,
-            IProcurementService woService,
-            ILogger<ApprovalService> logger)
+            IProcurementService woService
+        )
         {
             _approvalRepository = approvalRepository;
             _woService = woService;
-            _logger = logger;
         }
 
         // ===== existing =====
-        public Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(User user)
-            => _approvalRepository.GetPendingApprovalsForUserAsync(user);
+        public Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(
+            User user
+        ) => _approvalRepository.GetPendingApprovalsForUserAsync(user);
 
         public async Task ApproveAsync(string approvalId, string approverUserId)
         {
@@ -37,18 +32,27 @@ namespace ProcurementHTE.Core.Services
                 await _woService.MarkAsCompletedAsync(result.ProcurementId);
         }
 
-        public Task RejectAsync(string approvalId, string approverUserId, string? note)
-            => _approvalRepository.RejectAsync(approvalId, approverUserId, note);
+        public Task RejectAsync(string approvalId, string approverUserId, string? note) =>
+            _approvalRepository.RejectAsync(approvalId, approverUserId, note);
 
-        public Task<GateInfoDto?> GetCurrentPendingGateByQrAsync(string qrText, CancellationToken ct = default)
-            => _approvalRepository.GetCurrentPendingGateByQrAsync(qrText, ct);
+        public Task<GateInfoDto?> GetCurrentPendingGateByQrAsync(
+            string qrText,
+            CancellationToken ct = default
+        ) => _approvalRepository.GetCurrentPendingGateByQrAsync(qrText, ct);
 
-        public Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(string procDocumentApprovalId, CancellationToken ct = default)
-            => _approvalRepository.GetCurrentPendingGateByApprovalIdAsync(procDocumentApprovalId, ct);
+        public Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(
+            string procDocumentApprovalId,
+            CancellationToken ct = default
+        ) => _approvalRepository.GetCurrentPendingGateByApprovalIdAsync(procDocumentApprovalId, ct);
 
         // ===== NEW: high-level =====
         public async Task<ApprovalUpdateResult> UpdateStatusByQrAsync(
-            string qrText, string action, string? note, User currentUser, CancellationToken ct = default)
+            string qrText,
+            string action,
+            string? note,
+            User currentUser,
+            CancellationToken ct = default
+        )
         {
             if (string.IsNullOrWhiteSpace(qrText))
                 return Fail("InvalidAction", "QrText wajib diisi.");
@@ -67,20 +71,29 @@ namespace ProcurementHTE.Core.Services
 
             var roleHit = gate.RequiredRoles.FirstOrDefault(r =>
             {
-                var roleMatches = !string.IsNullOrWhiteSpace(r.RoleName)
+                var roleMatches =
+                    !string.IsNullOrWhiteSpace(r.RoleName)
                     && userRoleNames.Contains(r.RoleName!, StringComparer.OrdinalIgnoreCase);
                 if (!roleMatches)
                     return false;
 
-                if (!string.IsNullOrWhiteSpace(r.ApproverId)
-                    && !string.Equals(r.ApproverId, currentUser.Id, StringComparison.Ordinal))
+                if (
+                    !string.IsNullOrWhiteSpace(r.ApproverId)
+                    && !string.Equals(r.ApproverId, currentUser.Id, StringComparison.Ordinal)
+                )
                     return false;
 
                 return true;
             });
 
             if (roleHit == null)
-                return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
+                return await BuildRoleValidationFailAsync(
+                    _approvalRepository,
+                    gate,
+                    currentUser,
+                    userRoleNames,
+                    ct
+                );
 
             var approvalId = roleHit.ProcDocumentApprovalId!;
             try
@@ -97,7 +110,7 @@ namespace ProcurementHTE.Core.Services
                     ApprovalId = approvalId,
                     ProcurementId = gate.ProcurementId,
                     ProcDocumentId = gate.ProcDocumentId,
-                    When = DateTime.UtcNow
+                    When = DateTime.UtcNow,
                 };
             }
             catch (InvalidOperationException ex)
@@ -106,13 +119,17 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdateStatusByQrAsync gagal untuk QR={Qr}", qrText);
                 return Fail("Error", ex.Message);
             }
         }
 
         public async Task<ApprovalUpdateResult> UpdateStatusByApprovalIdAsync(
-            string approvalId, string action, string? note, User currentUser, CancellationToken ct = default)
+            string approvalId,
+            string action,
+            string? note,
+            User currentUser,
+            CancellationToken ct = default
+        )
         {
             if (string.IsNullOrWhiteSpace(approvalId))
                 return Fail("InvalidAction", "ProcDocumentApprovalId wajib diisi.");
@@ -127,7 +144,9 @@ namespace ProcurementHTE.Core.Services
             if (gate.RequiredRoles.Count == 0)
                 return await BuildFinalStateResponseAsync(_approvalRepository, gate, ct);
 
-            var gateTarget = gate.RequiredRoles.FirstOrDefault(r => r.ProcDocumentApprovalId == approvalId);
+            var gateTarget = gate.RequiredRoles.FirstOrDefault(r =>
+                r.ProcDocumentApprovalId == approvalId
+            );
             if (gateTarget == null)
             {
                 return new ApprovalUpdateResult
@@ -139,7 +158,7 @@ namespace ProcurementHTE.Core.Services
                     ProcDocumentId = gate.ProcDocumentId,
                     CurrentGateLevel = gate.Level,
                     CurrentGateSequence = gate.SequenceOrder,
-                    RequiredRoles = gate.RequiredRoles
+                    RequiredRoles = gate.RequiredRoles,
                 };
             }
 
@@ -147,7 +166,10 @@ namespace ProcurementHTE.Core.Services
 
             bool matchRole = false;
             if (!string.IsNullOrWhiteSpace(gateTarget.RoleName))
-                matchRole = userRoleNames.Contains(gateTarget.RoleName!, StringComparer.OrdinalIgnoreCase);
+                matchRole = userRoleNames.Contains(
+                    gateTarget.RoleName!,
+                    StringComparer.OrdinalIgnoreCase
+                );
 
             if (!matchRole && !string.IsNullOrWhiteSpace(gateTarget.RoleId))
             {
@@ -156,7 +178,13 @@ namespace ProcurementHTE.Core.Services
             }
 
             if (!matchRole)
-                return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
+                return await BuildRoleValidationFailAsync(
+                    _approvalRepository,
+                    gate,
+                    currentUser,
+                    userRoleNames,
+                    ct
+                );
 
             try
             {
@@ -170,7 +198,7 @@ namespace ProcurementHTE.Core.Services
                     Ok = true,
                     Action = normalized,
                     ApprovalId = approvalId,
-                    When = DateTime.UtcNow
+                    When = DateTime.UtcNow,
                 };
             }
             catch (InvalidOperationException ex)
@@ -179,13 +207,17 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdateStatusByApprovalIdAsync gagal untuk ApprovalId={ApprovalId}", approvalId);
                 return Fail("Error", ex.Message);
             }
         }
 
         public async Task<ApprovalUpdateResult> UpdateStatusByDocumentIdAsync(
-            string procDocumentId, string action, string? note, User currentUser, CancellationToken ct = default)
+            string procDocumentId,
+            string action,
+            string? note,
+            User currentUser,
+            CancellationToken ct = default
+        )
         {
             if (string.IsNullOrWhiteSpace(procDocumentId))
                 return Fail("InvalidAction", "ProcDocumentId wajib diisi.");
@@ -193,7 +225,10 @@ namespace ProcurementHTE.Core.Services
             if (!NormalizeAction(action, out var normalized))
                 return Fail("InvalidAction", "Action harus 'approve' atau 'reject'.");
 
-            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(procDocumentId, ct);
+            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(
+                procDocumentId,
+                ct
+            );
             if (gate == null)
                 return Fail("DocumentNotFound", "Dokumen tidak ditemukan.");
 
@@ -204,20 +239,29 @@ namespace ProcurementHTE.Core.Services
 
             var roleHit = gate.RequiredRoles.FirstOrDefault(r =>
             {
-                var roleMatches = !string.IsNullOrWhiteSpace(r.RoleName)
+                var roleMatches =
+                    !string.IsNullOrWhiteSpace(r.RoleName)
                     && userRoleNames.Contains(r.RoleName!, StringComparer.OrdinalIgnoreCase);
                 if (!roleMatches)
                     return false;
 
-                if (!string.IsNullOrWhiteSpace(r.ApproverId)
-                    && !string.Equals(r.ApproverId, currentUser.Id, StringComparison.Ordinal))
+                if (
+                    !string.IsNullOrWhiteSpace(r.ApproverId)
+                    && !string.Equals(r.ApproverId, currentUser.Id, StringComparison.Ordinal)
+                )
                     return false;
 
                 return true;
             });
 
             if (roleHit == null)
-                return await BuildRoleValidationFailAsync(_approvalRepository, gate, currentUser, userRoleNames, ct);
+                return await BuildRoleValidationFailAsync(
+                    _approvalRepository,
+                    gate,
+                    currentUser,
+                    userRoleNames,
+                    ct
+                );
 
             var approvalId = roleHit.ProcDocumentApprovalId!;
             try
@@ -234,7 +278,7 @@ namespace ProcurementHTE.Core.Services
                     ApprovalId = approvalId,
                     ProcurementId = gate.ProcurementId,
                     ProcDocumentId = gate.ProcDocumentId,
-                    When = DateTime.UtcNow
+                    When = DateTime.UtcNow,
                 };
             }
             catch (InvalidOperationException ex)
@@ -243,16 +287,22 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdateStatusByDocumentIdAsync gagal untuk DocId={DocId}", procDocumentId);
                 return Fail("Error", ex.Message);
             }
         }
 
         // ApprovalService.cs (tambahkan method ringkas)
-        public async Task<ApprovalTimelineDto?> GetApprovalTimelineAsync(string procDocumentId, CancellationToken ct = default)
+        public async Task<ApprovalTimelineDto?> GetApprovalTimelineAsync(
+            string procDocumentId,
+            CancellationToken ct = default
+        )
         {
-            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(procDocumentId, ct);
-            if (gate == null) return null;
+            var gate = await _approvalRepository.GetCurrentPendingGateByDocumentIdAsync(
+                procDocumentId,
+                ct
+            );
+            if (gate == null)
+                return null;
 
             var chain = await _approvalRepository.GetDocumentApprovalChainAsync(procDocumentId, ct);
 
@@ -264,21 +314,22 @@ namespace ProcurementHTE.Core.Services
                 CurrentGateLevel = gate.Level,
                 CurrentGateSequence = gate.SequenceOrder,
                 RequiredRoles = gate.RequiredRoles, // List<RoleInfoDto>
-                Steps = chain.Select(c => new ApprovalStepDto
-                {
-                    Level = c.Level,
-                    SequenceOrder = c.SequenceOrder,
-                    RoleName = c.RoleName,
-                    Status = c.Status,
-                    AssignedApproverUserId = c.AssignedApproverUserId,
-                    AssignedApproverFullName = c.AssignedApproverFullName,
-                    ApproverUserId = c.ApproverUserId,
-                    ApproverFullName = c.ApproverFullName,
-                    ApprovedAt = c.ApprovedAt,
-                    Note = c.Note
-                }).ToList()
+                Steps = chain
+                    .Select(c => new ApprovalStepDto
+                    {
+                        Level = c.Level,
+                        SequenceOrder = c.SequenceOrder,
+                        RoleName = c.RoleName,
+                        Status = c.Status,
+                        AssignedApproverUserId = c.AssignedApproverUserId,
+                        AssignedApproverFullName = c.AssignedApproverFullName,
+                        ApproverUserId = c.ApproverUserId,
+                        ApproverFullName = c.ApproverFullName,
+                        ApprovedAt = c.ApprovedAt,
+                        Note = c.Note,
+                    })
+                    .ToList(),
             };
         }
-
     }
 }

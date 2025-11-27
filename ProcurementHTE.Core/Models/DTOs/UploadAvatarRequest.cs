@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace ProcurementHTE.Core.Models.DTOs
 {
     public class UploadAvatarRequest

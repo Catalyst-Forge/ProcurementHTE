@@ -1,5 +1,3 @@
-using System.IO;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +13,6 @@ public class ProcurementDocumentsController : Controller
 {
     private readonly IProcurementDocumentQuery _query;
     private readonly IProcDocumentService _docSvc;
-    private readonly ILogger<ProcurementDocumentsController> _logger;
     private readonly IProcurementService _procurementService;
     private readonly IHttpClientFactory _http;
     private readonly IDocumentGenerator _docGenerator;
@@ -26,7 +23,6 @@ public class ProcurementDocumentsController : Controller
         IProcurementDocumentQuery query,
         IProcurementService procurementService,
         IProcDocumentService docSvc,
-        ILogger<ProcurementDocumentsController> logger,
         IHttpClientFactory http,
         IDocumentGenerator docGenerator,
         IDocumentTypeRepository docTypeRepo,
@@ -35,7 +31,6 @@ public class ProcurementDocumentsController : Controller
     {
         _query = query;
         _docSvc = docSvc;
-        _logger = logger;
         _procurementService = procurementService;
         _http = http;
         _docGenerator = docGenerator;
@@ -49,7 +44,6 @@ public class ProcurementDocumentsController : Controller
     {
         if (string.IsNullOrWhiteSpace(procurementId))
         {
-            _logger.LogWarning("[ProcDocs] Index without procurementId.");
             return BadRequest("Invalid procurementId parameter.");
         }
 
@@ -58,7 +52,6 @@ public class ProcurementDocumentsController : Controller
             var dto = await _query.GetRequiredDocsAsync(procurementId, TimeSpan.FromMinutes(30));
             if (dto is null)
             {
-                _logger.LogInformation("[ProcDocs] Procurement {Procurement} not found.", procurementId);
                 return NotFound("Procurement was not found.");
             }
 
@@ -93,7 +86,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] Error load Index for Procurement={Procurement}.", procurementId);
             TempData["ErrorMessage"] = "Failed to load document list.";
             return RedirectToAction("Index", "Error");
         }
@@ -166,33 +158,27 @@ public class ProcurementDocumentsController : Controller
 
             if (IsAjaxRequest())
             {
-                return Json(new
-                {
-                    ok = true,
-                    message,
-                    procurementId = ProcurementId,
-                    documentTypeId = DocumentTypeId,
-                    document = new
+                return Json(
+                    new
                     {
-                        id = result.ProcDocumentId,
-                        name = result.FileName,
-                        size = result.Size
+                        ok = true,
+                        message,
+                        procurementId = ProcurementId,
+                        documentTypeId = DocumentTypeId,
+                        document = new
+                        {
+                            id = result.ProcDocumentId,
+                            name = result.FileName,
+                            size = result.Size,
+                        },
                     }
-                });
+                );
             }
 
             TempData["SuccessMessage"] = message;
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "[ProcDocs] Upload gagal: Procurement={Procurement}, DocType={DT}, File={FN}",
-                ProcurementId,
-                DocumentTypeId,
-                File?.FileName
-            );
-
             if (IsAjaxRequest())
             {
                 return BadRequest(new { ok = false, error = ex.Message });
@@ -206,15 +192,22 @@ public class ProcurementDocumentsController : Controller
 
     private bool IsAjaxRequest()
     {
-        if (Request is null) return false;
-        if (Request.Headers.TryGetValue("X-Requested-With", out var requestedWith)
-            && requestedWith == "XMLHttpRequest")
+        if (Request is null)
+            return false;
+        if (
+            Request.Headers.TryGetValue("X-Requested-With", out var requestedWith)
+            && requestedWith == "XMLHttpRequest"
+        )
         {
             return true;
         }
 
-        if (Request.Headers.TryGetValue("Accept", out var acceptHeader)
-            && acceptHeader.Any(h => h != null && h.Contains("application/json", StringComparison.OrdinalIgnoreCase)))
+        if (
+            Request.Headers.TryGetValue("Accept", out var acceptHeader)
+            && acceptHeader.Any(h =>
+                h != null && h.Contains("application/json", StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             return true;
         }
@@ -267,7 +260,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] Download gagal: id={Id}", id);
             TempData["ErrorMessage"] = "Failed to download document.";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
@@ -290,7 +282,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] PreviewUrl gagal: id={Id}", id);
             return Json(new { ok = false, error = "Failed to create preview link." });
         }
     }
@@ -306,13 +297,10 @@ public class ProcurementDocumentsController : Controller
         try
         {
             var ok = await _docSvc.DeleteAsync(id);
-            TempData[ok ? "success" : "error"] = ok
-                ? "Document deleted."
-                : "Document not found.";
+            TempData[ok ? "success" : "error"] = ok ? "Document deleted." : "Document not found.";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] Delete gagal: id={Id}", id);
             TempData["ErrorMessage"] = ex.Message;
         }
 
@@ -322,7 +310,10 @@ public class ProcurementDocumentsController : Controller
     // POST: /ProcurementDocuments/SendApprovalPerDoc
     [HttpPost("SendApprovalPerDoc")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendApprovalPerDoc([FromForm] string procDocumentId, [FromForm] string procurementId)
+    public async Task<IActionResult> SendApprovalPerDoc(
+        [FromForm] string procDocumentId,
+        [FromForm] string procurementId
+    )
     {
         if (string.IsNullOrWhiteSpace(procDocumentId))
         {
@@ -333,11 +324,11 @@ public class ProcurementDocumentsController : Controller
         {
             var userId = User?.Identity?.Name ?? "-";
             await _docSvc.SendApprovalAsync(procDocumentId, userId, HttpContext.RequestAborted);
-            TempData["SuccessMessage"] = "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
+            TempData["SuccessMessage"] =
+                "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] SendApprovalPerDoc gagal: doc={Doc}", procDocumentId);
             TempData["ErrorMessage"] = ex.Message;
         }
         return RedirectToAction(nameof(Index), new { procurementId });
@@ -357,7 +348,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] QrUrl gagal: id={Id}", id);
             return Json(new { ok = false, error = "Failed to create QR link." });
         }
     }
@@ -390,7 +380,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] DownloadQr gagal: id={Id}", id);
             return BadRequest("Failed to download QR.");
         }
     }
@@ -398,11 +387,17 @@ public class ProcurementDocumentsController : Controller
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Generate(string procurementId, string documentTypeId, string? procDocumentId)
+    public async Task<IActionResult> Generate(
+        string procurementId,
+        string documentTypeId,
+        string? procDocumentId
+    )
     {
         try
         {
-            var procurementEntity = await _procurementService.GetProcurementByIdAsync(procurementId);
+            var procurementEntity = await _procurementService.GetProcurementByIdAsync(
+                procurementId
+            );
             if (procurementEntity == null)
             {
                 TempData["ErrorMessage"] = "Procurement was not found";
@@ -420,17 +415,29 @@ public class ProcurementDocumentsController : Controller
             byte[] pdfBytes = docType.Name switch
             {
                 "Memorandum" => await _docGenerator.GenerateMemorandumAsync(procurementEntity),
-                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(procurementEntity),
+                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(
+                    procurementEntity
+                ),
                 "Service Order" => await _docGenerator.GenerateServiceOrderAsync(procurementEntity),
                 "Market Survey" => await _docGenerator.GenerateMarketSurveyAsync(procurementEntity),
                 "Surat Perintah Mulai Pekerjaan (SPMP)" => await _docGenerator.GenerateSPMPAsync(
                     procurementEntity
                 ),
-                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(procurementEntity),
-                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(procurementEntity),
-                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(procurementEntity),
-                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(procurementEntity),
-                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(procurementEntity),
+                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(
+                    procurementEntity
+                ),
+                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(
+                    procurementEntity
+                ),
+                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(
+                    procurementEntity
+                ),
+                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(
+                    procurementEntity
+                ),
+                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(
+                    procurementEntity
+                ),
                 "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurementEntity),
                 "Profit & Loss" => await _docGenerator.GenerateProfitLossAsync(procurementEntity),
                 _ => throw new NotImplementedException(
@@ -457,29 +464,19 @@ public class ProcurementDocumentsController : Controller
             );
 
             TempData["SuccessMessage"] = $"Dokumen '{docType.Name}' berhasil digenerate!";
-            _logger.LogInformation(
-                "Document generated: Procurement={Procurement}, DocType={DocType}, Size={Size}",
-                procurementEntity.ProcNum,
-                docType.Name,
-                pdfBytes.Length
-            );
 
             return RedirectToAction("Index", new { procurementId });
         }
         catch (NotImplementedException ex)
         {
             TempData["ErrorMessage"] = ex.Message;
-            _logger.LogWarning(
-                ex,
-                "Template not implemented for DocumentTypeId={DocTypeId}",
-                documentTypeId
-            );
+
             return RedirectToAction("Index", new { procurementId });
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = $"Failed to generate documents: {ex.Message}";
-            _logger.LogError(ex, "Error generating document for Procurement={Procurement}", procurementId);
+
             return RedirectToAction("Index", new { procurementId });
         }
     }
@@ -501,17 +498,29 @@ public class ProcurementDocumentsController : Controller
             byte[] pdfBytes = docType.Name switch
             {
                 "Memorandum" => await _docGenerator.GenerateMemorandumAsync(procurement),
-                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(procurement),
+                "Permintaan Pekerjaan" => await _docGenerator.GeneratePermintaanPekerjaanAsync(
+                    procurement
+                ),
                 "Service Order" => await _docGenerator.GenerateServiceOrderAsync(procurement),
                 "Market Survey" => await _docGenerator.GenerateMarketSurveyAsync(procurement),
                 "Surat Perintah Mulai Pekerjaan (SPMP)" => await _docGenerator.GenerateSPMPAsync(
                     procurement
                 ),
-                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(procurement),
-                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(procurement),
-                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(procurement),
-                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(procurement),
-                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(procurement),
+                "Surat Penawaran Harga" => await _docGenerator.GenerateSuratPenawaranHargaAsync(
+                    procurement
+                ),
+                "Surat Negosiasi Harga" => await _docGenerator.GenerateSuratNegosiasiHargaAsync(
+                    procurement
+                ),
+                "Rencana Kerja dan Syarat-Syarat (RKS)" => await _docGenerator.GenerateRKSAsync(
+                    procurement
+                ),
+                "Risk Assessment (RA)" => await _docGenerator.GenerateRiskAssessmentAsync(
+                    procurement
+                ),
+                "Owner Estimate (OE)" => await _docGenerator.GenerateOwnerEstimateAsync(
+                    procurement
+                ),
                 "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurement),
                 _ => throw new NotImplementedException(
                     $"Template untuk '{docType.Name}' belum tersedia"
@@ -522,7 +531,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error previewing generated document");
             return BadRequest(new { error = ex.Message });
         }
     }
@@ -547,14 +555,17 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[ProcDocs] ApprovalTimeline gagal: doc={Doc}", procDocumentId);
-            return StatusCode(500, new { ok = false, message = "Failed to load approval timeline." });
+            return StatusCode(
+                500,
+                new { ok = false, message = "Failed to load approval timeline." }
+            );
         }
     }
 
     private static string SanitizeFileNameBase(string? name)
     {
-        if (string.IsNullOrWhiteSpace(name)) return "document";
+        if (string.IsNullOrWhiteSpace(name))
+            return "document";
 
         var invalid = Path.GetInvalidFileNameChars();
         var sb = new StringBuilder();

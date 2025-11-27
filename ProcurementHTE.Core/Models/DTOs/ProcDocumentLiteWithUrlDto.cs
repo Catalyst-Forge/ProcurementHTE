@@ -11,4 +11,5 @@ public record ProcDocumentLiteWithUrlDto(
     string? CreatedByUserId,
     string? CreatedByUserName,
     DateTime CreatedAt,
-    string? ViewUrl);
+    string? ViewUrl
+);

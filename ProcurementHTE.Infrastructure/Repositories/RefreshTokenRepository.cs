@@ -20,20 +20,29 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public Task<RefreshToken?> FindByTokenAsync(string token, CancellationToken ct = default) =>
             _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == token, ct);
 
-        public async Task<bool> HasActiveTokenForDeviceAsync(string userId, string deviceId, CancellationToken ct = default) {
+        public async Task<bool> HasActiveTokenForDeviceAsync(
+            string userId,
+            string deviceId,
+            CancellationToken ct = default
+        )
+        {
             var now = DateTime.Now;
-            return await _context.RefreshTokens
-                .AnyAsync(r => r.UserId == userId
-                               && r.DeviceId == deviceId
-                               && !r.Revoked
-                               && r.ExpiresAt > now, ct);
+            return await _context.RefreshTokens.AnyAsync(
+                r =>
+                    r.UserId == userId && r.DeviceId == deviceId && !r.Revoked && r.ExpiresAt > now,
+                ct
+            );
         }
 
-
         public Task<int> DeleteByTokenAsync(string token, CancellationToken ct = default) =>
-        _context.RefreshTokens.Where(x => x.Token == token).ExecuteDeleteAsync(ct);
+            _context.RefreshTokens.Where(x => x.Token == token).ExecuteDeleteAsync(ct);
 
-        public Task<int> DeleteAllForDeviceAsync(string userId, string? deviceId, CancellationToken ct = default) {
+        public Task<int> DeleteAllForDeviceAsync(
+            string userId,
+            string? deviceId,
+            CancellationToken ct = default
+        )
+        {
             var q = _context.RefreshTokens.Where(r => r.UserId == userId);
             if (!string.IsNullOrWhiteSpace(deviceId))
                 q = q.Where(r => r.DeviceId == deviceId);

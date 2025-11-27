@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ProcurementHTE.Web.Extensions
 {
-    /// <summary>
-    /// Helpers that keep sidebar navigation classes in sync with the current route.
-    /// </summary>
     public static class NavigationHtmlExtensions
     {
         public static bool IsRouteActive(
@@ -30,20 +24,30 @@ namespace ProcurementHTE.Web.Extensions
             var currentAction = actionValue?.ToString();
             var currentPath = viewContext.HttpContext?.Request?.Path.Value ?? string.Empty;
 
-            var areaMatches = string.IsNullOrEmpty(area) ||
-                              string.Equals(currentArea, area, StringComparison.OrdinalIgnoreCase);
+            var areaMatches =
+                string.IsNullOrEmpty(area)
+                || string.Equals(currentArea, area, StringComparison.OrdinalIgnoreCase);
 
-            var controllerMatches = controllers is null || !controllers.Any()
-                ? true
-                : controllers.Any(c => string.Equals(c, currentController, StringComparison.OrdinalIgnoreCase));
+            var controllerMatches =
+                controllers is null || !controllers.Any()
+                    ? true
+                    : controllers.Any(c =>
+                        string.Equals(c, currentController, StringComparison.OrdinalIgnoreCase)
+                    );
 
-            var actionMatches = actions is null || !actions.Any()
-                ? true
-                : actions.Any(a => string.Equals(a, currentAction, StringComparison.OrdinalIgnoreCase));
+            var actionMatches =
+                actions is null || !actions.Any()
+                    ? true
+                    : actions.Any(a =>
+                        string.Equals(a, currentAction, StringComparison.OrdinalIgnoreCase)
+                    );
 
-            var pathMatches = string.IsNullOrEmpty(pathStartsWith) ||
-                              (!string.IsNullOrEmpty(currentPath) &&
-                               currentPath.StartsWith(pathStartsWith, StringComparison.OrdinalIgnoreCase));
+            var pathMatches =
+                string.IsNullOrEmpty(pathStartsWith)
+                || (
+                    !string.IsNullOrEmpty(currentPath)
+                    && currentPath.StartsWith(pathStartsWith, StringComparison.OrdinalIgnoreCase)
+                );
 
             return areaMatches && controllerMatches && actionMatches && pathMatches;
         }
@@ -57,7 +61,9 @@ namespace ProcurementHTE.Web.Extensions
             string? pathStartsWith = null
         )
         {
-            return htmlHelper.IsRouteActive(controllers, actions, area, pathStartsWith) ? className : string.Empty;
+            return htmlHelper.IsRouteActive(controllers, actions, area, pathStartsWith)
+                ? className
+                : string.Empty;
         }
 
         public static string CollapseState(
@@ -69,7 +75,9 @@ namespace ProcurementHTE.Web.Extensions
             string? pathStartsWith = null
         )
         {
-            return htmlHelper.IsRouteActive(controllers, actions, area, pathStartsWith) ? className : string.Empty;
+            return htmlHelper.IsRouteActive(controllers, actions, area, pathStartsWith)
+                ? className
+                : string.Empty;
         }
     }
 }

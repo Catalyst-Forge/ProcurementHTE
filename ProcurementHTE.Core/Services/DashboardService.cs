@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.Interfaces;
-using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 
 namespace ProcurementHTE.Core.Services
@@ -23,8 +20,9 @@ namespace ProcurementHTE.Core.Services
             _dashboardRepository = dashboardRepository;
         }
 
-        public async Task<IReadOnlyList<ProcurementStatusCountDto>> GetProcurementStatusCountsAsync() =>
-            await _woRepository.GetCountByStatusAsync();
+        public async Task<
+            IReadOnlyList<ProcurementStatusCountDto>
+        > GetProcurementStatusCountsAsync() => await _woRepository.GetCountByStatusAsync();
 
         public async Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year) =>
             await _pnlRepository.GetRevenuePerMonthAsync(year);

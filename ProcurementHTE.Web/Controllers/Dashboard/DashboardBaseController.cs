@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +19,8 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             IProcurementService procurementService,
             UserManager<User> userManager,
             IProfitLossService profitLossService,
-            IDashboardService dashboardService)
+            IDashboardService dashboardService
+        )
         {
             ProcurementService = procurementService;
             UserManager = userManager;
@@ -34,14 +31,19 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
         protected async Task<DashboardSummaryViewModel> BuildDashboardAsync(
             User user,
             string roleName,
-            CancellationToken ct = default)
+            CancellationToken ct = default
+        )
         {
             var userId = user.Id;
 
             var totalUsers = UserManager.Users.Count();
             var activeUsers = UserManager.Users.Count(u => u.IsActive);
 
-            var recentProcurements = await ProcurementService.GetMyRecentProcurementAsync(userId, 5, ct);
+            var recentProcurements = await ProcurementService.GetMyRecentProcurementAsync(
+                userId,
+                5,
+                ct
+            );
             var totalRevenueThisMonth = await ProfitLossService.GetTotalRevenueThisMonthAsync();
             var activities = await DashboardService.GetRecentActivitiesAsync(5);
             var procurementsByStatus = await DashboardService.GetProcurementStatusCountsAsync();
@@ -75,7 +77,8 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
         protected async Task<IActionResult> RenderDashboardAsync(
             string viewPath,
             string roleName,
-            CancellationToken ct = default)
+            CancellationToken ct = default
+        )
         {
             var user = await UserManager.GetUserAsync(User);
             if (user is null)

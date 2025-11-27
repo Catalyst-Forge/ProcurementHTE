@@ -1,8 +1,5 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 
@@ -14,50 +11,57 @@ namespace ProcurementHTE.Web.Controllers.ApiController
     [Produces("application/json")]
     public class DocumentsApiController : ControllerBase
     {
-        private readonly ILogger<DocumentsApiController> _logger;
         // NOTE: sementara tetap pakai service query lama (IApprovalServiceApi) untuk paging by QR.
         private readonly IApprovalServiceApi _approvalQuery;
         private readonly IProcDocumentService _docSvc;
 
         public DocumentsApiController(
-            ILogger<DocumentsApiController> logger,
             IApprovalServiceApi approvalQuery,
-            IProcDocumentService docSvc)
+            IProcDocumentService docSvc
+        )
         {
-            _logger = logger;
             _approvalQuery = approvalQuery;
             _docSvc = docSvc;
         }
 
-        // ====== A) POST by-qr (dulunya GET) ======
-        // POST /api/v1/documents/by-qr
-        // Body:
-        // { "QrText": "...", "Page": 1, "PageSize": 20 }
-
         [HttpPost("by-qr")]
         [Consumes("application/json")]
-        public async Task<IActionResult> GetByQr([FromBody] ByQrRequest body, CancellationToken ct = default)
+        public async Task<IActionResult> GetByQr(
+            [FromBody] ByQrRequest body,
+            CancellationToken ct = default
+        )
         {
             ArgumentNullException.ThrowIfNull(body);
             if (body is null || string.IsNullOrWhiteSpace(body.QrText))
-                return BadRequest(new ProblemDetails { Title = "QrText is required", Status = 400 });
+                return BadRequest(
+                    new ProblemDetails { Title = "QrText is required", Status = 400 }
+                );
 
             var qrText = body.QrText.Trim();
             if (qrText.Length > 1024)
-                return BadRequest(new ProblemDetails { Title = "qrText too long (max 1024)", Status = 400 });
+                return BadRequest(
+                    new ProblemDetails { Title = "qrText too long (max 1024)", Status = 400 }
+                );
 
             var page = Math.Max(1, body.Page ?? 1);
             var pageSize = Math.Clamp(body.PageSize ?? 20, 1, 100);
 
-            var res = await _approvalQuery.GetProcDocumentsByQrTextAsync(qrText, page, pageSize, ct);
+            var res = await _approvalQuery.GetProcDocumentsByQrTextAsync(
+                qrText,
+                page,
+                pageSize,
+                ct
+            );
             if (res.TotalItems == 0 || res.Items.Count == 0)
-                return NotFound(new ProblemDetails
-                {
-                    Title = "Document reference not found or not pending",
-                    Detail = "No related reference/procurement document is available.",
-                    Status = 404,
-                    Instance = HttpContext.Request.Path
-                });
+                return NotFound(
+                    new ProblemDetails
+                    {
+                        Title = "Document reference not found or not pending",
+                        Detail = "No related reference/procurement document is available.",
+                        Status = 404,
+                        Instance = HttpContext.Request.Path,
+                    }
+                );
 
             // presign untuk setiap item
             var ttl = TimeSpan.FromMinutes(15);
@@ -69,16 +73,30 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                 try
                 {
                     viewUrl = await _docSvc.GetPresignedViewUrlByObjectKeyAsync(
-                        d.ObjectKey, d.FileName, "application/pdf", ttl, ct);
+                        d.ObjectKey,
+                        d.FileName,
+                        "application/pdf",
+                        ttl,
+                        ct
+                    );
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[documents/by-qr] failed to generate presigned URL: {DocId}", d.ProcDocumentId);
-                }
+                catch (Exception ex) { }
 
-                list.Add(new ProcDocumentLiteWithUrlDto(
-                    d.ProcDocumentId, d.ProcurementId, d.FileName, d.Status, d.QrText,
-                    d.ObjectKey, d.Description, d.CreatedByUserId, d.CreatedByUserName, d.CreatedAt, viewUrl));
+                list.Add(
+                    new ProcDocumentLiteWithUrlDto(
+                        d.ProcDocumentId,
+                        d.ProcurementId,
+                        d.FileName,
+                        d.Status,
+                        d.QrText,
+                        d.ObjectKey,
+                        d.Description,
+                        d.CreatedByUserId,
+                        d.CreatedByUserName,
+                        d.CreatedAt,
+                        viewUrl
+                    )
+                );
             }
 
             var totalPages = (int)Math.Ceiling((double)res.TotalItems / pageSize);
@@ -87,25 +105,41 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             return Ok(ApiResponse<IReadOnlyList<ProcDocumentLiteWithUrlDto>>.Ok(list, "OK", meta));
         }
 
-        // ====== B) POST resolve-qr (tetap POST) ======
-        // POST /api/v1/documents/resolve-qr
-        // Body: { "QrText": "..." }
-
         [HttpPost("resolve-qr")]
         [Consumes("application/json")]
-        public async Task<IActionResult> ResolveQr([FromBody] ApiResolveQrRequest body, CancellationToken ct = default)
+        public async Task<IActionResult> ResolveQr(
+            [FromBody] ApiResolveQrRequest body,
+            CancellationToken ct = default
+        )
         {
             if (body is null || string.IsNullOrWhiteSpace(body.QrText))
-                return BadRequest(new ProblemDetails { Title = "QrText is required", Status = 400 });
+                return BadRequest(
+                    new ProblemDetails { Title = "QrText is required", Status = 400 }
+                );
 
             var doc = await _approvalQuery.GetProcDocumentByQrCode(body.QrText.Trim(), ct);
             if (doc is null)
-                return NotFound(new ProblemDetails { Title = "ProcDocument not found", Status = 404 });
+                return NotFound(
+                    new ProblemDetails { Title = "ProcDocument not found", Status = 404 }
+                );
 
-            var viewUrl = await _docSvc.GetPresignedUrlAsync(doc.ProcDocumentId, TimeSpan.FromMinutes(15));
+            var viewUrl = await _docSvc.GetPresignedUrlAsync(
+                doc.ProcDocumentId,
+                TimeSpan.FromMinutes(15)
+            );
             var dto = new ProcDocumentLiteWithUrlDto(
-                doc.ProcDocumentId, doc.ProcurementId, doc.FileName, doc.Status, doc.QrText,
-                doc.ObjectKey, doc.Description, doc.CreatedByUserId, doc.CreatedByUserName, doc.CreatedAt, viewUrl);
+                doc.ProcDocumentId,
+                doc.ProcurementId,
+                doc.FileName,
+                doc.Status,
+                doc.QrText,
+                doc.ObjectKey,
+                doc.Description,
+                doc.CreatedByUserId,
+                doc.CreatedByUserName,
+                doc.CreatedAt,
+                viewUrl
+            );
 
             return Ok(ApiResponse<ProcDocumentLiteWithUrlDto>.Ok(dto, "OK"));
         }

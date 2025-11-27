@@ -1,5 +1,3 @@
-using System;
-
 namespace ProcurementHTE.Web.Models.Account
 {
     public class UserSessionViewModel

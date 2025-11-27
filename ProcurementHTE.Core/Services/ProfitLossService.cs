@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Protocols.Configuration;
-using ProcurementHTE.Core.Interfaces;
+﻿using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 

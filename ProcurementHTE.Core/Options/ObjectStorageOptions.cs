@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using Minio;
-
-public sealed class ObjectStorageOptions
+﻿public sealed class ObjectStorageOptions
 {
     public string Endpoint { get; set; } = default!;
     public bool UseSSL { get; set; }

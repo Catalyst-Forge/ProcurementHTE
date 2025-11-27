@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -27,7 +22,6 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly IAccountService _accountService;
         private readonly EmailSenderOptions _emailOptions;
         private readonly SmsSenderOptions _smsOptions;
-        private readonly ILogger<AccountController> _logger;
         private const int VerificationCooldownSeconds = 60;
         private const string EmailVerificationCooldownKey = "settings.email";
         private const string PhoneVerificationCooldownKey = "settings.phone";
@@ -37,8 +31,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             SignInManager<User> signInManager,
             IAccountService accountService,
             IOptions<EmailSenderOptions> emailOptions,
-            IOptions<SmsSenderOptions> smsOptions,
-            ILogger<AccountController> logger
+            IOptions<SmsSenderOptions> smsOptions
         )
         {
             _userManager = userManager;
@@ -46,7 +39,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             _accountService = accountService;
             _emailOptions = emailOptions.Value;
             _smsOptions = smsOptions.Value;
-            _logger = logger;
         }
 
         public async Task<IActionResult> Settings()
@@ -55,11 +47,24 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
-            var overview = await _accountService.GetOverviewAsync(user.Id, HttpContext.RequestAborted);
-            var twoFactor = await _accountService.GetTwoFactorSummaryAsync(user.Id, HttpContext.RequestAborted);
-            var sessions = await _accountService.GetSessionsAsync(user.Id, HttpContext.RequestAborted);
+            var overview = await _accountService.GetOverviewAsync(
+                user.Id,
+                HttpContext.RequestAborted
+            );
+            var twoFactor = await _accountService.GetTwoFactorSummaryAsync(
+                user.Id,
+                HttpContext.RequestAborted
+            );
+            var sessions = await _accountService.GetSessionsAsync(
+                user.Id,
+                HttpContext.RequestAborted
+            );
             sessions = sessions.Where(s => s.IsActive || s.IsCurrent).ToList();
-            var logs = await _accountService.GetSecurityLogsAsync(user.Id, 5, HttpContext.RequestAborted);
+            var logs = await _accountService.GetSecurityLogsAsync(
+                user.Id,
+                5,
+                HttpContext.RequestAborted
+            );
             var currentSessionId = GetCurrentSessionId();
             var recoveryCodes = overview.RecoveryCodesSnapshot?.ToArray();
             var profilePhoneInput = FormatPhoneForInput(overview.PhoneNumber);
@@ -88,20 +93,17 @@ namespace ProcurementHTE.Web.Controllers.Account
                     NewlyGeneratedRecoveryCodes = recoveryCodes,
                 },
                 Sessions = sessions
-                    .Select(
-                        x =>
-                            new UserSessionViewModel
-                            {
-                                SessionId = x.UserSessionId,
-                                Device = x.Device ?? "Tidak diketahui",
-                                Browser = x.Browser ?? "Tidak diketahui",
-                                IpAddress = x.IpAddress,
-                                Location = x.Location,
-                                CreatedAt = x.CreatedAt,
-                                IsActive = x.IsActive,
-                                IsCurrent = x.UserSessionId == currentSessionId,
-                            }
-                    )
+                    .Select(x => new UserSessionViewModel
+                    {
+                        SessionId = x.UserSessionId,
+                        Device = x.Device ?? "Tidak diketahui",
+                        Browser = x.Browser ?? "Tidak diketahui",
+                        IpAddress = x.IpAddress,
+                        Location = x.Location,
+                        CreatedAt = x.CreatedAt,
+                        IsActive = x.IsActive,
+                        IsCurrent = x.UserSessionId == currentSessionId,
+                    })
                     .ToList(),
                 SecurityLogs = logs,
             };
@@ -109,7 +111,9 @@ namespace ProcurementHTE.Web.Controllers.Account
             ViewBag.ActivePage = "settings";
             ViewBag.ShowPhoneVerify = TempData["ShowPhoneVerify"]?.ToString() == "1";
             ViewBag.DevPhoneOtp = _smsOptions.UseDevelopmentMode ? TempData["DevPhoneOtp"] : null;
-            ViewBag.DevMagicLink = _emailOptions.UseDevelopmentMode ? TempData["DevMagicLink"] : null;
+            ViewBag.DevMagicLink = _emailOptions.UseDevelopmentMode
+                ? TempData["DevMagicLink"]
+                : null;
             ViewBag.RecoveryCodesHidden = overview.RecoveryCodesHidden;
             ViewBag.HasStoredRecoveryCodes = recoveryCodes?.Length > 0;
             ViewBag.EmailVerificationCooldown = GetCooldownSeconds(EmailVerificationCooldownKey);
@@ -127,7 +131,9 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateProfile([Bind(Prefix = "Profile")] UpdateProfileInputModel model)
+        public async Task<IActionResult> UpdateProfile(
+            [Bind(Prefix = "Profile")] UpdateProfileInputModel model
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -144,9 +150,18 @@ namespace ProcurementHTE.Web.Controllers.Account
             var currentPhone = string.IsNullOrWhiteSpace(user.PhoneNumber)
                 ? null
                 : user.PhoneNumber.Trim();
-            var emailChanged = !string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase);
-            var phoneChanged = !string.Equals(currentPhone, normalizedPhone, StringComparison.OrdinalIgnoreCase);
-            var requiresPhoneVerification = phoneChanged && !string.IsNullOrWhiteSpace(normalizedPhone);
+            var emailChanged = !string.Equals(
+                user.Email,
+                normalizedEmail,
+                StringComparison.OrdinalIgnoreCase
+            );
+            var phoneChanged = !string.Equals(
+                currentPhone,
+                normalizedPhone,
+                StringComparison.OrdinalIgnoreCase
+            );
+            var requiresPhoneVerification =
+                phoneChanged && !string.IsNullOrWhiteSpace(normalizedPhone);
 
             var request = new UpdateProfileRequest
             {
@@ -175,7 +190,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal memperbarui profil user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -184,7 +198,9 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword([Bind(Prefix = "ChangePassword")] ChangePasswordInputModel model)
+        public async Task<IActionResult> ChangePassword(
+            [Bind(Prefix = "ChangePassword")] ChangePasswordInputModel model
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -211,7 +227,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengganti password user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -260,7 +275,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal mengirim email verifikasi untuk {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -278,16 +292,11 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             try
             {
-                await _accountService.ConfirmEmailAsync(
-                    userId,
-                    token,
-                    HttpContext.RequestAborted
-                );
+                await _accountService.ConfirmEmailAsync(userId, token, HttpContext.RequestAborted);
                 TempData["SuccessMessage"] = "Email Anda telah terverifikasi.";
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Verifikasi email gagal untuk user {UserId}", userId);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -304,7 +313,8 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (IsCooldownActive(PhoneVerificationCooldownKey, out var phoneRemaining))
             {
-                TempData["ErrorMessage"] = $"Tunggu {phoneRemaining} detik sebelum mengirim ulang OTP.";
+                TempData["ErrorMessage"] =
+                    $"Tunggu {phoneRemaining} detik sebelum mengirim ulang OTP.";
                 TempData["ShowPhoneVerify"] = "1";
                 return RedirectToAction(nameof(Settings));
             }
@@ -331,11 +341,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Gagal mengirim OTP verifikasi nomor HP user {UserId}",
-                    user?.Id
-                );
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -359,16 +364,11 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             try
             {
-                await _accountService.ConfirmPhoneAsync(
-                    user.Id,
-                    code,
-                    HttpContext.RequestAborted
-                );
+                await _accountService.ConfirmPhoneAsync(user.Id, code, HttpContext.RequestAborted);
                 TempData["SuccessMessage"] = "Nomor HP berhasil diverifikasi.";
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Verifikasi nomor HP gagal untuk {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
                 TempData["ShowPhoneVerify"] = "1";
             }
@@ -408,8 +408,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal mengunggah avatar user {UserId}", user?.Id);
-                TempData["ErrorMessage"] = "Gagal mengunggah foto profil. Pastikan format gambar valid.";
+                TempData["ErrorMessage"] =
+                    "Gagal mengunggah foto profil. Pastikan format gambar valid.";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -430,7 +430,10 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EnableTwoFactor(TwoFactorMethod method, string verificationCode)
+        public async Task<IActionResult> EnableTwoFactor(
+            TwoFactorMethod method,
+            string verificationCode
+        )
         {
             var user = await GetCurrentUserAsync();
             if (user == null)
@@ -448,7 +451,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengaktifkan 2FA user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -470,7 +472,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal menonaktifkan 2FA user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -573,7 +574,13 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (method == TwoFactorMethod.AuthenticatorApp)
             {
-                return Json(new { success = false, message = "Authenticator tidak membutuhkan kode pengiriman." });
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = "Authenticator tidak membutuhkan kode pengiriman.",
+                    }
+                );
             }
 
             try
@@ -599,28 +606,17 @@ namespace ProcurementHTE.Web.Controllers.Account
                 var channel = method == TwoFactorMethod.Email ? "email" : "SMS";
                 var message = $"Kode verifikasi dikirim melalui {channel}.";
 
-                if (devCode == null)
-                {
-                    _logger.LogInformation(
-                        "2FA code dikirim via {Channel} untuk user {UserId}",
-                        channel,
-                        user.Id
-                    );
-                }
-                else
-                {
-                    _logger.LogInformation(
-                        "2FA code (dev) untuk user {UserId}: {Code}",
-                        user.Id,
-                        devCode
-                    );
-                }
-
-                return Json(new { success = true, message, devCode });
+                return Json(
+                    new
+                    {
+                        success = true,
+                        message,
+                        devCode,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal mengirim kode 2FA ke user {UserId}", user.Id);
                 return Json(new { success = false, message = ex.Message });
             }
         }
@@ -734,7 +730,11 @@ namespace ProcurementHTE.Web.Controllers.Account
         }
 
         private void StartCooldown(string key) =>
-            CooldownHelper.SetCooldown(HttpContext.Session, key, TimeSpan.FromSeconds(VerificationCooldownSeconds));
+            CooldownHelper.SetCooldown(
+                HttpContext.Session,
+                key,
+                TimeSpan.FromSeconds(VerificationCooldownSeconds)
+            );
 
         private int GetCooldownSeconds(string key) =>
             CooldownHelper.GetRemainingSeconds(HttpContext.Session, key);
@@ -755,7 +755,9 @@ namespace ProcurementHTE.Web.Controllers.Account
             Response.Cookies.Append(CookieNames.Session, sessionId, options);
         }
 
-        private static (byte[] Buffer, string ContentType, string FileName) ParseImagePayload(string base64)
+        private static (byte[] Buffer, string ContentType, string FileName) ParseImagePayload(
+            string base64
+        )
         {
             var span = base64.AsSpan();
             var commaIndex = span.IndexOf(',');
@@ -768,11 +770,14 @@ namespace ProcurementHTE.Web.Controllers.Account
                 payload = span[(commaIndex + 1)..];
             }
 
-            var contentType = metadata
-                .ToString()
-                .Split(';', StringSplitOptions.RemoveEmptyEntries)
-                .FirstOrDefault(part => part.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-                ?.Replace("data:", string.Empty, StringComparison.OrdinalIgnoreCase)
+            var contentType =
+                metadata
+                    .ToString()
+                    .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault(part =>
+                        part.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+                    )
+                    ?.Replace("data:", string.Empty, StringComparison.OrdinalIgnoreCase)
                 ?? "image/png";
 
             var buffer = Convert.FromBase64String(payload.ToString());
@@ -780,7 +785,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             {
                 "image/png" => "png",
                 "image/jpeg" => "jpg",
-                _ => "png"
+                _ => "png",
             };
 
             return (buffer, contentType, $"avatar.{extension}");

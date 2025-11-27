@@ -19,12 +19,15 @@ public interface IProcDocumentRepository
         CancellationToken ct = default
     );
     Task<ProcDocumentLiteDto?> GetProcDocumentByQrCode(
-    string QrText,
-    CancellationToken ct = default
-);
+        string QrText,
+        CancellationToken ct = default
+    );
     Task<ProcDocuments?> GetByIdAsync(string id);
     Task<IReadOnlyList<ProcDocuments>> GetByProcurementAsync(string procurementId);
-    Task<ProcDocuments?> GetLatestActiveByProcurementAndDocTypeAsync(string woId, string documentTypeId);
+    Task<ProcDocuments?> GetLatestActiveByProcurementAndDocTypeAsync(
+        string woId,
+        string documentTypeId
+    );
     Task AddAsync(ProcDocuments doc);
     Task UpdateAsync(ProcDocuments doc);
     Task DeleteAsync(string id);

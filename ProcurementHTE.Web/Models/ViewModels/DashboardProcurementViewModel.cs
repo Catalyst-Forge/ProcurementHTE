@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Models.ViewModels
 {

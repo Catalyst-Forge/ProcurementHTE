@@ -4,21 +4,23 @@ using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Web.Controllers.ProcurementModule {
+namespace ProcurementHTE.Web.Controllers.ProcurementModule
+{
     [Authorize]
-    public class ApprovalsController : Controller {
+    public class ApprovalsController : Controller
+    {
         private readonly IApprovalService _approvalService;
         private readonly UserManager<User> _userMgr;
-        private readonly ILogger<ApprovalsController> _logger;
 
-        public ApprovalsController(IApprovalService approvalService, UserManager<User> userMgr, ILogger<ApprovalsController> logger) {
+        public ApprovalsController(IApprovalService approvalService, UserManager<User> userMgr)
+        {
             _approvalService = approvalService;
             _userMgr = userMgr;
-            _logger = logger;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index() {
+        public async Task<IActionResult> Index()
+        {
             var user = await _userMgr.GetUserAsync(User);
             if (user == null)
                 return Challenge();
@@ -28,16 +30,19 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule {
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Approve(string id) {
+        public async Task<IActionResult> Approve(string id)
+        {
             var user = await _userMgr.GetUserAsync(User);
             if (user == null)
                 return Challenge();
 
-            try {
+            try
+            {
                 await _approvalService.ApproveAsync(id, user.Id);
                 TempData["SuccessMessage"] = "Dokumen disetujui.";
-            } catch (Exception ex) {
-                _logger.LogError(ex, "Error saat approve {ApprovalId}", id);
+            }
+            catch (Exception ex)
+            {
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -46,16 +51,19 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule {
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Reject(string id, string? note) {
+        public async Task<IActionResult> Reject(string id, string? note)
+        {
             var user = await _userMgr.GetUserAsync(User);
             if (user == null)
                 return Challenge();
 
-            try {
+            try
+            {
                 await _approvalService.RejectAsync(id, user.Id, note);
                 TempData["ErrorMessage"] = "Dokumen ditolak.";
-            } catch (Exception ex) {
-                _logger.LogError(ex, "Error saat reject {ApprovalId}", id);
+            }
+            catch (Exception ex)
+            {
                 TempData["ErrorMessage"] = ex.Message;
             }
             return RedirectToAction(nameof(Index));

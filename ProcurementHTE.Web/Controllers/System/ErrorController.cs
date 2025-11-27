@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Web.Models;
 
@@ -11,13 +10,6 @@ namespace ProcurementHTE.Web.Controllers.SystemModule;
 [Route("Error")]
 public class ErrorController : Controller
 {
-    private readonly ILogger<ErrorController> _logger;
-
-    public ErrorController(ILogger<ErrorController> logger)
-    {
-        _logger = logger;
-    }
-
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [HttpGet("")]
     [HttpGet("500")]
@@ -26,15 +18,6 @@ public class ErrorController : Controller
         ConfigureChromeLessLayout();
 
         var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-
-        if (exceptionFeature?.Error is not null)
-        {
-            _logger.LogError(
-                exceptionFeature.Error,
-                "Unhandled exception at path {Path}",
-                exceptionFeature.Path ?? HttpContext.Request.Path
-            );
-        }
 
         Response.StatusCode = StatusCodes.Status500InternalServerError;
 
@@ -59,49 +42,50 @@ public class ErrorController : Controller
         var feature = HttpContext.Features.Get<IStatusCodeReExecuteFeature>();
         var originalPath = feature?.OriginalPath ?? HttpContext.Request.Path;
 
-        var (title, description, primaryText, primaryUrl, secondaryText, secondaryUrl) = statusCode switch
-        {
-            StatusCodes.Status404NotFound => (
-                "Halaman tidak ditemukan",
-                "Kami tidak menemukan halaman yang Anda minta atau mungkin sudah dipindahkan.",
-                "Kembali ke Dashboard",
-                Url.Action("Index", "Dashboard") ?? "/",
-                null,
-                null
-            ),
-            StatusCodes.Status403Forbidden => (
-                "Akses dibatasi",
-                "Anda tidak memiliki izin untuk membuka halaman ini. Jika menurut Anda ini suatu kesalahan, hubungi administrator.",
-                "Kembali ke Dashboard",
-                Url.Action("Index", "Dashboard") ?? "/",
-                null,
-                null
-            ),
-            StatusCodes.Status401Unauthorized => (
-                "Sesi Anda berakhir",
-                "Silakan masuk kembali agar kami dapat memverifikasi identitas Anda sebelum melanjutkan.",
-                "Masuk ke Akun",
-                Url.Action("Login", "Auth") ?? "/Auth/Login",
-                null,
-                null
-            ),
-            _ when statusCode >= 500 => (
-                "Layanan sedang bermasalah",
-                "Terjadi kesalahan pada server kami. Tim sedang melakukan penanganan.",
-                "Muat ulang halaman",
-                originalPath,
-                "Kembali ke Dashboard",
-                Url.Action("Index", "Dashboard")
-            ),
-            _ => (
-                "Terjadi kesalahan",
-                "Permintaan Anda tidak dapat kami proses saat ini.",
-                "Kembali ke Dashboard",
-                Url.Action("Index", "Dashboard") ?? "/",
-                null,
-                null
-            )
-        };
+        var (title, description, primaryText, primaryUrl, secondaryText, secondaryUrl) =
+            statusCode switch
+            {
+                StatusCodes.Status404NotFound => (
+                    "Halaman tidak ditemukan",
+                    "Kami tidak menemukan halaman yang Anda minta atau mungkin sudah dipindahkan.",
+                    "Kembali ke Dashboard",
+                    Url.Action("Index", "Dashboard") ?? "/",
+                    null,
+                    null
+                ),
+                StatusCodes.Status403Forbidden => (
+                    "Akses dibatasi",
+                    "Anda tidak memiliki izin untuk membuka halaman ini. Jika menurut Anda ini suatu kesalahan, hubungi administrator.",
+                    "Kembali ke Dashboard",
+                    Url.Action("Index", "Dashboard") ?? "/",
+                    null,
+                    null
+                ),
+                StatusCodes.Status401Unauthorized => (
+                    "Sesi Anda berakhir",
+                    "Silakan masuk kembali agar kami dapat memverifikasi identitas Anda sebelum melanjutkan.",
+                    "Masuk ke Akun",
+                    Url.Action("Login", "Auth") ?? "/Auth/Login",
+                    null,
+                    null
+                ),
+                _ when statusCode >= 500 => (
+                    "Layanan sedang bermasalah",
+                    "Terjadi kesalahan pada server kami. Tim sedang melakukan penanganan.",
+                    "Muat ulang halaman",
+                    originalPath,
+                    "Kembali ke Dashboard",
+                    Url.Action("Index", "Dashboard")
+                ),
+                _ => (
+                    "Terjadi kesalahan",
+                    "Permintaan Anda tidak dapat kami proses saat ini.",
+                    "Kembali ke Dashboard",
+                    Url.Action("Index", "Dashboard") ?? "/",
+                    null,
+                    null
+                ),
+            };
 
         Response.StatusCode = statusCode;
 
@@ -169,7 +153,8 @@ public class ErrorController : Controller
         string? primaryText = null,
         string? primaryUrl = null,
         string? secondaryText = null,
-        string? secondaryUrl = null)
+        string? secondaryUrl = null
+    )
     {
         return new ErrorViewModel
         {
@@ -181,7 +166,7 @@ public class ErrorController : Controller
             PrimaryActionText = primaryText ?? "Kembali ke Dashboard",
             PrimaryActionUrl = primaryUrl ?? (Url.Action("Index", "Dashboard") ?? "/"),
             SecondaryActionText = secondaryText,
-            SecondaryActionUrl = secondaryUrl
+            SecondaryActionUrl = secondaryUrl,
         };
     }
 }

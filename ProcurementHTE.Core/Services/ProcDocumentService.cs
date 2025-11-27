@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,7 +18,6 @@ public sealed class ProcDocumentService : IProcDocumentService
     private readonly IDocumentTypeRepository _documentTypeRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly ObjectStorageOptions _storageOptions;
-    private readonly ILogger<ProcDocumentService> _logger;
 
     public ProcDocumentService(
         IProcDocumentRepository procDocumentRepository,
@@ -31,12 +27,12 @@ public sealed class ProcDocumentService : IProcDocumentService
         IProfitLossService pnlService,
         IDocumentTypeRepository documentTypeRepository,
         IObjectStorage objectStorage,
-        IOptions<ObjectStorageOptions> storageOptions,
-        ILogger<ProcDocumentService> logger
+        IOptions<ObjectStorageOptions> storageOptions
     )
     {
         _procDocumentRepository =
-            procDocumentRepository ?? throw new ArgumentNullException(nameof(procDocumentRepository));
+            procDocumentRepository
+            ?? throw new ArgumentNullException(nameof(procDocumentRepository));
         _procurementRepository =
             procurementRepository ?? throw new ArgumentNullException(nameof(procurementRepository));
         _jobTypeDocumentRepository =
@@ -45,14 +41,18 @@ public sealed class ProcDocumentService : IProcDocumentService
         _approvalFlowService =
             approvalFlowService ?? throw new ArgumentNullException(nameof(approvalFlowService));
         _pnlService = pnlService ?? throw new ArgumentNullException(nameof(pnlService));
-        _documentTypeRepository = documentTypeRepository ?? throw new ArgumentNullException(nameof(documentTypeRepository));
+        _documentTypeRepository =
+            documentTypeRepository
+            ?? throw new ArgumentNullException(nameof(documentTypeRepository));
         _objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
         _storageOptions =
             storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         if (string.IsNullOrWhiteSpace(_storageOptions.Bucket))
-            throw new ArgumentException("Object storage bucket belum dikonfigurasi.", nameof(storageOptions));
+            throw new ArgumentException(
+                "Object storage bucket belum dikonfigurasi.",
+                nameof(storageOptions)
+            );
     }
 
     #region Public API
@@ -89,7 +89,6 @@ public sealed class ProcDocumentService : IProcDocumentService
         await _procDocumentRepository.DeleteAsync(procDocumentId);
         await _procDocumentRepository.SaveAsync();
 
-        _logger.LogInformation("ProcDocument {DocumentId} deleted.", procDocumentId);
         return true;
     }
 
@@ -107,7 +106,10 @@ public sealed class ProcDocumentService : IProcDocumentService
         if (string.IsNullOrWhiteSpace(request.ProcurementId))
             throw new ArgumentException("ProcurementId wajib diisi", nameof(request.ProcurementId));
         if (string.IsNullOrWhiteSpace(request.DocumentTypeId))
-            throw new ArgumentException("DocumentTypeId wajib diisi", nameof(request.DocumentTypeId));
+            throw new ArgumentException(
+                "DocumentTypeId wajib diisi",
+                nameof(request.DocumentTypeId)
+            );
 
         _ = await GetProcurementOrThrowAsync(request.ProcurementId);
 
@@ -145,12 +147,6 @@ public sealed class ProcDocumentService : IProcDocumentService
 
         await _procDocumentRepository.AddAsync(entity);
         await _procDocumentRepository.SaveAsync();
-
-        _logger.LogInformation(
-            "Document uploaded for Procurement {ProcurementId} ({DocumentTypeId})",
-            request.ProcurementId,
-            request.DocumentTypeId
-        );
 
         return new UploadProcDocumentResult
         {
@@ -246,7 +242,10 @@ public sealed class ProcDocumentService : IProcDocumentService
         );
     }
 
-    public async Task<bool> CanSendApprovalAsync(string procurementId, CancellationToken ct = default)
+    public async Task<bool> CanSendApprovalAsync(
+        string procurementId,
+        CancellationToken ct = default
+    )
     {
         var procurement = await GetProcurementOrThrowAsync(procurementId);
         if (string.IsNullOrWhiteSpace(procurement.JobTypeId))
@@ -258,8 +257,9 @@ public sealed class ProcDocumentService : IProcDocumentService
         );
 
         var docs = await _procDocumentRepository.GetByProcurementAsync(procurementId);
-        var availableDocTypes = docs
-            .Where(d => !string.Equals(d.Status, DocStatuses.Deleted, StringComparison.OrdinalIgnoreCase))
+        var availableDocTypes = docs.Where(d =>
+                !string.Equals(d.Status, DocStatuses.Deleted, StringComparison.OrdinalIgnoreCase)
+            )
             .Select(d => d.DocumentTypeId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -301,7 +301,13 @@ public sealed class ProcDocumentService : IProcDocumentService
 
         if (config?.RequiresApproval == true)
         {
-            if (!string.Equals(doc.Status, DocStatuses.PendingApproval, StringComparison.OrdinalIgnoreCase))
+            if (
+                !string.Equals(
+                    doc.Status,
+                    DocStatuses.PendingApproval,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
             {
                 // Special handling: if this document is Profit & Loss and selected final offer > 300,000,000
                 // then append Vice President to approval flow
@@ -309,8 +315,14 @@ public sealed class ProcDocumentService : IProcDocumentService
                 try
                 {
                     var docType = await _documentTypeRepository.GetByIdAsync(doc.DocumentTypeId);
-                    if (docType != null && !string.IsNullOrWhiteSpace(docType.Name) &&
-                        docType.Name.IndexOf("Profit & Loss.pdf", StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (
+                        docType != null
+                        && !string.IsNullOrWhiteSpace(docType.Name)
+                        && docType.Name.IndexOf(
+                            "Profit & Loss.pdf",
+                            StringComparison.OrdinalIgnoreCase
+                        ) >= 0
+                    )
                     {
                         var pnl = await _pnlService.GetLatestByProcurementAsync(doc.ProcurementId);
                         if (pnl != null && pnl.SelectedVendorFinalOffer > 300_000_000m)
@@ -319,15 +331,19 @@ public sealed class ProcDocumentService : IProcDocumentService
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[SendApproval] Failed to evaluate extra approval roles for doc={Doc}", doc.ProcDocumentId);
-                }
+                catch (Exception ex) { }
 
                 if (extraRoles.Count > 0)
-                    await _approvalFlowService.GenerateFlowAsync(doc.ProcurementId, doc.ProcDocumentId, extraRoles);
+                    await _approvalFlowService.GenerateFlowAsync(
+                        doc.ProcurementId,
+                        doc.ProcDocumentId,
+                        extraRoles
+                    );
                 else
-                    await _approvalFlowService.GenerateFlowAsync(doc.ProcurementId, doc.ProcDocumentId);
+                    await _approvalFlowService.GenerateFlowAsync(
+                        doc.ProcurementId,
+                        doc.ProcDocumentId
+                    );
 
                 doc.Status = DocStatuses.PendingApproval;
                 await _procDocumentRepository.UpdateAsync(doc);
@@ -390,10 +406,20 @@ public sealed class ProcDocumentService : IProcDocumentService
         {
             existingDoc = await _procDocumentRepository.GetByIdAsync(request.ProcDocumentId);
             if (existingDoc is null)
-                throw new KeyNotFoundException($"ProcDocument dengan ID '{request.ProcDocumentId}' tidak ditemukan.");
+                throw new KeyNotFoundException(
+                    $"ProcDocument dengan ID '{request.ProcDocumentId}' tidak ditemukan."
+                );
 
-            if (!string.Equals(existingDoc.ProcurementId, request.ProcurementId, StringComparison.Ordinal))
-                throw new InvalidOperationException("ProcDocument tidak sesuai dengan procurement yang dimaksud.");
+            if (
+                !string.Equals(
+                    existingDoc.ProcurementId,
+                    request.ProcurementId,
+                    StringComparison.Ordinal
+                )
+            )
+                throw new InvalidOperationException(
+                    "ProcDocument tidak sesuai dengan procurement yang dimaksud."
+                );
 
             previousObjectKey = existingDoc.ObjectKey;
         }
@@ -456,17 +482,13 @@ public sealed class ProcDocumentService : IProcDocumentService
 
         await _procDocumentRepository.SaveAsync();
 
-        if (!string.IsNullOrWhiteSpace(previousObjectKey) &&
-            !string.Equals(previousObjectKey, entity.ObjectKey, StringComparison.Ordinal))
+        if (
+            !string.IsNullOrWhiteSpace(previousObjectKey)
+            && !string.Equals(previousObjectKey, entity.ObjectKey, StringComparison.Ordinal)
+        )
         {
             await SafeDeleteAsync(previousObjectKey);
         }
-
-        _logger.LogInformation(
-            "Generated document stored for Procurement {ProcurementId} ({DocumentTypeId})",
-            request.ProcurementId,
-            request.DocumentTypeId
-        );
 
         return new UploadProcDocumentResult
         {
@@ -488,7 +510,9 @@ public sealed class ProcDocumentService : IProcDocumentService
 
         var procurement = await _procurementRepository.GetByIdAsync(procurementId);
         return procurement
-            ?? throw new KeyNotFoundException($"Procurement dengan ID '{procurementId}' tidak ditemukan.");
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID '{procurementId}' tidak ditemukan."
+            );
     }
 
     private TimeSpan GetExpiry(TimeSpan? overrideValue)
@@ -589,10 +613,7 @@ public sealed class ProcDocumentService : IProcDocumentService
         {
             await _objectStorage.DeleteAsync(_storageOptions.Bucket, objectKey);
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Gagal menghapus objek {ObjectKey} dari storage.", objectKey);
-        }
+        catch (Exception ex) { }
     }
 
     #endregion

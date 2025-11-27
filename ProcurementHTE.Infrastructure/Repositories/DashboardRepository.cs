@@ -49,11 +49,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     Time = pnl.CreatedAt,
                     User = pnl.Procurement.User != null ? pnl.Procurement.User.FullName : "Unknown",
                     Action = "Created Profit & Loss Record",
-                    Description = $"For Procurement {pnl.Procurement!.ProcNum} Create Profit & Loss Record",
+                    Description =
+                        $"For Procurement {pnl.Procurement!.ProcNum} Create Profit & Loss Record",
                 })
                 .ToListAsync();
 
-            return procurements.Concat(docs)
+            return procurements
+                .Concat(docs)
                 .Concat(pnl)
                 .OrderByDescending(activity => activity.Time)
                 .Take(take)
@@ -63,7 +65,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync()
         {
             return await _context
-                .ProcDocumentApprovals.Where(a => a.Status == "Pending").GroupBy(d => d.Status)
+                .ProcDocumentApprovals.Where(a => a.Status == "Pending")
+                .GroupBy(d => d.Status)
                 .Select(g => new ApprovalStatusCountDto { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
         }

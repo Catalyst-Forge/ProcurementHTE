@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;

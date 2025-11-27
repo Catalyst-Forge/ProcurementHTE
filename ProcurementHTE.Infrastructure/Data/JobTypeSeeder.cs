@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
 
-
 namespace ProcurementHTE.Infrastructure.Data
 {
     public static class JobTypeSeeder
@@ -20,7 +19,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 new()
                 {
                     TypeName = "StandBy",
-                    Description = "Procurement untuk standby crew/alat dalam periode waktu tertentu",
+                    Description =
+                        "Procurement untuk standby crew/alat dalam periode waktu tertentu",
                 },
                 new()
                 {
@@ -32,17 +32,11 @@ namespace ProcurementHTE.Infrastructure.Data
                     TypeName = "SPOT Angkutan",
                     Description = "Order spot untuk kebutuhan pengangkutan cepat",
                 },
-                new()
-                {
-                    TypeName = "Other",
-                    Description = "Tipe lain di luar kategori yang ada",
-                },
+                new() { TypeName = "Other", Description = "Tipe lain di luar kategori yang ada" },
             };
 
             // Filter out types with duplicate TypeName
-            var newTypes = types
-                .Where(t => !existingTypeNames.Contains(t.TypeName))
-                .ToList();
+            var newTypes = types.Where(t => !existingTypeNames.Contains(t.TypeName)).ToList();
 
             if (!newTypes.Any())
             {

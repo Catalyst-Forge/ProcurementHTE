@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace ProcurementHTE.Web.Authorization
 {
     public static class DashboardRoleHelper
@@ -31,26 +27,27 @@ namespace ProcurementHTE.Web.Authorization
 
         public static string GeneralRolesCsv => string.Join(',', GeneralRoles);
 
-        private static readonly Dictionary<string, string> RoleControllerMap =
-            new(StringComparer.OrdinalIgnoreCase)
-            {
-                [ManagerTransportRole] = "ManagerTransportDashboard",
-                [AnalystHteRole] = "AnalystHteDashboard",
-                [HteRole] = "HteDashboard",
-                [OperationRole] = "OperationDashboard",
-                [AssistantManagerHteRole] = "AssistantManagerHteDashboard",
-                [VicePresidentRole] = "VicePresidentDashboard",
-                [HseRole] = "HseDashboard",
-                [SupplyChainManagementRole] = "SupplyChainManagementDashboard",
-            };
+        private static readonly Dictionary<string, string> RoleControllerMap = new(
+            StringComparer.OrdinalIgnoreCase
+        )
+        {
+            [ManagerTransportRole] = "ManagerTransportDashboard",
+            [AnalystHteRole] = "AnalystHteDashboard",
+            [HteRole] = "HteDashboard",
+            [OperationRole] = "OperationDashboard",
+            [AssistantManagerHteRole] = "AssistantManagerHteDashboard",
+            [VicePresidentRole] = "VicePresidentDashboard",
+            [HseRole] = "HseDashboard",
+            [SupplyChainManagementRole] = "SupplyChainManagementDashboard",
+        };
 
         public static bool IsAdmin(string? role) =>
-            !string.IsNullOrWhiteSpace(role) &&
-            string.Equals(role, AdminRole, StringComparison.OrdinalIgnoreCase);
+            !string.IsNullOrWhiteSpace(role)
+            && string.Equals(role, AdminRole, StringComparison.OrdinalIgnoreCase);
 
         public static bool IsGeneralRole(string? role) =>
-            !string.IsNullOrWhiteSpace(role) &&
-            GeneralRoles.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase));
+            !string.IsNullOrWhiteSpace(role)
+            && GeneralRoles.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase));
 
         public static string? FindGeneralRole(IEnumerable<string> roles)
         {

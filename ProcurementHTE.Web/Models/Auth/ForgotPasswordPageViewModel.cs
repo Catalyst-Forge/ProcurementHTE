@@ -1,5 +1,3 @@
-using ProcurementHTE.Web.Models.Auth;
-
 namespace ProcurementHTE.Web.Models.Auth
 {
     public class ForgotPasswordPageViewModel

@@ -10,12 +10,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class ApprovalRepository : IApprovalRepository
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<ApprovalRepository> _logger;
 
-        public ApprovalRepository(AppDbContext context, ILogger<ApprovalRepository> logger)
+        public ApprovalRepository(AppDbContext context)
         {
             _context = context;
-            _logger = logger;
         }
 
         public async Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(
@@ -36,7 +34,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Where(a =>
                     a.Status == "Pending"
                     && roles.Contains(a.RoleId)
-                    && (a.AssignedApproverId == null || a.AssignedApproverId == user.Id))
+                    && (a.AssignedApproverId == null || a.AssignedApproverId == user.Id)
+                )
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -97,13 +96,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
             var totalOffer = pnl?.SelectedVendorFinalOffer ?? 0m;
             var needVP = totalOffer > ThresholdVP;
-
-            _logger.LogInformation(
-                "[Approve] Procurement={Procurement}, TotalOffer={TotalOffer:N0}, NeedVP={NeedVP}",
-                ProcurementEntity.ProcNum,
-                totalOffer,
-                needVP
-            );
 
             // 1) Set current approved
             approval.Status = "Approved";
@@ -294,9 +286,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         RoleName = a.Role?.Name,
                         ProcDocumentApprovalId = a.ProcDocumentApprovalId,
                         ApproverId = a.AssignedApproverId,
-                        ApproverFullName = a.AssignedApprover != null
-                            ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
-                            : null,
+                        ApproverFullName =
+                            a.AssignedApprover != null
+                                ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
+                                : null,
                     }),
             ];
 
@@ -503,9 +496,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     RoleName = x.Role.Name,
                     Status = x.Status, // < PENTING
                     AssignedApproverUserId = x.AssignedApproverId,
-                    AssignedApproverFullName = x.AssignedApprover != null
-                        ? (x.AssignedApprover.FullName ?? x.AssignedApprover.UserName)
-                        : null,
+                    AssignedApproverFullName =
+                        x.AssignedApprover != null
+                            ? (x.AssignedApprover.FullName ?? x.AssignedApprover.UserName)
+                            : null,
                     ApproverUserId = x.ApproverId,
                     ApproverFullName =
                         x.Approver != null ? (x.Approver.FullName ?? x.Approver.UserName) : null,
@@ -572,9 +566,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     Level = a.Level,
                     SequenceOrder = a.SequenceOrder,
                     ApproverId = a.AssignedApproverId,
-                    ApproverFullName = a.AssignedApprover != null
-                        ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
-                        : null,
+                    ApproverFullName =
+                        a.AssignedApprover != null
+                            ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
+                            : null,
                 })
                 .ToList();
 

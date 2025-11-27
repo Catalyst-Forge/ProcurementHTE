@@ -20,7 +20,9 @@ public class DocumentApprovalsController : Controller
         _roleManager = roleManager;
     }
 
-    public override void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+    public override void OnActionExecuting(
+        Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context
+    )
     {
         ViewBag.ActivePage = ActivePageName;
         base.OnActionExecuting(context);
@@ -29,9 +31,11 @@ public class DocumentApprovalsController : Controller
     // GET: DocumentApprovals
     public async Task<IActionResult> Index(string? jobTypeId = null, CancellationToken ct = default)
     {
-        var approvals = _db.DocumentApprovals
-            .Include(x => x.JobTypeDocument).ThenInclude(j => j.JobType)
-            .Include(x => x.JobTypeDocument).ThenInclude(j => j.DocumentType)
+        var approvals = _db
+            .DocumentApprovals.Include(x => x.JobTypeDocument)
+            .ThenInclude(j => j.JobType)
+            .Include(x => x.JobTypeDocument)
+            .ThenInclude(j => j.DocumentType)
             .Include(x => x.Role)
             .AsQueryable();
 
@@ -79,7 +83,8 @@ public class DocumentApprovalsController : Controller
     public async Task<IActionResult> Edit(string id, CancellationToken ct = default)
     {
         var entity = await _db.DocumentApprovals.FindAsync(new object?[] { id }, ct);
-        if (entity is null) return NotFound();
+        if (entity is null)
+            return NotFound();
         await PopulateSelections(ct);
         return View(entity);
     }
@@ -87,9 +92,14 @@ public class DocumentApprovalsController : Controller
     // POST: DocumentApprovals/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(string id, DocumentApprovals model, CancellationToken ct = default)
+    public async Task<IActionResult> Edit(
+        string id,
+        DocumentApprovals model,
+        CancellationToken ct = default
+    )
     {
-        if (id != model.DocumentApprovalId) return BadRequest();
+        if (id != model.DocumentApprovalId)
+            return BadRequest();
 
         if (!ModelState.IsValid)
         {
@@ -109,7 +119,8 @@ public class DocumentApprovalsController : Controller
     public async Task<IActionResult> Delete(string id, CancellationToken ct = default)
     {
         var entity = await _db.DocumentApprovals.FindAsync(new object?[] { id }, ct);
-        if (entity is null) return NotFound();
+        if (entity is null)
+            return NotFound();
 
         _db.DocumentApprovals.Remove(entity);
         await _db.SaveChangesAsync(ct);
@@ -119,8 +130,8 @@ public class DocumentApprovalsController : Controller
 
     private async Task PopulateSelections(CancellationToken ct)
     {
-        var jobTypeDocs = await _db.JobTypeDocuments
-            .Include(x => x.JobType)
+        var jobTypeDocs = await _db
+            .JobTypeDocuments.Include(x => x.JobType)
             .Include(x => x.DocumentType)
             .OrderBy(x => x.JobType.TypeName)
             .ThenBy(x => x.DocumentType.Name)
@@ -129,11 +140,13 @@ public class DocumentApprovalsController : Controller
         var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync(ct);
 
         ViewBag.JobTypeDocuments = jobTypeDocs;
-        ViewBag.JobTypeDocumentSelect = jobTypeDocs.Select(x => new
-        {
-            x.JobTypeDocumentId,
-            Display = $"{x.JobType?.TypeName} - {x.DocumentType?.Name}"
-        }).ToList();
+        ViewBag.JobTypeDocumentSelect = jobTypeDocs
+            .Select(x => new
+            {
+                x.JobTypeDocumentId,
+                Display = $"{x.JobType?.TypeName} - {x.DocumentType?.Name}",
+            })
+            .ToList();
         ViewBag.Roles = roles;
     }
 }

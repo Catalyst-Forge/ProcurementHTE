@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
@@ -23,23 +20,40 @@ namespace ProcurementHTE.Infrastructure.Data
             }
 
             var createdBy = await GetUserOrThrowAsync("admin@example.com", "Admin");
-            var picOpsUser = await GetUserOrThrowAsync("pro.operation@example.com", "PIC Operation");
+            var picOpsUser = await GetUserOrThrowAsync(
+                "pro.operation@example.com",
+                "PIC Operation"
+            );
             var analystUser = await GetUserOrThrowAsync("AHte@example.com", "Analyst HTE & LTS");
             var assistantManagerUser = await GetUserOrThrowAsync(
                 "assistantmanagerhte@example.com",
                 "Assistant Manager HTE"
             );
-            var managerUser = await GetUserOrThrowAsync("manager@example.com", "Manager Transport & Logistic");
+            var managerUser = await GetUserOrThrowAsync(
+                "manager@example.com",
+                "Manager Transport & Logistic"
+            );
 
-            var requiredStatuses = new[] { "Draft", "Created", "In Progress", "Uploaded", "Completed" };
-            var statusLookup = await db.Statuses
-                .Where(s => s.StatusName != null && requiredStatuses.Contains(s.StatusName))
+            var requiredStatuses = new[]
+            {
+                "Draft",
+                "Created",
+                "In Progress",
+                "Uploaded",
+                "Completed",
+            };
+            var statusLookup = await db
+                .Statuses.Where(s =>
+                    s.StatusName != null && requiredStatuses.Contains(s.StatusName)
+                )
                 .ToDictionaryAsync(s => s.StatusName!, StringComparer.OrdinalIgnoreCase);
 
             foreach (var statusName in requiredStatuses)
             {
                 if (!statusLookup.ContainsKey(statusName))
-                    throw new Exception($"Status '{statusName}' belum ada. Jalankan Status seeder dulu.");
+                    throw new Exception(
+                        $"Status '{statusName}' belum ada. Jalankan Status seeder dulu."
+                    );
             }
 
             var jobType =
@@ -54,7 +68,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     StatusName = "Draft",
                     ContractType = ContractType.LTC,
-                    JobName = "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
+                    JobName =
+                        "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
                     SpkNumber = "1063/PROC-DS/DSI1310/2025",
                     Wonum = "111 / DSI1130/2025",
                     StartDate = new DateTime(2025, 9, 1),
@@ -71,7 +86,11 @@ namespace ProcurementHTE.Infrastructure.Data
                     CreatedAt = DateTime.UtcNow.AddDays(-30),
                     Details =
                     {
-                        new("Core Barrel (2 Jts 6-3/4\" Core Barrel dan 2 Jts 7\" Core Barrel) c/w protector", 4, "Jts"),
+                        new(
+                            "Core Barrel (2 Jts 6-3/4\" Core Barrel dan 2 Jts 7\" Core Barrel) c/w protector",
+                            4,
+                            "Jts"
+                        ),
                         new("Lay Down Cradle", 2, "Ea"),
                         new("Inner Barrel Aluminium 4.3/4\" OD", 2, "Jts"),
                         new("Float Sub 6.3/4\" c/w protector (dalam tool box)", 2, "Ea"),
@@ -111,7 +130,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     StatusName = "In Progress",
                     ContractType = ContractType.RO,
-                    JobName = "Support mobilisasi rig dan kru untuk proyek geothermal South Sumatra.",
+                    JobName =
+                        "Support mobilisasi rig dan kru untuk proyek geothermal South Sumatra.",
                     SpkNumber = "455/PROC-RIG/RIG200/2025",
                     Wonum = "113 / DSI1132/2025",
                     StartDate = new DateTime(2025, 10, 1),
@@ -225,8 +245,8 @@ namespace ProcurementHTE.Infrastructure.Data
                     CreatedAt = seed.CreatedAt,
                 };
 
-                procurement.ProcDetails = seed.Details
-                    .Select(detail => new ProcDetail
+                procurement.ProcDetails = seed
+                    .Details.Select(detail => new ProcDetail
                     {
                         ItemName = detail.ItemName,
                         Quantity = detail.Quantity,

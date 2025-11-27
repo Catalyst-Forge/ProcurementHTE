@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Text;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,8 +19,6 @@ using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Repositories;
 using ProcurementHTE.Infrastructure.Services;
 using ProcurementHTE.Infrastructure.Storage;
-using System.Security.Claims;
-using System.Text;
 
 namespace ProcurementHTE.Web.Extensions
 {
@@ -84,7 +84,8 @@ namespace ProcurementHTE.Web.Extensions
                 )
                 .AddPolicy(
                     Permissions.Procurement.Create,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Create))
+                    p =>
+                        p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Create))
                 )
                 .AddPolicy(
                     Permissions.Procurement.Edit,
@@ -92,7 +93,8 @@ namespace ProcurementHTE.Web.Extensions
                 )
                 .AddPolicy(
                     Permissions.Procurement.Delete,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Delete))
+                    p =>
+                        p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Delete))
                 )
                 .AddPolicy(
                     Permissions.Vendor.Read,
@@ -246,69 +248,28 @@ namespace ProcurementHTE.Web.Extensions
                         {
                             OnAuthenticationFailed = context =>
                             {
-                                var logger = context.HttpContext.RequestServices.GetRequiredService<
-                                    ILogger<Program>
-                                >();
-
-                                logger.LogError(
-                                    "JWT Authentication Failed: {Exception}",
-                                    context.Exception.Message
-                                );
-
                                 if (
                                     context.Exception.GetType()
                                     == typeof(SecurityTokenExpiredException)
                                 )
                                 {
                                     context.Response.Headers.Append("Token-Expired", "true");
-                                    logger.LogWarning("Token expired");
                                 }
 
                                 return Task.CompletedTask;
                             },
                             OnMessageReceived = context =>
                             {
-                                var logger = context.HttpContext.RequestServices.GetRequiredService<
-                                    ILogger<Program>
-                                >();
-
                                 var token = context.Request.Headers.Authorization.ToString();
-                                if (!string.IsNullOrEmpty(token))
-                                {
-                                    logger.LogInformation("JWT Token received in header");
-                                }
-                                else
-                                {
-                                    logger.LogWarning("No Authorization header found");
-                                }
                                 return Task.CompletedTask;
                             },
                             OnTokenValidated = context =>
                             {
-                                var logger = context.HttpContext.RequestServices.GetRequiredService<
-                                    ILogger<Program>
-                                >();
-
-                                logger.LogInformation("JWT Token validated successfully");
-                                logger.LogInformation(
-                                    "User: {User}",
-                                    context.Principal?.Identity?.Name
-                                );
                                 return Task.CompletedTask;
                             },
                             OnChallenge = context =>
                             {
                                 context.HandleResponse();
-
-                                var logger = context
-                                    .HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                                    .CreateLogger("JwtAuth");
-
-                                logger.LogWarning(
-                                    "JWT Challenge: {Error} - {Description}",
-                                    context.Error,
-                                    context.ErrorDescription
-                                );
 
                                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                                 context.Response.ContentType = "application/json";

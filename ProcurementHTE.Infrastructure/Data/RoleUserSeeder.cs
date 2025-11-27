@@ -35,12 +35,15 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Vice President",
                 "HSE",
                 "Supply Chain Management",
-                "AP-PO"
+                "AP-PO",
             ];
 
-            foreach (var roleName in roles) {
-                if (!await roleManager.RoleExistsAsync(roleName)) {
-                    var role = new Role {
+            foreach (var roleName in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    var role = new Role
+                    {
                         Name = roleName,
                         NormalizedName = roleName.ToUpperInvariant(),
                         Description = $"{roleName} system role",

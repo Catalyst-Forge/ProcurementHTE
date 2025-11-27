@@ -1,9 +1,6 @@
-using System.Linq;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -26,8 +23,7 @@ namespace ProcurementHTE.Web.Controllers.Account
         IAccountService accountService,
         IOptions<EmailSenderOptions> emailOptions,
         IOptions<SmsSenderOptions> smsOptions,
-        IOptions<SecurityBypassOptions> bypassOptions,
-        ILogger<AuthController> logger
+        IOptions<SecurityBypassOptions> bypassOptions
     ) : Controller
     {
         private const string RecoveryResetSessionKey = "Auth.RequireRecoveryReset";
@@ -37,8 +33,8 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly IAccountService _accountService = accountService;
         private readonly EmailSenderOptions _emailOptions = emailOptions.Value;
         private readonly SmsSenderOptions _smsOptions = smsOptions.Value;
-        private readonly SecurityBypassOptions _securityBypassOptions = bypassOptions.Value ?? new SecurityBypassOptions();
-        private readonly ILogger<AuthController> _logger = logger;
+        private readonly SecurityBypassOptions _securityBypassOptions =
+            bypassOptions.Value ?? new SecurityBypassOptions();
 
         private const int CodeCooldownSeconds = 60;
         private const string ForgotEmailCooldownKey = "forgot.email";
@@ -197,7 +193,8 @@ namespace ProcurementHTE.Web.Controllers.Account
 
                     if (string.IsNullOrWhiteSpace(callbackUrl))
                     {
-                        ViewBag.Auto2faError = "Tidak dapat membuat tautan verifikasi email saat ini.";
+                        ViewBag.Auto2faError =
+                            "Tidak dapat membuat tautan verifikasi email saat ini.";
                     }
                     else
                     {
@@ -214,7 +211,6 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Gagal mengirim magic link otomatis untuk user {User}", user.Id);
                     ViewBag.Auto2faError = ex.Message;
                 }
             }
@@ -239,11 +235,6 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(
-                        ex,
-                        "Gagal mengirim OTP verifikasi nomor untuk user {User}",
-                        user.Id
-                    );
                     ViewBag.Auto2faError = ex.Message;
                 }
             }
@@ -268,11 +259,13 @@ namespace ProcurementHTE.Web.Controllers.Account
                             : "Kode verifikasi dikirim via SMS.";
 
                     var devCode =
-                        user.TwoFactorMethod == TwoFactorMethod.Email && _emailOptions.UseDevelopmentMode
+                        user.TwoFactorMethod == TwoFactorMethod.Email
+                        && _emailOptions.UseDevelopmentMode
                             ? code
-                            : user.TwoFactorMethod == TwoFactorMethod.Sms && _smsOptions.UseDevelopmentMode
-                                ? code
-                                : null;
+                        : user.TwoFactorMethod == TwoFactorMethod.Sms
+                        && _smsOptions.UseDevelopmentMode
+                            ? code
+                        : null;
                     if (devCode != null)
                     {
                         ViewBag.DevTwoFactorCode = devCode;
@@ -280,16 +273,13 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Gagal mengirim kode 2FA otomatis untuk user {User}", user.Id);
                     ViewBag.Auto2faError = ex.Message;
                 }
 
                 var loginCooldownKey =
-                    user.TwoFactorMethod == TwoFactorMethod.Email
-                        ? TwoFactorLoginEmailCooldownKey
-                        : user.TwoFactorMethod == TwoFactorMethod.Sms
-                            ? TwoFactorLoginSmsCooldownKey
-                            : null;
+                    user.TwoFactorMethod == TwoFactorMethod.Email ? TwoFactorLoginEmailCooldownKey
+                    : user.TwoFactorMethod == TwoFactorMethod.Sms ? TwoFactorLoginSmsCooldownKey
+                    : null;
 
                 if (loginCooldownKey != null)
                 {
@@ -308,7 +298,10 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResendPendingEmailVerification(bool rememberMe, string? returnUrl = null)
+        public async Task<IActionResult> ResendPendingEmailVerification(
+            bool rememberMe,
+            string? returnUrl = null
+        )
         {
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
@@ -322,7 +315,8 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (IsCooldownActive(PendingEmailCooldownKey, out var remaining))
             {
-                TempData["ErrorMessage"] = $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
+                TempData["ErrorMessage"] =
+                    $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
                 return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
             }
 
@@ -357,7 +351,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengirim ulang magic link untuk user {User}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -366,7 +359,10 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResendPendingPhoneVerification(bool rememberMe, string? returnUrl = null)
+        public async Task<IActionResult> ResendPendingPhoneVerification(
+            bool rememberMe,
+            string? returnUrl = null
+        )
         {
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
@@ -402,7 +398,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengirim ulang OTP verifikasi HP untuk user {User}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -411,7 +406,11 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyPendingPhone(string code, bool rememberMe, string? returnUrl = null)
+        public async Task<IActionResult> VerifyPendingPhone(
+            string code,
+            bool rememberMe,
+            string? returnUrl = null
+        )
         {
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
@@ -425,16 +424,12 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             try
             {
-                await _accountService.ConfirmPhoneAsync(
-                    user.Id,
-                    code,
-                    HttpContext.RequestAborted
-                );
-                TempData["SuccessMessage"] = "Nomor HP berhasil diverifikasi. Silakan lanjutkan login.";
+                await _accountService.ConfirmPhoneAsync(user.Id, code, HttpContext.RequestAborted);
+                TempData["SuccessMessage"] =
+                    "Nomor HP berhasil diverifikasi. Silakan lanjutkan login.";
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Verifikasi nomor HP 2FA gagal untuk user {User}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -464,8 +459,12 @@ namespace ProcurementHTE.Web.Controllers.Account
                 RequiresEmail = requireEmail,
                 RequiresPhone = requirePhone,
                 ReturnUrl = returnUrl,
-                DevMagicLink = _emailOptions.UseDevelopmentMode ? TempData["ContactDevMagicLink"] as string : null,
-                DevPhoneOtp = _smsOptions.UseDevelopmentMode ? TempData["ContactDevPhoneOtp"] as string : null,
+                DevMagicLink = _emailOptions.UseDevelopmentMode
+                    ? TempData["ContactDevMagicLink"] as string
+                    : null,
+                DevPhoneOtp = _smsOptions.UseDevelopmentMode
+                    ? TempData["ContactDevPhoneOtp"] as string
+                    : null,
             };
 
             ViewBag.ContactEmailCooldown = GetCooldownSeconds(ContactEmailCooldownKey);
@@ -487,7 +486,8 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (IsCooldownActive(ContactEmailCooldownKey, out var remaining))
             {
-                TempData["ErrorMessage"] = $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
+                TempData["ErrorMessage"] =
+                    $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
                 return RedirectToAction(nameof(ContactVerification), new { returnUrl });
             }
 
@@ -523,7 +523,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengirim magic link verifikasi untuk user {UserId}", user?.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -569,7 +568,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengirim OTP verifikasi nomor untuk user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -586,11 +584,18 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (user.TwoFactorEnabled)
                 return RedirectToLocal(returnUrl);
 
-            var summary = await _accountService.GetTwoFactorSummaryAsync(user.Id, HttpContext.RequestAborted);
+            var summary = await _accountService.GetTwoFactorSummaryAsync(
+                user.Id,
+                HttpContext.RequestAborted
+            );
             var emailAvailable = !string.IsNullOrWhiteSpace(user.Email) && user.EmailConfirmed;
-            var phoneAvailable = RequiresPhoneVerification(user) == false && !string.IsNullOrWhiteSpace(user.PhoneNumber);
+            var phoneAvailable =
+                RequiresPhoneVerification(user) == false
+                && !string.IsNullOrWhiteSpace(user.PhoneNumber);
             var requestedTab = TempData["TwoFactorSetupActiveTab"] as string;
-            var defaultTab = string.IsNullOrWhiteSpace(requestedTab) ? "auth" : requestedTab.ToLowerInvariant();
+            var defaultTab = string.IsNullOrWhiteSpace(requestedTab)
+                ? "auth"
+                : requestedTab.ToLowerInvariant();
             if (defaultTab == "email" && !emailAvailable)
                 defaultTab = phoneAvailable ? "sms" : "auth";
             if (defaultTab == "sms" && !phoneAvailable)
@@ -663,7 +668,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengaktifkan 2FA untuk user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
@@ -683,7 +687,13 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (method == TwoFactorMethod.AuthenticatorApp)
             {
-                return Json(new { success = false, message = "Authenticator tidak membutuhkan kode tambahan." });
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = "Authenticator tidak membutuhkan kode tambahan.",
+                    }
+                );
             }
 
             if (method == TwoFactorMethod.Email && !user.EmailConfirmed)
@@ -721,22 +731,28 @@ namespace ProcurementHTE.Web.Controllers.Account
                     code,
                     HttpContext.RequestAborted
                 );
-                var message = method == TwoFactorMethod.Email
-                    ? "Kode dikirim ke email Anda."
-                    : "Kode dikirim via SMS.";
+                var message =
+                    method == TwoFactorMethod.Email
+                        ? "Kode dikirim ke email Anda."
+                        : "Kode dikirim via SMS.";
                 var devCode =
-                    method == TwoFactorMethod.Email && _emailOptions.UseDevelopmentMode
-                        ? code
-                        : method == TwoFactorMethod.Sms && _smsOptions.UseDevelopmentMode
-                            ? code
-                            : null;
+                    method == TwoFactorMethod.Email && _emailOptions.UseDevelopmentMode ? code
+                    : method == TwoFactorMethod.Sms && _smsOptions.UseDevelopmentMode ? code
+                    : null;
                 if (cooldownKey != null)
                     StartCooldown(cooldownKey);
-                return Json(new { success = true, message, devCode, cooldown = CodeCooldownSeconds });
+                return Json(
+                    new
+                    {
+                        success = true,
+                        message,
+                        devCode,
+                        cooldown = CodeCooldownSeconds,
+                    }
+                );
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Gagal mengirim kode 2FA setup untuk user {UserId}", user.Id);
                 return Json(new { success = false, message = ex.Message });
             }
         }
@@ -758,16 +774,11 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             try
             {
-                await _accountService.ConfirmPhoneAsync(
-                    user.Id,
-                    code,
-                    HttpContext.RequestAborted
-                );
+                await _accountService.ConfirmPhoneAsync(user.Id, code, HttpContext.RequestAborted);
                 TempData["SuccessMessage"] = "Nomor HP berhasil diverifikasi.";
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Verifikasi nomor HP gagal untuk user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -776,7 +787,10 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LoginWith2fa(LoginWith2faViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> LoginWith2fa(
+            LoginWith2faViewModel model,
+            string? returnUrl = null
+        )
         {
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
@@ -804,9 +818,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             else
             {
-                var provider = user.TwoFactorMethod == TwoFactorMethod.Email
-                    ? TokenOptions.DefaultEmailProvider
-                    : TokenOptions.DefaultPhoneProvider;
+                var provider =
+                    user.TwoFactorMethod == TwoFactorMethod.Email
+                        ? TokenOptions.DefaultEmailProvider
+                        : TokenOptions.DefaultPhoneProvider;
 
                 result = await _signInManager.TwoFactorSignInAsync(
                     provider,
@@ -847,7 +862,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             return View(model);
         }
 
-        public async Task<IActionResult> LoginWithRecoveryCode(bool? rememberMe = true, string? returnUrl = null)
+        public async Task<IActionResult> LoginWithRecoveryCode(
+            bool? rememberMe = true,
+            string? returnUrl = null
+        )
         {
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
@@ -866,7 +884,10 @@ namespace ProcurementHTE.Web.Controllers.Account
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LoginWithRecoveryCode(LoginWithRecoveryCodeViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> LoginWithRecoveryCode(
+            LoginWithRecoveryCodeViewModel model,
+            string? returnUrl = null
+        )
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -916,7 +937,9 @@ namespace ProcurementHTE.Web.Controllers.Account
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPasswordWithRecovery([Bind(Prefix = "Recovery")] ForgotPasswordRecoveryViewModel model)
+        public async Task<IActionResult> ResetPasswordWithRecovery(
+            [Bind(Prefix = "Recovery")] ForgotPasswordRecoveryViewModel model
+        )
         {
             if (!ModelState.IsValid)
                 return ForgotPasswordView("recovery", recovery: model);
@@ -949,7 +972,9 @@ namespace ProcurementHTE.Web.Controllers.Account
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendEmailResetCode([Bind(Prefix = "EmailReset")] ForgotPasswordResetWithCodeViewModel model)
+        public async Task<IActionResult> SendEmailResetCode(
+            [Bind(Prefix = "EmailReset")] ForgotPasswordResetWithCodeViewModel model
+        )
         {
             ModelState.Remove("EmailReset.Code");
             ModelState.Remove("EmailReset.NewPassword");
@@ -968,7 +993,10 @@ namespace ProcurementHTE.Web.Controllers.Account
                 if (isAjax)
                     return CooldownJsonResult(remaining);
 
-                ModelState.AddModelError(string.Empty, $"Tunggu {remaining} detik sebelum mengirim ulang kode.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Tunggu {remaining} detik sebelum mengirim ulang kode."
+                );
                 return ForgotPasswordView("email", emailReset: model);
             }
 
@@ -997,7 +1025,15 @@ namespace ProcurementHTE.Web.Controllers.Account
             StartCooldown(ForgotEmailCooldownKey);
             if (isAjax)
             {
-                return Ok(new { success = true, message, devCode, cooldown = CodeCooldownSeconds });
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        message,
+                        devCode,
+                        cooldown = CodeCooldownSeconds,
+                    }
+                );
             }
             return ForgotPasswordView("email", emailReset: model, emailCodeOverride: devCode);
         }
@@ -1005,7 +1041,9 @@ namespace ProcurementHTE.Web.Controllers.Account
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPasswordWithEmail([Bind(Prefix = "EmailReset")] ForgotPasswordResetWithCodeViewModel model)
+        public async Task<IActionResult> ResetPasswordWithEmail(
+            [Bind(Prefix = "EmailReset")] ForgotPasswordResetWithCodeViewModel model
+        )
         {
             if (!ModelState.IsValid)
                 return ForgotPasswordView("email", emailReset: model);
@@ -1038,7 +1076,9 @@ namespace ProcurementHTE.Web.Controllers.Account
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendSmsResetCode([Bind(Prefix = "SmsReset")] ForgotPasswordResetWithCodeViewModel model)
+        public async Task<IActionResult> SendSmsResetCode(
+            [Bind(Prefix = "SmsReset")] ForgotPasswordResetWithCodeViewModel model
+        )
         {
             ModelState.Remove("SmsReset.Code");
             ModelState.Remove("SmsReset.NewPassword");
@@ -1057,7 +1097,10 @@ namespace ProcurementHTE.Web.Controllers.Account
                 if (isAjax)
                     return CooldownJsonResult(smsRemaining);
 
-                ModelState.AddModelError(string.Empty, $"Tunggu {smsRemaining} detik sebelum mengirim ulang kode.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Tunggu {smsRemaining} detik sebelum mengirim ulang kode."
+                );
                 return ForgotPasswordView("sms", smsReset: model);
             }
 
@@ -1095,7 +1138,15 @@ namespace ProcurementHTE.Web.Controllers.Account
             StartCooldown(ForgotSmsCooldownKey);
             if (isAjax)
             {
-                return Ok(new { success = true, message, devCode, cooldown = CodeCooldownSeconds });
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        message,
+                        devCode,
+                        cooldown = CodeCooldownSeconds,
+                    }
+                );
             }
 
             return ForgotPasswordView("sms", smsReset: model, smsCodeOverride: devCode);
@@ -1104,7 +1155,9 @@ namespace ProcurementHTE.Web.Controllers.Account
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPasswordWithSms([Bind(Prefix = "SmsReset")] ForgotPasswordResetWithCodeViewModel model)
+        public async Task<IActionResult> ResetPasswordWithSms(
+            [Bind(Prefix = "SmsReset")] ForgotPasswordResetWithCodeViewModel model
+        )
         {
             if (!ModelState.IsValid)
                 return ForgotPasswordView("sms", smsReset: model);
@@ -1176,7 +1229,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal reset password setelah login recovery.");
                 ModelState.AddModelError(string.Empty, ex.Message);
                 return View(model);
             }
@@ -1194,7 +1246,13 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (user.TwoFactorMethod == TwoFactorMethod.AuthenticatorApp)
             {
-                return Json(new { success = false, message = "Authenticator tidak membutuhkan kode tambahan." });
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = "Authenticator tidak membutuhkan kode tambahan.",
+                    }
+                );
             }
 
             var code = await _accountService.GenerateTwoFactorCodeAsync(
@@ -1213,30 +1271,20 @@ namespace ProcurementHTE.Web.Controllers.Account
             var devCode =
                 user.TwoFactorMethod == TwoFactorMethod.Email && _emailOptions.UseDevelopmentMode
                     ? code
-                    : user.TwoFactorMethod == TwoFactorMethod.Sms && _smsOptions.UseDevelopmentMode
-                        ? code
-                        : null;
+                : user.TwoFactorMethod == TwoFactorMethod.Sms && _smsOptions.UseDevelopmentMode
+                    ? code
+                : null;
             var channel = user.TwoFactorMethod == TwoFactorMethod.Email ? "email" : "SMS";
             var message = $"Kode verifikasi dikirim melalui {channel}.";
 
-            if (devCode == null)
-            {
-                _logger.LogInformation(
-                    "Kode 2FA dikirim via {Channel} untuk user {User}",
-                    channel,
-                    user.UserName
-                );
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "2FA code (dev) untuk user {User}: {Code}",
-                    user.UserName,
-                    devCode
-                );
-            }
-
-            return Json(new { success = true, message, devCode });
+            return Json(
+                new
+                {
+                    success = true,
+                    message,
+                    devCode,
+                }
+            );
         }
 
         /*
@@ -1269,7 +1317,6 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             ClearSessionCookie();
             await _signInManager.SignOutAsync();
-            _logger.LogInformation("User logged out");
 
             return Redirect("~/");
         }
@@ -1293,7 +1340,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             return Redirect("~/");
         }
 
-        private void PopulateForgotPasswordDevHints(string? emailCodeOverride = null, string? smsCodeOverride = null)
+        private void PopulateForgotPasswordDevHints(
+            string? emailCodeOverride = null,
+            string? smsCodeOverride = null
+        )
         {
             if (_emailOptions.UseDevelopmentMode && !string.IsNullOrWhiteSpace(emailCodeOverride))
             {
@@ -1324,14 +1374,11 @@ namespace ProcurementHTE.Web.Controllers.Account
         {
             var errors = ModelState
                 .Where(x => x.Value?.Errors.Count > 0)
-                .Select(
-                    x =>
-                        new
-                        {
-                            field = x.Key,
-                            messages = x.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                        }
-                )
+                .Select(x => new
+                {
+                    field = x.Key,
+                    messages = x.Value!.Errors.Select(e => e.ErrorMessage).ToArray(),
+                })
                 .ToArray();
 
             return BadRequest(
@@ -1339,7 +1386,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 {
                     success = false,
                     message = fallbackMessage ?? "Permintaan tidak valid.",
-                    errors
+                    errors,
                 }
             );
         }
@@ -1350,16 +1397,20 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (headers is null)
                 return false;
 
-            if (headers.TryGetValue("X-Requested-With", out var requestedWith)
-                && requestedWith == "XMLHttpRequest")
+            if (
+                headers.TryGetValue("X-Requested-With", out var requestedWith)
+                && requestedWith == "XMLHttpRequest"
+            )
             {
                 return true;
             }
 
             foreach (var accept in headers!["Accept"])
             {
-                if (!string.IsNullOrEmpty(accept)
-                    && accept.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+                if (
+                    !string.IsNullOrEmpty(accept)
+                    && accept.Contains("application/json", StringComparison.OrdinalIgnoreCase)
+                )
                     return true;
             }
 
@@ -1377,7 +1428,10 @@ namespace ProcurementHTE.Web.Controllers.Account
         {
             PopulateForgotPasswordDevHints(emailCodeOverride, smsCodeOverride);
             PopulateForgotPasswordCooldowns();
-            return View("ForgotPassword", BuildForgotPasswordPage(activeTab, recovery, emailReset, smsReset));
+            return View(
+                "ForgotPassword",
+                BuildForgotPasswordPage(activeTab, recovery, emailReset, smsReset)
+            );
         }
 
         private static ForgotPasswordPageViewModel BuildForgotPasswordPage(
@@ -1413,7 +1467,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             return string.IsNullOrEmpty(digitsOnly) ? string.Empty : $"+62{digitsOnly}";
         }
 
-        private bool NeedsRecoveryReset() => HttpContext.Session.GetString(RecoveryResetSessionKey) == "1";
+        private bool NeedsRecoveryReset() =>
+            HttpContext.Session.GetString(RecoveryResetSessionKey) == "1";
 
         private async Task<User?> FindUserAsync(string identifier)
         {
@@ -1443,16 +1498,10 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             var normalized = NormalizePhone(rawPhone);
             var digits = new string(normalized.Where(char.IsDigit).ToArray());
-            var candidates = new[]
-            {
-                normalized,
-                $"+{digits}",
-                "0" + digits,
-                digits
-            };
+            var candidates = new[] { normalized, $"+{digits}", "0" + digits, digits };
 
-            return await _userManager.Users.FirstOrDefaultAsync(
-                u => candidates.Contains(u.PhoneNumber ?? string.Empty)
+            return await _userManager.Users.FirstOrDefaultAsync(u =>
+                candidates.Contains(u.PhoneNumber ?? string.Empty)
             );
         }
 
@@ -1530,18 +1579,24 @@ namespace ProcurementHTE.Web.Controllers.Account
         }
 
         private void StartCooldown(string key) =>
-            CooldownHelper.SetCooldown(HttpContext.Session, key, TimeSpan.FromSeconds(CodeCooldownSeconds));
+            CooldownHelper.SetCooldown(
+                HttpContext.Session,
+                key,
+                TimeSpan.FromSeconds(CodeCooldownSeconds)
+            );
 
         private int GetCooldownSeconds(string key) =>
             CooldownHelper.GetRemainingSeconds(HttpContext.Session, key);
 
         private JsonResult CooldownJsonResult(int remaining) =>
-            Json(new
-            {
-                success = false,
-                message = $"Tunggu {remaining} detik sebelum mengirim ulang.",
-                remaining
-            });
+            Json(
+                new
+                {
+                    success = false,
+                    message = $"Tunggu {remaining} detik sebelum mengirim ulang.",
+                    remaining,
+                }
+            );
 
         private IActionResult? RedirectIfContactVerificationRequired(User user, string? returnUrl)
         {
@@ -1592,4 +1647,3 @@ namespace ProcurementHTE.Web.Controllers.Account
         }
     }
 }
-

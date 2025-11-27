@@ -1,7 +1,4 @@
 using System.Text;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -24,7 +21,6 @@ namespace ProcurementHTE.Core.Services
         private readonly IUserSecurityLogRepository _logRepository;
         private readonly IEmailSender _emailSender;
         private readonly ISmsSender _smsSender;
-        private readonly ILogger<AccountService> _logger;
 
         public AccountService(
             UserManager<User> userManager,
@@ -33,25 +29,30 @@ namespace ProcurementHTE.Core.Services
             IUserSessionRepository sessionRepository,
             IUserSecurityLogRepository logRepository,
             IEmailSender emailSender,
-            ISmsSender smsSender,
-            ILogger<AccountService> logger
+            ISmsSender smsSender
         )
         {
             _userManager = userManager;
-            _objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
+            _objectStorage =
+                objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
             _storageOptions =
                 storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
             _sessionRepository = sessionRepository;
             _logRepository = logRepository;
             _emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
             _smsSender = smsSender ?? throw new ArgumentNullException(nameof(smsSender));
-            _logger = logger;
 
             if (string.IsNullOrWhiteSpace(_storageOptions.Bucket))
-                throw new ArgumentException("Object storage bucket belum dikonfigurasi.", nameof(storageOptions));
+                throw new ArgumentException(
+                    "Object storage bucket belum dikonfigurasi.",
+                    nameof(storageOptions)
+                );
         }
 
-        public async Task<AccountOverviewDto> GetOverviewAsync(string userId, CancellationToken ct = default)
+        public async Task<AccountOverviewDto> GetOverviewAsync(
+            string userId,
+            CancellationToken ct = default
+        )
         {
             var user = await RequireUserAsync(userId);
             var roles = await _userManager.GetRolesAsync(user);
@@ -81,7 +82,10 @@ namespace ProcurementHTE.Core.Services
             );
         }
 
-        public async Task UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default)
+        public async Task UpdateProfileAsync(
+            UpdateProfileRequest request,
+            CancellationToken ct = default
+        )
         {
             ArgumentNullException.ThrowIfNull(request);
             var user = await RequireUserAsync(request.UserId);
@@ -134,7 +138,10 @@ namespace ProcurementHTE.Core.Services
             );
         }
 
-        public async Task<string?> UploadAvatarAsync(UploadAvatarRequest request, CancellationToken ct = default)
+        public async Task<string?> UploadAvatarAsync(
+            UploadAvatarRequest request,
+            CancellationToken ct = default
+        )
         {
             ArgumentNullException.ThrowIfNull(request);
             var user = await RequireUserAsync(request.UserId);
@@ -263,25 +270,26 @@ namespace ProcurementHTE.Core.Services
             if (method == TwoFactorMethod.Email && string.IsNullOrWhiteSpace(user.Email))
                 throw new InvalidOperationException("Alamat email tidak tersedia.");
             if (method == TwoFactorMethod.Email && !user.EmailConfirmed)
-                throw new InvalidOperationException("Verifikasi email terlebih dahulu sebelum memakai Email OTP.");
+                throw new InvalidOperationException(
+                    "Verifikasi email terlebih dahulu sebelum memakai Email OTP."
+                );
             if (method == TwoFactorMethod.Sms && !user.PhoneNumberConfirmed)
-                throw new InvalidOperationException("Nomor HP harus terverifikasi sebelum memakai SMS OTP.");
+                throw new InvalidOperationException(
+                    "Nomor HP harus terverifikasi sebelum memakai SMS OTP."
+                );
             return method switch
             {
-                TwoFactorMethod.Email
-                    => await _userManager.GenerateTwoFactorTokenAsync(
-                        user,
-                        TokenOptions.DefaultEmailProvider
-                    ),
-                TwoFactorMethod.Sms
-                    => await _userManager.GenerateTwoFactorTokenAsync(
-                        user,
-                        TokenOptions.DefaultPhoneProvider
-                    ),
-                _
-                    => throw new InvalidOperationException(
-                        "Metode ini tidak membutuhkan kode terpisah."
-                    ),
+                TwoFactorMethod.Email => await _userManager.GenerateTwoFactorTokenAsync(
+                    user,
+                    TokenOptions.DefaultEmailProvider
+                ),
+                TwoFactorMethod.Sms => await _userManager.GenerateTwoFactorTokenAsync(
+                    user,
+                    TokenOptions.DefaultPhoneProvider
+                ),
+                _ => throw new InvalidOperationException(
+                    "Metode ini tidak membutuhkan kode terpisah."
+                ),
             };
         }
 
@@ -299,11 +307,17 @@ namespace ProcurementHTE.Core.Services
                     if (string.IsNullOrWhiteSpace(user.Email))
                         throw new InvalidOperationException("Alamat email tidak tersedia.");
                     if (!user.EmailConfirmed)
-                        throw new InvalidOperationException("Verifikasi email terlebih dahulu sebelum memakai Email OTP.");
+                        throw new InvalidOperationException(
+                            "Verifikasi email terlebih dahulu sebelum memakai Email OTP."
+                        );
                     var body = new StringBuilder()
                         .AppendLine("<p>Gunakan kode berikut untuk verifikasi login Anda:</p>")
-                        .AppendLine($"""<p style="font-size:22px;font-weight:bold;letter-spacing:4px;">{code}</p>""")
-                        .AppendLine("<p>Kode hanya berlaku sementara. Jangan bagikan kepada siapapun.</p>")
+                        .AppendLine(
+                            $"""<p style="font-size:22px;font-weight:bold;letter-spacing:4px;">{code}</p>"""
+                        )
+                        .AppendLine(
+                            "<p>Kode hanya berlaku sementara. Jangan bagikan kepada siapapun.</p>"
+                        )
                         .ToString();
                     await _emailSender.SendAsync(
                         user.Email,
@@ -316,7 +330,9 @@ namespace ProcurementHTE.Core.Services
                     if (string.IsNullOrWhiteSpace(user.PhoneNumber))
                         throw new InvalidOperationException("Nomor HP belum diisi.");
                     if (!user.PhoneNumberConfirmed)
-                        throw new InvalidOperationException("Verifikasi nomor HP terlebih dahulu sebelum memakai SMS OTP.");
+                        throw new InvalidOperationException(
+                            "Verifikasi nomor HP terlebih dahulu sebelum memakai SMS OTP."
+                        );
                     await _smsSender.SendAsync(
                         user.PhoneNumber,
                         $"Kode verifikasi login Procurement HTE: {code}",
@@ -324,7 +340,9 @@ namespace ProcurementHTE.Core.Services
                     );
                     break;
                 default:
-                    throw new InvalidOperationException("Metode ini tidak mendukung pengiriman kode.");
+                    throw new InvalidOperationException(
+                        "Metode ini tidak mendukung pengiriman kode."
+                    );
             }
         }
 
@@ -337,32 +355,35 @@ namespace ProcurementHTE.Core.Services
         {
             var user = await RequireUserAsync(userId);
             if (method == TwoFactorMethod.Sms && string.IsNullOrWhiteSpace(user.PhoneNumber))
-                throw new InvalidOperationException("Lengkapi nomor HP sebelum mengaktifkan 2FA SMS.");
+                throw new InvalidOperationException(
+                    "Lengkapi nomor HP sebelum mengaktifkan 2FA SMS."
+                );
             if (method == TwoFactorMethod.Email && string.IsNullOrWhiteSpace(user.Email))
                 throw new InvalidOperationException("Alamat email tidak tersedia.");
             if (method == TwoFactorMethod.Email && !user.EmailConfirmed)
-                throw new InvalidOperationException("Verifikasi email terlebih dahulu sebelum mengaktifkan 2FA Email.");
+                throw new InvalidOperationException(
+                    "Verifikasi email terlebih dahulu sebelum mengaktifkan 2FA Email."
+                );
             if (method == TwoFactorMethod.Sms && !user.PhoneNumberConfirmed)
-                throw new InvalidOperationException("Verifikasi nomor HP terlebih dahulu sebelum mengaktifkan 2FA SMS.");
+                throw new InvalidOperationException(
+                    "Verifikasi nomor HP terlebih dahulu sebelum mengaktifkan 2FA SMS."
+                );
             var normalized = verificationCode?.Replace(" ", string.Empty);
 
             bool isValid = method switch
             {
-                TwoFactorMethod.AuthenticatorApp
-                    => await _userManager.VerifyTwoFactorTokenAsync(
-                        user,
-                        _userManager.Options.Tokens.AuthenticatorTokenProvider,
-                        normalized!
-                    ),
-                TwoFactorMethod.Email
-                    => await _userManager.VerifyTwoFactorTokenAsync(
-                        user,
-                        TokenOptions.DefaultEmailProvider,
-                        normalized!
-                    ),
-                TwoFactorMethod.Sms
-                    when !string.IsNullOrWhiteSpace(user.PhoneNumber)
-                    => await _userManager.VerifyTwoFactorTokenAsync(
+                TwoFactorMethod.AuthenticatorApp => await _userManager.VerifyTwoFactorTokenAsync(
+                    user,
+                    _userManager.Options.Tokens.AuthenticatorTokenProvider,
+                    normalized!
+                ),
+                TwoFactorMethod.Email => await _userManager.VerifyTwoFactorTokenAsync(
+                    user,
+                    TokenOptions.DefaultEmailProvider,
+                    normalized!
+                ),
+                TwoFactorMethod.Sms when !string.IsNullOrWhiteSpace(user.PhoneNumber) =>
+                    await _userManager.VerifyTwoFactorTokenAsync(
                         user,
                         TokenOptions.DefaultPhoneProvider,
                         normalized!
@@ -540,7 +561,9 @@ namespace ProcurementHTE.Core.Services
             );
 
             if (!valid)
-                throw new InvalidOperationException("Kode email tidak valid atau sudah kadaluarsa.");
+                throw new InvalidOperationException(
+                    "Kode email tidak valid atau sudah kadaluarsa."
+                );
 
             await ResetPasswordInternalAsync(
                 user,
@@ -640,7 +663,10 @@ namespace ProcurementHTE.Core.Services
         )
         {
             if (string.IsNullOrWhiteSpace(callbackUrl))
-                throw new ArgumentException("Callback url tidak boleh kosong.", nameof(callbackUrl));
+                throw new ArgumentException(
+                    "Callback url tidak boleh kosong.",
+                    nameof(callbackUrl)
+                );
 
             var user = await RequireUserAsync(userId);
             if (string.IsNullOrWhiteSpace(user.Email))
@@ -650,7 +676,9 @@ namespace ProcurementHTE.Core.Services
             var body = new StringBuilder()
                 .AppendLine("<p>Halo,</p>")
                 .AppendLine("<p>Klik tautan berikut untuk memverifikasi email Anda:</p>")
-                .AppendLine($"""<p><a href="{callbackUrl}" style="font-weight:600;">Verifikasi Sekarang</a></p>""")
+                .AppendLine(
+                    $"""<p><a href="{callbackUrl}" style="font-weight:600;">Verifikasi Sekarang</a></p>"""
+                )
                 .AppendLine("<p>Abaikan jika Anda tidak meminta verifikasi ini.</p>")
                 .ToString();
 
@@ -704,7 +732,11 @@ namespace ProcurementHTE.Core.Services
             await _smsSender.SendAsync(user.PhoneNumber, message, ct);
         }
 
-        public async Task ConfirmPhoneAsync(string userId, string code, CancellationToken ct = default)
+        public async Task ConfirmPhoneAsync(
+            string userId,
+            string code,
+            CancellationToken ct = default
+        )
         {
             var user = await RequireUserAsync(userId);
             if (string.IsNullOrWhiteSpace(user.PhoneNumber))
@@ -872,10 +904,7 @@ namespace ProcurementHTE.Core.Services
             {
                 await _objectStorage.DeleteAsync(_storageOptions.Bucket, objectKey);
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Gagal menghapus objek {ObjectKey}", objectKey);
-            }
+            catch (Exception ex) { }
         }
 
         private async Task ResetPasswordInternalAsync(
@@ -951,12 +980,13 @@ namespace ProcurementHTE.Core.Services
                 return null;
 
             var issuer = Uri.EscapeDataString("ProcurementHTE");
-            return
-                $"otpauth://totp/{issuer}:{Uri.EscapeDataString(email)}?secret={sharedKey.Replace(" ", string.Empty)}&issuer={issuer}&digits=6";
+            return $"otpauth://totp/{issuer}:{Uri.EscapeDataString(email)}?secret={sharedKey.Replace(" ", string.Empty)}&issuer={issuer}&digits=6";
         }
 
         private static string NormalizeRecoveryCode(string code) =>
-            string.IsNullOrWhiteSpace(code) ? string.Empty : code.Replace(" ", string.Empty, StringComparison.Ordinal);
+            string.IsNullOrWhiteSpace(code)
+                ? string.Empty
+                : code.Replace(" ", string.Empty, StringComparison.Ordinal);
 
         private static string? BuildQrImage(string? uri)
         {

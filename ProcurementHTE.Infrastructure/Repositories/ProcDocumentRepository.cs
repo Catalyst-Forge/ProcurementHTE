@@ -56,7 +56,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task DeleteAsync(string id)
         {
-            var entity = await _context.ProcDocuments.FirstOrDefaultAsync(d => d.ProcDocumentId == id);
+            var entity = await _context.ProcDocuments.FirstOrDefaultAsync(d =>
+                d.ProcDocumentId == id
+            );
             if (entity != null)
             {
                 _context.ProcDocuments.Remove(entity);
@@ -111,27 +113,25 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             var total = await baseQuery.CountAsync(ct);
 
-            var itemsQuery = from wd in baseQuery
-                             join u in _context.Users on wd.CreatedByUserId equals u.Id into gj
-                             from u in gj.DefaultIfEmpty()
-                             orderby wd.CreatedAt descending
-                             select new ProcDocumentLiteDto(
-                                 wd.ProcDocumentId,
-                                 wd.ProcurementId,
-                                 wd.FileName,
-                                 wd.Status,
-                                 wd.QrText!,
-                                 wd.ObjectKey,
-                                 wd.Description,
-                                 wd.CreatedByUserId,
-                                 u != null ? u.FullName : null,
-                                 wd.CreatedAt
-                             );
+            var itemsQuery =
+                from wd in baseQuery
+                join u in _context.Users on wd.CreatedByUserId equals u.Id into gj
+                from u in gj.DefaultIfEmpty()
+                orderby wd.CreatedAt descending
+                select new ProcDocumentLiteDto(
+                    wd.ProcDocumentId,
+                    wd.ProcurementId,
+                    wd.FileName,
+                    wd.Status,
+                    wd.QrText!,
+                    wd.ObjectKey,
+                    wd.Description,
+                    wd.CreatedByUserId,
+                    u != null ? u.FullName : null,
+                    wd.CreatedAt
+                );
 
-            var items = await itemsQuery
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
+            var items = await itemsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
 
             return new PagedResult<ProcDocumentLiteDto>(items, total);
         }
@@ -211,8 +211,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
 
             // map balik ke DTO ringan (sesuaikan dengan DTO-mu)
-            var createdByName = await _context.Users
-                .AsNoTracking()
+            var createdByName = await _context
+                .Users.AsNoTracking()
                 .Where(u => u.Id == entity.CreatedByUserId)
                 .Select(u => u.FullName)
                 .FirstOrDefaultAsync(ct);
@@ -233,14 +233,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<ProcDocumentLiteDto?> GetProcDocumentByQrCode(
             string QrText,
-            CancellationToken ct = default)
+            CancellationToken ct = default
+        )
         {
-            var entity = await _context.ProcDocuments
-                .AsNoTracking()
+            var entity = await _context
+                .ProcDocuments.AsNoTracking()
                 .FirstOrDefaultAsync(d => d.QrText == QrText, ct);
-            if (entity is null) return null;
-            var createdByName = await _context.Users
-                .AsNoTracking()
+            if (entity is null)
+                return null;
+            var createdByName = await _context
+                .Users.AsNoTracking()
                 .Where(u => u.Id == entity.CreatedByUserId)
                 .Select(u => u.FullName)
                 .FirstOrDefaultAsync(ct);

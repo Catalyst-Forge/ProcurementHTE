@@ -33,7 +33,18 @@ public interface IProcDocumentService
         CancellationToken ct = default
     );
     Task<bool> CanSendApprovalAsync(string procurementId, CancellationToken ct = default);
-    Task SendApprovalAsync(string procDocumentId, string requestedByUserId, CancellationToken ct = default);
-    Task<string?> GetPresignedQrUrlAsync(string procDocumentId, TimeSpan expiry, CancellationToken ct = default);
-    Task<UploadProcDocumentResult> SaveGeneratedAsync(GeneratedProcDocumentRequest request, CancellationToken ct = default);
+    Task SendApprovalAsync(
+        string procDocumentId,
+        string requestedByUserId,
+        CancellationToken ct = default
+    );
+    Task<string?> GetPresignedQrUrlAsync(
+        string procDocumentId,
+        TimeSpan expiry,
+        CancellationToken ct = default
+    );
+    Task<UploadProcDocumentResult> SaveGeneratedAsync(
+        GeneratedProcDocumentRequest request,
+        CancellationToken ct = default
+    );
 }

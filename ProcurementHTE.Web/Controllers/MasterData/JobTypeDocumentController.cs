@@ -19,7 +19,9 @@ public class JobTypeDocumentController : Controller
         _logger = logger;
     }
 
-    public override void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+    public override void OnActionExecuting(
+        Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context
+    )
     {
         ViewBag.ActivePage = ActivePageName;
         base.OnActionExecuting(context);
@@ -28,8 +30,8 @@ public class JobTypeDocumentController : Controller
     // GET: JobTypeDocument
     public async Task<IActionResult> Index(string? jobTypeId = null, CancellationToken ct = default)
     {
-        var query = _db.JobTypeDocuments
-            .Include(x => x.JobType)
+        var query = _db
+            .JobTypeDocuments.Include(x => x.JobType)
             .Include(x => x.DocumentType)
             .AsQueryable();
 
@@ -51,7 +53,14 @@ public class JobTypeDocumentController : Controller
     public async Task<IActionResult> Create(CancellationToken ct = default)
     {
         await PopulateSelections(ct);
-        return View(new JobTypeDocuments { IsMandatory = true, IsUploadRequired = true, Sequence = 1 });
+        return View(
+            new JobTypeDocuments
+            {
+                IsMandatory = true,
+                IsUploadRequired = true,
+                Sequence = 1,
+            }
+        );
     }
 
     // POST: JobTypeDocument/Create
@@ -61,7 +70,10 @@ public class JobTypeDocumentController : Controller
     {
         if (await ExistsAsync(model.JobTypeId, model.DocumentTypeId, ct))
         {
-            ModelState.AddModelError(string.Empty, "Mapping for this Job Type and Document Type already exists.");
+            ModelState.AddModelError(
+                string.Empty,
+                "Mapping for this Job Type and Document Type already exists."
+            );
         }
 
         if (!ModelState.IsValid)
@@ -80,7 +92,8 @@ public class JobTypeDocumentController : Controller
     public async Task<IActionResult> Edit(string id, CancellationToken ct = default)
     {
         var entity = await _db.JobTypeDocuments.FindAsync(new object?[] { id }, ct);
-        if (entity is null) return NotFound();
+        if (entity is null)
+            return NotFound();
         await PopulateSelections(ct);
         return View(entity);
     }
@@ -88,13 +101,21 @@ public class JobTypeDocumentController : Controller
     // POST: JobTypeDocument/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(string id, JobTypeDocuments model, CancellationToken ct = default)
+    public async Task<IActionResult> Edit(
+        string id,
+        JobTypeDocuments model,
+        CancellationToken ct = default
+    )
     {
-        if (id != model.JobTypeDocumentId) return BadRequest();
+        if (id != model.JobTypeDocumentId)
+            return BadRequest();
 
         if (await ExistsAsync(model.JobTypeId, model.DocumentTypeId, ct, excludeId: id))
         {
-            ModelState.AddModelError(string.Empty, "Mapping for this Job Type and Document Type already exists.");
+            ModelState.AddModelError(
+                string.Empty,
+                "Mapping for this Job Type and Document Type already exists."
+            );
         }
 
         if (!ModelState.IsValid)
@@ -115,7 +136,8 @@ public class JobTypeDocumentController : Controller
     public async Task<IActionResult> Delete(string id, CancellationToken ct = default)
     {
         var entity = await _db.JobTypeDocuments.FindAsync(new object?[] { id }, ct);
-        if (entity is null) return NotFound();
+        if (entity is null)
+            return NotFound();
 
         _db.JobTypeDocuments.Remove(entity);
         await _db.SaveChangesAsync(ct);
@@ -129,7 +151,12 @@ public class JobTypeDocumentController : Controller
         ViewBag.DocumentTypes = await _db.DocumentTypes.OrderBy(x => x.Name).ToListAsync(ct);
     }
 
-    private Task<bool> ExistsAsync(string jobTypeId, string documentTypeId, CancellationToken ct, string? excludeId = null)
+    private Task<bool> ExistsAsync(
+        string jobTypeId,
+        string documentTypeId,
+        CancellationToken ct,
+        string? excludeId = null
+    )
     {
         var query = _db.JobTypeDocuments.AsQueryable();
         query = query.Where(x => x.JobTypeId == jobTypeId && x.DocumentTypeId == documentTypeId);

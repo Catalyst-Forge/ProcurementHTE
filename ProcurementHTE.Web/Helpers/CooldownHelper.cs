@@ -1,6 +1,3 @@
-using System;
-using Microsoft.AspNetCore.Http;
-
 namespace ProcurementHTE.Web.Helpers
 {
     public static class CooldownHelper

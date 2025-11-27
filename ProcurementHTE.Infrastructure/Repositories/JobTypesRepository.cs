@@ -1,5 +1,4 @@
-﻿using Azure;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -11,7 +10,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public JobTypesRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
+        public JobTypesRepository(AppDbContext context) =>
+            _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task CreateJobTypeAsync(JobTypes jobType)
         {

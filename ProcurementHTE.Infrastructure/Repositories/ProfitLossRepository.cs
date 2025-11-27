@@ -43,11 +43,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await _context
                 .ProfitLosses.AsNoTracking()
                 .Include(pnl => pnl.Items)
-                    .ThenInclude(item => item.ProcOffer)
+                .ThenInclude(item => item.ProcOffer)
                 .Include(pl => pl.VendorOffers)
-                    .ThenInclude(vo => vo.Vendor)
+                .ThenInclude(vo => vo.Vendor)
                 .Include(pl => pl.VendorOffers)
-                    .ThenInclude(vo => vo.ProcOffer)
+                .ThenInclude(vo => vo.ProcOffer)
                 .Where(pnl => pnl.ProcurementId == procurementId)
                 .OrderByDescending(pnl => pnl.CreatedAt)
                 .FirstOrDefaultAsync();

@@ -8,7 +8,10 @@ namespace ProcurementHTE.Core.Interfaces
     {
         Task<AccountOverviewDto> GetOverviewAsync(string userId, CancellationToken ct = default);
         Task UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default);
-        Task<string?> UploadAvatarAsync(UploadAvatarRequest request, CancellationToken ct = default);
+        Task<string?> UploadAvatarAsync(
+            UploadAvatarRequest request,
+            CancellationToken ct = default
+        );
         Task RemoveAvatarAsync(string userId, CancellationToken ct = default);
         Task ChangePasswordAsync(
             string userId,
@@ -16,7 +19,10 @@ namespace ProcurementHTE.Core.Interfaces
             string newPassword,
             CancellationToken ct = default
         );
-        Task<TwoFactorSummaryDto> GetTwoFactorSummaryAsync(string userId, CancellationToken ct = default);
+        Task<TwoFactorSummaryDto> GetTwoFactorSummaryAsync(
+            string userId,
+            CancellationToken ct = default
+        );
         Task<string> GenerateTwoFactorCodeAsync(
             string userId,
             TwoFactorMethod method,
@@ -39,7 +45,10 @@ namespace ProcurementHTE.Core.Interfaces
             string userId,
             CancellationToken ct = default
         );
-        Task<IReadOnlyList<UserSession>> GetSessionsAsync(string userId, CancellationToken ct = default);
+        Task<IReadOnlyList<UserSession>> GetSessionsAsync(
+            string userId,
+            CancellationToken ct = default
+        );
         Task<UserSession> RegisterSessionAsync(
             string userId,
             string? userAgent,
@@ -50,7 +59,11 @@ namespace ProcurementHTE.Core.Interfaces
             bool isCurrent,
             CancellationToken ct = default
         );
-        Task DeactivateSessionAsync(string userId, string sessionId, CancellationToken ct = default);
+        Task DeactivateSessionAsync(
+            string userId,
+            string sessionId,
+            CancellationToken ct = default
+        );
         Task DeactivateAllSessionsAsync(string userId, CancellationToken ct = default);
         Task<IReadOnlyList<UserSecurityLog>> GetSecurityLogsAsync(
             string userId,
@@ -66,11 +79,25 @@ namespace ProcurementHTE.Core.Interfaces
             string? userAgent,
             CancellationToken ct = default
         );
-        Task<string> GenerateEmailVerificationTokenAsync(string userId, CancellationToken ct = default);
-        Task SendEmailVerificationAsync(string userId, string callbackUrl, CancellationToken ct = default);
+        Task<string> GenerateEmailVerificationTokenAsync(
+            string userId,
+            CancellationToken ct = default
+        );
+        Task SendEmailVerificationAsync(
+            string userId,
+            string callbackUrl,
+            CancellationToken ct = default
+        );
         Task ConfirmEmailAsync(string userId, string encodedToken, CancellationToken ct = default);
-        Task<string> GeneratePhoneVerificationCodeAsync(string userId, CancellationToken ct = default);
-        Task SendPhoneVerificationCodeAsync(string userId, string code, CancellationToken ct = default);
+        Task<string> GeneratePhoneVerificationCodeAsync(
+            string userId,
+            CancellationToken ct = default
+        );
+        Task SendPhoneVerificationCodeAsync(
+            string userId,
+            string code,
+            CancellationToken ct = default
+        );
         Task ConfirmPhoneAsync(string userId, string code, CancellationToken ct = default);
         Task ResetPasswordWithRecoveryCodeAsync(
             string userId,
@@ -78,16 +105,30 @@ namespace ProcurementHTE.Core.Interfaces
             string newPassword,
             CancellationToken ct = default
         );
-        Task<string> GeneratePasswordResetEmailCodeAsync(string userId, CancellationToken ct = default);
-        Task SendPasswordResetEmailCodeAsync(string userId, string code, CancellationToken ct = default);
+        Task<string> GeneratePasswordResetEmailCodeAsync(
+            string userId,
+            CancellationToken ct = default
+        );
+        Task SendPasswordResetEmailCodeAsync(
+            string userId,
+            string code,
+            CancellationToken ct = default
+        );
         Task ResetPasswordWithEmailCodeAsync(
             string userId,
             string code,
             string newPassword,
             CancellationToken ct = default
         );
-        Task<string> GeneratePasswordResetSmsCodeAsync(string userId, CancellationToken ct = default);
-        Task SendPasswordResetSmsCodeAsync(string userId, string code, CancellationToken ct = default);
+        Task<string> GeneratePasswordResetSmsCodeAsync(
+            string userId,
+            CancellationToken ct = default
+        );
+        Task SendPasswordResetSmsCodeAsync(
+            string userId,
+            string code,
+            CancellationToken ct = default
+        );
         Task ResetPasswordWithSmsCodeAsync(
             string userId,
             string code,
@@ -104,6 +145,10 @@ namespace ProcurementHTE.Core.Interfaces
             string userId,
             CancellationToken ct = default
         );
-        Task SetRecoveryCodesHiddenAsync(string userId, bool hidden, CancellationToken ct = default);
+        Task SetRecoveryCodesHiddenAsync(
+            string userId,
+            bool hidden,
+            CancellationToken ct = default
+        );
     }
 }

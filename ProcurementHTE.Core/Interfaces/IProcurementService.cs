@@ -23,7 +23,10 @@ namespace ProcurementHTE.Core.Interfaces
         Task<int> CountAllProcurementsAsync(CancellationToken ct);
 
         // Lookup Methods
-        Task<(List<JobTypes> JobTypes, List<Status> Statuses)> GetRelatedEntitiesForProcurementAsync();
+        Task<(
+            List<JobTypes> JobTypes,
+            List<Status> Statuses
+        )> GetRelatedEntitiesForProcurementAsync();
         Task<JobTypes?> GetJobTypeByIdAsync(string id);
         Task<Status?> GetStatusByNameAsync(string name);
 

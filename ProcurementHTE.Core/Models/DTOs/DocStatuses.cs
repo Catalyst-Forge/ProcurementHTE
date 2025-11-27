@@ -11,10 +11,15 @@ public static class DocStatuses
 
     public static readonly HashSet<string> All = new(StringComparer.OrdinalIgnoreCase)
     {
-        Uploaded, PendingApproval, Approved, Rejected, Replaced, Deleted
+        Uploaded,
+        PendingApproval,
+        Approved,
+        Rejected,
+        Replaced,
+        Deleted,
     };
 
     public static bool IsFinal(string s) =>
-        s.Equals(Approved, StringComparison.OrdinalIgnoreCase) ||
-        s.Equals(Rejected, StringComparison.OrdinalIgnoreCase);
+        s.Equals(Approved, StringComparison.OrdinalIgnoreCase)
+        || s.Equals(Rejected, StringComparison.OrdinalIgnoreCase);
 }

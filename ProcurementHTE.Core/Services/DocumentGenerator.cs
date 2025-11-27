@@ -9,7 +9,6 @@ namespace ProcurementHTE.Core.Services
     {
         private readonly ITemplateProvider _templateProvider;
         private readonly IHtmlTokenReplacer _tokenReplacer;
-        private readonly ILogger<DocumentGenerator> _logger;
         private readonly IProcurementRepository _ProcurementRepository;
         private readonly IProfitLossRepository _pnlRepository;
         private readonly IVendorRepository _vendorRepository;
@@ -17,7 +16,6 @@ namespace ProcurementHTE.Core.Services
         public DocumentGenerator(
             ITemplateProvider templateProvider,
             IHtmlTokenReplacer tokenReplacer,
-            ILogger<DocumentGenerator> logger,
             IProcurementRepository ProcurementRepository,
             IProfitLossRepository pnlRepository,
             IVendorRepository vendorRepository
@@ -25,7 +23,6 @@ namespace ProcurementHTE.Core.Services
         {
             _templateProvider = templateProvider;
             _tokenReplacer = tokenReplacer;
-            _logger = logger;
             _ProcurementRepository = ProcurementRepository;
             _pnlRepository = pnlRepository;
             _vendorRepository = vendorRepository;
@@ -37,7 +34,6 @@ namespace ProcurementHTE.Core.Services
         )
         {
             return await GenerateByTemplateAsync("ProfitLoss", "Profit & Loss", procurement, ct);
-
         }
 
         public async Task<byte[]> GenerateMemorandumAsync(
@@ -160,7 +156,12 @@ namespace ProcurementHTE.Core.Services
             CancellationToken ct = default
         )
         {
-            return await GenerateByTemplateAsync("OwnerEstimate", "Owner Estimate", procurement, ct);
+            return await GenerateByTemplateAsync(
+                "OwnerEstimate",
+                "Owner Estimate",
+                procurement,
+                ct
+            );
         }
 
         public async Task<byte[]> GenerateBOQAsync(
@@ -177,8 +178,6 @@ namespace ProcurementHTE.Core.Services
             CancellationToken ct = default
         )
         {
-            _logger.LogInformation("Generating from custom template: {Template}", templateName);
-
             var template = await _templateProvider.GetTemplateAsync(templateName, ct);
             string html;
 
@@ -211,7 +210,12 @@ namespace ProcurementHTE.Core.Services
         )
         {
             var template = await _templateProvider.GetTemplateAsync(templateKey, ct);
-            var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct, templateKey);
+            var html = await _tokenReplacer.ReplaceTokensAsync(
+                template,
+                procurement,
+                ct,
+                templateKey
+            );
 
             return await HtmlToPdfAsync(html, title, ct);
         }

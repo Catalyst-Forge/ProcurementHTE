@@ -1,5 +1,4 @@
-﻿
-namespace ProcurementHTE.Core.Models.DTOs
+﻿namespace ProcurementHTE.Core.Models.DTOs
 {
     public sealed class ByQrRequest
     {

@@ -32,7 +32,10 @@ namespace ProcurementHTE.Web.Middleware
                     return;
                 }
 
-                var session = await sessionRepository.GetByIdAsync(sessionId, context.RequestAborted);
+                var session = await sessionRepository.GetByIdAsync(
+                    sessionId,
+                    context.RequestAborted
+                );
                 if (session is null || session.UserId != userId || !session.IsActive)
                 {
                     await SignOutAsync(context, signInManager);
@@ -47,7 +50,10 @@ namespace ProcurementHTE.Web.Middleware
             await _next(context);
         }
 
-        private static async Task SignOutAsync(HttpContext context, SignInManager<User> signInManager)
+        private static async Task SignOutAsync(
+            HttpContext context,
+            SignInManager<User> signInManager
+        )
         {
             await signInManager.SignOutAsync();
             context.Response.Cookies.Delete(CookieNames.Session);

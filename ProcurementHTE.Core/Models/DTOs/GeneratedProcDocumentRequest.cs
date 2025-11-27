@@ -1,5 +1,7 @@
-﻿namespace ProcurementHTE.Core.Models.DTOs {
-    public sealed class GeneratedProcDocumentRequest {
+﻿namespace ProcurementHTE.Core.Models.DTOs
+{
+    public sealed class GeneratedProcDocumentRequest
+    {
         public string ProcurementId { get; set; } = null!;
         public string DocumentTypeId { get; set; } = null!;
         public string FileName { get; set; } = null!;

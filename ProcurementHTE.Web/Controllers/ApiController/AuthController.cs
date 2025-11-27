@@ -1,13 +1,10 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Core.Services;
-using ProcurementHTE.Infrastructure.Repositories;
 
 namespace ProcurementHTE.Web.Controllers.ApiController
 {
@@ -19,19 +16,16 @@ namespace ProcurementHTE.Web.Controllers.ApiController
         private readonly IAuthService _authService;
         private readonly JwtSettings _jwtSettings;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
-        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
             IOptions<JwtSettings> jwtSettings,
-            IRefreshTokenRepository refreshTokenRepository,
-            ILogger<AuthController> logger
+            IRefreshTokenRepository refreshTokenRepository
         )
         {
             _authService = authService;
             _jwtSettings = jwtSettings.Value;
             _refreshTokenRepository = refreshTokenRepository;
-            _logger = logger;
         }
 
         [HttpPost("login")]
@@ -55,8 +49,6 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
                 var userId = GetUserIdFromAccessToken(tokenResponse.AccessToken);
                 var profile = await _authService.GetProfileAsync(userId, ct);
-
-                _logger.LogInformation("User {Email} logged in via API", model.Email);
 
                 var expiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpirationInMinutes);
 
@@ -88,7 +80,6 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning(ex, "Login failed for {Identifier}", model.Email);
                 return Unauthorized(
                     new LoginResponseDto
                     {
@@ -99,7 +90,6 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during API login for {Email}", model.Email);
                 return StatusCode(
                     500,
                     new LoginResponseDto
@@ -125,12 +115,10 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning(ex, "Refresh token invalid");
                 return Unauthorized(new { success = false, message = "Refresh token is invalid." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error refreshing token");
                 return StatusCode(
                     500,
                     new { success = false, message = "An internal server error occurred." }
@@ -186,7 +174,6 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during logout");
                 return StatusCode(
                     500,
                     new { success = false, message = "An internal server error occurred." }
@@ -206,9 +193,9 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
                 if (string.IsNullOrEmpty(userId))
                 {
-                    _logger.LogError("Token is invalid");
                     return Unauthorized(new { message = "Token is invalid." });
                 }
+
                 var profile = await _authService.GetProfileAsync(userId, ct);
 
                 return Ok(
@@ -230,7 +217,6 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting user profile");
                 return StatusCode(500, new { message = "An internal server error occurred." });
             }
         }

@@ -10,15 +10,18 @@ namespace ProcurementHTE.Infrastructure.Services
     public class SmtpEmailSender : IEmailSender
     {
         private readonly EmailSenderOptions _options;
-        private readonly ILogger<SmtpEmailSender> _logger;
 
-        public SmtpEmailSender(IOptions<EmailSenderOptions> options, ILogger<SmtpEmailSender> logger)
+        public SmtpEmailSender(IOptions<EmailSenderOptions> options)
         {
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            _logger = logger;
         }
 
-        public async Task SendAsync(string toEmail, string subject, string htmlBody, CancellationToken ct = default)
+        public async Task SendAsync(
+            string toEmail,
+            string subject,
+            string htmlBody,
+            CancellationToken ct = default
+        )
         {
             if (string.IsNullOrWhiteSpace(_options.SmtpHost))
                 throw new InvalidOperationException("SMTP host belum dikonfigurasi.");
@@ -28,7 +31,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 From = new MailAddress(_options.FromAddress, _options.FromName),
                 Subject = subject,
                 Body = htmlBody,
-                IsBodyHtml = true
+                IsBodyHtml = true,
             };
 
             message.To.Add(new MailAddress(toEmail));
@@ -46,7 +49,6 @@ namespace ProcurementHTE.Infrastructure.Services
             }
 
             await client.SendMailAsync(message, ct);
-            _logger.LogInformation("Email dikirim ke {Email} via SMTP host {Host}", toEmail, _options.SmtpHost);
         }
     }
 }

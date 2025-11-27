@@ -1,10 +1,9 @@
+using System.Globalization;
 using MigraDocCore.DocumentObjectModel;
 using MigraDocCore.DocumentObjectModel.Tables;
-using MigraDocCore.DocumentObjectModel.Shapes;
 using MigraDocCore.Rendering;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using System.Globalization;
 
 namespace ProcurementHTE.Core.Services
 {
@@ -59,8 +58,9 @@ namespace ProcurementHTE.Core.Services
             return Task.FromResult(ms.ToArray());
         }
 
-        private static void AddHeader(Section s, Procurement Procurement, ProfitLoss pnl) {
-            var title = s.AddParagraph($"Pengangkutan / P&L — Procurement {Procurement.ProcNum}");
+        private static void AddHeader(Section s, Procurement Procurement, ProfitLoss pnl)
+        {
+            var title = s.AddParagraph($"Pengangkutan / P&L ï¿½ Procurement {Procurement.ProcNum}");
             title.Style = "Heading1";
             title.Format.SpaceAfter = Unit.FromMillimeter(2);
 
@@ -73,7 +73,8 @@ namespace ProcurementHTE.Core.Services
             var c1 = tbl.AddColumn(Unit.FromMillimeter(40));
             var c2 = tbl.AddColumn(Unit.FromMillimeter(PageWidthMm - 40));
 
-            void Row(string label, string value) {
+            void Row(string label, string value)
+            {
                 var r = tbl.AddRow();
                 r.TopPadding = 1;
                 r.BottomPadding = 1;
@@ -88,7 +89,12 @@ namespace ProcurementHTE.Core.Services
             Row("Tanggal P&L", pnl.CreatedAt.ToString("dd/MM/yyyy", Id));
         }
 
-        private static void AddVendorsTable(Section s, IReadOnlyList<VendorOffer> offers, Vendor? selected) {
+        private static void AddVendorsTable(
+            Section s,
+            IReadOnlyList<VendorOffer> offers,
+            Vendor? selected
+        )
+        {
             var box = s.AddParagraph("Vendor yang berpartisipasi / dipertimbangkan");
             box.Style = "Heading2";
             box.Format.SpaceAfter = Unit.FromMillimeter(2);
@@ -112,18 +118,28 @@ namespace ProcurementHTE.Core.Services
                 .ToList();
 
             int i = 1;
-            foreach (var g in vendorGroups) {
-                var last = g.OrderByDescending(x => x.Round).ThenByDescending(x => x.CreatedAt).FirstOrDefault();
+            foreach (var g in vendorGroups)
+            {
+                var last = g.OrderByDescending(x => x.Round)
+                    .ThenByDescending(x => x.CreatedAt)
+                    .FirstOrDefault();
                 var row = tbl.AddRow();
                 row.Cells[0].AddParagraph(i.ToString());
-                row.Cells[1].AddParagraph(g.Key.Name + (selected?.VendorId == g.Key.VendorId ? "  (TERPILIH)" : ""));
+                row.Cells[1]
+                    .AddParagraph(
+                        g.Key.Name + (selected?.VendorId == g.Key.VendorId ? "  (TERPILIH)" : "")
+                    );
                 row.Cells[2].AddParagraph(last != null ? Rp(last.Price) : "-");
-                row.Cells[3].AddParagraph(selected?.VendorId == g.Key.VendorId ? "Best Value / Direkomendasikan" : "-");
+                row.Cells[3]
+                    .AddParagraph(
+                        selected?.VendorId == g.Key.VendorId ? "Best Value / Direkomendasikan" : "-"
+                    );
                 i++;
             }
         }
 
-        private static void AddChargesTable(Section s, ProfitLoss pnl) {
+        private static void AddChargesTable(Section s, ProfitLoss pnl)
+        {
             var title = s.AddParagraph("Tagihan ke PDC");
             title.Style = "Heading2";
             title.Format.SpaceAfter = Unit.FromMillimeter(1.5);
@@ -138,7 +154,15 @@ namespace ProcurementHTE.Core.Services
                 tbl.AddColumn(Unit.FromMillimeter(w));
 
             var hdr = tbl.AddRow();
-            Header(hdr, "Unit", "Tarif awal", "Tarif Add", "Km per 25", "Nilai Penambahan", "Jumlah");
+            Header(
+                hdr,
+                "Unit",
+                "Tarif awal",
+                "Tarif Add",
+                "Km per 25",
+                "Nilai Penambahan",
+                "Jumlah"
+            );
 
             var r = tbl.AddRow();
             r.Cells[0].AddParagraph("1 (Highbed)"); // contoh ringkas
@@ -157,7 +181,8 @@ namespace ProcurementHTE.Core.Services
             //total.Cells[5].AddParagraph(Rp(pnl.Revenue)).Format.Font.Bold = true;
         }
 
-        private static void AddOffersTable(Section s, IReadOnlyList<VendorOffer> offers) {
+        private static void AddOffersTable(Section s, IReadOnlyList<VendorOffer> offers)
+        {
             var title = s.AddParagraph("Rincian Penawaran / Nego per Vendor");
             title.Style = "Heading2";
             title.Format.SpaceAfter = Unit.FromMillimeter(1.5);
@@ -179,7 +204,8 @@ namespace ProcurementHTE.Core.Services
                 .ThenBy(o => o.Round)
                 .ToList();
 
-            foreach (var o in rows) {
+            foreach (var o in rows)
+            {
                 var r = tbl.AddRow();
                 r.Cells[0].AddParagraph(o.Vendor?.VendorName ?? "-");
                 r.Cells[1].AddParagraph(o.Round.ToString());
@@ -188,8 +214,8 @@ namespace ProcurementHTE.Core.Services
             }
         }
 
-
-        private static void AddPnLSummary(Section s, ProfitLoss pnl, Vendor? selectedVendor) {
+        private static void AddPnLSummary(Section s, ProfitLoss pnl, Vendor? selectedVendor)
+        {
             var title = s.AddParagraph("Profit & Loss Estimate");
             title.Style = "Heading2";
             title.Format.SpaceAfter = Unit.FromMillimeter(1.5);
@@ -203,7 +229,11 @@ namespace ProcurementHTE.Core.Services
             tbl.AddColumn(Unit.FromMillimeter(100));
 
             //Row2(tbl, "Revenue (Tagihan PDC)", Rp(pnl.Revenue), shaded: true);
-            Row2(tbl, $"Harga Mitra Terpilih{(selectedVendor != null ? $" – {selectedVendor.VendorName}" : "")}", Rp(pnl.SelectedVendorFinalOffer));
+            Row2(
+                tbl,
+                $"Harga Mitra Terpilih{(selectedVendor != null ? $" ï¿½ {selectedVendor.VendorName}" : "")}",
+                Rp(pnl.SelectedVendorFinalOffer)
+            );
             //Row2(tbl, "COST OPERATOR", Rp(pnl.OperatorCost));
             var profit = pnl.Profit;
             Row2(tbl, "PROFIT", Rp(profit), shaded: true, bold: true);
@@ -213,7 +243,8 @@ namespace ProcurementHTE.Core.Services
             Row2(tbl, "% Profit vs Revenue", $"{percent:0.##} %");
         }
 
-        private static void AddSignatures(Section s) {
+        private static void AddSignatures(Section s)
+        {
             var title = s.AddParagraph("Persetujuan");
             title.Style = "Heading2";
             title.Format.SpaceAfter = Unit.FromMillimeter(1.5);
@@ -228,33 +259,53 @@ namespace ProcurementHTE.Core.Services
             var rBox = tbl.AddRow();
             rBox.Height = Unit.FromMillimeter(25);
             rBox.VerticalAlignment = VerticalAlignment.Center;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++)
+            {
                 rBox.Cells[i].AddParagraph("\n\n\n"); // ruang tanda tangan
             }
 
             var rCap = tbl.AddRow();
-            rCap.Cells[0].AddParagraph("Disetujui oleh\nAnalyst HTE").Format.Alignment = ParagraphAlignment.Center;
-            rCap.Cells[1].AddParagraph("Diketahui oleh\nAsisten Manager HTE").Format.Alignment = ParagraphAlignment.Center;
-            rCap.Cells[2].AddParagraph("Disahkan oleh\nManager Transport & Logistic").Format.Alignment = ParagraphAlignment.Center;
+            rCap.Cells[0].AddParagraph("Disetujui oleh\nAnalyst HTE").Format.Alignment =
+                ParagraphAlignment.Center;
+            rCap.Cells[1].AddParagraph("Diketahui oleh\nAsisten Manager HTE").Format.Alignment =
+                ParagraphAlignment.Center;
+            rCap.Cells[2]
+                .AddParagraph("Disahkan oleh\nManager Transport & Logistic")
+                .Format.Alignment = ParagraphAlignment.Center;
 
             s.AddParagraph().Format.SpaceAfter = Unit.FromMillimeter(2);
         }
 
-        private static void AddNotes(Section section, Vendor? selectedVendor, ProfitLoss pnl) {
+        private static void AddNotes(Section section, Vendor? selectedVendor, ProfitLoss pnl)
+        {
             var heading = section.AddParagraph("Catatan:");
             heading.Format.Font.Bold = true;
             heading.Format.SpaceBefore = Unit.FromMillimeter(2);
             heading.Format.SpaceAfter = Unit.FromMillimeter(1);
 
-            var baseInfo = new ListInfo {
+            var baseInfo = new ListInfo
+            {
                 ListType = ListType.NumberList1,
-                NumberPosition = Unit.FromMillimeter(6)
+                NumberPosition = Unit.FromMillimeter(6),
             };
 
-            AddListItem(section, "Penawaran RFI melibatkan beberapa vendor terdaftar PDC.", baseInfo, first: true);
-            AddListItem(section, $"Dari hasil negosiasi, vendor terpilih {selectedVendor?.VendorName ?? "-"}.", baseInfo);
+            AddListItem(
+                section,
+                "Penawaran RFI melibatkan beberapa vendor terdaftar PDC.",
+                baseInfo,
+                first: true
+            );
+            AddListItem(
+                section,
+                $"Dari hasil negosiasi, vendor terpilih {selectedVendor?.VendorName ?? "-"}.",
+                baseInfo
+            );
             AddListItem(section, "Actual invoice disesuaikan dengan Surat Jalan.", baseInfo);
-            AddListItem(section, "Mitra telah berpengalaman dan memiliki SKT & CSMS untuk pekerjaan ini.", baseInfo);
+            AddListItem(
+                section,
+                "Mitra telah berpengalaman dan memiliki SKT & CSMS untuk pekerjaan ini.",
+                baseInfo
+            );
 
             // highlight ringkas profit
             var highlight = section.AddParagraph();
@@ -262,13 +313,16 @@ namespace ProcurementHTE.Core.Services
             highlight.Format.SpaceBefore = Unit.FromMillimeter(1);
             highlight.AddText($"Estimasi Profit: {Rp(pnl.Profit)} ({(pnl.ProfitPercent):0.##}%)");
         }
+
         // ------------------------ Helpers ------------------------
 
         private static string Rp(decimal? v) =>
             v.HasValue ? string.Format(Id, "Rp {0:N0}", v.Value) : "-";
 
-        private static void Header(Row r, params string[] captions) {
-            for (int i = 0; i < captions.Length; i++) {
+        private static void Header(Row r, params string[] captions)
+        {
+            for (int i = 0; i < captions.Length; i++)
+            {
                 r.Cells[i].AddParagraph(captions[i]);
                 r.Cells[i].Shading.Color = Colors.LightGray;
                 r.Cells[i].Format.Font.Bold = true;
@@ -278,34 +332,51 @@ namespace ProcurementHTE.Core.Services
             r.BottomPadding = 2;
         }
 
-        private static void Row2(Table t, string label, string value, bool shaded = false, bool bold = false) {
+        private static void Row2(
+            Table t,
+            string label,
+            string value,
+            bool shaded = false,
+            bool bold = false
+        )
+        {
             var r = t.AddRow();
             r.Cells[0].AddParagraph(label);
             r.Cells[1].AddParagraph(value);
             r.Cells[1].Format.Alignment = ParagraphAlignment.Right;
-            if (shaded) {
+            if (shaded)
+            {
                 r.Cells[0].Shading.Color = Colors.WhiteSmoke;
                 r.Cells[1].Shading.Color = Colors.WhiteSmoke;
             }
-            if (bold) {
+            if (bold)
+            {
                 r.Cells[0].Format.Font.Bold = true;
                 r.Cells[1].Format.Font.Bold = true;
             }
         }
 
-        private static void AddListItem(Section section, string text, ListInfo baseInfo, bool first = false) {
+        private static void AddListItem(
+            Section section,
+            string text,
+            ListInfo baseInfo,
+            bool first = false
+        )
+        {
             var p = section.AddParagraph(text);
             p.Format.LeftIndent = Unit.FromMillimeter(12);
             p.Format.FirstLineIndent = Unit.FromMillimeter(-6);
             p.Format.SpaceAfter = Unit.FromPoint(1.5);
-            p.Format.ListInfo = new ListInfo {
+            p.Format.ListInfo = new ListInfo
+            {
                 ListType = baseInfo.ListType,
                 NumberPosition = baseInfo.NumberPosition,
-                ContinuePreviousList = !first
+                ContinuePreviousList = !first,
             };
         }
 
-        private static void DefineStyles(Document doc) {
+        private static void DefineStyles(Document doc)
+        {
             var normal = doc.Styles["Normal"];
             normal.Font.Name = "Calibri";
             normal.Font.Size = 9;

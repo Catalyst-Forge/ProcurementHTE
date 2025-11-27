@@ -1,22 +1,24 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ProcurementHTE.Core.Models {
-  public class UserClaim {
-    [Key]
-    public int Id { get; set; }
+namespace ProcurementHTE.Core.Models
+{
+    public class UserClaim
+    {
+        [Key]
+        public int Id { get; set; }
 
-    [ForeignKey("User")]
-    public int UserId { get; set; }
-    public virtual User? User { get; set; }
+        [ForeignKey("User")]
+        public int UserId { get; set; }
+        public virtual User? User { get; set; }
 
-    [Required]
-    [StringLength(100)]
-    public string? ClaimType { get; set; }
+        [Required]
+        [StringLength(100)]
+        public string? ClaimType { get; set; }
 
-    [StringLength(200)]
-    public string? ClaimValue { get; set; }
+        [StringLength(200)]
+        public string? ClaimValue { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
-  }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
 }

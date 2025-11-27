@@ -41,9 +41,11 @@ namespace ProcurementHTE.Web.Middleware
         public async Task InvokeAsync(HttpContext context, UserManager<User> userManager)
         {
             var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
-            if (context.User.Identity?.IsAuthenticated == true
+            if (
+                context.User.Identity?.IsAuthenticated == true
                 && !IsIgnoredPath(path)
-                && !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
+                && !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 var user = await userManager.GetUserAsync(context.User);
                 if (user != null)
@@ -74,10 +76,12 @@ namespace ProcurementHTE.Web.Middleware
             if (path.StartsWith("/auth", StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase)
+            if (
+                path.StartsWith("/lib", StringComparison.OrdinalIgnoreCase)
                 || path.StartsWith("/css", StringComparison.OrdinalIgnoreCase)
                 || path.StartsWith("/js", StringComparison.OrdinalIgnoreCase)
-                || path.StartsWith("/images", StringComparison.OrdinalIgnoreCase))
+                || path.StartsWith("/images", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 return true;
             }
@@ -107,7 +111,9 @@ namespace ProcurementHTE.Web.Middleware
             if (context.Response.HasStarted)
                 return;
 
-            var encoded = Uri.EscapeDataString(string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl);
+            var encoded = Uri.EscapeDataString(
+                string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl
+            );
             context.Response.Redirect($"{target}?returnUrl={encoded}");
         }
     }

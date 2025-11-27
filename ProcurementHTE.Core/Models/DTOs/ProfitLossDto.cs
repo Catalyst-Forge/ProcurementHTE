@@ -9,20 +9,36 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         public int Quantity { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative number."
+        )]
         public decimal TarifAwal { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative number."
+        )]
         public decimal TarifAdd { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative number."
+        )]
         public decimal KmPer25 { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative number."
+        )]
         public decimal OperatorCost { get; set; }
     }
 
@@ -60,12 +76,20 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? AccrualAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -87,12 +111,20 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? AccrualAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -104,8 +136,12 @@ namespace ProcurementHTE.Core.Models.DTOs
         [StringLength(450)]
         public string? SelectedVendorId { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal SelectedVendorFinalOffer { get; set; }
 
         public decimal Profit { get; set; }
@@ -125,12 +161,20 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcurementId { get; set; } = null!;
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? AccrualAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -165,8 +209,12 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string SelectedVendorId { get; set; } = null!;
         public string? SelectedVendorName { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative amount.")]
+        [Range(
+            typeof(decimal),
+            "0",
+            "79228162514264337593543950335",
+            ErrorMessage = "The field {0} must be a valid non-negative amount."
+        )]
         public decimal SelectedFinalOffer { get; set; }
 
         public decimal Profit { get; set; }
@@ -182,8 +230,7 @@ namespace ProcurementHTE.Core.Models.DTOs
             decimal KmPer25,
             decimal OperatorCost,
             decimal Revenue
-        )> Items
-        { get; set; } = [];
+        )> Items { get; set; } = [];
 
         public List<string> SelectedVendorNames { get; set; } = [];
         public List<VendorComparisonDto> VendorComparisons { get; set; } = [];
@@ -196,7 +243,8 @@ namespace ProcurementHTE.Core.Models.DTOs
         public List<ProfitLossVendorNegotiationTableDto> Vendors { get; set; } = [];
     }
 
-    public class ProfitLossVendorNegotiationTableDto {
+    public class ProfitLossVendorNegotiationTableDto
+    {
         public string VendorId { get; set; } = null!;
         public string VendorName { get; set; } = null!;
         public int MaxRound { get; set; }
@@ -206,12 +254,14 @@ namespace ProcurementHTE.Core.Models.DTOs
         public bool IsSelectedVendor { get; set; }
     }
 
-    public class ProfitLossVendorRoundInfoDto {
+    public class ProfitLossVendorRoundInfoDto
+    {
         public int Round { get; set; }
         public string? LetterNumber { get; set; }
     }
 
-    public class ProfitLossVendorItemNegotiationDto {
+    public class ProfitLossVendorItemNegotiationDto
+    {
         public string ProcOfferId { get; set; } = null!;
         public string ItemName { get; set; } = null!;
         public int Quantity { get; set; }

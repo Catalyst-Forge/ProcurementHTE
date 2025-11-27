@@ -10,7 +10,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public VendorRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
+        public VendorRepository(AppDbContext context) =>
+            _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<int> CountAsync()
         {

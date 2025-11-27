@@ -4,13 +4,22 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IDocumentGenerator
     {
-        Task<byte[]> GenerateMemorandumAsync(Procurement procurement, CancellationToken ct = default);
+        Task<byte[]> GenerateMemorandumAsync(
+            Procurement procurement,
+            CancellationToken ct = default
+        );
         Task<byte[]> GeneratePermintaanPekerjaanAsync(
             Procurement procurement,
             CancellationToken ct = default
         );
-        Task<byte[]> GenerateServiceOrderAsync(Procurement procurement, CancellationToken ct = default);
-        Task<byte[]> GenerateMarketSurveyAsync(Procurement procurement, CancellationToken ct = default);
+        Task<byte[]> GenerateServiceOrderAsync(
+            Procurement procurement,
+            CancellationToken ct = default
+        );
+        Task<byte[]> GenerateMarketSurveyAsync(
+            Procurement procurement,
+            CancellationToken ct = default
+        );
         Task<byte[]> GenerateSPMPAsync(Procurement procurement, CancellationToken ct = default);
         Task<byte[]> GenerateSuratPenawaranHargaAsync(
             Procurement procurement,
@@ -30,7 +39,10 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
         Task<byte[]> GenerateBOQAsync(Procurement procurement, CancellationToken ct = default);
-        Task<byte[]> GenerateProfitLossAsync(Procurement procurement, CancellationToken ct = default);
+        Task<byte[]> GenerateProfitLossAsync(
+            Procurement procurement,
+            CancellationToken ct = default
+        );
 
         // Generic method untuk custom templates
         Task<byte[]> GenerateFromTemplateAsync(

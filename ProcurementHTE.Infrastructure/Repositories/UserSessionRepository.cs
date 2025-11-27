@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -24,7 +23,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public Task UpdateAsync(UserSession session, CancellationToken ct = default)
         {
             ArgumentNullException.ThrowIfNull(session);
-            var tracked = _context.ChangeTracker.Entries<UserSession>()
+            var tracked = _context
+                .ChangeTracker.Entries<UserSession>()
                 .FirstOrDefault(e => e.Entity.UserSessionId == session.UserSessionId);
 
             if (tracked is not null)
@@ -44,8 +44,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
             return _context
-                .UserSessions
-                .AsNoTracking()
+                .UserSessions.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.UserSessionId == sessionId, ct);
         }
 
@@ -56,8 +55,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(userId);
             return await _context
-                .UserSessions
-                .AsNoTracking()
+                .UserSessions.AsNoTracking()
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync(ct);

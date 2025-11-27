@@ -32,14 +32,17 @@ namespace ProcurementHTE.Core.Authorization.Handlers
             AuthorizationHandlerContext context,
             CanApproveProcDocumentRequirement requirement,
             ApproveDocContext resource
-        ) {
-            if (context.User.IsInRole("Admin")) {
+        )
+        {
+            if (context.User.IsInRole("Admin"))
+            {
                 context.Succeed(requirement);
                 return;
             }
 
             var doc = await _docRepository.GetByIdAsync(resource.ProcDocumentId);
-            if (doc is null || doc.Procurement is null || doc.Procurement.JobTypeId is null) {
+            if (doc is null || doc.Procurement is null || doc.Procurement.JobTypeId is null)
+            {
                 return;
             }
 
@@ -47,27 +50,40 @@ namespace ProcurementHTE.Core.Authorization.Handlers
                 doc.Procurement.JobTypeId,
                 doc.DocumentTypeId
             );
-            if (config is null || config.DocumentApprovals is null || config.DocumentApprovals.Count == 0)
+            if (
+                config is null
+                || config.DocumentApprovals is null
+                || config.DocumentApprovals.Count == 0
+            )
                 return;
 
             const decimal ThreshHoldVP = 300_000_000m;
             bool needVP = resource.TotalPenawaran > ThreshHoldVP;
 
             var configured = config
-                .DocumentApprovals
-                .OrderBy(a => a.Level)
+                .DocumentApprovals.OrderBy(a => a.Level)
                 .ThenBy(a => a.SequenceOrder)
                 .ToList();
 
-            if (!needVP) {
-                configured = configured.Where(approval => approval.Role != null && approval.Role.Name != "Vice President").ToList();
+            if (!needVP)
+            {
+                configured = configured
+                    .Where(approval =>
+                        approval.Role != null && approval.Role.Name != "Vice President"
+                    )
+                    .ToList();
             }
 
             if (configured.Count == 0)
                 return;
 
-            var allApprovals = await _procDocApprovalRepository.GetByProcDocumentIdAsync(doc.ProcDocumentId);
-            var approvedRoleIds = allApprovals.Where(approval => approval.Status == "Approved").Select(approval => approval.RoleId).ToHashSet();
+            var allApprovals = await _procDocApprovalRepository.GetByProcDocumentIdAsync(
+                doc.ProcDocumentId
+            );
+            var approvedRoleIds = allApprovals
+                .Where(approval => approval.Status == "Approved")
+                .Select(approval => approval.RoleId)
+                .ToHashSet();
 
             if (allApprovals.Any(approval => approval.Status == "Rejected"))
                 return;
@@ -83,7 +99,5 @@ namespace ProcurementHTE.Core.Authorization.Handlers
             if (context.User.IsInRole(role.Name!))
                 context.Succeed(requirement);
         }
-
-
     }
 }

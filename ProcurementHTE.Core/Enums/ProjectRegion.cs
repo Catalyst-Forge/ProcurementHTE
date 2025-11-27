@@ -1,7 +1,9 @@
-﻿namespace ProcurementHTE.Core.Enums {
-    public enum ProjectRegion {
+﻿namespace ProcurementHTE.Core.Enums
+{
+    public enum ProjectRegion
+    {
         JWKT = 0,
         SMRT = 1,
-        AKOMODASI = 2
+        AKOMODASI = 2,
     }
 }

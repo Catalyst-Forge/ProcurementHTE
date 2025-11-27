@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Web.Models.Admin;
 
@@ -20,18 +14,16 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<Role> _roleManager;
-        private readonly ILogger<UserManagementController> _logger;
 
         public UserManagementController(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
-            RoleManager<Role> roleManager,
-            ILogger<UserManagementController> logger)
+            RoleManager<Role> roleManager
+        )
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
-            _logger = logger;
         }
 
         // LIST + FILTER
@@ -45,11 +37,12 @@ namespace ProcurementHTE.Web.Controllers.Account
             {
                 var search = filters.Search.Trim();
                 query = query.Where(u =>
-                    (u.UserName != null && u.UserName.Contains(search)) ||
-                    (u.Email != null && u.Email.Contains(search)) ||
-                    (u.FirstName != null && u.FirstName.Contains(search)) ||
-                    (u.LastName != null && u.LastName.Contains(search)) ||
-                    (u.JobTitle != null && u.JobTitle.Contains(search)));
+                    (u.UserName != null && u.UserName.Contains(search))
+                    || (u.Email != null && u.Email.Contains(search))
+                    || (u.FirstName != null && u.FirstName.Contains(search))
+                    || (u.LastName != null && u.LastName.Contains(search))
+                    || (u.JobTitle != null && u.JobTitle.Contains(search))
+                );
             }
 
             // Filter status (aktif / nonaktif)
@@ -103,8 +96,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 var roles = await _userManager.GetRolesAsync(user);
 
                 // Filter role (kalau dipilih)
-                if (!string.IsNullOrWhiteSpace(filters.Role) &&
-                    !roles.Contains(filters.Role))
+                if (!string.IsNullOrWhiteSpace(filters.Role) && !roles.Contains(filters.Role))
                 {
                     continue;
                 }
@@ -115,29 +107,27 @@ namespace ProcurementHTE.Web.Controllers.Account
                     displayName = user.UserName ?? user.Email ?? user.Id;
                 }
 
-                resultUsers.Add(new UserListItemViewModel
-                {
-                    Id = user.Id,
-                    DisplayName = displayName,
-                    Email = user.Email ?? string.Empty,
-                    UserName = user.UserName ?? string.Empty,
-                    JobTitle = user.JobTitle ?? string.Empty,
-                    Roles = roles.ToArray(),
-                    EmailConfirmed = user.EmailConfirmed,
-                    PhoneConfirmed = user.PhoneNumberConfirmed,
-                    TwoFactorEnabled = user.TwoFactorEnabled,
-                    IsActive = user.IsActive,
-                    LastLoginAt = user.LastLoginAt
-                });
+                resultUsers.Add(
+                    new UserListItemViewModel
+                    {
+                        Id = user.Id,
+                        DisplayName = displayName,
+                        Email = user.Email ?? string.Empty,
+                        UserName = user.UserName ?? string.Empty,
+                        JobTitle = user.JobTitle ?? string.Empty,
+                        Roles = roles.ToArray(),
+                        EmailConfirmed = user.EmailConfirmed,
+                        PhoneConfirmed = user.PhoneNumberConfirmed,
+                        TwoFactorEnabled = user.TwoFactorEnabled,
+                        IsActive = user.IsActive,
+                        LastLoginAt = user.LastLoginAt,
+                    }
+                );
             }
 
-            var roleOptions = await _roleManager.Roles
-                .OrderBy(r => r.Name)
-                .Select(r => new RoleOptionViewModel
-                {
-                    Id = r.Id,
-                    Name = r.Name!
-                })
+            var roleOptions = await _roleManager
+                .Roles.OrderBy(r => r.Name)
+                .Select(r => new RoleOptionViewModel { Id = r.Id, Name = r.Name! })
                 .ToListAsync();
 
             var viewModel = new UserManagementIndexViewModel
@@ -149,7 +139,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 ActiveCount = activeCount,
                 InactiveCount = inactiveCount,
                 TwoFactorEnabledCount = twoFactorEnabledCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
             };
 
             return View(viewModel);
@@ -166,7 +156,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 Form = new UserFormInputModel(),
                 Roles = roles,
                 // Password auto-generate, nanti ditampilkan ke admin
-                GeneratedPassword = GeneratePassword()
+                GeneratedPassword = GeneratePassword(),
             };
 
             // Pakai view Edit yang sama (Create & Edit satu view)
@@ -198,7 +188,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                     PhoneNumber = model.Form.PhoneNumber,
                     IsActive = model.Form.IsActive,
                     EmailConfirmed = true, // bisa disesuaikan kebutuhan
-                    LockoutEnabled = true
+                    LockoutEnabled = true,
                 };
 
                 var password = model.GeneratedPassword ?? GeneratePassword();
@@ -219,7 +209,10 @@ namespace ProcurementHTE.Web.Controllers.Account
                 // Set Roles
                 if (model.Form.SelectedRoles != null && model.Form.SelectedRoles.Any())
                 {
-                    var addRoleResult = await _userManager.AddToRolesAsync(user, model.Form.SelectedRoles);
+                    var addRoleResult = await _userManager.AddToRolesAsync(
+                        user,
+                        model.Form.SelectedRoles
+                    );
                     if (!addRoleResult.Succeeded)
                     {
                         foreach (var error in addRoleResult.Errors)
@@ -240,7 +233,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal membuat user");
                 ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat membuat user.");
 
                 model.Roles = await GetRoleOptionsAsync();
@@ -276,9 +268,9 @@ namespace ProcurementHTE.Web.Controllers.Account
                     JobTitle = user.JobTitle,
                     PhoneNumber = user.PhoneNumber,
                     IsActive = user.IsActive,
-                    SelectedRoles = userRoles.ToList()
+                    SelectedRoles = userRoles.ToList(),
                 },
-                Roles = roles
+                Roles = roles,
             };
 
             return View(vm);
@@ -371,7 +363,11 @@ namespace ProcurementHTE.Web.Controllers.Account
                     await RefreshUserSessionStateAsync(user, user.IsActive);
                 }
 
-                var editingSelf = string.Equals(_userManager.GetUserId(User), user.Id, StringComparison.OrdinalIgnoreCase);
+                var editingSelf = string.Equals(
+                    _userManager.GetUserId(User),
+                    user.Id,
+                    StringComparison.OrdinalIgnoreCase
+                );
                 if (editingSelf)
                 {
                     var stillAdmin = await _userManager.IsInRoleAsync(user, "Admin");
@@ -386,7 +382,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal mengubah user");
                 ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat mengubah user.");
 
                 model.Roles = await GetRoleOptionsAsync();
@@ -410,7 +405,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             await _userManager.UpdateAsync(user);
             await RefreshUserSessionStateAsync(user, user.IsActive);
 
-            TempData["SuccessMessage"] = $"Status user {user.UserName} diubah menjadi {(user.IsActive ? "Aktif" : "Tidak Aktif")}.";
+            TempData["SuccessMessage"] =
+                $"Status user {user.UserName} diubah menjadi {(user.IsActive ? "Aktif" : "Tidak Aktif")}.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -426,8 +422,10 @@ namespace ProcurementHTE.Web.Controllers.Account
                 return NotFound();
 
             var currentUserId = _userManager.GetUserId(User);
-            if (!string.IsNullOrEmpty(currentUserId) &&
-                string.Equals(currentUserId, id, StringComparison.OrdinalIgnoreCase))
+            if (
+                !string.IsNullOrEmpty(currentUserId)
+                && string.Equals(currentUserId, id, StringComparison.OrdinalIgnoreCase)
+            )
             {
                 TempData["ErrorMessage"] = "Tidak dapat menghapus akun yang sedang digunakan.";
                 return RedirectToAction(nameof(Index));
@@ -448,8 +446,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Gagal menghapus user {User}", user.UserName);
-                TempData["ErrorMessage"] = "Gagal menghapus user. Pastikan user tidak dipakai di data lain.";
+                TempData["ErrorMessage"] =
+                    "Gagal menghapus user. Pastikan user tidak dipakai di data lain.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -458,13 +456,9 @@ namespace ProcurementHTE.Web.Controllers.Account
         // Helpers
         private async Task<IReadOnlyList<RoleOptionViewModel>> GetRoleOptionsAsync()
         {
-            var roles = await _roleManager.Roles
-                .OrderBy(r => r.Name)
-                .Select(r => new RoleOptionViewModel
-                {
-                    Id = r.Id,
-                    Name = r.Name!
-                })
+            var roles = await _roleManager
+                .Roles.OrderBy(r => r.Name)
+                .Select(r => new RoleOptionViewModel { Id = r.Id, Name = r.Name! })
                 .ToListAsync();
 
             return roles;
@@ -473,8 +467,8 @@ namespace ProcurementHTE.Web.Controllers.Account
         private IActionResult RedirectToForbidden()
         {
             var redirectUrl =
-                Url.Action("Status", "Error", new { statusCode = StatusCodes.Status403Forbidden }) ??
-                "/Error/403";
+                Url.Action("Status", "Error", new { statusCode = StatusCodes.Status403Forbidden })
+                ?? "/Error/403";
 
             if (Request.Headers.ContainsKey("HX-Request"))
             {

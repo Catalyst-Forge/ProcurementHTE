@@ -1,16 +1,15 @@
-using Humanizer;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
-using System.Security.Claims;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule
 {
@@ -27,7 +26,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private readonly IDocumentGenerator _documentGenerator;
         private readonly IDocumentTypeService _docTypeService;
         private readonly IProcDocumentService _procDocService;
-        private readonly ILogger<ProcurementsController> _logger;
         private readonly UserManager<User> _userManager;
 
         public ProcurementsController(
@@ -38,7 +36,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             IDocumentGenerator documentGenerator,
             IDocumentTypeService docTypeService,
             IProcDocumentService procDocService,
-            ILogger<ProcurementsController> logger,
             UserManager<User> userManager
         )
         {
@@ -49,7 +46,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             _documentGenerator = documentGenerator;
             _docTypeService = docTypeService;
             _procDocService = procDocService;
-            _logger = logger;
             _userManager = userManager;
         }
 
@@ -137,7 +133,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading Procurement details for ID: {id}", id);
                 TempData["ErrorMessage"] = "Failed to load procurement details: " + ex.Message;
 
                 return RedirectToAction(nameof(Index));
@@ -253,7 +248,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to save procurement");
                 ModelState.AddModelError(
                     "",
                     "An error occurred while saving the data: " + ex.Message
@@ -320,7 +314,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading Procurement for edit, ID: {id}", id);
                 TempData["ErrorMessage"] = $"Failed to load procurement for editing: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
@@ -387,14 +380,12 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning(ex, "Procurement not found for edit, ID: {id}", id);
                 TempData["ErrorMessage"] = ex.Message;
                 ModelState.AddModelError("", ex.Message);
                 return NotFound();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating Procurement, ID: {id}", id);
                 ModelState.AddModelError(
                     "",
                     $"An error occurred while updating the data: {ex.Message}"
@@ -422,7 +413,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading Procurement for delete, ID: {id}", id);
                 TempData["ErrorMessage"] = $"Failed to load procurement for deletion: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
@@ -513,11 +503,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Error creating ProfitLoss form for Procurement: {ProcurementId}",
-                    procurementId
-                );
                 TempData["ErrorMessage"] = $"Error: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
@@ -538,7 +523,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             if (!ModelState.IsValid)
             {
                 await RepopulateVendorChoices(viewModel);
-                LogModelStateErrors();
 
                 return View("CreateProfitLoss", viewModel);
             }
@@ -605,11 +589,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Error creating ProfitLoss for Procurement: {ProcurementId}",
-                    viewModel.ProcurementId
-                );
                 ModelState.AddModelError("", $"Error: {ex.Message}");
             }
 
@@ -621,8 +600,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [HttpGet]
         public async Task<IActionResult> EditProfitLoss(string id)
         {
-            _logger.LogInformation("?? EditPnL (GET) called with ID: {Id}", id);
-
             try
             {
                 var dto = await _pnlService.GetEditDataAsync(id);
@@ -726,12 +703,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 ViewBag.ProcNum = procurement.ProcNum;
                 ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
-                _logger.LogInformation("? EditPnL view akan ditampilkan");
                 return View("CreateProfitLoss", vm);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "? Error di EditPnL");
                 ModelState.AddModelError("", $"Error: {ex.Message}");
                 return RedirectToAction("Index");
             }
@@ -968,15 +943,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     ItemPenawaran = o.ItemPenawaran,
                 })
                 .ToList();
-        }
-
-        private void LogModelStateErrors()
-        {
-            var errors = ModelState.Values.SelectMany(v => v.Errors);
-            foreach (var error in errors)
-            {
-                _logger.LogWarning("ModelState Error: {Error}", error.ErrorMessage);
-            }
         }
 
         private void RemoveAutoGeneratedProcurementValidation()

@@ -9,26 +9,37 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class JobTypeDocumentRepository : IJobTypeDocumentRepository
     {
         private readonly AppDbContext _context;
-        public JobTypeDocumentRepository(AppDbContext context)
-            => _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<JobTypeDocuments?> FindByJobTypeAndDocTypeAsync(string jobTypeId, string documentTypeId)
+        public JobTypeDocumentRepository(AppDbContext context) =>
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+
+        public async Task<JobTypeDocuments?> FindByJobTypeAndDocTypeAsync(
+            string jobTypeId,
+            string documentTypeId
+        )
         {
-            return await _context.JobTypeDocuments
-                .Where(jobTypeDoc => jobTypeDoc.JobTypeId == jobTypeId && jobTypeDoc.DocumentTypeId == documentTypeId)
+            return await _context
+                .JobTypeDocuments.Where(jobTypeDoc =>
+                    jobTypeDoc.JobTypeId == jobTypeId && jobTypeDoc.DocumentTypeId == documentTypeId
+                )
                 .Include(jobTypeDoc => jobTypeDoc.JobType)
                 .Include(jobTypeDoc => jobTypeDoc.DocumentType)
                 .Include(jobTypeDoc => jobTypeDoc.DocumentApprovals)
-                    .ThenInclude(da => da.Role)
+                .ThenInclude(da => da.Role)
                 .AsNoTracking()
                 .AsSplitQuery()
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<JobTypeDocuments?> GetByJobTypeAndDocumentTypeAsync(string jobTypeId, string documentTypeId)
+        public async Task<JobTypeDocuments?> GetByJobTypeAndDocumentTypeAsync(
+            string jobTypeId,
+            string documentTypeId
+        )
         {
-            return await _context.JobTypeDocuments
-                .Where(x => x.JobTypeId == jobTypeId && x.DocumentTypeId == documentTypeId)
+            return await _context
+                .JobTypeDocuments.Where(x =>
+                    x.JobTypeId == jobTypeId && x.DocumentTypeId == documentTypeId
+                )
                 .Include(x => x.JobType)
                 .Include(x => x.DocumentType)
                 .AsNoTracking()
@@ -36,12 +47,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<IReadOnlyList<JobTypeDocuments>> ListByJobTypeAsync(string jobTypeId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<JobTypeDocuments>> ListByJobTypeAsync(
+            string jobTypeId,
+            CancellationToken ct = default
+        )
         {
-            return await _context.JobTypeDocuments
-                .AsNoTracking()
+            return await _context
+                .JobTypeDocuments.AsNoTracking()
                 .Where(x => x.JobTypeId == jobTypeId)
-                .Include(x => x.DocumentApprovals).ThenInclude(a => a.Role)
+                .Include(x => x.DocumentApprovals)
+                .ThenInclude(a => a.Role)
                 .ToListAsync(ct);
         }
     }

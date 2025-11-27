@@ -1,7 +1,7 @@
-using ProcurementHTE.Core.Enums;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Core.Models;
 
@@ -97,7 +97,6 @@ public class Procurement
     public string ManagerUserId { get; set; } = null!;
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
-
     [DisplayName("Created At")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

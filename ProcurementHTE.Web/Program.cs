@@ -1,8 +1,6 @@
-﻿using System.Security.Cryptography;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Infrastructure.Data;
-using ProcurementHTE.Infrastructure.Storage;
 using ProcurementHTE.Web.Extensions;
 using ProcurementHTE.Web.Middleware;
 using ProcurementHTE.Web.Options;
@@ -14,39 +12,18 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddHttpClient("MinioProxy");
 builder.Services.AddHttpClient("SmsProvider");
-builder.Services.Configure<SecurityBypassOptions>(builder.Configuration.GetSection("SecurityBypass"));
-var app = builder.Build();
-
-// Nanti Hapus ini setelah yakin konfigurasi Object Storage benar
-var s = app.Services.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
-app.Logger.LogInformation(
-    "ObjectStorage => Endpoint={Endpoint}, SSL={SSL}, Bucket={Bucket}, AccessKey={AK}, SecretKey={SecretKey}",
-    s.Endpoint,
-    s.UseSSL,
-    s.Bucket,
-    s.AccessKey,
-    s.SecretKey
+builder.Services.Configure<SecurityBypassOptions>(
+    builder.Configuration.GetSection("SecurityBypass")
 );
+var app = builder.Build();
 
 // ==================== ENSURE TEMPLATES DIRECTORY EXISTS ====================
 var templatesPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Documents");
-if (!Directory.Exists(templatesPath)) {
+if (!Directory.Exists(templatesPath))
+{
     Directory.CreateDirectory(templatesPath);
-    Console.WriteLine($"✓ Created templates directory: {templatesPath}");
-} else {
-    Console.WriteLine($"✓ Templates directory exists: {templatesPath}");
-
-    // List available templates
-    var templates = Directory.GetFiles(templatesPath, "*.html");
-    if (templates.Length > 0) {
-        Console.WriteLine($"  Found {templates.Length} template(s):");
-        foreach (var template in templates) {
-            Console.WriteLine($"    - {Path.GetFileName(template)}");
-        }
-    } else {
-        Console.WriteLine("  ⚠ No templates found. Please add HTML templates.");
-    }
 }
+
 // ===========================================================================
 
 // Configure the HTTP request pipeline.
@@ -67,36 +44,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseSession();
 app.UseRouting();
-
-app.Use(
-    async (context, next) =>
-    {
-        if (context.Request.Path.StartsWithSegments("/api"))
-        {
-            var authHeader = context.Request.Headers["Authorization"].ToString();
-            Console.WriteLine($"======================================");
-            Console.WriteLine($"[API Request] {context.Request.Method} {context.Request.Path}");
-            Console.WriteLine(
-                $"[Authorization Header] {(string.IsNullOrEmpty(authHeader) ? "MISSING" : $"Present - {authHeader.Substring(0, Math.Min(30, authHeader.Length))}...")}"
-            );
-            Console.WriteLine($"[All Headers]:");
-            foreach (var header in context.Request.Headers)
-            {
-                Console.WriteLine($"  {header.Key}: {header.Value}");
-            }
-        }
-
-        await next();
-
-        if (context.Request.Path.StartsWithSegments("/api"))
-        {
-            Console.WriteLine($"[Response] Status: {context.Response.StatusCode}");
-            Console.WriteLine($"[User Authenticated] {context.User.Identity?.IsAuthenticated}");
-            Console.WriteLine($"[Auth Type] {context.User.Identity?.AuthenticationType ?? "None"}");
-            Console.WriteLine($"======================================");
-        }
-    }
-);
 
 app.UseAuthentication();
 app.UseMiddleware<UserSessionValidationMiddleware>();
@@ -120,13 +67,8 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync();
         await DataSeeder.SeedAsync(services);
-
     }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Terjadi kesalahan saat migrasi atau seeding database.");
-    }
+    catch (Exception ex) { }
 }
 
 app.Run();

@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +15,16 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             IProcurementService procurementService,
             UserManager<User> userManager,
             IProfitLossService profitLossService,
-            IDashboardService dashboardService)
-            : base(procurementService, userManager, profitLossService, dashboardService)
-        {
-        }
+            IDashboardService dashboardService
+        )
+            : base(procurementService, userManager, profitLossService, dashboardService) { }
 
         [HttpGet("")]
         public Task<IActionResult> Index(CancellationToken ct = default) =>
-            RenderDashboardAsync("~/Views/Dashboard/ManagerTransport.cshtml", DashboardRoleHelper.ManagerTransportRole, ct);
+            RenderDashboardAsync(
+                "~/Views/Dashboard/ManagerTransport.cshtml",
+                DashboardRoleHelper.ManagerTransportRole,
+                ct
+            );
     }
 }
