@@ -10,13 +10,11 @@ namespace ProcurementHTE.Web.Controllers.MasterData;
 public class JobTypeDocumentController : Controller
 {
     private readonly AppDbContext _db;
-    private readonly ILogger<JobTypeDocumentController> _logger;
     private const string ActivePageName = "Index Job Type Documents";
 
-    public JobTypeDocumentController(AppDbContext db, ILogger<JobTypeDocumentController> logger)
+    public JobTypeDocumentController(AppDbContext db)
     {
         _db = db;
-        _logger = logger;
     }
 
     public override void OnActionExecuting(
