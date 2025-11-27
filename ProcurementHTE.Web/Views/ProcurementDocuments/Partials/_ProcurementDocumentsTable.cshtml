@@ -1,0 +1,336 @@
+@using System.Linq
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementRequiredDocsVm
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:50px;" class="ps-4">#</th>
+                                <th>Dokumen</th>
+                                <th class="text-center" style="width:360px;">Status</th>
+                                <th class="text-end pe-4" style="width:400px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Items == null || !Model.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-5">
+                                        <i class="bi bi-folder-x fs-1 d-block mb-3 text-secondary"></i>
+                                        <p class="mb-0">No document configuration available</p>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                var rowIndex = 0;
+                                foreach (var item in Model.Items.OrderBy(x => x.Sequence))
+                                {
+                                    rowIndex++;
+                                    var status = !string.IsNullOrWhiteSpace(item.Status)
+                                        ? item.Status
+                                        : (item.Uploaded ? "Uploaded" : (item.IsMandatory ? "Required" : "Optional"));
+
+                                    var isPending = string.Equals(status, "Pending Approval", StringComparison.OrdinalIgnoreCase);
+                                    var isUploaded = item.Uploaded && !isPending;
+
+                                    <tr
+                                        data-doc-id="@item.ProcDocumentId"
+                                        data-row-index="@rowIndex"
+                                        data-doc-title="@item.DocumentTypeName"
+                                        data-uploaded="@item.Uploaded.ToString().ToLowerInvariant()"
+                                        data-mandatory="@item.IsMandatory.ToString().ToLowerInvariant()"
+                                        data-generated="@item.IsGenerated.ToString().ToLowerInvariant()"
+                                        data-upload-required="@item.IsUploadRequired.ToString().ToLowerInvariant()"
+                                        data-requires-approval="@item.RequiresApproval.ToString().ToLowerInvariant()">
+                                        <td class="text-muted ps-4 fw-semibold">@rowIndex</td>
+
+                                        <td>
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="pt-1">
+                                                    @if (isPending)
+                                                    {
+                                                        <i class="bi bi-hourglass-split text-warning fs-4" title="Pending Approval"></i>
+                                                    }
+                                                    else if (item.Uploaded)
+                                                    {
+                                                        <i class="bi bi-file-earmark-check-fill text-success fs-4" title="Uploaded"></i>
+                                                    }
+                                                    else if (item.IsUploadRequired)
+                                                    {
+                                                        <i class="bi bi-file-earmark-medical-fill text-warning fs-4" title="Required"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-file-earmark text-secondary fs-4" title="Optional"></i>
+                                                    }
+                                                </div>
+
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-semibold mb-1">
+                                                        @item.DocumentTypeName
+                                                    </div>
+                                                    <div class="doc-attribute-badges d-flex flex-wrap gap-1 mb-1">
+                                                        @if (item.IsMandatory)
+                                                        {
+                                                            <span class="badge badge-mandatory"><i class="bi bi-exclamation-triangle me-1"></i>Mandatory</span>
+                                                        }
+                                                        @if (item.IsUploadRequired)
+                                                        {
+                                                            <span class="badge badge-upload"><i class="bi bi-upload me-1"></i>Upload</span>
+                                                        }
+                                                        @if (item.IsGenerated)
+                                                        {
+                                                            <span class="badge badge-generated"><i class="bi bi-gear me-1"></i>Generated</span>
+                                                        }
+                                                        @if (item.RequiresApproval)
+                                                        {
+                                                            <span class="badge badge-approval"><i class="bi bi-person-check me-1"></i>Approval</span>
+                                                        }
+                                                        @if (item.Uploaded)
+                                                        {
+                                                            <span class="badge badge-complete"><i class="bi bi-check2 me-1"></i>Uploaded</span>
+                                                        }
+                                                    </div>
+
+                                                    @if (item.Uploaded && !string.IsNullOrEmpty(item.FileName))
+                                                    {
+                                                        <div class="small text-muted mb-1">
+                                                            <i class="bi bi-paperclip me-1"></i>@item.FileName
+                                                            @if (item.Size.HasValue)
+                                                            {
+                                                                var sizeKB = item.Size.Value / 1024.0;
+                                                                var sizeMB = sizeKB / 1024.0;
+                                                                var sizeStr = sizeMB >= 1 ? $"{sizeMB:F2} MB" : $"{sizeKB:F2} KB";
+                                                                <span class="text-muted">&bull; @sizeStr</span>
+                                                            }
+                                                        </div>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(item.Note))
+                                                    {
+                                                        <div class="small text-muted">
+                                                            <i class="bi bi-info-circle me-1"></i>@item.Note
+                                                        </div>
+                                                    }
+
+                                                    @if (isPending && !string.IsNullOrEmpty(item.ProcDocumentId))
+                                                    {
+                                                        <div class="small mt-2" id="next-@item.ProcDocumentId">
+                                                            <span class="badge bg-light text-dark border">
+                                                                <i class="bi bi-person-check me-1"></i>Next approver: <em class="text-muted">&bull;</em>
+                                                            </span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="text-center" data-status-row="@rowIndex">
+                                            @switch (status)
+                                            {
+                                                case "Pending Approval":
+                                                    <span class="badge rounded-pill bg-warning text-dark px-3 py-2">
+                                                        <i class="bi bi-hourglass-split"></i> Pending
+                                                    </span>
+                                                    break;
+                                                case "Uploaded":
+                                                    <span class="badge rounded-pill bg-success bg-opacity-25 text-success px-3 py-2">
+                                                        <i class="bi bi-check-lg"></i> Uploaded
+                                                    </span>
+                                                    break;
+                                                case "Required":
+                                                    <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis px-3 py-2">
+                                                        <i class="bi bi-exclamation-lg"></i> Required
+                                                    </span>
+                                                    break;
+                                                case "Optional":
+                                                    <span class="badge rounded-pill bg-secondary px-3 py-2">Optional</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis px-3 py-2">@status</span>
+                                                    break;
+                                            }
+                                        </td>
+
+                                        <td class="pe-4" data-actions-row="@rowIndex">
+                                            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                                @if (!item.Uploaded && item.IsUploadRequired && !item.IsGenerated)
+                                                {
+                                                    <form class="d-inline-flex gap-2 align-items-center flex-wrap upload-form"
+                                                          asp-controller="ProcurementDocuments"
+                                                          asp-action="Upload"
+                                                          method="post"
+                                                          enctype="multipart/form-data"
+                                                          hx-boost="false"
+                                                          data-row="@rowIndex"
+                                                          data-upload-form="true">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="ProcurementId" value="@Model.ProcurementId" />
+                                                        <input type="hidden" name="DocumentTypeId" value="@item.DocumentTypeId" />
+
+                                                        <div class="upload-input-stack" data-row="@rowIndex">
+                                                            <label class="upload-dropzone mb-1" data-row="@rowIndex" tabindex="0">
+                                                                <div class="d-flex flex-column">
+                                                                    <span class="fw-semibold">
+                                                                        <i class="bi bi-cloud-arrow-up me-1"></i> Drop / Select File (PDF)
+                                                                    </span>
+                                                                    <small class="text-muted">Maksimal 10MB</small>
+                                                                </div>
+                                                                <input class="d-none file-input"
+                                                                       type="file"
+                                                                       name="File"
+                                                                       accept="application/pdf,.pdf"
+                                                                       required
+                                                                       data-row="@rowIndex" />
+                                                            </label>
+                                                            <div class="selected-file small text-muted" data-row="@rowIndex">
+                                                                <i class="bi bi-info-circle me-1"></i>No file selected yet
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="d-flex flex-column">
+                                                            <button class="btn btn-sm btn-primary upload-btn"
+                                                                    type="submit"
+                                                                    disabled
+                                                                    data-row="@rowIndex">
+                                                                <i class="bi bi-upload"></i> Upload
+                                                            </button>
+                                                            <div class="upload-feedback small text-muted mt-1" data-row="@rowIndex"></div>
+                                                        </div>
+                                                    </form>
+                                                }
+
+                                                @if (item.IsGenerated)
+                                                {
+                                    <div>
+                                        <form asp-controller="ProcurementDocuments"
+                                              asp-action="Generate"
+                                              method="post"
+                                              class="d-inline js-generate-form"
+                                              hx-boost="false"
+                                              data-generate-form="true">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                                            <input type="hidden" name="documentTypeId" value="@item.DocumentTypeId" />
+                                            @if (!string.IsNullOrEmpty(item.ProcDocumentId))
+                                            {
+                                                <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
+                                            }
+
+                                            @{
+                                                var disableGenerate = item.RequiresApproval && (string.Equals(status, "Pending Approval", StringComparison.OrdinalIgnoreCase) || string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase));
+                                                var disableReason = disableGenerate ? "Disabled while approval in progress/approved" : string.Empty;
+                                            }
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-success js-generate-btn"
+                                                    @(disableGenerate ? "disabled" : "")
+                                                    title="@(disableReason)">
+                                                <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                                                @(item.Uploaded ? "Regenerate" : "Generate")
+                                            </button>
+                                        </form>
+                                    </div>
+                                                }
+
+                                                @if (isUploaded && !string.IsNullOrEmpty(item.ProcDocumentId))
+                                                {
+                                                    <div>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                data-doc-name="@item.DocumentTypeName"
+                                                                data-file-name="@item.FileName">
+                                                            <i class="bi bi-eye"></i> Preview
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-primary btn-download"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                data-file-name="@item.FileName">
+                                                            <i class="bi bi-download"></i> Download
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-danger btn-delete"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                data-doc-name="@item.DocumentTypeName"
+                                                                data-file-name="@item.FileName"
+                                                                data-procurement-id="@Model.ProcurementId">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                }
+
+                                                @if (isPending && !string.IsNullOrEmpty(item.ProcDocumentId))
+                                                {
+                                                    <div>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                data-doc-name="@item.DocumentTypeName"
+                                                                data-file-name="@item.FileName">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-primary btn-download"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                data-file-name="@item.FileName">
+                                                            <i class="bi bi-download"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-success btn-show-qr"
+                                                                data-doc-id="@item.ProcDocumentId"
+                                                                title="Tampilkan QR Code">
+                                                            <i class="bi bi-qr-code"></i>
+                                                        </button>
+                                                        <a class="btn btn-sm btn-outline-success"
+                                                           asp-controller="ProcurementDocuments"
+                                                           asp-action="DownloadQr"
+                                                           asp-route-id="@item.ProcDocumentId"
+                                                           title="Download QR PNG">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-success btn-print-qr"
+                                                                title="Print QR Code">
+                                                            <i class="bi bi-printer"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-dark btn-timeline"
+                                                            data-doc-id="@item.ProcDocumentId"
+                                                            data-doc-name="@item.DocumentTypeName">
+                                                        <i class="bi bi-diagram-3"></i> Timeline
+                                                    </button>
+                                                }
+
+                                                @if (item.RequiresApproval && item.Uploaded && !isPending && !string.Equals(item.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <form asp-controller="ProcurementDocuments" asp-action="SendApprovalPerDoc" method="post" class="d-inline" hx-boost="false">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
+                                                        <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                                                        <button type="submit" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-send-check me-1"></i> Send Approval
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

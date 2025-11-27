@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ProcurementHTE.Core.Models.DTOs {
-    public class LoginRequestDto {
+namespace ProcurementHTE.Core.Models.DTOs
+{
+    public class LoginRequestDto
+    {
         [Required(ErrorMessage = "Email wajib diisi")]
         [EmailAddress(ErrorMessage = "Format email tidak valid")]
         public string Email { get; set; } = null!;

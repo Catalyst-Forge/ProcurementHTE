@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Owner Estimate - WO {{ProcNum}}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        margin: 20px 25px;
+        font-family: "Calibri", Arial, Helvetica, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      th,
+      td {
+        padding: 0 0.5rem !important;
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="text-center py-3 border border-black border-bottom-0">
+      <h2 class="fw-bold h6">OWNER ESTIMATE</h2>
+    </header>
+
+    <div class="row g-0 pe-3 border border-black border-bottom-0" style="padding-left: 2.5rem">
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">OE No.</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">{{ OeNumber }}</div>
+      </div>
+
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Proyek</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ JobTypeName }}</div>
+      </div>
+
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Dari</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">Transport & Logistics Manager</div>
+      </div>
+
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Tanggal</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ StartDate }}</div>
+      </div>
+
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Kepada</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">SCM Manager</div>
+      </div>
+
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Lokasi</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ ProjectRegion }}</div>
+      </div>
+
+      <div class="col-8 mb-1"></div>
+      <div class="col-4 row g-0 mb-1">
+        <div class="col-6">Pengiriman Tgl. diperlukan</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-5">{{ EndDate }}</div>
+      </div>
+
+      <div class="col-8 row g-0 mb-1">Harap melaksanakan pekerjaan sebagai berikut:</div>
+      <div class="col-4 mb-1"></div>
+
+      <div class="col-12">
+        <p>{{ JobName }}</p>
+      </div>
+    </div>
+
+    <table class="table table-bordered border-black mb-0">
+      <thead>
+        <tr class="text-center">
+          <th style="width: 5%">No</th>
+          <th style="width: 45%">Item</th>
+          <th style="width: 10%">Qty</th>
+          <th style="width: 10%">Satuan</th>
+          <th style="width: 15%">Harga</th>
+          <th style="width: 15%">Harga Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {{ PnlItemsTable }}
+      </tbody>
+
+      <tfoot>
+        <tr>
+          <td colspan="5" class="text-center fw-bold">TOTAL</td>
+          <td class="text-end fw-bold">{{ TotalRevenue }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="ps-5 border border-black border-top-0">
+      Catatan: Reff Penawaran Harga {{ SelectedVendorName }} <br />
+      {{ NoLetter }}
+    </div>
+
+    <div class="ps-5 border border-black border-top-0">
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Periode Pekerjaan</div>
+        <div class="col-1" style="width: 5% !important">:</div>
+        <div class="col-8">{{ StartDate }} s.d {{ EndDate }}</div>
+      </div>
+    </div>
+
+    <div class="ps-5 border border-black border-top-0">
+      <div class="col-8 row g-0 mb-1">
+        <div class="col-3">Terbilang</div>
+        <div class="col-9"><strong>{{ RevenueTerbilang }}</strong></div>
+      </div>
+    </div>
+
+    <div class="border border-black border-top-0">&ThinSpace;</div>
+
+    <div class="border border-black border-top-0 text-center row g-0">
+      <div class="col-6">Diajukan oleh</div>
+      <div class="col-6">Disetujui oleh</div>
+    </div>
+
+    <div class="border border-black border-top-0 text-center row g-0" style="height: 7rem">
+      <div class="col-6">Assistant Manager</div>
+      <div class="col-6">Transport & Logistic Manager</div>
+    </div>
+
+    <div class="border border-black border-top-0 text-center row g-0">
+      <div class="col-6">{{ AsstManagerUserId }}</div>
+      <div class="col-6">{{ ManagerUserId }}</div>
+    </div>
+  </body>
+</html>

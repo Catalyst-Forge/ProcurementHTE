@@ -3,12 +3,12 @@
     public sealed class ApprovalUpdateResult
     {
         public bool Ok { get; set; }
-        public string? Reason { get; set; }     // NotYourTurn | Blocked | InvalidGateConfig | NoEligibleApprover | AlreadyFinalized | QrNotFound | ApprovalNotFound | InvalidAction | Error
+        public string? Reason { get; set; } // NotYourTurn | Blocked | InvalidGateConfig | NoEligibleApprover | AlreadyFinalized | QrNotFound | ApprovalNotFound | InvalidAction | Error
         public string? Message { get; set; }
-        public string? Action { get; set; }     // "approve" | "reject"
+        public string? Action { get; set; } // "approve" | "reject"
         public string? ApprovalId { get; set; }
-        public string? WorkOrderId { get; set; }
-        public string? WoDocumentId { get; set; }
+        public string? ProcurementId { get; set; }
+        public string? ProcDocumentId { get; set; }
         public string? DocStatus { get; set; }
         public int? CurrentGateLevel { get; set; }
         public int? CurrentGateSequence { get; set; }
@@ -27,7 +27,6 @@
         public string? RejectedByFullName { get; set; }
         public DateTime? RejectedAt { get; set; }
         public string? RejectNote { get; set; }
-
 
         public DateTime? When { get; set; }
     }

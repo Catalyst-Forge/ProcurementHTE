@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -10,15 +10,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class ApprovalRepository : IApprovalRepository
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<ApprovalRepository> _logger;
 
-        public ApprovalRepository(AppDbContext context, ILogger<ApprovalRepository> logger)
+        public ApprovalRepository(AppDbContext context)
         {
             _context = context;
-            _logger = logger;
         }
 
-        public async Task<IReadOnlyList<WoDocumentApprovals>> GetPendingApprovalsForUserAsync(
+        public async Task<IReadOnlyList<ProcDocumentApprovals>> GetPendingApprovalsForUserAsync(
             User user
         )
         {
@@ -28,43 +26,48 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
 
             return await _context
-                .WoDocumentApprovals.Include(a => a.WoDocument)
+                .ProcDocumentApprovals.Include(a => a.ProcDocument)
                 .ThenInclude(d => d.DocumentType)
-                .Include(a => a.WorkOrder)
+                .Include(a => a.Procurement)
                 .Include(a => a.Role)
-                .Where(a => a.Status == "Pending" && roles.Contains(a.RoleId))
+                .Include(a => a.AssignedApprover)
+                .Where(a =>
+                    a.Status == "Pending"
+                    && roles.Contains(a.RoleId)
+                    && (a.AssignedApproverId == null || a.AssignedApproverId == user.Id)
+                )
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<(bool AllDocsApproved, string WorkOrderId)> ApproveAsync(
+        public async Task<(bool AllDocsApproved, string ProcurementId)> ApproveAsync(
             string approvalId,
             string approverUserId
         )
         {
-            // Load lengkap: WoDocument + Approvals + WorkOrder
+            // Load lengkap: ProcDocument + Approvals + Procurement
             var approval = await _context
-                .WoDocumentApprovals.Include(a => a.WoDocument)!
+                .ProcDocumentApprovals.Include(a => a.ProcDocument)!
                 .ThenInclude(d => d.Approvals)
-                .Include(a => a.WoDocument)!
-                .ThenInclude(d => d.WorkOrder)
-                .FirstOrDefaultAsync(a => a.WoDocumentApprovalId == approvalId);
+                .Include(a => a.ProcDocument)!
+                .ThenInclude(d => d.Procurement)
+                .FirstOrDefaultAsync(a => a.ProcDocumentApprovalId == approvalId);
 
             if (approval == null)
                 throw new InvalidOperationException("Approval tidak ditemukan.");
 
-            var woEntity =
-                approval.WoDocument?.WorkOrder
-                ?? throw new InvalidOperationException("Work Order tidak ditemukan.");
-            var woId = woEntity.WorkOrderId;
+            var ProcurementEntity =
+                approval.ProcDocument?.Procurement
+                ?? throw new InvalidOperationException("Procurement Order tidak ditemukan.");
+            var ProcurementId = ProcurementEntity.ProcurementId;
 
             // Idempotent: kalau sudah final, anggap OK tetapi tidak memajukan apa pun
             if (approval.Status is "Approved" or "Rejected")
-                return (false, woId);
+                return (false, ProcurementId);
 
             // Harus ada pending di dokumen ini
             var docEntity =
-                approval.WoDocument
+                approval.ProcDocument
                 ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
             var pendings = (docEntity.Approvals ?? []).Where(a => a.Status == "Pending").ToList();
             if (pendings.Count == 0)
@@ -88,38 +91,31 @@ namespace ProcurementHTE.Infrastructure.Repositories
             const decimal ThresholdVP = 500_000_000m;
             var pnl = await _context
                 .ProfitLosses.AsNoTracking()
-                .Where(p => p.WorkOrderId == woId)
+                .Where(p => p.ProcurementId == ProcurementId)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync();
             var totalOffer = pnl?.SelectedVendorFinalOffer ?? 0m;
             var needVP = totalOffer > ThresholdVP;
-
-            _logger.LogInformation(
-                "[Approve] WO={WO}, TotalOffer={TotalOffer:N0}, NeedVP={NeedVP}",
-                woEntity.WoNum,
-                totalOffer,
-                needVP
-            );
 
             // 1) Set current approved
             approval.Status = "Approved";
             approval.ApproverId = approverUserId;
             approval.ApprovedAt = DateTime.UtcNow;
 
-            var docId = approval.WoDocumentId;
+            var docId = approval.ProcDocumentId;
             var currentLevel = approval.Level;
             var currentSeq = approval.SequenceOrder;
 
             // 2) Ambil semua step untuk dokumen ini (tracking aktif)
             var all = await _context
-                .WoDocumentApprovals.Where(a => a.WoDocumentId == docId)
+                .ProcDocumentApprovals.Where(a => a.ProcDocumentId == docId)
                 .ToListAsync();
 
             // Jika ada yang Rejected sebelumnya, hentikan (dok sudah mental)
             if (all.Any(x => x.Status == "Rejected"))
             {
                 await _context.SaveChangesAsync();
-                return (false, woId);
+                return (false, ProcurementId);
             }
 
             // 3) Apakah masih ada sequence berikutnya pada level yang sama?
@@ -132,7 +128,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             if (nextSeqOnSameLevel != 0) // ada sequence berikutnya
             {
-                // ✅ Promote SEMUA step pada sequence berikutnya menjadi Pending
+                // ? Promote SEMUA step pada sequence berikutnya menjadi Pending
                 foreach (
                     var step in all.Where(x =>
                         x.Level == currentLevel
@@ -143,7 +139,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     step.Status = "Pending";
 
                 await _context.SaveChangesAsync();
-                return (false, woId);
+                return (false, ProcurementId);
             }
 
             // 4) Kalau semua step pada level saat ini sudah approved, buka level berikutnya (first sequence)
@@ -163,7 +159,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         .Select(x => x.SequenceOrder)
                         .Min();
 
-                    // ✅ Promote SEMUA step pada first sequence di level berikutnya
+                    // ? Promote SEMUA step pada first sequence di level berikutnya
                     foreach (
                         var step in all.Where(x =>
                             x.Level == nextLevel
@@ -174,16 +170,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         step.Status = "Pending";
 
                     await _context.SaveChangesAsync();
-                    return (false, woId);
+                    return (false, ProcurementId);
                 }
             }
 
-            // 5) Tidak ada next sequence/level → cek apakah semua approval dok ini sudah Approved
+            // 5) Tidak ada next sequence/level ? cek apakah semua approval dok ini sudah Approved
             bool thisDocAllApproved = all.All(x => x.Status == "Approved");
             if (thisDocAllApproved)
             {
-                var docForUpdate = await _context.WoDocuments.FirstAsync(d =>
-                    d.WoDocumentId == docId
+                var docForUpdate = await _context.ProcDocuments.FirstAsync(d =>
+                    d.ProcDocumentId == docId
                 );
                 docForUpdate.IsApproved = true;
                 docForUpdate.ApprovedAt = DateTime.UtcNow;
@@ -192,22 +188,22 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
             }
 
-            // 6) Apakah SEMUA dokumen pada WO ini sudah approved?
+            // 6) Apakah SEMUA dokumen pada Procurement ini sudah approved?
             bool allDocsApproved = await _context
-                .WoDocumentApprovals.Include(a => a.WoDocument)
-                .Where(a => a.WoDocument!.WorkOrderId == woId)
+                .ProcDocumentApprovals.Include(a => a.ProcDocument)
+                .Where(a => a.ProcDocument!.ProcurementId == ProcurementId)
                 .AllAsync(a => a.Status == "Approved");
 
-            return (allDocsApproved, woId);
+            return (allDocsApproved, ProcurementId);
         }
 
         public async Task RejectAsync(string approvalId, string approverUserId, string? note)
         {
             var approval =
                 await _context
-                    .WoDocumentApprovals.Include(a => a.WoDocument)
-                    .ThenInclude(d => d.WorkOrder)
-                    .FirstOrDefaultAsync(a => a.WoDocumentApprovalId == approvalId)
+                    .ProcDocumentApprovals.Include(a => a.ProcDocument)
+                    .ThenInclude(d => d.Procurement)
+                    .FirstOrDefaultAsync(a => a.ProcDocumentApprovalId == approvalId)
                 ?? throw new InvalidOperationException("Approval tidak ditemukan.");
 
             approval.Status = "Rejected";
@@ -215,8 +211,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             approval.ApprovedAt = DateTime.UtcNow;
             approval.Note = note;
 
-            var doc = await _context.WoDocuments.FirstAsync(d =>
-                d.WoDocumentId == approval.WoDocumentId
+            var doc = await _context.ProcDocuments.FirstAsync(d =>
+                d.ProcDocumentId == approval.ProcDocumentId
             );
             doc.Status = "Rejected";
             doc.IsApproved = false;
@@ -229,38 +225,43 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            // QrText diindeks di WoDocuments, jadi query ini efisien
+            // QrText diindeks di ProcDocuments, jadi query ini efisien
             var doc = await _context
-                .WoDocuments.Include(d => d.Approvals)!
+                .ProcDocuments.Include(d => d.Approvals)!
                 .ThenInclude(a => a.Role)
+                .Include(d => d.Approvals)!
+                .ThenInclude(a => a.AssignedApprover)
                 .FirstOrDefaultAsync(d => d.QrText == qrText, ct);
 
             return BuildGate(doc);
         }
 
         public async Task<GateInfoDto?> GetCurrentPendingGateByApprovalIdAsync(
-            string woDocumentApprovalId,
+            string procDocumentApprovalId,
             CancellationToken ct = default
         )
         {
             var approval = await _context
-                .WoDocumentApprovals.Include(a => a.WoDocument)!
+                .ProcDocumentApprovals.Include(a => a.ProcDocument)!
                 .ThenInclude(d => d.Approvals)!
                 .ThenInclude(a => a.Role)
-                .FirstOrDefaultAsync(a => a.WoDocumentApprovalId == woDocumentApprovalId, ct);
+                .Include(a => a.ProcDocument)!
+                .ThenInclude(d => d.Approvals)!
+                .ThenInclude(a => a.AssignedApprover)
+                .FirstOrDefaultAsync(a => a.ProcDocumentApprovalId == procDocumentApprovalId, ct);
 
-            return BuildGate(approval?.WoDocument);
+            return BuildGate(approval?.ProcDocument);
         }
 
-        private static GateInfoDto? BuildGate(WoDocuments? doc)
+        private static GateInfoDto? BuildGate(ProcDocuments? doc)
         {
             if (doc == null)
                 return null;
 
             var gate = new GateInfoDto
             {
-                WorkOrderId = doc.WorkOrderId,
-                WoDocumentId = doc.WoDocumentId,
+                ProcurementId = doc.ProcurementId,
+                ProcDocumentId = doc.ProcDocumentId,
                 DocStatus = doc.Status,
             };
 
@@ -280,10 +281,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         a.Status == "Pending" && a.Level == minLevel && a.SequenceOrder == minSeq
                     )
                     .Select(a => new RoleInfoDto
-                    { // <— dari Core.DTOs
+                    { // < dari Core.DTOs
                         RoleId = a.RoleId,
                         RoleName = a.Role?.Name,
-                        WoDocumentApprovalId = a.WoDocumentApprovalId,
+                        ProcDocumentApprovalId = a.ProcDocumentApprovalId,
+                        ApproverId = a.AssignedApproverId,
+                        ApproverFullName =
+                            a.AssignedApprover != null
+                                ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
+                                : null,
                     }),
             ];
 
@@ -291,8 +297,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
         }
 
         public async Task AddStepIfMissingAsync(
-            string woDocumentId,
-            string workOrderId,
+            string procDocumentId,
+            string procurementId,
             int level,
             int sequenceOrder,
             string roleId,
@@ -301,10 +307,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             // Cek dulu apakah step ini sudah ada (idempotent)
             var exists = await _context
-                .WoDocumentApprovals.AsNoTracking()
+                .ProcDocumentApprovals.AsNoTracking()
                 .AnyAsync(
                     a =>
-                        a.WoDocumentId == woDocumentId
+                        a.ProcDocumentId == procDocumentId
                         && a.Level == level
                         && a.SequenceOrder == sequenceOrder,
                     ct
@@ -313,14 +319,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             if (exists)
                 return;
 
-            // Insert step baru (step pertama → Pending, sisanya → Blocked)
+            // Insert step baru (step pertama ? Pending, sisanya ? Blocked)
             var status = (level == 1 && sequenceOrder == 1) ? "Pending" : "Blocked";
 
-            _context.WoDocumentApprovals.Add(
-                new WoDocumentApprovals
+            _context.ProcDocumentApprovals.Add(
+                new ProcDocumentApprovals
                 {
-                    WoDocumentId = woDocumentId,
-                    WorkOrderId = workOrderId, // kalau kamu putuskan menghapus kolom ini nanti, cukup hilangkan baris ini
+                    ProcDocumentId = procDocumentId,
+                    ProcurementId = procurementId, // kalau kamu putuskan menghapus kolom ini nanti, cukup hilangkan baris ini
                     Level = level,
                     SequenceOrder = sequenceOrder,
                     RoleId = roleId,
@@ -364,16 +370,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return roleIds.Where(id => !string.IsNullOrWhiteSpace(id)).ToList();
         }
 
-        public async Task<WoDocumentApprovals?> GetLastApprovalByUserOnDocumentAsync(
+        public async Task<ProcDocumentApprovals?> GetLastApprovalByUserOnDocumentAsync(
             string userId,
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         )
         {
             return await _context
-                .WoDocumentApprovals.AsNoTracking()
+                .ProcDocumentApprovals.AsNoTracking()
                 .Where(a =>
-                    a.WoDocumentId == woDocumentId
+                    a.ProcDocumentId == procDocumentId
                     && a.ApproverId == userId
                     && a.Status == "Approved"
                 )
@@ -386,14 +392,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            var ids = (roleIds ?? Enumerable.Empty<string>())
+            var ids = (roleIds ?? [])
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(s => s.Trim())
                 .Distinct()
                 .ToList();
 
             if (ids.Count == 0)
-                return Array.Empty<string>();
+                return [];
 
             var exist = await _context
                 .Roles.AsNoTracking()
@@ -409,14 +415,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            var names = (roleNames ?? Enumerable.Empty<string>())
+            var names = (roleNames ?? [])
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(s => s.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             if (names.Count == 0)
-                return Array.Empty<string>();
+                return [];
 
             var upper = names.Select(n => n.ToUpperInvariant()).ToList();
 
@@ -470,24 +476,30 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         // Di ApprovalRepository
         public async Task<IReadOnlyList<ApprovalStepDto>> GetDocumentApprovalChainAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct
         )
         {
             return await _context
-                .WoDocumentApprovals.Where(x => x.WoDocumentId == woDocumentId)
+                .ProcDocumentApprovals.Where(x => x.ProcDocumentId == procDocumentId)
                 .Include(x => x.Role)
+                .Include(x => x.AssignedApprover)
                 .Include(x => x.Approver) // supaya full name bisa diambil
                 .OrderBy(x => x.Level)
                 .ThenBy(x => x.SequenceOrder)
                 .Select(x => new ApprovalStepDto
                 {
-                    WoDocumentApprovalId = x.WoDocumentApprovalId,
+                    ProcDocumentApprovalId = x.ProcDocumentApprovalId,
                     Level = x.Level,
                     SequenceOrder = x.SequenceOrder,
                     RoleId = x.RoleId,
                     RoleName = x.Role.Name,
-                    Status = x.Status, // <— PENTING
+                    Status = x.Status, // < PENTING
+                    AssignedApproverUserId = x.AssignedApproverId,
+                    AssignedApproverFullName =
+                        x.AssignedApprover != null
+                            ? (x.AssignedApprover.FullName ?? x.AssignedApprover.UserName)
+                            : null,
                     ApproverUserId = x.ApproverId,
                     ApproverFullName =
                         x.Approver != null ? (x.Approver.FullName ?? x.Approver.UserName) : null,
@@ -499,17 +511,17 @@ namespace ProcurementHTE.Infrastructure.Repositories
         }
 
         public async Task<GateInfoDto?> GetCurrentPendingGateByDocumentIdAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         )
         {
             var doc = await _context
-                .WoDocuments.AsNoTracking()
-                .Where(d => d.WoDocumentId == woDocumentId)
+                .ProcDocuments.AsNoTracking()
+                .Where(d => d.ProcDocumentId == procDocumentId)
                 .Select(d => new
                 {
-                    d.WoDocumentId,
-                    d.WorkOrderId,
+                    d.ProcDocumentId,
+                    d.ProcurementId,
                     d.Status,
                 })
                 .FirstOrDefaultAsync(ct);
@@ -519,23 +531,24 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             // Ambil approvals untuk dokumen ini
             var approvals = await _context
-                .WoDocumentApprovals.AsNoTracking()
+                .ProcDocumentApprovals.AsNoTracking()
                 .Include(a => a.Role)
-                .Where(a => a.WoDocumentId == woDocumentId)
+                .Include(a => a.AssignedApprover)
+                .Where(a => a.ProcDocumentId == procDocumentId)
                 .ToListAsync(ct);
 
-            // Kalau tidak ada Pending sama sekali ⇒ finalized
+            // Kalau tidak ada Pending sama sekali ? finalized
             var pendings = approvals.Where(a => a.Status == "Pending").ToList();
             if (pendings.Count == 0)
             {
                 return new GateInfoDto
                 {
-                    WorkOrderId = doc.WorkOrderId,
-                    WoDocumentId = doc.WoDocumentId,
+                    ProcurementId = doc.ProcurementId,
+                    ProcDocumentId = doc.ProcDocumentId,
                     DocStatus = doc.Status,
                     Level = null,
                     SequenceOrder = null,
-                    RequiredRoles = new List<RoleInfoDto>(), // kosong ⇒ AlreadyFinalized
+                    RequiredRoles = [], // kosong ? AlreadyFinalized
                 };
             }
 
@@ -549,16 +562,21 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 {
                     RoleId = a.RoleId,
                     RoleName = a.Role != null ? a.Role.Name : null,
-                    WoDocumentApprovalId = a.WoDocumentApprovalId,
+                    ProcDocumentApprovalId = a.ProcDocumentApprovalId,
                     Level = a.Level,
                     SequenceOrder = a.SequenceOrder,
+                    ApproverId = a.AssignedApproverId,
+                    ApproverFullName =
+                        a.AssignedApprover != null
+                            ? (a.AssignedApprover.FullName ?? a.AssignedApprover.UserName)
+                            : null,
                 })
                 .ToList();
 
             return new GateInfoDto
             {
-                WorkOrderId = doc.WorkOrderId,
-                WoDocumentId = doc.WoDocumentId,
+                ProcurementId = doc.ProcurementId,
+                ProcDocumentId = doc.ProcDocumentId,
                 DocStatus = doc.Status,
                 Level = minLevel,
                 SequenceOrder = minSeq,
@@ -567,18 +585,18 @@ namespace ProcurementHTE.Infrastructure.Repositories
         }
 
         public async Task<RejectionInfoDto?> GetLastRejectionInfoAsync(
-            string woDocumentId,
+            string procDocumentId,
             CancellationToken ct = default
         )
         {
             return await _context
-                .WoDocumentApprovals.AsNoTracking()
+                .ProcDocumentApprovals.AsNoTracking()
                 .Include(a => a.Approver) // ambil nama user
-                .Where(a => a.WoDocumentId == woDocumentId && a.Status == "Rejected")
+                .Where(a => a.ProcDocumentId == procDocumentId && a.Status == "Rejected")
                 .OrderByDescending(a => a.ApprovedAt) // waktu penolakan disimpan di ApprovedAt
                 .Select(a => new RejectionInfoDto
                 {
-                    WoDocumentApprovalId = a.WoDocumentApprovalId,
+                    ProcDocumentApprovalId = a.ProcDocumentApprovalId,
                     RejectedByUserId = a.ApproverId,
                     RejectedByUserName = a.Approver != null ? a.Approver.UserName : null,
                     RejectedByFullName = a.Approver != null ? a.Approver.FullName : null,

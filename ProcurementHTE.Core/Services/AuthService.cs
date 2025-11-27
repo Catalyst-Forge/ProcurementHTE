@@ -3,8 +3,10 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 
-namespace ProcurementHTE.Core.Services {
-    public class AuthService : IAuthService {
+namespace ProcurementHTE.Core.Services
+{
+    public class AuthService : IAuthService
+    {
         private readonly IUserRepository _users;
         private readonly IRefreshTokenRepository _refreshTokens;
         private readonly IJwtTokenService _jwt;
@@ -18,7 +20,9 @@ namespace ProcurementHTE.Core.Services {
             IJwtTokenService jwt,
             UserManager<User> userManager,
             int accessTokenMinutes = 60,
-            int refreshTokenDays = 14) {
+            int refreshTokenDays = 14
+        )
+        {
             _users = users;
             _refreshTokens = refreshTokens;
             _jwt = jwt;
@@ -27,9 +31,15 @@ namespace ProcurementHTE.Core.Services {
             _refreshDays = refreshTokenDays;
         }
 
-        public async Task<TokenResponseDto> LoginAsync(LoginRequestDto dto, string? ip, CancellationToken ct = default) {
-            var user = await _users.FindByEmailAsync(dto.Email, ct)
-                       ?? throw new UnauthorizedAccessException("Username atau password salah.");
+        public async Task<TokenResponseDto> LoginAsync(
+            LoginRequestDto dto,
+            string? ip,
+            CancellationToken ct = default
+        )
+        {
+            var user =
+                await _users.FindByEmailAsync(dto.Email, ct)
+                ?? throw new UnauthorizedAccessException("Username atau password salah.");
 
             if (!await _users.CheckPasswordAsync(user, dto.Password))
                 throw new UnauthorizedAccessException("Username atau password salah.");
@@ -43,12 +53,13 @@ namespace ProcurementHTE.Core.Services {
             var access = await _jwt.GenerateTokenAsync(user);
             var expires = DateTime.Now.AddMinutes(_accessMinutes);
 
-            var refresh = new RefreshToken {
+            var refresh = new RefreshToken
+            {
                 UserId = user.Id.ToString(),
                 Token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
                 DeviceId = dto.DeviceId,
                 ExpiresAt = DateTime.Now.AddDays(_refreshDays),
-                IpAddress = ip
+                IpAddress = ip,
             };
             await _refreshTokens.AddAsync(refresh, ct);
             await _refreshTokens.SaveAsync(ct);
@@ -56,9 +67,14 @@ namespace ProcurementHTE.Core.Services {
             return new TokenResponseDto(access, expires, refresh.Token, refresh.ExpiresAt);
         }
 
-        public async Task<TokenResponseDto> RefreshAsync(RefreshRequestDto dto, CancellationToken ct = default) {
-            var rt = await _refreshTokens.FindByTokenAsync(dto.RefreshToken, ct)
-                     ?? throw new UnauthorizedAccessException("Refresh token tidak valid.");
+        public async Task<TokenResponseDto> RefreshAsync(
+            RefreshRequestDto dto,
+            CancellationToken ct = default
+        )
+        {
+            var rt =
+                await _refreshTokens.FindByTokenAsync(dto.RefreshToken, ct)
+                ?? throw new UnauthorizedAccessException("Refresh token tidak valid.");
 
             if (rt.ExpiresAt <= DateTime.Now)
                 throw new UnauthorizedAccessException("Refresh token kedaluwarsa.");
@@ -66,17 +82,19 @@ namespace ProcurementHTE.Core.Services {
             if (!string.IsNullOrEmpty(dto.DeviceId) && rt.DeviceId != dto.DeviceId)
                 throw new UnauthorizedAccessException("Refresh token tidak cocok dengan device.");
 
-            var user = await _userManager.FindByIdAsync(rt.UserId)
-                       ?? throw new UnauthorizedAccessException("User tidak ditemukan.");
+            var user =
+                await _userManager.FindByIdAsync(rt.UserId)
+                ?? throw new UnauthorizedAccessException("User tidak ditemukan.");
 
             // Hapus token lama (rotation by hard delete)
             await _refreshTokens.DeleteByTokenAsync(rt.Token, ct);
 
-            var newRt = new RefreshToken {
+            var newRt = new RefreshToken
+            {
                 UserId = rt.UserId,
                 Token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
                 DeviceId = rt.DeviceId,
-                ExpiresAt = DateTime.Now.AddDays(_refreshDays)
+                ExpiresAt = DateTime.Now.AddDays(_refreshDays),
             };
             await _refreshTokens.AddAsync(newRt, ct);
             await _refreshTokens.SaveAsync(ct);
@@ -87,18 +105,26 @@ namespace ProcurementHTE.Core.Services {
             return new TokenResponseDto(access, exp, newRt.Token, newRt.ExpiresAt);
         }
 
-
-        public async Task LogoutAsync(LogoutRequestDto dto, string userIdFromContext, CancellationToken ct = default) {
-            if (dto.RevokeAllForDevice) {
+        public async Task LogoutAsync(
+            LogoutRequestDto dto,
+            string userIdFromContext,
+            CancellationToken ct = default
+        )
+        {
+            if (dto.RevokeAllForDevice)
+            {
                 if (string.IsNullOrWhiteSpace(dto.DeviceId))
-                    throw new ArgumentException("DeviceId wajib diisi saat RevokeAllForDevice=true");
+                    throw new ArgumentException(
+                        "DeviceId wajib diisi saat RevokeAllForDevice=true"
+                    );
 
                 await _refreshTokens.DeleteAllForDeviceAsync(userIdFromContext, dto.DeviceId, ct);
                 await _refreshTokens.SaveAsync(ct);
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.RefreshToken)) {
+            if (!string.IsNullOrWhiteSpace(dto.RefreshToken))
+            {
                 // optional keamanan: pastikan token memang milik user
                 var rt = await _refreshTokens.FindByTokenAsync(dto.RefreshToken, ct);
                 if (rt is null || rt.UserId != userIdFromContext)
@@ -109,11 +135,27 @@ namespace ProcurementHTE.Core.Services {
             }
         }
 
-
-        public async Task<ProfileResponseDto> GetProfileAsync(string userId, CancellationToken ct = default) {
-            var user = await _users.GetByIdAsync(userId, ct) ?? throw new UnauthorizedAccessException();
+        public async Task<ProfileResponseDto> GetProfileAsync(
+            string userId,
+            CancellationToken ct = default
+        )
+        {
+            var user =
+                await _users.GetByIdAsync(userId, ct) ?? throw new UnauthorizedAccessException();
             var roles = await _users.GetRolesAsync(user);
-            return new ProfileResponseDto(user.Id.ToString(), user.UserName!, user.FullName, user.Email!, user.FirstName, user.LastName, user.PhoneNumber, user.CreatedAt, user.UpdatedAt, user.LastLoginAt, roles.ToArray());
+            return new ProfileResponseDto(
+                user.Id.ToString(),
+                user.UserName!,
+                user.FullName,
+                user.Email!,
+                user.FirstName,
+                user.LastName,
+                user.PhoneNumber,
+                user.CreatedAt,
+                user.UpdatedAt,
+                user.LastLoginAt,
+                roles.ToArray()
+            );
         }
     }
 }

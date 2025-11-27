@@ -1,0 +1,74 @@
+@model ProcurementHTE.Core.Models.Procurement
+
+@{
+    ViewData["Title"] = "Delete Procurement";
+}
+
+<section class="card shadow-sm">
+    <div class="card-body">
+        <header class="mb-3">
+            <h1 class="h4 text-danger mb-1">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">
+                Are you sure you want to delete procurement <strong>@Model.Wonum</strong>?
+            </p>
+        </header>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Job Name</dt>
+                    <dd class="fw-semibold">@Model.JobName</dd>
+                </dl>
+            </div>
+            <div class="col-md-3">
+                <dl class="mb-0">
+                    <dt class="text-secondary">WO Number</dt>
+                    <dd class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.Wonum) ? Model.Wonum : "-")</dd>
+                </dl>
+            </div>
+            <div class="col-md-3">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Status</dt>
+                    <dd class="fw-semibold">@Model.Status?.StatusName ?? "-"</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Job Type</dt>
+                    <dd class="fw-semibold">@Model.JobType?.TypeName ?? "-"</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Project Region</dt>
+                    <dd class="fw-semibold">@Model.ProjectRegion</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Created At</dt>
+                    <dd class="fw-semibold">@Model.CreatedAt.ToString("d MMM yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>This action cannot be undone.</span>
+        </div>
+
+        <form asp-action="Delete" method="post" class="d-flex gap-2 js-loading-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.ProcurementId" />
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash-fill me-1"></i> Delete
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Cancel
+            </a>
+        </form>
+    </div>
+</section>

@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Memorandum - WO {{ProcNum}}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        margin: 20px 25px;
+        font-family: Calibri, Arial, Helvetica, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .page {
+        padding: 2cm;
+        page-break-after: always;
+      }
+
+      .page:last-of-type {
+        page-break-after: auto;
+      }
+
+      .memobody {
+        margin-top: 10px;
+        text-align: justify;
+      }
+
+      .sign {
+        margin-top: 30px;
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="mt-5">
+        <h1 class="fw-semibold text-uppercase h4">MEMORANDUM</h1>
+        <p>Jakarta, {{ StartDate }}</p>
+      </header>
+
+      <table>
+        <tr>
+          <td style="width: 5rem">No.</td>
+          <td>:</td>
+          <td>2416/PDC-1110/2025-S0</td>
+        </tr>
+        <tr>
+          <td>Kepada</td>
+          <td>:</td>
+          <td>SCM Manager</td>
+        </tr>
+        <tr>
+          <td>Dari</td>
+          <td>:</td>
+          <td>Transport & Logistic Manager</td>
+        </tr>
+        <tr>
+          <td>Perihal</td>
+          <td>:</td>
+          <td>Pengadaan Jasa {{ JobName }}</td>
+        </tr>
+      </table>
+
+      <div class="memobody">
+        <p class="mb-0">
+          Sehubungan dengan rencana pelaksanaan pekerjaan {{ JobName }}, bersama ini kami sampaikan dokumen-dokumen
+          pengadaan untuk dapat dipertimbangkan proses pengadaannya dengan rincian sebagai berikut:
+        </p>
+
+        <ol class="mb-0">
+          <li>Owner Estimate (OE)</li>
+          <li>Bill of Quantity (BoQ)</li>
+          <li>Purchase Requisition (PR)</li>
+          <li>Penilaian Risiko Pekerjaan/Risk Assessment (RA)</li>
+          <li>Rencana Kerja &amp; Syarat-syarat (RKS)</li>
+          <li>Referensi Penawaran Harga</li>
+        </ol>
+
+        <p>
+          Adapun {{ SelectedVendorName }} diusulkan sebagai penyedia jasa, mengingat perusahaan tersebut telah
+          berpengalaman dalam pekerjaan serupa dan menyampaikan penawaran harga terendah.
+        </p>
+
+        <p>Demikian memo ini kami sampaikan. Atas perhatian dan kerjasama, kami ucapkan terima kasih.</p>
+      </div>
+
+      <div class="sign text-right">
+        <div>Transport &amp; Logistic Manager,</div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <div class="fw-bold">Arfinal Diputra</div>
+        <div>Tembusan</div>
+        <ol>
+          <li>VP Operasi &amp; Support</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="page">
+      <header class="mt-5">
+        <h1 class="fw-semibold text-uppercase h4">MEMORANDUM</h1>
+        <p>Jakarta,</p>
+      </header>
+
+      <table>
+        <tr>
+          <td style="width: 5rem">Nomor</td>
+          <td>:</td>
+          <td><span class="invisible">9999999</span>/PDC-1110/2025-S0</td>
+        </tr>
+        <tr>
+          <td>Kepada</td>
+          <td>:</td>
+          <td>SCM Manager</td>
+        </tr>
+        <tr>
+          <td>Dari</td>
+          <td>:</td>
+          <td>Transport & Logistic Manager</td>
+        </tr>
+        <tr>
+          <td>Perihal</td>
+          <td>:</td>
+          <td>Kelengkapan Dokumen Pengadaan - Purchase Requisition (PR)</td>
+        </tr>
+      </table>
+
+      <div class="memobody">
+        <p>
+          Dengan ini kami sampaikan bahwa sehubungan dengan implementasi Modul MMNH di PT Patra Drilling Contractor,
+          seluruh unit bisnis diwajibkan untuk melampirkan <strong>Purchase Requisition (PR)</strong> sebagai salah satu
+          dokumen pendukung dalam proses pengadaan. <br /><br />
+          Sehubungan dengan hal tersebut, kami lampirkan <strong>dokumen PR</strong> guna melengkapi dokumen pengadaan
+          sebagaimana dimaksud dalam <strong>Memo No. <span class="invisible">99999</span>/PDC-1110/2025-S0</strong>,
+          serta turut kami lampirkan <strong>justifikasi keterlambatan PR</strong> yang bersangkutan.
+        </p>
+
+        <p>Demikian disampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+      </div>
+
+      <div class="sign text-right">
+        <div>Transport &amp; Logistic Manager,</div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <div class="fw-bold">Arfinal Diputra</div>
+        <div>Tembusan</div>
+        <ol>
+          <li>VP Operasi &amp; Support</li>
+        </ol>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementDocumentStatsViewModel
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-12">
+                        <div class="row text-center g-3">
+                            <div class="col-4">
+                                <div class="p-3 bg-success-subtle rounded">
+                                    <div class="fs-3 fw-bold text-success" id="completedCount">@Model.CompletedDocs</div>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-warning-subtle rounded">
+                                    <div class="fs-3 fw-bold text-warning-emphasis" id="remainingCount">@Model.RemainingDocs</div>
+                                    <small class="text-muted">Remaining</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-warning-subtle rounded">
+                                    <div class="fs-3 fw-bold text-warning-emphasis">@Model.GeneratedDocs</div>
+                                    <small class="text-muted">Generated</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-warning-subtle rounded">
+                                    <div class="fs-3 fw-bold text-warning-emphasis">@Model.MandatoryDocs</div>
+                                    <small class="text-muted">Mandatory</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-warning-subtle rounded">
+                                    <div class="fs-3 fw-bold text-warning-emphasis">@Model.ApprovalDocs</div>
+                                    <small class="text-muted">Approvals</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-info-subtle rounded">
+                                    <div class="fs-3 fw-bold text-info">@Model.TotalDocs</div>
+                                    <small class="text-muted">Total</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

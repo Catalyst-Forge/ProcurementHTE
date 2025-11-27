@@ -1,0 +1,349 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementEditViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using ProcurementHTE.Core.Models
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@{
+    ViewData["Title"] = "Edit Procurement";
+
+    Model.Details ??= new List<ProcDetail>();
+    Model.Offers ??= new List<ProcOffer>();
+
+    var jobTypeName = ViewBag.SelectedJobTypeName as string ?? "Other";
+
+    var contractTypeOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ContractType>();
+    var projectRegionOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProjectRegion>();
+
+    var picOpsOptions = (Model.PicOpsUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
+    var analystOptions = (Model.AnalystUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
+    var assistantManagerOptions = (Model.AssistantManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
+    var managerOptions = (Model.ManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
+
+    var emptyOfferKey = Guid.NewGuid().ToString("N");
+}
+
+<header class="hstack justify-content-between mb-3">
+    <div>
+        <h2 class="mb-1">@ViewData["Title"]</h2>
+        <p class="text-muted mb-0">
+            WO Number: <span class="fw-semibold">@Model.ProcNum</span>
+            <span class="mx-2 text-secondary">|</span>
+            Type: <span class="fw-semibold">@jobTypeName</span>
+        </p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="Index" role="button">
+        <i class="bi bi-arrow-left"></i> Back to list
+    </a>
+</header>
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="js-loading-form">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="ProcurementId" />
+    <input type="hidden" asp-for="ProcNum" />
+    <input type="hidden" asp-for="JobTypeId" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Procurement Overview</legend>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="ContractType" class="form-label"></label>
+                    <select asp-for="ContractType" class="form-select" asp-items="contractTypeOptions">
+                        <option value="">Select contract type</option>
+                    </select>
+                    <span asp-validation-for="ContractType" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-12">
+                    <label asp-for="JobName" class="form-label"></label>
+                    <textarea asp-for="JobName" class="form-control" rows="3" maxlength="255"></textarea>
+                    <span asp-validation-for="JobName" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-4">
+                    <label asp-for="ProjectRegion" class="form-label"></label>
+                    <select asp-for="ProjectRegion" class="form-select" asp-items="projectRegionOptions">
+                        <option value="">Select project region</option>
+                    </select>
+                    <span asp-validation-for="ProjectRegion" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ProjectCode" class="form-label"></label>
+                    <input asp-for="ProjectCode" class="form-control" maxlength="64" />
+                    <span asp-validation-for="ProjectCode" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Wonum" class="form-label"></label>
+                    <input asp-for="Wonum" class="form-control" maxlength="100" />
+                    <span asp-validation-for="Wonum" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Schedule &amp; Etc</legend>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="StartDate" class="form-label"></label>
+                    <input asp-for="StartDate" type="date" class="form-control" />
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="EndDate" class="form-label"></label>
+                    <input asp-for="EndDate" type="date" class="form-control" />
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="PotentialAccrualDate" class="form-label"></label>
+                    <input asp-for="PotentialAccrualDate" type="date" class="form-control" />
+                    <span asp-validation-for="PotentialAccrualDate" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <label asp-for="LtcName" class="form-label"></label>
+                    <input asp-for="LtcName" class="form-control" maxlength="255" />
+                    <span asp-validation-for="LtcName" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <label asp-for="Note" class="form-label"></label>
+                <textarea asp-for="Note" class="form-control" rows="3" maxlength="1000"></textarea>
+                <span asp-validation-for="Note" class="text-danger"></span>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Reference Numbers</legend>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="SpkNumber" class="form-label"></label>
+                    <input asp-for="SpkNumber" class="form-control" maxlength="100" />
+                    <span asp-validation-for="SpkNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="SpmpNumber" class="form-label"></label>
+                    <input asp-for="SpmpNumber" class="form-control" maxlength="100" />
+                    <span asp-validation-for="SpmpNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="MemoNumber" class="form-label"></label>
+                    <input asp-for="MemoNumber" class="form-control" maxlength="100" />
+                    <span asp-validation-for="MemoNumber" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <label asp-for="OeNumber" class="form-label"></label>
+                    <input asp-for="OeNumber" class="form-control" maxlength="100" />
+                    <span asp-validation-for="OeNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="RaNumber" class="form-label"></label>
+                    <input asp-for="RaNumber" class="form-control" maxlength="100" />
+                    <span asp-validation-for="RaNumber" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <legend class="card-title fw-semibold mb-0">Item Penawaran</legend>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+            <hr />
+
+            <div class="row g-3" id="offers-container">
+                @if (Model.Offers.Any())
+                {
+                    for (var i = 0; i < Model.Offers.Count; i++)
+                    {
+                        <div class="col-12 offer-row position-relative">
+                            <input type="hidden" name="Offers.Index" value="@i" />
+                            <div class="row g-3 align-items-end">
+                                <div class="col-lg-10">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                            <input asp-for="Offers[i].ItemPenawaran" class="form-control" />
+                                            <span class="text-danger" asp-validation-for="Offers[i].ItemPenawaran"></span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Qty</label>
+                                            <input asp-for="Offers[i].Qty" type="number" min="1" step="1" class="form-control text-end" />
+                                            <span class="text-danger" asp-validation-for="Offers[i].Qty"></span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Unit</label>
+                                            <input asp-for="Offers[i].Unit" class="form-control" />
+                                            <span class="text-danger" asp-validation-for="Offers[i].Unit"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-2 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 offer-row position-relative">
+                        <input type="hidden" name="Offers.Index" value="@emptyOfferKey" />
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-10">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                        <input class="form-control" name="Offers[@emptyOfferKey].ItemPenawaran" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Qty</label>
+                                        <input class="form-control text-end" type="number" min="1" step="1" name="Offers[@emptyOfferKey].Qty" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Unit</label>
+                                        <input class="form-control" name="Offers[@emptyOfferKey].Unit" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 d-flex justify-content-end">
+                                <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </fieldset>
+    </section>
+
+    <section class="card shadow-sm mb-3 p-2 rounded-4">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold">Approvals &amp; PIC</legend>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="PicOpsUserId" class="form-label">PIC Operations</label>
+                    <select asp-for="PicOpsUserId" class="form-select" asp-items="picOpsOptions">
+                        <option value="">Select PIC Operations</option>
+                    </select>
+                    <span asp-validation-for="PicOpsUserId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AnalystHteUserId" class="form-label">Analyst HTE &amp; LTS</label>
+                    <select asp-for="AnalystHteUserId" class="form-select" asp-items="analystOptions">
+                        <option value="">Select Analyst</option>
+                    </select>
+                    <span asp-validation-for="AnalystHteUserId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AssistantManagerUserId" class="form-label">Assistant Manager HTE</label>
+                    <select asp-for="AssistantManagerUserId" class="form-select" asp-items="assistantManagerOptions">
+                        <option value="">Select Assistant Manager</option>
+                    </select>
+                    <span asp-validation-for="AssistantManagerUserId" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="ManagerUserId" class="form-label">Manager Transport &amp; Logistic</label>
+                    <select asp-for="ManagerUserId" class="form-select" asp-items="managerOptions">
+                        <option value="">Select Manager</option>
+                    </select>
+                    <span asp-validation-for="ManagerUserId" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+    </section>
+
+    <div class="mb-3 d-flex w-100 justify-content-end">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2-circle"></i> Save Changes
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const offersContainer = document.getElementById('offers-container');
+            const btnAddOffer = document.getElementById('btn-add-offer');
+
+            const newKey = () => Math.random().toString(36).slice(2, 10);
+
+            const offerRowMarkup = (key) => `
+                <div class="col-12 offer-row position-relative">
+                    <input type="hidden" name="Offers.Index" value="${key}" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-10">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                    <input class="form-control" name="Offers[${key}].ItemPenawaran" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Qty</label>
+                                    <input class="form-control text-end" type="number" min="1" step="1" name="Offers[${key}].Qty" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Unit</label>
+                                    <input class="form-control" name="Offers[${key}].Unit" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 d-flex justify-content-end">
+                            <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (btnAddOffer && offersContainer) {
+                btnAddOffer.addEventListener('click', () => {
+                    const key = newKey();
+                    offersContainer.insertAdjacentHTML('beforeend', offerRowMarkup(key));
+                    if (window.jQuery && $.validator && $.validator.unobtrusive) {
+                        $.validator.unobtrusive.parse(offersContainer);
+                    }
+                });
+            }
+
+            document.addEventListener('click', (event) => {
+                const btnOffer = event.target.closest('.js-remove-offer');
+                if (btnOffer) {
+                    const row = btnOffer.closest('.offer-row');
+                    if (row) {
+                        row.remove();
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -2,12 +2,12 @@
 {
     public static class Permissions
     {
-        public static class WO
+        public static class Procurement
         {
-            public const string Read = "WO.Read";
-            public const string Create = "WO.Create";
-            public const string Edit = "WO.Edit";
-            public const string Delete = "WO.Delete";
+            public const string Read = "Procurement.Read";
+            public const string Create = "Procurement.Create";
+            public const string Edit = "Procurement.Edit";
+            public const string Delete = "Procurement.Delete";
         }
 
         public static class Vendor

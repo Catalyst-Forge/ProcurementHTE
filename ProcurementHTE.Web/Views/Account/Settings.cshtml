@@ -1,0 +1,887 @@
+@using System
+@using System.Linq
+@using ProcurementHTE.Core.Models.Enums
+@model AccountSettingsViewModel
+@{
+    ViewData["Title"] = "Pengaturan Akun";
+    var avatarUrl = Model.Overview.AvatarUrl
+        ?? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.Overview.FirstName)}&background=0D8ABC&color=fff";
+    var fullName = string.Join(" ", new[] { Model.Overview.FirstName, Model.Overview.LastName }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    var roles = Model.Overview.Roles?.Count > 0 ? string.Join(", ", Model.Overview.Roles) : "Role belum diatur";
+    var jobTitle = string.IsNullOrWhiteSpace(Model.Overview.JobTitle) ? "Belum diatur" : Model.Overview.JobTitle;
+    var lastLogin = Model.Overview.LastLoginAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm") ?? "Belum pernah";
+    var showPhoneVerify = ViewBag.ShowPhoneVerify is bool b && b;
+    var devMagicLink = ViewBag.DevMagicLink as string;
+    var devPhoneOtp = ViewBag.DevPhoneOtp as string;
+    var recoveryCodes = Model.TwoFactor.NewlyGeneratedRecoveryCodes;
+    var recoveryCodesHidden = Model.Overview.RecoveryCodesHidden;
+    var hasStoredRecoveryCodes = recoveryCodes?.Any() == true;
+    var emailVerificationCooldown = ViewBag.EmailVerificationCooldown as int? ?? 0;
+    var phoneVerificationCooldown = ViewBag.PhoneVerificationCooldown as int? ?? 0;
+}
+
+@section HeadScripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
+    <div>
+        <h2 class="mb-0">Pengaturan Akun</h2>
+        <p class="text-muted mb-0">Kelola identitas dasar, keamanan, dan perangkat aktif.</p>
+    </div>
+    <span class="badge @(Model.TwoFactor.IsEnabled ? "text-bg-success" : "text-bg-secondary")">
+        @(Model.TwoFactor.IsEnabled ? "2FA Aktif" : "2FA Belum Aktif")
+    </span>
+</div>
+
+<div class="account-hero card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-lg-row gap-4 align-items-center align-items-lg-start">
+            <div class="d-flex align-items-center gap-3 flex-grow-1 w-100">
+                <div class="position-relative">
+                    <img src="@avatarUrl" class="rounded-circle shadow-sm avatar-xl hero-avatar" alt="Avatar" id="currentAvatar" />
+                    <span class="status-indicator @(Model.TwoFactor.IsEnabled ? "bg-success" : "bg-secondary")"></span>
+                </div>
+                <div>
+                    <p class="text-muted text-uppercase small mb-1">Akun @Model.Overview.UserName</p>
+                    <h3 class="mb-1">@fullName</h3>
+                    <p class="mb-0 text-muted">@Model.Overview.Email</p>
+                    <div class="d-flex flex-wrap gap-2 mt-3 small">
+                        <span class="account-chip">
+                            <i class="bi bi-briefcase me-1"></i>@jobTitle
+                        </span>
+                        <span class="account-chip">
+                            <i class="bi bi-people me-1"></i>@roles
+                        </span>
+                        <span class="account-chip">
+                            <i class="bi bi-clock-history me-1"></i>Login terakhir: @lastLogin
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+                <label for="avatarFile" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 flex-sm-fill">
+                    <i class="bi bi-camera"></i>
+                    <span>Upload / Ubah Foto</span>
+                </label>
+                <form asp-action="RemoveAvatar" method="post" class="flex-sm-fill">
+                    <button type="submit" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2" @(Model.Overview.AvatarUrl == null ? "disabled" : string.Empty)>
+                        <i class="bi bi-trash"></i>
+                        <span>Hapus Foto</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+            <div class="mini-stat">
+                <span class="text-muted small text-uppercase">Dibuat</span>
+                <strong>@Model.Overview.CreatedAt.ToString("dd MMM yyyy")</strong>
+            </div>
+            <div class="mini-stat">
+                <span class="text-muted small text-uppercase">Verifikasi Email</span>
+                <strong>@(Model.Overview.EmailConfirmed ? "Sudah" : "Belum")</strong>
+            </div>
+            <div class="mini-stat">
+                <span class="text-muted small text-uppercase">Nomor HP</span>
+                <strong>@(string.IsNullOrWhiteSpace(Model.Overview.PhoneNumber) ? "-" : Model.Overview.PhoneNumber)</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="UpdateAvatar" method="post" id="avatarForm" class="visually-hidden">
+    <input type="hidden" name="ImageData" id="avatarImageData" />
+    <input type="file" accept="image/*" id="avatarFile" />
+</form>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0">Verifikasi Kontak</h5>
+            <small class="text-muted">Pastikan email dan nomor HP terverifikasi untuk keamanan maksimal.</small>
+        </div>
+        <span class="badge @(Model.Overview.EmailConfirmed && Model.Overview.PhoneNumberConfirmed ? "text-bg-success" : "text-bg-warning")">
+            @(Model.Overview.EmailConfirmed && Model.Overview.PhoneNumberConfirmed ? "Semua tervalidasi" : "Butuh verifikasi")
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="contact-tile">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted small mb-1">Email</p>
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="mb-1">@Model.Overview.Email</h6>
+                                @if (Model.Overview.EmailConfirmed)
+                                {
+                                    <i class="bi bi-check-circle-fill text-primary fs-5"></i>
+                                }
+                            </div>
+                            <small class="text-muted">Status: @(Model.Overview.EmailConfirmed ? "Terverifikasi" : "Belum terverifikasi")</small>
+                        </div>
+                        <i class="bi bi-envelope-paper icon-lg text-primary"></i>
+                    </div>
+                    @if (!Model.Overview.EmailConfirmed)
+                    {
+                        <form asp-action="SendEmailVerification" method="post" class="mt-3">
+                            <button type="submit"
+                                    class="btn btn-outline-primary w-100"
+                                    data-cooldown-button
+                                    data-label="Kirim Magic Link"
+                                    data-cooldown-seconds="@emailVerificationCooldown"
+                                    data-status-target="#emailVerificationStatus">
+                                <i class="bi bi-link-45deg"></i> Kirim Magic Link
+                            </button>
+                        </form>
+                        <div class="small text-muted mt-2" id="emailVerificationStatus"></div>
+                        @if (!string.IsNullOrWhiteSpace(devMagicLink))
+                        {
+                            <div class="alert alert-info mt-2 mb-0 small">
+                                Dev magic link: <a href="@devMagicLink">@devMagicLink</a>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="contact-tile">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted small mb-1">Nomor HP</p>
+                            <div class="d-flex align-items-center gap-2">
+                                <h6 class="mb-1">@(!string.IsNullOrWhiteSpace(Model.Overview.PhoneNumber) ? Model.Overview.PhoneNumber : "Belum diisi")</h6>
+                                @if (Model.Overview.PhoneNumberConfirmed)
+                                {
+                                    <i class="bi bi-check-circle-fill text-primary fs-5"></i>
+                                }
+                            </div>
+                            <small class="text-muted">Status: @(Model.Overview.PhoneNumberConfirmed ? "Terverifikasi" : "Belum terverifikasi")</small>
+                        </div>
+                        <i class="bi bi-phone icon-lg text-primary"></i>
+                    </div>
+
+                    @if (string.IsNullOrWhiteSpace(Model.Overview.PhoneNumber))
+                    {
+                        <div class="alert alert-warning mt-3 mb-0 small">
+                            Isi nomor HP terlebih dahulu di form profil sebelum melakukan verifikasi.
+                        </div>
+                    }
+                    else if (!Model.Overview.PhoneNumberConfirmed)
+                    {
+                        <form asp-action="SendPhoneVerification" method="post" class="mt-3">
+                            <button type="submit"
+                                    class="btn btn-outline-secondary w-100"
+                                    data-cooldown-button
+                                    data-label="Kirim OTP"
+                                    data-cooldown-seconds="@phoneVerificationCooldown"
+                                    data-status-target="#phoneVerificationStatus">
+                                <i class="bi bi-chat-dots"></i> Kirim OTP
+                            </button>
+                        </form>
+                        <div class="small text-muted mt-2" id="phoneVerificationStatus"></div>
+                        <form asp-action="VerifyPhone" method="post" class="mt-2 d-flex flex-column gap-3">
+                            <label class="form-label small">Masukkan kode OTP</label>
+                            <input type="hidden" name="code" data-otp-hidden="settings.phone" />
+                            <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="settings.phone">
+                                @for (var i = 0; i < 6; i++)
+                                {
+                                    <input type="text"
+                                           inputmode="numeric"
+                                           maxlength="1"
+                                           class="form-control text-center otp-input"
+                                           data-otp-input />
+                                }
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Verifikasi</button>
+                        </form>
+                        @if (showPhoneVerify)
+                        {
+                            <div class="alert alert-warning mt-2 mb-0 small">
+                                Masukkan kode OTP yang baru dikirim ke nomor Anda.
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(devPhoneOtp))
+                        {
+                            <div class="alert alert-info mt-2 mb-0 small">
+                                Dev OTP: <strong>@devPhoneOtp</strong>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0">Info Akun Dasar</h5>
+            <small class="text-muted">Pastikan data ini selalu mutakhir.</small>
+        </div>
+        <span class="badge text-bg-light">ID: @Model.Overview.UserName</span>
+    </div>
+    <div class="card-body">
+        <form asp-action="UpdateProfile" method="post" class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Profile.FirstName" class="form-label"></label>
+                <input asp-for="Profile.FirstName" class="form-control" />
+                <span asp-validation-for="Profile.FirstName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Profile.LastName" class="form-label"></label>
+                <input asp-for="Profile.LastName" class="form-control" />
+                <span asp-validation-for="Profile.LastName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Profile.UserName" class="form-label"></label>
+                <input asp-for="Profile.UserName" class="form-control" />
+                <span asp-validation-for="Profile.UserName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Profile.Email" class="form-label"></label>
+                <input asp-for="Profile.Email" class="form-control" />
+                <span asp-validation-for="Profile.Email" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Profile.JobTitle" class="form-label"></label>
+                <input asp-for="Profile.JobTitle" class="form-control" placeholder="Jabatan / posisi" />
+                <span asp-validation-for="Profile.JobTitle" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Profile.PhoneNumber" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">+62</span>
+                    <input asp-for="Profile.PhoneNumber"
+                           class="form-control"
+                           placeholder="812xxxxxx"
+                           inputmode="numeric"
+                           autocomplete="tel" />
+                </div>
+                <span asp-validation-for="Profile.PhoneNumber" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end mt-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 align-items-start">
+    <div class="col-12 col-xl-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Ganti Password</h5>
+                <small class="text-muted">Gunakan kombinasi huruf besar, angka, dan simbol.</small>
+            </div>
+            <div class="card-body">
+                <form asp-action="ChangePassword" method="post" class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="ChangePassword.CurrentPassword" class="form-label"></label>
+                        <input asp-for="ChangePassword.CurrentPassword" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="ChangePassword.CurrentPassword" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="ChangePassword.NewPassword" class="form-label"></label>
+                        <input asp-for="ChangePassword.NewPassword" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="ChangePassword.NewPassword" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="ChangePassword.ConfirmPassword" class="form-label"></label>
+                        <input asp-for="ChangePassword.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="ChangePassword.ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-key"></i> Perbarui Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Two-Factor Authentication</h5>
+                </div>
+                @if (Model.TwoFactor.IsEnabled)
+                {
+                    <form asp-action="DisableTwoFactor" method="post">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Nonaktifkan</button>
+                    </form>
+                }
+            </div>
+            <div class="card-body">
+                @if (!Model.TwoFactor.IsEnabled)
+                {
+                    <div class="alert alert-warning small">
+                        Pilih metode autentikasi yang Anda inginkan, kemudian masukkan kode verifikasi untuk mengaktifkan.
+                    </div>
+                    <form asp-action="EnableTwoFactor" method="post" id="twoFactorEnableForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Metode</label>
+                            <div class="list-group">
+                                <label class="list-group-item d-flex align-items-start gap-2">
+                                    <input class="form-check-input mt-1" type="radio" name="method" value="@TwoFactorMethod.AuthenticatorApp" checked />
+                                    <div>
+                                        <div class="fw-semibold">Authenticator App</div>
+                                        <small class="text-muted">Gunakan Google Authenticator, Microsoft Authenticator, dll.</small>
+                                    </div>
+                                </label>
+                                <label class="list-group-item d-flex align-items-start gap-2">
+                                    <input class="form-check-input mt-1" type="radio" name="method" value="@TwoFactorMethod.Email" />
+                                    <div>
+                                        <div class="fw-semibold">Email OTP</div>
+                                        <small class="text-muted">Kode dikirim ke email @Model.Overview.Email.</small>
+                                    </div>
+                                </label>
+                                <label class="list-group-item d-flex align-items-start gap-2">
+                                    <input class="form-check-input mt-1" type="radio" name="method" value="@TwoFactorMethod.Sms" />
+                                    <div>
+                                        <div class="fw-semibold">SMS OTP</div>
+                                        <small class="text-muted">Pastikan nomor HP valid.</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border rounded p-3 mb-3 bg-light-subtle small" id="authenticatorInfo">
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <div>
+                                    <span class="fw-semibold d-block text-uppercase text-muted small">Kode Rahasia</span>
+                                    <span class="fs-5 fw-bold">@Model.TwoFactor.SharedKey</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(Model.TwoFactor.AuthenticatorQrBase64))
+                                {
+                                    <img src="data:image/png;base64,@Model.TwoFactor.AuthenticatorQrBase64" alt="QR" class="border rounded w-100" />
+                                }
+                            </div>
+                            <p class="mt-3 mb-0">Scan QR atau masukkan kode rahasia ke aplikasi autentikator.</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Kode Verifikasi</label>
+                            <div class="input-group">
+                                <input type="text" name="verificationCode" class="form-control" placeholder="123456" required maxlength="8" />
+                                <button type="button" class="btn btn-outline-secondary d-none" id="btnSendSetupCode">
+                                    Kirim Kode
+                                </button>
+                            </div>
+                            <small class="text-muted" id="twoFactorCodeHelp">
+                                Masukkan kode dari aplikasi authenticator.
+                            </small>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-shield-lock"></i> Aktifkan 2FA
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                        <div class="alert alert-success small mb-3">
+                            2FA aktif menggunakan metode <strong>@Model.Overview.TwoFactorMethod</strong>.
+                        </div>
+                        @if ((ViewBag.RequireEmailVerificationForTwoFactor as bool?) ?? false)
+                        {
+                            <div class="alert alert-warning small">
+                                Email @Model.Overview.Email belum terverifikasi sehingga 2FA Email tidak dapat digunakan. Kirim magic link dari bagian verifikasi email di atas atau gunakan tombol ini untuk mempercepat:
+                                <form asp-action="SendEmailVerification" method="post" class="mt-2">
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-primary"
+                                            data-cooldown-button
+                                            data-label="Kirim magic link"
+                                            data-cooldown-seconds="@emailVerificationCooldown"
+                                            data-status-target="#emailVerificationStatus">
+                                        Kirim magic link
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                        @if ((ViewBag.RequirePhoneVerificationForTwoFactor as bool?) ?? false)
+                        {
+                            <div class="alert alert-warning small">
+                                Nomor HP belum terverifikasi sehingga 2FA SMS tidak dapat digunakan. Verifikasi nomor terlebih dahulu di bagian informasi tambahan.
+                                @if (!string.IsNullOrWhiteSpace(Model.Overview.PhoneNumber))
+                                {
+                                    <form asp-action="SendPhoneVerification" method="post" class="mt-2">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-primary"
+                                                data-cooldown-button
+                                                data-label="Kirim OTP"
+                                                data-cooldown-seconds="@phoneVerificationCooldown"
+                                                data-status-target="#phoneVerificationStatus">
+                                            Kirim OTP verifikasi
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <div>
+                                <div class="fw-semibold">@Model.TwoFactor.RecoveryCodesLeft tersisa</div>
+                                <small class="text-muted">Recovery code dapat digunakan saat kehilangan akses device.</small>
+                            </div>
+                        @if (hasStoredRecoveryCodes)
+                        {
+                            <form asp-action="GenerateRecoveryCodes" method="post" class="ms-auto">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-arrow-repeat"></i> Generate Codes
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning w-100 mt-3 mb-0 small">
+                                Anda belum memiliki recovery codes. Generate terlebih dahulu untuk berjaga-jaga.
+                            </div>
+                        }
+                    </div>
+
+                    @if (Model.TwoFactor.NewlyGeneratedRecoveryCodes?.Any() == true && !recoveryCodesHidden)
+                    {
+                        <div class="alert alert-info mt-3">
+                            <div class="fw-semibold mb-2">Recovery codes baru:</div>
+                            <div class="row row-cols-2 g-2 font-monospace small">
+                                @foreach (var code in Model.TwoFactor.NewlyGeneratedRecoveryCodes)
+                                {
+                                    <div class="col">
+                                        <span class="badge text-bg-light w-100">@code</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <a asp-action="DownloadRecoveryCodes" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+                                    <i class="bi bi-download"></i> Download .txt
+                                </a>
+                                <form asp-action="HideRecoveryCodes" method="post">
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-eye-slash"></i> Sembunyikan
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                    else if (recoveryCodesHidden && hasStoredRecoveryCodes)
+                    {
+                        <div class="alert alert-secondary mt-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="fw-semibold">Recovery codes disembunyikan</div>
+                                    <small class="text-muted">Anda tetap dapat mengunduh atau menampilkan kembali kapan saja.</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="DownloadRecoveryCodes" class="btn btn-outline-primary btn-sm" target="_blank">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <form asp-action="ShowRecoveryCodes" method="post">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                            Tampilkan
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (!hasStoredRecoveryCodes)
+                    {
+                        <div class="alert alert-warning mt-3">
+                            <div class="fw-semibold mb-1">Belum ada recovery codes.</div>
+                            <form asp-action="GenerateRecoveryCodes" method="post" class="mt-3">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-arrow-repeat"></i> Generate Codes
+                                    </button>
+                            </form>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Perangkat & Sesi Aktif</h5>
+                    <small class="text-muted">Pantau akses yang masih login.</small>
+                </div>
+                <form asp-action="LogoutAllSessions" method="post">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-x-circle"></i> Logout semua
+                    </button>
+                </form>
+            </div>
+            <div class="card-body table-responsive">
+                @if (!Model.Sessions.Any())
+                {
+                    <p class="text-muted mb-0">Belum ada data sesi.</p>
+                }
+                else
+                {
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Perangkat</th>
+                                <th>IP / Lokasi</th>
+                                <th>Login</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var session in Model.Sessions)
+                            {
+                                var rowClass = !session.IsActive ? "opacity-50" : session.IsCurrent ? "table-primary" : string.Empty;
+                                <tr class="@rowClass">
+                                    <td>
+                                        <div class="fw-semibold">@session.Browser</div>
+                                        <small class="text-muted">@session.Device</small>
+                                    </td>
+                                    <td>
+                                        <div>@(session.IpAddress ?? "-")</div>
+                                        <small class="text-muted">@((session.Location ?? "Tidak diketahui"))</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@session.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</small>
+                                    </td>
+                                    <td class="text-end">
+                                        @if (session.IsCurrent)
+                                        {
+                                            <span class="badge text-bg-info-subtle">Perangkat ini</span>
+                                        }
+                                        else if (session.IsActive)
+                                        {
+                                            <form asp-action="RevokeSession" method="post" class="d-inline">
+                                                <input type="hidden" name="sessionId" value="@session.SessionId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Logout
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge text-bg-light">Nonaktif</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Riwayat Keamanan</h5>
+                <small class="text-muted">Login, perubahan password, dan aktivitas penting.</small>
+            </div>
+            <div class="card-body">
+                @if (!Model.SecurityLogs.Any())
+                {
+                    <p class="text-muted mb-0">Belum ada aktivitas terekam.</p>
+                }
+                else
+                {
+                    <ul class="list-unstyled security-log mb-0">
+                        @foreach (var log in Model.SecurityLogs)
+                        {
+                            <li class="d-flex gap-3 mb-3">
+                                <div class="timeline-dot @(log.IsSuccess ? "bg-success-subtle" : "bg-danger-subtle")"></div>
+                                <div>
+                                    <div class="fw-semibold">@log.EventType</div>
+                                    <div class="text-muted small">
+                                        @log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm") &bull; @(log.IpAddress ?? "IP tidak diketahui")
+                                    </div>
+                                    <div>@(log.Description ?? "-")</div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="avatarCropModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Foto Profil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 align-items-start">
+                    <div class="col-md-8">
+                        <div class="cropper-area border rounded bg-body-tertiary">
+                            <img id="avatarCropImage" alt="Crop preview" class="img-fluid" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="text-muted small mb-2">Preview</p>
+                        <div class="avatar-live-preview rounded-circle border mx-auto shadow-sm"></div>
+                        <p class="text-muted small text-center mt-3">Gunakan scroll atau cubit untuk zoom, lalu geser gambar agar framing pas.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="saveCroppedAvatar">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+    <script>
+        (function () {
+            const avatarInput = document.getElementById('avatarFile');
+            const imageDataInput = document.getElementById('avatarImageData');
+            const modalElement = document.getElementById('avatarCropModal');
+            const modal = new bootstrap.Modal(modalElement);
+            const cropImage = document.getElementById('avatarCropImage');
+            const avatarForm = document.getElementById('avatarForm');
+            const livePreview = document.querySelector('.avatar-live-preview');
+            let cropper;
+
+            avatarInput?.addEventListener('change', (event) => {
+                const file = event.target.files?.[0];
+                if (!file) {
+                    return;
+                }
+                if (!file.type.startsWith('image/')) {
+                    Swal.fire({ icon: 'error', title: 'Format tidak didukung', text: 'Pilih file gambar (JPG/PNG).' });
+                    event.target.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    cropImage.src = e.target?.result;
+                    modal.show();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            modalElement.addEventListener('shown.bs.modal', () => {
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: 1,
+                    viewMode: 2,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    background: false,
+                    responsive: true,
+                    checkOrientation: true,
+                    preview: livePreview ? '.avatar-live-preview' : undefined,
+                });
+            });
+
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                cropper?.destroy();
+                cropper = null;
+                avatarInput.value = '';
+            });
+
+            document.getElementById('saveCroppedAvatar')?.addEventListener('click', () => {
+                if (!cropper) return;
+                const canvas = cropper.getCroppedCanvas({ width: 480, height: 480, imageSmoothingQuality: 'high' });
+                canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        imageDataInput.value = reader.result;
+                        modal.hide();
+                        avatarForm.submit();
+                    };
+                    reader.readAsDataURL(blob);
+                }, 'image/png');
+            });
+
+            const methodRadios = document.querySelectorAll('#twoFactorEnableForm input[name="method"]');
+            const sendButton = document.getElementById('btnSendSetupCode');
+            const codeHelp = document.getElementById('twoFactorCodeHelp');
+            const authenticatorInfo = document.getElementById('authenticatorInfo');
+            const sendCodeUrl = '@Url.Action("SendTwoFactorCode")';
+
+            function syncTwoFactorUI() {
+                const selected = document.querySelector('#twoFactorEnableForm input[name="method"]:checked')?.value;
+                if (!selected || !sendButton) return;
+
+                if (selected === '@TwoFactorMethod.AuthenticatorApp') {
+                    sendButton.classList.add('d-none');
+                    authenticatorInfo?.classList.remove('d-none');
+                    codeHelp.textContent = 'Masukkan kode dari aplikasi authenticator.';
+                } else {
+                    sendButton.classList.remove('d-none');
+                    authenticatorInfo?.classList.add('d-none');
+                    sendButton.dataset.method = selected;
+                    codeHelp.textContent = `Kami akan mengirim kode via ${selected === '@TwoFactorMethod.Email' ? 'email' : 'SMS'}.`;
+                }
+            }
+
+            methodRadios.forEach(radio => radio.addEventListener('change', syncTwoFactorUI));
+            syncTwoFactorUI();
+
+            sendButton?.addEventListener('click', () => {
+                const method = sendButton.dataset.method;
+                if (!method) return;
+                const token = document.querySelector('#twoFactorEnableForm input[name="__RequestVerificationToken"]')?.value;
+                const body = new URLSearchParams();
+                body.append('method', method);
+
+                fetch(sendCodeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token ?? ''
+                    },
+                    body: body.toString()
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        if (res.devCode) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Kode dikirim',
+                                html: `<p class="mb-1">Gunakan kode berikut:</p><div class="fw-bold fs-4">${res.devCode}</div><small class="text-muted d-block mt-2">Kode ditampilkan untuk lingkungan pengujian.</small>`
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Kode dikirim',
+                                text: res.message ?? 'Silakan cek email atau SMS Anda.'
+                            });
+                        }
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: res.message ?? 'Tidak dapat mengirim kode.' });
+                    }
+                })
+                .catch(() => Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat mengirim kode.' }));
+            });
+        })();
+    </script>
+
+    <script>
+        (() => {
+            function startCooldown(button, seconds, statusSelector) {
+                if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
+                    return;
+
+                button.dataset.cooldownActive = '1';
+                let remaining = seconds;
+                button.disabled = true;
+                const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
+
+                const updateStatus = () => {
+                    if (statusEl) {
+                        statusEl.textContent = `Tunggu ${remaining} detik sebelum mengirim ulang.`;
+                        statusEl.classList.add('text-warning');
+                    }
+                };
+
+                updateStatus();
+
+                const intervalId = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(intervalId);
+                        button.disabled = false;
+                        button.dataset.cooldownActive = '';
+                        if (statusEl) {
+                            statusEl.textContent = '';
+                            statusEl.classList.remove('text-warning');
+                        }
+                    } else {
+                        updateStatus();
+                    }
+                }, 1000);
+            }
+
+            document.querySelectorAll('[data-cooldown-button]').forEach(button => {
+                const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
+                if (seconds > 0) {
+                    startCooldown(button, seconds, button.dataset.statusTarget);
+                }
+            });
+        })();
+    </script>
+
+    <script>
+        (() => {
+            document.querySelectorAll('[data-otp-container]').forEach(container => {
+                const target = container.dataset.otpContainer;
+                if (!target) return;
+                const hidden = document.querySelector(`input[data-otp-hidden="${target}"]`);
+                if (!hidden) return;
+                const inputs = Array.from(container.querySelectorAll('input[data-otp-input]'));
+                if (!inputs.length) return;
+
+                const syncHidden = () => {
+                    hidden.value = inputs.map(i => i.value ?? '').join('');
+                };
+
+                const syncFromHidden = () => {
+                    const value = (hidden.value || '').replace(/[^0-9]/g, '');
+                    inputs.forEach((input, index) => input.value = value[index] ?? '');
+                };
+
+                const focusNext = idx => {
+                    if (idx + 1 < inputs.length)
+                        inputs[idx + 1].focus();
+                };
+
+                const focusPrev = idx => {
+                    if (idx - 1 >= 0)
+                        inputs[idx - 1].focus();
+                };
+
+                inputs.forEach((input, index) => {
+                    input.addEventListener('focus', () => input.select());
+                    input.addEventListener('keydown', event => {
+                        if (event.key === 'Backspace' && !input.value) {
+                            event.preventDefault();
+                            focusPrev(index);
+                        }
+                        if (event.key === 'ArrowLeft') {
+                            event.preventDefault();
+                            focusPrev(index);
+                        }
+                        if (event.key === 'ArrowRight') {
+                            event.preventDefault();
+                            focusNext(index);
+                        }
+                    });
+                    input.addEventListener('input', event => {
+                        const value = event.target.value.replace(/[^0-9]/g, '');
+                        event.target.value = value.slice(-1);
+                        syncHidden();
+                        if (value.length) {
+                            focusNext(index);
+                        }
+                    });
+                    input.addEventListener('paste', event => {
+                        event.preventDefault();
+                        const pasted = (event.clipboardData?.getData('text') ?? '').replace(/[^0-9]/g, '');
+                        if (!pasted.length) return;
+                        inputs.forEach((inp, idx) => inp.value = pasted[idx] ?? '');
+                        syncHidden();
+                        const filled = Math.min(pasted.length, inputs.length - 1);
+                        inputs[filled]?.focus();
+                    });
+                });
+
+                syncFromHidden();
+            });
+        })();
+    </script>
+}

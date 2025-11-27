@@ -1,0 +1,72 @@
+@using ProcurementHTE.Core.Models
+@model JobTypeDocuments
+@{
+    ViewData["Title"] = "Edit Job Type Document";
+    var jobTypes = ViewBag.JobTypes as List<JobTypes> ?? new();
+    var documentTypes = ViewBag.DocumentTypes as List<DocumentType> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Edit Job Type Document</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Edit" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="JobTypeDocumentId" />
+
+            <div class="col-md-6">
+                <label asp-for="JobTypeId" class="form-label">Job Type</label>
+                <select asp-for="JobTypeId" class="form-select" asp-items="@(new SelectList(jobTypes, "JobTypeId", "TypeName", Model.JobTypeId))">
+                    <option value="">-- Select Job Type --</option>
+                </select>
+                <span asp-validation-for="JobTypeId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="DocumentTypeId" class="form-label">Document Type</label>
+                <select asp-for="DocumentTypeId" class="form-select" asp-items="@(new SelectList(documentTypes, "DocumentTypeId", "Name", Model.DocumentTypeId))">
+                    <option value="">-- Select Document Type --</option>
+                </select>
+                <span asp-validation-for="DocumentTypeId" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Sequence" class="form-label">Sequence</label>
+                <input asp-for="Sequence" class="form-control" type="number" min="1" />
+                <span asp-validation-for="Sequence" class="text-danger"></span>
+            </div>
+            <div class="col-md-8 d-flex flex-wrap gap-3 align-items-center">
+                <div class="form-check">
+                    <input asp-for="IsMandatory" class="form-check-input" type="checkbox" />
+                    <label class="form-check-label" asp-for="IsMandatory">Mandatory</label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="IsGenerated" class="form-check-input" type="checkbox" />
+                    <label class="form-check-label" asp-for="IsGenerated">Generate</label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="IsUploadRequired" class="form-check-input" type="checkbox" />
+                    <label class="form-check-label" asp-for="IsUploadRequired">Upload</label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="RequiresApproval" class="form-check-input" type="checkbox" />
+                    <label class="form-check-label" asp-for="RequiresApproval">Requires Approval</label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Note" class="form-label">Note</label>
+                <textarea asp-for="Note" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-light">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />

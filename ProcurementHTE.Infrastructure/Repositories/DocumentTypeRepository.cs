@@ -10,7 +10,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public DocumentTypeRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
+        public DocumentTypeRepository(AppDbContext context) =>
+            _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public Task<PagedResult<DocumentType>> GetAllAsync(
             int page,

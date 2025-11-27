@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using ProcurementHTE.Core.Interfaces;
+﻿using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 
@@ -18,16 +13,26 @@ namespace ProcurementHTE.Core.Utils
             return normalized is "approve" or "reject";
         }
 
-        public static ApprovalUpdateResult Fail(string reason, string message)
-            => new() { Ok = false, Reason = reason, Message = message };
+        public static ApprovalUpdateResult Fail(string reason, string message) =>
+            new()
+            {
+                Ok = false,
+                Reason = reason,
+                Message = message,
+            };
 
         // --- final-state response (termasuk rejected detail) ---
         public static async Task<ApprovalUpdateResult> BuildFinalStateResponseAsync(
             IApprovalRepository repo,
             GateInfoDto gate,
-            CancellationToken ct)
+            CancellationToken ct
+        )
         {
-            bool isRejected = string.Equals(gate.DocStatus, "Rejected", StringComparison.OrdinalIgnoreCase);
+            bool isRejected = string.Equals(
+                gate.DocStatus,
+                "Rejected",
+                StringComparison.OrdinalIgnoreCase
+            );
 
             var res = new ApprovalUpdateResult
             {
@@ -36,8 +41,8 @@ namespace ProcurementHTE.Core.Utils
                 Message = isRejected
                     ? "Dokumen sudah ditolak (Rejected), tidak ada approval PENDING."
                     : "Dokumen ini tidak memiliki approval PENDING.",
-                WorkOrderId = gate.WorkOrderId,
-                WoDocumentId = gate.WoDocumentId,
+                ProcurementId = gate.ProcurementId,
+                ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = null,
                 CurrentGateSequence = null,
@@ -45,9 +50,9 @@ namespace ProcurementHTE.Core.Utils
                 YourRoles = new(),
             };
 
-            if (isRejected && !string.IsNullOrWhiteSpace(gate.WoDocumentId))
+            if (isRejected && !string.IsNullOrWhiteSpace(gate.ProcDocumentId))
             {
-                var info = await repo.GetLastRejectionInfoAsync(gate.WoDocumentId, ct);
+                var info = await repo.GetLastRejectionInfoAsync(gate.ProcDocumentId, ct);
                 if (info != null)
                 {
                     res.RejectedByUserId = info.RejectedByUserId;
@@ -67,17 +72,22 @@ namespace ProcurementHTE.Core.Utils
             GateInfoDto gate,
             User currentUser,
             IEnumerable<string> userRoleNames,
-            CancellationToken ct)
+            CancellationToken ct
+        )
         {
-            var last = await repo.GetLastApprovalByUserOnDocumentAsync(currentUser.Id, gate.WoDocumentId!, ct);
+            var last = await repo.GetLastApprovalByUserOnDocumentAsync(
+                currentUser.Id,
+                gate.ProcDocumentId!,
+                ct
+            );
 
             return new ApprovalUpdateResult
             {
                 Ok = false,
                 Reason = "NotYourTurn",
                 Message = "Bukan giliran role Anda untuk approve.",
-                WorkOrderId = gate.WorkOrderId,
-                WoDocumentId = gate.WoDocumentId,
+                ProcurementId = gate.ProcurementId,
+                ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
                 CurrentGateSequence = gate.SequenceOrder,
@@ -96,18 +106,27 @@ namespace ProcurementHTE.Core.Utils
             GateInfoDto gate,
             User currentUser,
             IEnumerable<string> userRoleNames,
-            CancellationToken ct)
+            CancellationToken ct
+        )
         {
             // 1) cek role yg dikonfig (ada Id/Name) bener-bener exist di sistem
-            var reqIds = gate.RequiredRoles.Select(r => r.RoleId).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!).ToArray();
-            var reqNames = gate.RequiredRoles.Select(r => r.RoleName).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!).ToArray();
+            var reqIds = gate
+                .RequiredRoles.Select(r => r.RoleId)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s!)
+                .ToArray();
+            var reqNames = gate
+                .RequiredRoles.Select(r => r.RoleName)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s!)
+                .ToArray();
 
             var existIds = await repo.GetExistingRoleIdsAsync(reqIds, ct);
             var existNames = await repo.GetExistingRoleNamesAsync(reqNames, ct);
 
             var noneExist =
-                (reqIds.Length > 0 && existIds.Count == 0) &&
-                (reqNames.Length > 0 && existNames.Count == 0);
+                (reqIds.Length > 0 && existIds.Count == 0)
+                && (reqNames.Length > 0 && existNames.Count == 0);
 
             if (noneExist)
             {
@@ -116,8 +135,8 @@ namespace ProcurementHTE.Core.Utils
                     Ok = false,
                     Reason = "InvalidGateConfig",
                     Message = "Role pada gate tidak ditemukan di sistem (periksa RoleId/RoleName).",
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     DocStatus = gate.DocStatus,
                     CurrentGateLevel = gate.Level,
                     CurrentGateSequence = gate.SequenceOrder,
@@ -135,8 +154,8 @@ namespace ProcurementHTE.Core.Utils
                     Ok = false,
                     Reason = "NoEligibleApprover",
                     Message = "Tidak ada user yang memiliki role yang diminta pada gate ini.",
-                    WorkOrderId = gate.WorkOrderId,
-                    WoDocumentId = gate.WoDocumentId,
+                    ProcurementId = gate.ProcurementId,
+                    ProcDocumentId = gate.ProcDocumentId,
                     DocStatus = gate.DocStatus,
                     CurrentGateLevel = gate.Level,
                     CurrentGateSequence = gate.SequenceOrder,
@@ -146,11 +165,11 @@ namespace ProcurementHTE.Core.Utils
             }
 
             // 3) role user ada di chain dokumen ini?
-            var chain = await repo.GetDocumentApprovalChainAsync(gate.WoDocumentId!, ct);
+            var chain = await repo.GetDocumentApprovalChainAsync(gate.ProcDocumentId!, ct);
 
             var appearsInDoc = chain.Any(c =>
-                !string.IsNullOrWhiteSpace(c.RoleName) &&
-                userRoleNames.Contains(c.RoleName!, StringComparer.OrdinalIgnoreCase)
+                !string.IsNullOrWhiteSpace(c.RoleName)
+                && userRoleNames.Contains(c.RoleName!, StringComparer.OrdinalIgnoreCase)
             );
 
             if (appearsInDoc)
@@ -165,8 +184,8 @@ namespace ProcurementHTE.Core.Utils
                 Ok = false,
                 Reason = "RoleNotInGate",
                 Message = "Role Anda tidak terdaftar dalam rules approval pada dokumen ini.",
-                WorkOrderId = gate.WorkOrderId,
-                WoDocumentId = gate.WoDocumentId,
+                ProcurementId = gate.ProcurementId,
+                ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
                 CurrentGateSequence = gate.SequenceOrder,

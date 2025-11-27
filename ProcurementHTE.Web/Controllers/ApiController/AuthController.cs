@@ -1,13 +1,10 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Core.Services;
-using ProcurementHTE.Infrastructure.Repositories;
 
 namespace ProcurementHTE.Web.Controllers.ApiController
 {
@@ -19,19 +16,16 @@ namespace ProcurementHTE.Web.Controllers.ApiController
         private readonly IAuthService _authService;
         private readonly JwtSettings _jwtSettings;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
-        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
             IOptions<JwtSettings> jwtSettings,
-            IRefreshTokenRepository refreshTokenRepository,
-            ILogger<AuthController> logger
+            IRefreshTokenRepository refreshTokenRepository
         )
         {
             _authService = authService;
             _jwtSettings = jwtSettings.Value;
             _refreshTokenRepository = refreshTokenRepository;
-            _logger = logger;
         }
 
         [HttpPost("login")]
@@ -46,7 +40,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(
-                        new LoginResponseDto { Success = false, Message = "Data tidak valid" }
+                        new LoginResponseDto { Success = false, Message = "Invalid data." }
                     );
                 }
 
@@ -56,15 +50,13 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                 var userId = GetUserIdFromAccessToken(tokenResponse.AccessToken);
                 var profile = await _authService.GetProfileAsync(userId, ct);
 
-                _logger.LogInformation("User {Email} logged in via API", model.Email);
-
                 var expiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpirationInMinutes);
 
                 return Ok(
                     new LoginResponseDto
                     {
                         Success = true,
-                        Message = "Login berhasil",
+                        Message = "Login successful.",
                         Token = tokenResponse.AccessToken,
                         ExpiresAt = expiresAt,
                         RefreshToken = tokenResponse.RefreshToken,
@@ -88,24 +80,22 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning(ex, "Login gagal untuk {Identifier}", model.Email);
                 return Unauthorized(
                     new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Email/username atau password salah",
+                        Message = "Email/username or password is incorrect.",
                     }
                 );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during API login for {Email}", model.Email);
                 return StatusCode(
                     500,
                     new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Terjadi kesalahan pada server",
+                        Message = "An internal server error occurred.",
                     }
                 );
             }
@@ -125,15 +115,13 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning(ex, "Refresh token invalid");
-                return Unauthorized(new { success = false, message = "Refresh token tidak valid" });
+                return Unauthorized(new { success = false, message = "Refresh token is invalid." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error refreshing token");
                 return StatusCode(
                     500,
-                    new { success = false, message = "Terjadi kesalahan pada server" }
+                    new { success = false, message = "An internal server error occurred." }
                 );
             }
         }
@@ -169,7 +157,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                     ?? User.FindFirst("sub")?.Value
                     ?? string.Empty;
                 if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { success = false, message = "Token tidak valid" });
+                    return Unauthorized(new { success = false, message = "Token is invalid." });
 
                 await _authService.LogoutAsync(dto, userId, ct);
 
@@ -186,10 +174,9 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during logout");
                 return StatusCode(
                     500,
-                    new { success = false, message = "Terjadi kesalahan pada server" }
+                    new { success = false, message = "An internal server error occurred." }
                 );
             }
         }
@@ -206,9 +193,9 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
                 if (string.IsNullOrEmpty(userId))
                 {
-                    _logger.LogError("Token tidak valid");
-                    return Unauthorized(new { message = "Token tidak valid" });
+                    return Unauthorized(new { message = "Token is invalid." });
                 }
+
                 var profile = await _authService.GetProfileAsync(userId, ct);
 
                 return Ok(
@@ -230,8 +217,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting user profile");
-                return StatusCode(500, new { message = "Terjadi kesalahan pada server" });
+                return StatusCode(500, new { message = "An internal server error occurred." });
             }
         }
 
@@ -252,7 +238,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                     new
                     {
                         valid = false,
-                        message = "Token tidak valid",
+                        message = "Token is invalid.",
                         reason = "NoUserIdClaim",
                         timestamp = DateTime.Now,
                     }
@@ -273,7 +259,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                         new
                         {
                             valid = false,
-                            message = "Token dianggap tidak valid: sesi device sudah logout.",
+                            message = "Token considered invalid because the device session has logged out.",
                             reason = "NoActiveRefreshTokenForDevice",
                             userId,
                             deviceId,

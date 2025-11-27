@@ -1,0 +1,995 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementRequiredDocsVm
+@using ProcurementHTE.Web.Models.ViewModels
+@{
+    ViewData["Title"] = "Procurement Documents";
+
+    var totalDocs = Model.Items?.Count() ?? 0;
+    var requiredDocs = Model.Items?.Count(x => x.IsUploadRequired || x.IsGenerated) ?? 0;
+    var generateDocs = Model.Items?.Count(x => x.IsGenerated) ?? 0;
+    var isRequiredApprovals = Model.Items?.Count(x => x.RequiresApproval) ?? 0;
+    var isMandatoryDocs = Model.Items?.Count(x => x.IsMandatory) ?? 0;
+    var completedDocs = Model.Items?.Count(x => x.IsUploadRequired && x.Uploaded) ?? 0;
+    var remainingDocs = Math.Max(requiredDocs - completedDocs, 0);
+    var progressPercent = requiredDocs > 0 ? completedDocs * 100 / requiredDocs : 0;
+
+    var summaryStats = new ProcurementDocumentStatsViewModel
+    {
+        CompletedDocs = completedDocs,
+        RemainingDocs = remainingDocs,
+        GeneratedDocs = generateDocs,
+        MandatoryDocs = isMandatoryDocs,
+        ApprovalDocs = isRequiredApprovals,
+        TotalDocs = totalDocs
+    };
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h4 class="mb-1 fw-bold">
+                        <i class="bi bi-folder2-open text-primary me-2"></i>Procurement Documents
+                    </h4>
+                    <span class="badge bg-light text-dark border">@ViewBag.ProcNum</span>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <a class="btn btn-outline-secondary" asp-controller="Procurements" asp-action="Details" asp-route-id="@Model.ProcurementId">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("Partials/_ProcurementDocumentsSummaryCard", summaryStats)
+
+    @await Html.PartialAsync("Partials/_ProcurementDocumentsTable", Model)
+</div>
+
+
+@await Html.PartialAsync("Partials/_ProcurementDocumentsModals", Model)
+
+@section Scripts {    
+    <script>
+        // ===== Global state =====
+        var currentPreviewUrl = window.currentPreviewUrl || null;
+        var currentDownloadDocId = window.currentDownloadDocId || null;
+        var currentQrImageSrc = window.currentQrImageSrc || null;
+        var MAX_UPLOAD_SIZE = window.MAX_UPLOAD_SIZE || 10 * 1024 * 1024; // 10MB
+
+        // ===== Toast util =====
+        function showToast(icon, title, text = '', timer = 4000) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon, title, text,
+                showConfirmButton: false,
+                timer, timerProgressBar: true,
+                didOpen: t => {
+                    t.addEventListener('mouseenter', Swal.stopTimer);
+                    t.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+        }
+
+        // Bind helpers to avoid double event handlers when HTMX swaps content
+        function bindOnce(selector, flag, binder) {
+            document.querySelectorAll(selector).forEach(el => {
+                if (el.dataset[flag]) return;
+                el.dataset[flag] = '1';
+                binder(el);
+            });
+        }
+
+        // ===== DOM Ready =====
+        function bootProcurementDocuments() {
+            initPreviewHandlers();          // preview dokumen existing (pakai PreviewUrl)
+            initGeneratePreviewHandlers();  // preview template (PreviewGeneratedUrl -> fallback)
+            initDownloadHandlers();         // tombol download per-row
+            initDeleteHandlers();           // hapus dokumen
+            initFileInputHandlers();        // validasi input file
+            initUploadFormHandlers();       // UX upload
+            initGenerateFormHandlers();     // loading indicator untuk generate/regenerate
+            initQrHandlers();               // QR show/print
+            initTimelineHandlers();         // approval timeline
+
+            // Download dari modal preview (hanya untuk dokumen existing)
+            const downloadBtn = document.getElementById('downloadFromPreview');
+            if (downloadBtn && !downloadBtn.dataset.boundPreviewDownload) {
+                downloadBtn.dataset.boundPreviewDownload = '1';
+                downloadBtn.addEventListener('click', () => {
+                    if (!currentDownloadDocId) {
+                        showToast('info', 'Download not available yet', 'Generate or upload the document first.', 3000);
+                        return;
+                    }
+                    const btn = document.querySelector(`.btn-download[data-doc-id="${currentDownloadDocId}"]`);
+                    if (btn) btn.click();
+                });
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootProcurementDocuments);
+        } else {
+            bootProcurementDocuments();
+        }
+
+        if (!window.procDocsHtmxHooked) {
+            window.procDocsHtmxHooked = true;
+            document.body?.addEventListener('htmx:afterSwap', bootProcurementDocuments);
+        }
+
+        // ===== Helper buka modal + load iframe =====
+        function openPdfModal(title, fileName, url, hasRealFile) {
+            const modalEl = document.getElementById('pdfPreviewModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            const iframe = document.getElementById('pdfPreviewFrame');
+            const loading = document.getElementById('pdfLoadingContainer');
+            const errorBox = document.getElementById('pdfErrorContainer');
+            const downloadBtn = document.getElementById('downloadFromPreview');
+
+            if (modalEl && !modalEl.dataset.accessibilityBound) {
+                modalEl.dataset.accessibilityBound = '1';
+                modalEl.addEventListener('hide.bs.modal', () => {
+                    // Pastikan tidak ada fokus tertinggal pada elemen yang akan disembunyikan
+                    const focused = modalEl.querySelector(':focus');
+                    if (focused && typeof focused.blur === 'function') focused.blur();
+                });
+                modalEl.addEventListener('hidden.bs.modal', () => {
+                    modalEl.setAttribute('aria-hidden', 'true');
+                    modalEl.removeAttribute('aria-modal');
+                    modalEl.removeAttribute('role');
+                });
+            }
+
+            document.getElementById('previewModalTitle').textContent = title || 'Preview Dokumen';
+            document.getElementById('previewFileName').textContent = fileName || '';
+
+            // tombol download hanya tampil kalau dokumen fisik ada (bukan preview template)
+            if (hasRealFile) downloadBtn.classList.remove('d-none');
+            else downloadBtn.classList.add('d-none');
+
+            // reset state
+            iframe.style.display = 'none';
+            iframe.src = 'about:blank';
+            loading.classList.remove('d-none');
+            errorBox.classList.add('d-none');
+
+            modal.show();
+            modalEl?.removeAttribute('aria-hidden');
+            modalEl?.setAttribute('aria-modal', 'true');
+            modalEl?.setAttribute('role', 'dialog');
+
+            try {
+                iframe.src = url;
+                iframe.onload = () => {
+                    loading.classList.add('d-none');
+                    iframe.style.display = 'block';
+                };
+                iframe.onerror = () => {
+                    loading.classList.add('d-none');
+                    errorBox.classList.remove('d-none');
+                };
+            } catch (err) {
+                console.error('Preview error:', err);
+                loading.classList.add('d-none');
+                errorBox.classList.remove('d-none');
+                showToast('error', 'Failed to load preview', err.message, 3000);
+            }
+        }
+
+        /* ===================== Preview dokumen EXISTING ===================== */
+        function initPreviewHandlers() {
+            bindOnce('.btn-preview', 'boundPreview', (btn) => {
+                btn.addEventListener('click', async function () {
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName || 'Preview Dokumen';
+                    const fileName = this.dataset.fileName || '';
+
+                    currentDownloadDocId = docId;
+                    currentPreviewUrl = null;
+
+                    // Pola yang sudah jalan: minta signed URL dari server
+                    try {
+                        const res = await fetch(`/ProcurementDocuments/PreviewUrl/${encodeURIComponent(docId)}?procurementId=@Model.ProcurementId`);
+                        const data = await res.json();
+                        if (!data?.ok || !data?.url) throw new Error(data?.error || 'URL preview tidak tersedia');
+
+                        currentPreviewUrl = data.url;
+                        openPdfModal(docName, fileName, data.url, /*hasRealFile*/ true);
+                    } catch (err) {
+                        console.error('Preview(existing) error:', err);
+                        showToast('error', 'Failed to load preview', err.message, 3500);
+                    }
+                });
+            });
+        }
+
+        /* ===================== Preview TEMPLATE (GENERATED) ===================== */
+        function initGeneratePreviewHandlers() {
+            bindOnce('.btn-preview-generate', 'boundPreviewGenerate', (btn) => {
+                btn.addEventListener('click', async function () {
+                    const procurementId = this.dataset.procurementId;
+                    const docTypeId = this.dataset.docTypeId;
+                    const docName = this.dataset.docName || 'Preview Template';
+
+                    if (!procurementId || !docTypeId) {
+                        showToast('error', 'Data tidak lengkap', 'procurementId / documentTypeId kosong.', 3500);
+                        return;
+                    }
+
+                    currentDownloadDocId = null; // belum ada file fisik
+                    currentPreviewUrl = null;
+
+                    // 1) Coba endpoint JSON signed URL (jika kamu sediakan)
+                    try {
+                        const urlJson = `/ProcurementDocuments/PreviewGeneratedUrl?procurementId=${encodeURIComponent(procurementId)}&documentTypeId=${encodeURIComponent(docTypeId)}`;
+                        const res = await fetch(urlJson);
+                        // Jika endpoint tidak ada / bukan JSON, ini bisa throw
+                        if (res.ok) {
+                            const data = await res.json().catch(() => null);
+                            if (data?.ok && data?.url) {
+                                currentPreviewUrl = data.url;
+                                openPdfModal(`Preview Template � ${docName}`, '', data.url, /*hasRealFile*/ false);
+                                return;
+                            }
+                        }
+                        // 2) Fallback ke endpoint stream langsung (iframe memuat langsung dari server)
+                        const fallbackUrl = `/ProcurementDocuments/PreviewGenerated?procurementId=${encodeURIComponent(procurementId)}&documentTypeId=${encodeURIComponent(docTypeId)}`;
+                        openPdfModal(`Preview Template � ${docName}`, '', fallbackUrl, /*hasRealFile*/ false);
+                    } catch (err) {
+                        console.error('Preview(template) error:', err);
+                        showToast('error', 'Failed to load template preview', err.message, 3500);
+                    }
+                });
+            });
+        }
+
+        /* ===================== Download (per-row) ===================== */
+        function initDownloadHandlers() {
+            bindOnce('.btn-download', 'boundDownload', (btn) => {
+                btn.addEventListener('click', function () {
+                    const docId = this.dataset.docId;
+                    const fileName = this.dataset.fileName;
+
+                    showToast('info', 'Memproses download...', '', 1500);
+                    try {
+                        const url = `/ProcurementDocuments/Download/${encodeURIComponent(docId)}?procurementId=@Model.ProcurementId`;
+                        const a = document.createElement('a');
+                        a.href = url;
+                        if (fileName) a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => showToast('success', 'Download dimulai', fileName || '', 2500), 400);
+                    } catch (e) {
+                        console.error('Download error:', e);
+                        showToast('error', 'Failed to download', e.message, 3000);
+                    }
+                });
+            });
+        }
+
+        /* ===================== Delete ===================== */
+        function initDeleteHandlers() {
+            bindOnce('.btn-delete', 'boundDelete', (btn) => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName;
+                    const fileName = this.dataset.fileName;
+                    const procurementId = this.dataset.procurementId;
+
+                    Swal.fire({
+                        title: 'Confirm Document Deletion',
+                        html: `<div class="text-start">
+                                <p class="mb-2">Are you sure you want to delete this document?</p>
+                                <div class="alert alert-warning mb-0">
+                                    <strong>${docName || '�'}</strong><br><small class="text-muted">${fileName || ''}</small>
+                                </div>
+                            </div>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-trash me-1"></i> Yes, Delete',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                        focusCancel: true
+                    }).then((r) => {
+                        if (r.isConfirmed) {
+                            document.getElementById('deleteDocId').value = docId;
+                            document.getElementById('deleteProcurementId').value = procurementId;
+                            document.getElementById('deleteForm').submit();
+                        }
+                    });
+                });
+            });
+        }
+
+        /* ===================== File Upload ===================== */
+        function initFileInputHandlers() {
+            bindOnce('.file-input', 'boundFileInput', (input) => {
+                input.addEventListener('change', function () {
+                    const row = this.dataset.row;
+                    const file = this.files?.[0];
+                    if (file) {
+                        handleFileSelection(row, file, this);
+                    } else {
+                        resetFileSelection(row);
+                    }
+                });
+            });
+            initDropzoneHandlers();
+        }
+
+        function markUploadSuccess(row, payload) {
+            const rowEl = document.querySelector(`tr[data-row-index="${row}"]`);
+            const dropzone = document.querySelector(`.upload-dropzone[data-row="${row}"]`);
+            const fileInput = document.querySelector(`.file-input[data-row="${row}"]`);
+            const label = document.querySelector(`.selected-file[data-row="${row}"]`);
+            const statusCell = document.querySelector(`td[data-status-row="${row}"]`);
+            const actionsCell = document.querySelector(`td[data-actions-row="${row}"]`);
+
+            if (dropzone) {
+                dropzone.classList.add('disabled');
+                dropzone.setAttribute('aria-disabled', 'true');
+            }
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.disabled = true;
+            }
+            if (label) {
+                label.classList.remove('text-muted');
+                label.classList.add('text-success');
+                const fileName = payload?.document?.name || 'Dokumen berhasil diunggah';
+                label.innerHTML = `<i class="bi bi-file-earmark-check me-1"></i>${fileName}`;
+            }
+            if (statusCell) {
+                statusCell.innerHTML = `<span class="badge rounded-pill bg-success px-3 py-2">
+                                            <i class="bi bi-check-lg"></i> Uploaded
+                                        </span>`;
+            }
+            if (actionsCell) {
+                actionsCell.classList.add('opacity-75');
+            }
+            if (rowEl) {
+                const icon = rowEl.querySelector('.pt-1 i');
+                if (icon) {
+                    icon.className = 'bi bi-file-earmark-check-fill text-success fs-4';
+                    icon.setAttribute('title', 'Uploaded');
+                }
+            }
+        }
+
+        function updateProgressIndicators(deltaCompleted) {
+            const bar = document.getElementById('procProgressBar');
+            if (!bar) return;
+            const required = Number(bar.dataset.required || 0);
+            const currentCompleted = Number(bar.dataset.completed || 0);
+            const nextCompleted = Math.min(required, currentCompleted + deltaCompleted);
+
+            bar.dataset.completed = nextCompleted;
+            const percent = required > 0 ? Math.min(Math.round((nextCompleted * 100) / required), 100) : 0;
+            bar.style.width = `${percent}%`;
+            bar.setAttribute('aria-valuenow', percent);
+            bar.textContent = `${percent}%`;
+
+            const completedLabel = document.getElementById('completedCount');
+            const remainingLabel = document.getElementById('remainingCount');
+            const progressInfo = document.getElementById('progressInfo');
+
+            if (completedLabel) completedLabel.textContent = nextCompleted;
+            if (remainingLabel) remainingLabel.textContent = Math.max(required - nextCompleted, 0);
+            if (progressInfo) {
+                progressInfo.innerHTML = `<i class="bi bi-info-circle me-1"></i>${nextCompleted} dari ${required} dokumen wajib telah dipenuhi`;
+            }
+        }
+
+        function initDropzoneHandlers() {
+            bindOnce('.upload-dropzone', 'boundDropzone', (zone) => {
+                const row = zone.dataset.row;
+                const input = zone.querySelector('.file-input');
+                if (!input) return;
+
+                const prevent = (evt) => {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                };
+
+                ['dragenter', 'dragover'].forEach(evt => {
+                    zone.addEventListener(evt, e => {
+                        prevent(e);
+                        if (zone.classList.contains('disabled')) return;
+                        zone.classList.add('drag-over');
+                    });
+                });
+
+                ['dragleave', 'dragend', 'drop'].forEach(evt => {
+                    zone.addEventListener(evt, e => {
+                        prevent(e);
+                        zone.classList.remove('drag-over');
+                    });
+                });
+
+                zone.addEventListener('drop', e => {
+                    if (zone.classList.contains('disabled')) return;
+                    const files = Array.from(e.dataTransfer?.files || []).filter(Boolean);
+                    if (!files.length) return;
+                    assignFileToInput(input, files[0], e.dataTransfer?.files);
+                    handleFileSelection(row, files[0], input);
+                });
+
+                zone.addEventListener('keydown', e => {
+                    if (zone.classList.contains('disabled')) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        input.click();
+                    }
+                });
+            });
+        }
+
+        function handleFileSelection(row, file, input) {
+            if (!file) {
+                resetFileSelection(row);
+                return;
+            }
+
+            if (!isPdfFile(file)) {
+                showToast('warning', 'Format tidak didukung', 'Hanya file PDF yang diperbolehkan.', 4000);
+                input.value = '';
+                resetFileSelection(row);
+                return;
+            }
+
+            if (file.size > MAX_UPLOAD_SIZE) {
+                showToast('warning', 'File terlalu besar', 'Ukuran maksimal 10MB.', 4000);
+                input.value = '';
+                resetFileSelection(row);
+                return;
+            }
+
+            const label = document.querySelector(`.selected-file[data-row="${row}"]`);
+            if (label) {
+                label.classList.remove('text-muted', 'text-success');
+                label.innerHTML = `<i class="bi bi-file-earmark-pdf text-danger me-1"></i>${file.name}`;
+            }
+
+            const uploadBtn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+            if (uploadBtn) uploadBtn.disabled = false;
+        }
+
+        function assignFileToInput(input, file, fallbackFileList) {
+            if (!input || !file) return;
+            try {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                input.files = dt.files;
+            } catch {
+                if (fallbackFileList) {
+                    try {
+                        input.files = fallbackFileList;
+                    } catch {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        function resetFileSelection(row) {
+            const label = document.querySelector(`.selected-file[data-row="${row}"]`);
+            if (label) {
+                label.classList.remove('text-success');
+                label.classList.add('text-muted');
+                label.innerHTML = '<i class="bi bi-info-circle me-1"></i>No file selected yet';
+            }
+            const uploadBtn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+            if (uploadBtn) uploadBtn.disabled = true;
+        }
+
+        function isPdfFile(file) {
+            if (!file) return false;
+            const fileName = (file.name || '').toLowerCase();
+            const contentType = (file.type || '').toLowerCase();
+            return contentType === 'application/pdf' || fileName.endsWith('.pdf');
+        }
+
+        function initUploadFormHandlers() {
+            bindOnce('form[data-upload-form="true"]', 'boundUploadForm', (form) => {
+                form.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const row = this.dataset.row;
+                    const fileInput = this.querySelector('.file-input');
+                    const submitBtn = this.querySelector('.upload-btn');
+                    const feedback = document.querySelector(`.upload-feedback[data-row="${row}"]`);
+
+                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                        showToast('warning', 'No file selected', 'Please select or drag & drop a document first.');
+                        return;
+                    }
+
+                    const originalHtml = submitBtn.innerHTML;
+                    let uploadSucceeded = false;
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
+                    if (feedback) {
+                        feedback.classList.remove('text-danger', 'text-success');
+                        feedback.classList.add('text-muted');
+                        feedback.textContent = 'Mengunggah dokumen...';
+                    }
+
+                    try {
+                        const response = await fetch(this.action, {
+                            method: this.method || 'POST',
+                            body: new FormData(this),
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        let payload = null;
+                        const contentType = response.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            payload = await response.json();
+                        }
+
+                        if (!response.ok || (payload && payload.ok === false)) {
+                            throw new Error(payload?.error || 'Failed to upload the document.');
+                        }
+
+                        uploadSucceeded = true;
+                        markUploadSuccess(row, payload);
+                        updateProgressIndicators(1);
+                        showToast('success', 'Upload berhasil', payload?.message || 'Dokumen berhasil diunggah.');
+                    } catch (err) {
+                        console.error('Upload error:', err);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalHtml;
+                        if (feedback) {
+                            feedback.classList.remove('text-muted', 'text-success');
+                            feedback.classList.add('text-danger');
+                            feedback.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>${err.message || 'Upload gagal.'}`;
+                        }
+                        showToast('error', 'Upload gagal', err.message || 'Terjadi kesalahan.', 5000);
+                        return;
+                    }
+
+                    if (uploadSucceeded) {
+                        submitBtn.innerHTML = '<i class="bi bi-check2"></i> Uploaded';
+                        if (feedback) {
+                            feedback.classList.remove('text-muted', 'text-danger');
+                            feedback.classList.add('text-success');
+                            feedback.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Upload berhasil. Refresh halaman untuk aksi lanjutan.';
+                        }
+                    }
+                });
+            });
+        }
+
+        function initGenerateFormHandlers() {
+            bindOnce('form[data-generate-form="true"]', 'boundGenerateForm', (form) => {
+                const submitBtn = form.querySelector('.js-generate-btn');
+                if (!submitBtn) return;
+                form.addEventListener('submit', () => {
+                    if (submitBtn.dataset.loading === 'true') return;
+                    submitBtn.dataset.loading = 'true';
+                    submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+                });
+            });
+        }
+
+        /* ===================== QR Code ===================== */
+        function initQrHandlers() {
+            bindOnce('.btn-show-qr', 'boundShowQr', (btn) => {
+                btn.addEventListener('click', async function () {
+                    const docId = this.dataset.docId;
+                    await showQrCode(docId);
+                });
+            });
+            const printBtn = document.getElementById('btnPrintQr');
+            if (printBtn && !printBtn.dataset.boundPrintQr) {
+                printBtn.dataset.boundPrintQr = '1';
+                printBtn.addEventListener('click', printQrCode);
+            }
+        }
+
+        async function showQrCode(docId) {
+            try {
+                const response = await fetch(`/ProcurementDocuments/QrUrl/${encodeURIComponent(docId)}`);
+                const data = await response.json();
+                if (!data.ok || !data.url) throw new Error(data.error || 'Failed to build the QR URL');
+
+                currentQrImageSrc = data.url;
+                document.getElementById('qrImg').src = data.url;
+                document.getElementById('btnDownloadQr').href = `/ProcurementDocuments/DownloadQr/${encodeURIComponent(docId)}`;
+
+                new bootstrap.Modal(document.getElementById('qrModal')).show();
+            } catch (error) {
+                console.error('QR error:', error);
+                showToast('error', 'Failed to load QR', error.message, 3000);
+            }
+        }
+
+        function printQrCode() {
+            if (!currentQrImageSrc) return;
+            const w = window.open('', '_blank', 'width=600,height=600');
+            const doc = w.document;
+            doc.title = 'Print QR Code';
+            if (!doc.head) doc.documentElement.appendChild(doc.createElement('head'));
+            const style = doc.createElement('style');
+            style.textContent = 'html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center}img{max-width:90%;max-height:90%}';
+            doc.head.appendChild(style);
+            doc.body.innerHTML = '';
+            const img = doc.createElement('img');
+            img.id = 'qrToPrint';
+            img.alt = 'QR Code';
+            img.src = currentQrImageSrc;
+            doc.body.appendChild(img);
+            img.onload = function () { w.focus(); w.print(); };
+        }
+
+        /* ===================== Approval Timeline ===================== */
+        function initTimelineHandlers() {
+            bindOnce('.btn-timeline', 'boundTimeline', (btn) => {
+                btn.addEventListener('click', function () {
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName || '';
+                    openTimelineModal(docId, docName);
+                });
+            });
+        }
+
+        function normalizeTimelinePayload(raw) {
+            const d = raw || {};
+            const norm = {
+                procurementId: d.ProcurementId ?? d.procurementId ?? null,
+                procDocumentId: d.ProcDocumentId ?? d.procDocumentId ?? null,
+                docStatus: d.DocStatus ?? d.docStatus ?? null,
+                currentGateLevel: d.CurrentGateLevel ?? d.currentGateLevel ?? null,
+                currentGateSequence: d.CurrentGateSequence ?? d.currentGateSequence ?? null,
+                requiredRoles: Array.isArray(d.RequiredRoles) ? d.RequiredRoles : (Array.isArray(d.requiredRoles) ? d.requiredRoles : []),
+                steps: Array.isArray(d.Steps) ? d.Steps : (Array.isArray(d.steps) ? d.steps : [])
+            };
+
+            // Normalisasi isi Steps ke camelCase
+            norm.steps = norm.steps.map(s => ({
+                procDocumentApprovalId: s.ProcDocumentApprovalId ?? s.procDocumentApprovalId ?? null,
+                level: s.Level ?? s.level ?? 0,
+                sequenceOrder: s.SequenceOrder ?? s.sequenceOrder ?? 0,
+                roleId: s.RoleId ?? s.roleId ?? null,
+                roleName: s.RoleName ?? s.roleName ?? null,
+                status: s.Status ?? s.status ?? null,
+                approverUserId: s.ApproverUserId ?? s.approverUserId ?? null,
+                approverFullName: s.ApproverFullName ?? s.approverFullName ?? null,
+                approvedAt: s.ApprovedAt ?? s.approvedAt ?? null,
+                note: s.Note ?? s.note ?? null
+            }));
+
+            // Normalisasi RequiredRoles (chips �Next approver�)
+            norm.requiredRoles = norm.requiredRoles.map(r => ({
+                roleId: r.RoleId ?? r.roleId ?? null,
+                roleName: r.RoleName ?? r.roleName ?? null,
+                procDocumentApprovalId: r.ProcDocumentApprovalId ?? r.procDocumentApprovalId ?? null,
+                level: r.Level ?? r.level ?? null,
+                sequenceOrder: r.SequenceOrder ?? r.sequenceOrder ?? null,
+                status: r.Status ?? r.status ?? null,
+                note: r.Note ?? r.note ?? null,
+                approverId: r.ApproverId ?? r.approverId ?? null,
+                approverFullName: r.ApproverFullName ?? r.approverFullName ?? null,
+                approvedAt: r.ApprovedAt ?? r.approvedAt ?? null
+            }));
+
+            return norm;
+        }
+
+        function openTimelineModal(docId, docName) {
+            document.getElementById('approvalDocName').textContent = docName || '';
+            document.getElementById('approvalLoading').classList.remove('d-none');
+            document.getElementById('approvalError').classList.add('d-none');
+            document.getElementById('approvalTimelineBody').classList.add('d-none');
+
+            const modal = new bootstrap.Modal(document.getElementById('approvalTimelineModal'));
+            modal.show();
+
+            fetch(`/ProcurementDocuments/ApprovalTimeline/${encodeURIComponent(docId)}`)
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(payload => {
+                    if (!payload?.ok || !payload?.data) throw new Error(payload?.message || 'Bad payload');
+                    const data = normalizeTimelinePayload(payload.data);
+                    renderTimeline(data, docId);
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('approvalLoading').classList.add('d-none');
+                    document.getElementById('approvalError').classList.remove('d-none');
+                });
+        }
+
+        function renderTimeline(data, docIdForInline) {
+            const body = document.getElementById('approvalTimelineBody');
+            const stepper = document.getElementById('approvalStepper');
+            const loading = document.getElementById('approvalLoading');
+            const nextWrap = document.getElementById('nextApproverWrap');
+            const nextChips = document.getElementById('nextApproverChips');
+            const docStatusBadge = document.getElementById('docStatusBadge');
+            const currentGateBadge = document.getElementById('currentGateBadge');
+
+            stepper.innerHTML = '';
+            nextChips.innerHTML = '';
+            nextWrap.style.display = 'none';
+            currentGateBadge.classList.add('d-none');
+
+            // Status badge dokumen
+            const text = data?.docStatus || '�';
+            let cls = 'bg-secondary';
+            const lower = (text || '').toLowerCase();
+            if (lower.includes('pending')) cls = 'bg-warning text-dark';
+            if (lower.includes('approved')) cls = 'bg-success';
+            if (lower.includes('reject')) cls = 'bg-danger';
+            if (lower.includes('generated') || lower.includes('uploaded')) cls = 'bg-info';
+            if (lower.includes('replaced') || lower.includes('deleted')) cls = 'bg-secondary';
+
+            docStatusBadge.className = 'badge rounded-pill ' + cls;
+            docStatusBadge.textContent = 'Status: ' + text;
+
+            // Gate indicator
+            if (data?.currentGateLevel && data?.currentGateSequence) {
+                currentGateBadge.classList.remove('d-none');
+                currentGateBadge.textContent = `Gate: L${data.currentGateLevel}.S${data.currentGateSequence}`;
+            }
+
+            // Steps
+            const steps = Array.isArray(data?.steps) ? data.steps.slice() : [];
+            steps.sort((a, b) => (a.level - b.level) || (a.sequenceOrder - b.sequenceOrder));
+
+            if (steps.length === 0) {
+                loading.classList.add('d-none');
+                document.getElementById('approvalError')?.classList.add('d-none');
+                body.classList.remove('d-none');
+                stepper.innerHTML = `<li class="timeline-item">
+                    <div class="d-flex">
+                        <div class="timeline-icon text-secondary"><i class="bi bi-lock"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">No approval data available</div>
+                            <div class="small text-muted">Pastikan flow sudah tergenerate & API mengembalikan steps.</div>
+                        </div>
+                    </div>
+                </li>`;
+                return;
+            }
+
+            steps.forEach(s => {
+                const status = (s.status || '').toLowerCase();
+                let icon = 'lock', color = 'secondary', badgeTextColor = '';
+                if (status === 'approved') { icon = 'check2-circle'; color = 'success'; }
+                else if (status === 'rejected') { icon = 'x-circle'; color = 'danger'; }
+                else if (status === 'pending') { icon = 'hourglass-split'; color = 'warning'; badgeTextColor = 'text-dark'; }
+                else if (status === 'blocked') { icon = 'lock'; color = 'secondary'; }
+
+                const approvedAtText = s.approvedAt ? ` � <i class="bi bi-clock-history"></i> ${new Date(s.approvedAt).toLocaleString()}` : '';
+                const approverText = s.approverFullName ? `<i class="bi bi-person-badge"></i> ${s.approverFullName}` : '';
+                const noteText = s.note ? ` � <i class="bi bi-chat-text"></i> ${escapeHtml(s.note)}` : '';
+
+                const li = document.createElement('li');
+                li.className = 'timeline-item';
+                li.innerHTML = `
+                    <div class="d-flex">
+                        <div class="timeline-icon text-${color}">
+                            <i class="bi bi-${icon}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                <span class="badge bg-light text-dark border">L${s.level}.S${s.sequenceOrder}</span>
+                                <span class="fw-semibold">${s.roleName ?? '�'}</span>
+                                <span class="badge rounded-pill bg-${color} ${badgeTextColor} text-capitalize">${s.status ?? '�'}</span>
+                            </div>
+                            <div class="small text-muted">
+                                ${approverText}${approvedAtText}${noteText}
+                            </div>
+                        </div>
+                    </div>`;
+                stepper.appendChild(li);
+            });
+
+            // Next approvers
+            if (Array.isArray(data?.requiredRoles) && data.requiredRoles.length > 0) {
+                nextWrap.style.display = '';
+                data.requiredRoles.forEach(r => {
+                    const span = document.createElement('span');
+                    span.className = 'badge rounded-pill bg-light text-dark border me-1';
+                    span.textContent = r.roleName || '�';
+                    nextChips.appendChild(span);
+                });
+
+                // Update inline hint di row tabel (jika ada)
+                const inline = document.getElementById('next-' + (data.procDocumentId || docIdForInline));
+                if (inline) {
+                    inline.innerHTML = '<span class="badge bg-light text-dark border"><i class="bi bi-person-check me-1"></i>Next: ';
+                    data.requiredRoles.forEach((r, idx) => {
+                        if (idx > 0) inline.innerHTML += ', ';
+                        inline.innerHTML += r.roleName || '�';
+                    });
+                    inline.innerHTML += '</span>';
+                }
+            }
+
+            loading.classList.add('d-none');
+            document.getElementById('approvalError')?.classList.add('d-none');
+            body.classList.remove('d-none');
+        }
+        function escapeHtml(s) {
+            if (!s) return '';
+            return s.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+        }
+    </script>
+}
+
+@section HeadScripts {
+    <style>
+        .card {
+            transition: box-shadow 0.3s ease;
+        }
+
+            .card:hover {
+                box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+            }
+
+        .modal-xl {
+            max-width: 95%;
+        }
+
+        .btn-sm {
+            font-size: 0.8125rem;
+            padding: 0.25rem 0.625rem;
+        }
+
+        .upload-input-stack {
+            min-width: 230px;
+        }
+
+        .upload-dropzone {
+            border: 1px dashed var(--bs-border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            background-color: #fff;
+            transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .upload-dropzone.drag-over {
+            border-color: var(--bs-primary);
+            background-color: rgba(var(--bs-primary-rgb), 0.05);
+            box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), 0.2);
+        }
+
+        .upload-dropzone.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .upload-feedback {
+            min-height: 1.2rem;
+        }
+
+        .progress-bar {
+            transition: width 0.6s ease;
+        }
+
+        .doc-attribute-badges .badge {
+            font-size: 0.7rem;
+        }
+
+        .badge-mandatory {
+            border-color: rgba(220, 53, 69, 0.4);
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.08);
+        }
+
+        .badge-upload {
+            border-color: rgba(13, 110, 253, 0.35);
+            color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.08);
+        }
+
+        .badge-generated {
+            border-color: rgba(32, 201, 151, 0.4);
+            color: #20c997;
+            background-color: rgba(32, 201, 151, 0.1);
+        }
+
+        .badge-approval {
+            border-color: rgba(255, 193, 7, 0.5);
+            color: #664d03;
+            background-color: rgba(255, 193, 7, 0.15);
+        }
+
+        .badge-complete {
+            border-color: rgba(25, 135, 84, 0.5);
+            color: #198754;
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+
+        .badge {
+            font-weight: 500;
+        }
+
+        /* Timeline vertical stepper */
+        .timeline {
+            position: relative;
+            padding-left: 2.5rem;
+        }
+
+            .timeline::before {
+                content: "";
+                position: absolute;
+                left: 16px;
+                top: 8px;
+                bottom: 8px;
+                width: 2px;
+                background: linear-gradient(to bottom, var(--bs-border-color) 0%, var(--bs-border-color) 100%);
+            }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+            .timeline-item:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+        .timeline-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--bs-border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            z-index: 1;
+        }
+
+            .timeline-icon i {
+                font-size: 1.1rem;
+            }
+
+            .timeline-icon.text-success {
+                border-color: var(--bs-success);
+                background: rgba(25, 135, 84, 0.1);
+            }
+
+            .timeline-icon.text-danger {
+                border-color: var(--bs-danger);
+                background: rgba(220, 53, 69, 0.1);
+            }
+
+            .timeline-icon.text-warning {
+                border-color: var(--bs-warning);
+                background: rgba(255, 193, 7, 0.1);
+            }
+
+        .modal-xl {
+            max-width: 98%;
+        }
+
+    </style>
+}
+

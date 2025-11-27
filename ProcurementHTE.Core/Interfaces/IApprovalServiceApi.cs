@@ -4,22 +4,22 @@ namespace ProcurementHTE.Core.Interfaces
 {
     public interface IApprovalServiceApi
     {
-        Task<PagedResult<WoDocumentLiteDto>> GetWoDocumentsByQrTextAsync(
+        Task<PagedResult<ProcDocumentLiteDto>> GetProcDocumentsByQrTextAsync(
             string qrText,
             int page,
             int pageSize,
             CancellationToken ct = default
         );
 
-        Task<WoDocumentLiteDto?> UpdateWoDocumentStatusAsync(
-            string woDocumentId,
+        Task<ProcDocumentLiteDto?> UpdateProcDocumentStatusAsync(
+            string procDocumentId,
             string newStatus,
             string? reason,
             string? approvedByUserId,
             CancellationToken ct = default
         );
 
-        Task<WoDocumentLiteDto?> GetWoDocumentByQrCode(
+        Task<ProcDocumentLiteDto?> GetProcDocumentByQrCode(
             string qrText,
             CancellationToken ct = default
         );

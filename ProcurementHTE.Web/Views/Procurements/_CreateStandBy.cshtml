@@ -1,0 +1,39 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementCreateViewModel
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Stand By</legend>
+        <hr />
+        <div class="row">
+            <div class="col-12 col-md-4">
+                <label asp-for="Procurement.Note" class="form-label">Standby Hours</label>
+                <input asp-for="Procurement.Note" type="string" class="form-control" />
+                <span asp-validation-for="Procurement.Note" class="text-danger small"></span>
+            </div>
+        </div>
+    </fieldset>
+</section>
+
+<div class="mb-3 w-100 d-flex justify-content-end">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWoModal"><i class="bi bi-check2-circle"></i> Save WO StandBy</button>
+</div>
+
+@* Modal *@
+<div class="modal fade" id="createWoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createWoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="createWoModalLabel">Create Work Order</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Would you like to create a new Work Order or save it as a draft?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" name="submitAction" value="Draft">Save/Draft</button>
+                <button type="submit" class="btn btn-success" name="submitAction" value="Created">Create</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,3 +1,12 @@
 ﻿@{
-    Layout = "_Layout";
+    var headers = Context?.Request?.Headers;
+    var query = Context?.Request?.Query;
+    var isPartialRequest =
+        (headers?.ContainsKey("X-Partial-Request") ?? false) ||
+        (query?.TryGetValue("partial", out var partialFlag) == true &&
+         string.Equals(partialFlag.ToString(), "true", System.StringComparison.OrdinalIgnoreCase));
+    var isHtmxRequest = headers?.ContainsKey("HX-Request") ?? false;
+    var isHtmxHistoryRestore = headers?.ContainsKey("HX-History-Restore-Request") ?? false;
+
+    Layout = (isPartialRequest || isHtmxRequest || isHtmxHistoryRestore) ? "_PartialLayout" : "_Layout";
 }

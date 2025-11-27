@@ -10,9 +10,9 @@ namespace ProcurementHTE.Core.Services
         public VendorOfferService(IVendorOfferRepository voRepository) =>
             _voRepository = voRepository;
 
-        public async Task<IReadOnlyList<VendorOffer>> GetByWorkOrderAsync(string woId)
+        public async Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string woId)
         {
-            return await _voRepository.GetByWorkOrderAsync(woId);
+            return await _voRepository.GetByProcurementAsync(woId);
         }
     }
 }

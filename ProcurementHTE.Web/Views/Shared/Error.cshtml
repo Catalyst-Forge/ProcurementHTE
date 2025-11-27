@@ -1,26 +1,76 @@
-﻿@using ProcurementHTE.Web.Models
+@using ProcurementHTE.Web.Models
 @model ErrorViewModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = Model.Title;
+    var dashboardUrl = Url.Action("Index", "Dashboard") ?? "/";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<section class="app-error-page py-5">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-lg-2">
+                <div class="app-error-illustration rounded-4 shadow-sm p-4">
+                    <svg viewBox="0 0 320 240" role="img" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="errorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#00AEEF" stop-opacity="0.8" />
+                                <stop offset="100%" stop-color="#0061FF" stop-opacity="0.6" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="320" height="240" rx="24" fill="url(#errorGradient)" opacity=".1" />
+                        <path d="M60 180 C80 110 120 110 140 180 S220 260 240 120" fill="none" stroke="#00AEEF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="160" cy="90" r="12" fill="#FF6A55" opacity=".9" />
+                        <circle cx="92" cy="150" r="8" fill="#F0B429" opacity=".8" />
+                        <circle cx="224" cy="150" r="10" fill="#4DC0B5" opacity=".8" />
+                        <text x="160" y="210" text-anchor="middle" fill="#0F172A" font-size="28" font-weight="600">Oops!</text>
+                    </svg>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <p class="app-error-code text-primary mb-2">Error @Model.StatusCode</p>
+                <h1 class="app-error-title mb-3">@Model.Title</h1>
+                <p class="app-error-description text-secondary mb-4">
+                    @Model.Description
+                </p>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+                <div class="app-error-actions d-flex flex-wrap gap-3 align-items-center mb-4">
+                    <a class="btn btn-primary px-4" href="@Model.PrimaryActionUrl">
+                        @Model.PrimaryActionText
+                    </a>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+                    @if (Model.ShowSecondaryAction)
+                    {
+                        <a class="btn btn-outline-primary px-4" href="@Model.SecondaryActionUrl">
+                            @Model.SecondaryActionText
+                        </a>
+                    }
+
+                    <button type="button"
+                            class="btn btn-link px-0 text-decoration-none"
+                            onclick="window.history.length > 1 ? window.history.back() : window.location.assign('@dashboardUrl');">
+                        Kembali ke halaman sebelumnya
+                    </button>
+                </div>
+
+                <div class="app-error-meta rounded-3 border p-3">
+                    <div class="app-error-meta-item">
+                        <span class="label text-uppercase">Permintaan</span>
+                        <span class="value">@((Model.ShowRequestPath ? Model.RequestPath : "-") ?? "-")</span>
+                    </div>
+                    <div class="app-error-meta-item">
+                        <span class="label text-uppercase">ID Referensi</span>
+                        <span class="value">@((Model.ShowRequestId ? Model.RequestId : "-") ?? "-")</span>
+                    </div>
+                    <div class="app-error-meta-item">
+                        <span class="label text-uppercase">Waktu</span>
+                        <span class="value">@DateTimeOffset.Now.ToString("dddd, dd MMM yyyy HH:mm", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</span>
+                    </div>
+                </div>
+
+                <p class="mt-4 text-muted small">
+                    Jika masalah terus terjadi, hubungi tim admin dengan menyertakan ID referensi di atas agar kami bisa membantu lebih cepat.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>

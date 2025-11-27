@@ -1,0 +1,769 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Models
+@using ProcurementHTE.Core.Authorization
+@using ProcurementHTE.Web.Models.ViewModels
+@inject IAuthorizationService AuthZ
+@model Procurement
+@{
+    ViewData["Title"] = "Procurement Details";
+    var no = 1;
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
+    var pnl = ViewBag.PnlViewModel as ProfitLossSummaryViewModel;
+    var documents = ViewBag.Documents as IReadOnlyList<ProcDocuments>;
+    var picOpsName = ViewBag.PicOpsName as string ?? Model?.PicOpsUserId;
+    var analystName = ViewBag.AnalystName as string ?? Model?.AnalystHteUserId;
+    var assistantManagerName = ViewBag.AssistantManagerName as string ?? Model?.AssistantManagerUserId;
+    var managerName = ViewBag.ManagerName as string ?? Model?.ManagerUserId;
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };  
+    var selectedNames = pnl?.SelectedVendorNames ?? new List<string>();
+}
+
+<header class="mb-3">
+    <div class="hstack flex-wrap justify-content-between my-2">
+        <h1 class="h2 fw-bold">@ViewBag.Title</h1>
+
+        <button class="btn btn-primary d-md-none position-fixed bottom-0 end-0 mb-4 mb-md-0 me-4 me-md-0 z-3" type="button" id="buttonNavToggle">
+            <i class="bi bi-three-dots-vertical"></i>
+        </button>
+
+        <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
+            <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
+            <span title="@(pnl != null ? "data pnl sudah ada" : "")">
+                <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model?.ProcurementId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-file-earmark-text-fill"></i> Create Profit & Loss</a>
+            </span>
+            <a asp-action="Edit" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+            <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
+        </div>
+    </div>
+
+    @* Navigation tabs *@
+    <nav>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="procurement-tab" data-bs-toggle="tab"
+                        data-bs-target="#procurement-tab-pane" type="button" role="tab"
+                        aria-controls="procurement-tab-pane" aria-selected="true">
+                    Procurement Information
+                </button>
+            </li>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pnl-tab" data-bs-toggle="tab" data-bs-target="#pnl-tab-pane" type="button" role="tab" aria-controls="pnl-tab-pane" aria-selected="false">Profit and Loss</button>
+            </li>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="document-tab" data-bs-toggle="tab" data-bs-target="#document-tab-pane" type="button" role="tab" aria-controls="document-tab-pane" aria-selected="false">Documents</button>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+@* Content body *@
+<div class="tab-content" id="myTabContent">
+    <!-- ================= PROCUREMENT DETAIL ================= -->
+    <section class="tab-pane show active" id="procurement-tab-pane" role="tabpanel" aria-labelledby="procurement-tab" tabindex="0">
+        <div class="d-grid gap-md-3 mt-2 wo-content">
+            <div>
+                @* Job Information card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Job Information</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ContractType)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ContractType)</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectRegion)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProjectRegion)</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectCode)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.ProjectCode</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.JobName)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.JobName)</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.LtcName)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.LtcName)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+                
+                @* Reference Numbers Card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-hash text-primary me-1"></i> Reference Numbers</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpkNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.SpkNumber</dd>
+                            </dl>
+
+                              <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                  <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpmpNumber)</dt>
+                                  <dd class="fw-medium text-secondary-emphasis">@Model?.SpmpNumber</dd>
+                              </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.MemoNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.MemoNumber</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.OeNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.OeNumber</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.RaNumber)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.RaNumber</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+
+                @* Schedule & Financials Card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-calendar-check text-primary me-1"></i> Schedule & Financials</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.StartDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.StartDate.ToTanggalIndonesia()</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.EndDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.EndDate.ToTanggalIndonesia()</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.PotentialAccrualDate)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Model?.PotentialAccrualDate.ToTanggalIndonesia()</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">Accrual Amount</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@(pnl?.AccrualAmount.ToIDR() ?? "-")</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">Realization Amount</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@(pnl?.RealizationAmount.ToIDR() ?? "-")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+
+                @* Item penawaran card*@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-list-check text-primary me-1"></i> Items
+                        </h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="table-responsive rounded-3">
+                            <table class="table table-hover">
+                                <thead class="table-info">
+                                    <tr>
+                                        <th class="mw-100 text-nowrap text-uppercase">No</th>
+                                        <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
+                                        <th class="mw-100 text-nowrap text-uppercase">Quantity</th>
+                                        <th class="mw-100 text-nowrap text-uppercase">Unit</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var item in Model!.ProcOffers) {
+                                        <tr>
+                                            <td class="text-nowrap">@no</td>
+                                            <td>@item.ItemPenawaran</td>
+                                            <td>@item.Qty</td>
+                                            <td>@item.Unit</td>
+                                        </tr>
+                                        no++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </article>
+
+                @* Item card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-file-text-fill text-primary me-1"></i> Job Description</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-12 mb-3">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-2">@Html.DisplayNameFor(model => model.Note)</dt>
+                                <dd class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info rounded-3 border-5">@Html.DisplayFor(model => model.Note)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div>
+                @* Procurement Status card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Status</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <div class="row mb-0">
+                            <dl class="col-12">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                    @Html.DisplayNameFor(model => model.JobType)
+                                </dt>
+                                <dd>
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">
+                                        @Html.DisplayFor(model => model.JobType!.TypeName)
+                                    </span>
+                                </dd>
+                            </dl>
+
+                            <dl class="col-12">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                    @Html.DisplayNameFor(model => model.Status)
+                                </dt>
+                                <dd>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary rounded-5 p-2 px-3">
+                                        @Html.DisplayFor(model => model.Status!.StatusName)
+                                    </span>
+                                </dd>
+                            </dl>
+
+                            <dl class="col-12">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                    @Html.DisplayNameFor(model => model.CreatedAt)
+                                </dt>
+                                <dd class="fw-medium text-secondary-emphasis">
+                                    @Model.CreatedAt.ToTanggalIndonesia()
+                                </dd>
+                            </dl>
+
+                            <dl class="col-12">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                    @Html.DisplayNameFor(model => model.User)
+                                </dt>
+                                <dd class="fw-medium text-secondary-emphasis">
+                                    @Html.DisplayFor(model => model.User!.FullName)
+                                </dd>
+                            </dl>
+
+                            <dl class="col-12">
+                                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                    @Html.DisplayNameFor(model => model.CompletedAt)
+                                </dt>
+                                <dd class="fw-medium text-secondary-emphasis">
+                                    @Model?.CompletedAt.ToTanggalIndonesia()
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+
+                @* Contact person card *@
+                @* <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-person-fill text-primary me-1"></i> Contact Person</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold mb-2"><i class="bi bi-geo-alt-fill"></i> Lokasi</dt>
+                            <dd class="text-secondary-emphasis">CP Lokasi @Model?.XS1 : <br /> @Html.DisplayFor(model => model.XS3)</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold mb-2"><i class="bi bi-tools"></i> Workshop</dt>
+                            <dd class="text-secondary-emphasis">CP Workshop @Model?.XS2 : <br /> @Html.DisplayFor(model => model.XS4)</dd>
+                        </dl>
+                    </div>
+                </article> *@
+
+                @* Approvals card *@
+                <article class="card shadow-sm mb-3 rounded-4">
+                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                        <h2 class="card-title mb-0 h5"><i class="bi bi-people text-primary me-1"></i> Approvers</h2>
+                    </header>
+                    <hr class="mx-3 my-2" />
+
+                    <div class="card-body">
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.PicOpsUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@picOpsName</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AnalystHteUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@analystName</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AssistantManagerUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@assistantManagerName</dd>
+                        </dl>
+
+                        <dl class="text-bg-light p-3 rounded-4 mb-2">
+                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.ManagerUserId)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@managerName</dd>
+                        </dl>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PROFIT & LOSS DETAIL ================= -->
+    <section class="tab-pane" id="pnl-tab-pane" role="tabpanel" aria-labelledby="pnl-tab" tabindex="0">
+        @if (pnl == null) {
+            <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                No Profit &amp; Loss data is available for this procurement.
+            </div>
+
+            <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model!.ProcurementId" class="btn btn-success">
+                <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
+            </a>
+        } else {
+            var items = pnl.Items;
+
+            @* VENDOR YANG DISERTAKAN *@
+            <article class="card shadow-sm mb-3 rounded-4">
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-building-fill text-primary me-1"></i>
+                        Vendors Involved
+                    </h2>
+                </header>
+                <hr class="mx-3 my-2" />
+
+                <div class="card-body">
+                    @if (selectedNames.Any()) {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var name in selectedNames) {
+                                <span class="badge border rounded-5 text-secondary fw-medium px-3 py-2">@name</span>
+                            }
+                        </div>
+                    } else {
+                        <span class="text-muted">�</span>
+                    }
+                </div>
+            </article>
+
+            @* RINGKASAN PNL *@
+            <article class="card shadow-sm mb-3 rounded-4">
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-bar-chart text-primary me-1"></i>
+                        Profit &amp; Loss Statement and Summary
+                    </h2>
+                </header>
+                <hr class="mx-3 my-2" />
+
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="card-title mb-0 h6">Information</h3>
+                    </div>
+
+                    <div class="row g-3">
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">WO Start</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Model!.StartDate.ToTanggalIndonesia()</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">WO Create</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Model!.CreatedAt.ToTanggalIndonesia()</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">Vendor</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@pnl.SelectedVendorName</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Status)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Status!.StatusName)</dd>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => pnl.Distance)</dt>
+                            <div class="fw-medium text-secondary-emphasis">@pnl.Distance KM</div>
+                        </dl>
+                        <dl class="col-12 col-sm-6 col-md-3">
+                            <dt class="fw-semibold text-uppercase text-secondary">Profit & Loss Create</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@pnl.CreatedAt.ToTanggalIndonesia()</dd>
+                        </dl>
+                    </div>
+
+                    <hr class="mt-1 mb-4" />
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="card-title mb-0 h6">Summary</h3>
+                        <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-repeat"></i> Recount
+                        </a>
+                    </div>
+
+                    <div class="row g-3">
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => pnl.AccrualAmount)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@(pnl.AccrualAmount.ToIDR())</dd>
+                        </dl>
+
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => pnl.RealizationAmount)</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@(pnl.RealizationAmount.ToIDR())</dd>
+                        </dl>
+
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Best Vendor</dt>
+                            <dd class="text-success fw-medium">@pnl.SelectedVendorName</dd>
+                        </dl>
+
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Total Revenue</dt>
+                            <dd class="fw-bold">@((pnl.Items?.Sum(x => x.Revenue) ?? 0m).ToIDR())</dd>
+                        </dl>
+
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Final Offer</dt>
+                            <dd class="fw-medium text-secondary-emphasis">@pnl.SelectedFinalOffer.ToIDR()</dd>
+                            <span class="small text-muted">(Σ minimum price per item)</span>
+
+                        </dl>
+
+                        <dl class="col-12 col-sm-6 col-md-4">
+                            <dt class="fw-semibold text-uppercase text-secondary">Profit</dt>
+                            <dd class="fw-bold text-success">
+                                @pnl.Profit.ToIDR() (@pnl.ProfitPercent.ToPersen())
+                            </dd>
+                            <span class="small text-muted">= Total Revenue - Final Offer</span>
+                        </dl>
+                    </div>
+                </div>
+            </article>
+
+            @* RINCIAN ITEM *@
+            <article class="card shadow-sm mb-3 rounded-4">
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-list-ul text-primary me-1"></i>
+                        Item Details (Revenue)
+                    </h2>
+                </header>
+                <hr class="mx-3 my-2" />
+
+                <div class="card-body">
+                    <div class="table-responsive rounded-3">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-info">
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">400 KM Tariff</th>
+                                    <th class="text-end">Additional Tariff</th>
+                                    <th class="text-end">KM/25</th>
+                                    <th class="text-end">Operator Cost</th>
+                                    <th class="text-end">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var it in items) {
+                                    <tr>
+                                        <td class="w-25">@it.ItemName</td>
+                                        <td class="text-end">@it.Quantity</td>
+                                        <td class="text-end">@it.TarifAwal.ToIDR()</td>
+                                        <td class="text-end">@it.TarifAdd.ToIDR()</td>
+                                        <td class="text-end">@it.KmPer25</td>
+                                        <td class="text-end">@it.OperatorCost.ToIDR()</td>
+                                        <td class="text-end fw-semibold">@it.Revenue.ToIDR()</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <th class="text-end" colspan="6">Total</th>
+                                    <th class="text-end fw-bold">@items.Sum(x => x.Revenue).ToIDR()</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="small text-muted px-3 pb-3">
+                    Operator Cost per item = <em>Additional Tariff * KM/25</em><br /> Revenue per item = <em>400 km Tariff + Operator Cost</em>.
+                </div>
+            </article>
+
+
+            @* PERBANDINGAN VENDOR *@
+            <article class="card shadow-sm mb-3 rounded-4">
+                <header class="card-header fw-semibold bg-transparent border-bottom-0 mt-2">
+                    <h2 class="card-title mb-0 h5">
+                        <i class="bi bi-award text-primary me-1"></i>
+                        Vendor Comparison
+                    </h2>
+                </header>
+                <hr class="mx-3 my-2" />
+                <div class="card-body">
+                    <div class="table-responsive rounded-3">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-info">
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th class="text-end">Final Offer</th>
+                                    <th class="text-end">Profit</th>
+                                    <th class="text-end">Profit %</th>
+                                    <th class="text-center">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in pnl.Rows) {
+                                    <tr class="@(row.IsSelected ? "table-success" : "")">
+                                        <td>@row.VendorName</td>
+                                        <td class="text-end">@row.FinalOffer.ToIDR()</td>
+                                        <td class="text-end">@row.Profit.ToIDR()</td>
+                                        <td class="text-end">@row.ProfitPercent.ToPersen()</td>
+                                        <td class="text-center">
+                                            @if (row.IsSelected) {
+                                                <span class="badge py-2 px-3 bg-success-subtle text-success border border-success rounded-5">
+                                                    <i class="bi bi-check-circle-fill"></i> Selected
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="small text-muted">
+                    The selected vendor is chosen based on the best profit,
+                    calculated from the vendor with the lowest total price
+                    (Σ the minimum price per item across all negotiation rounds).
+                </div>
+            </article>
+        }
+    </section>
+
+    <!-- ================= PROCUREMENT DOCUMENTS ================= -->
+    <section class="tab-pane" id="document-tab-pane" role="tabpanel" aria-labelledby="document-tab" tabindex="0">
+        <div class="mb-3">
+            @* Procurement Documents card *@
+            <header class="mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-folder-fill text-primary me-1"></i> Procurement Documents</h2>
+            </header>
+            <hr />
+
+            @if (documents != null && documents!.Any()) {
+                <div class="list-group shadow-sm rounded-3">
+                    @foreach (var doc in documents) {
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center">
+                                <i class="bi bi-file-earmark-pdf text-danger fs-5 me-3"></i>
+                                <div>
+                                    <div class="fw-semibold">@doc.FileName</div>
+                                    <small class="text-muted">@doc.Description</small>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <small class="small text-muted d-block mb-1">@doc.CreatedAt.ToLongDateString()</small>
+                                <div class="d-flex flex-column flex-sm-row gap-1 align-items-end">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary btn-preview"
+                                            data-doc-id="@doc.ProcDocumentId"
+                                            data-doc-name="@(doc.FileName)"
+                                            data-file-name="@(doc.FileName)">
+                                        <i class="bi bi-eye"></i> Preview
+                                    </button>
+
+                                    <a asp-controller="ProcurementDocuments"
+                                       asp-action="Download"
+                                       asp-route-id="@doc.ProcDocumentId"
+                                       class="btn btn-outline-primary btn-sm btn-download"
+                                       role="button"
+                                       data-doc-id="@doc.ProcDocumentId"
+                                       hx-boost="false"
+                                       download>
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            } else {
+                <div class="alert alert-info mb-0">No documents available for this procurement.</div>
+            }
+        </div>
+    </section>
+</div>
+
+@* PDF Preview Modal *@
+<div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title" id="previewModalTitle">Preview Dokumen</h5>
+                    <small class="text-muted" id="previewFileName"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="pdfLoadingContainer" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Memuat dokumen...</p>
+                </div>
+                <div id="pdfErrorContainer" class="text-center py-5 d-none">
+                    <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+                    <p class="text-muted">Failed to load documents. Please try again.</p>
+                </div>
+                <iframe id="pdfPreviewFrame"
+                        style="width: 100%; height: 75vh; border: none; display: none;"
+                        title="PDF Preview">
+                </iframe>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="downloadFromPreview">
+                    <i class="bi bi-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentDownloadDocId = null;
+        var currentPreviewUrl = null;
+
+        function initPreviewHandlers() {
+            document.querySelectorAll(".btn-preview").forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const docId = this.dataset.docId;
+                    const docName = this.dataset.docName;
+                    const fileName = this.dataset.fileName;
+
+                    currentDownloadDocId = docId;
+
+                    const titleElement = document.getElementById("previewModalTitle");
+                    const fileNameElement = document.getElementById("previewFileName");
+                    const loadingContainer = document.getElementById("pdfLoadingContainer");
+                    const errorContainer = document.getElementById("pdfErrorContainer");
+                    const previewFrame = document.getElementById("pdfPreviewFrame");
+
+                    if (titleElement) titleElement.textContent = `Preview Dokumen: ${docName}` || "Preview Dokumen";
+                    if (fileNameElement) fileNameElement.textContent = fileName || "";
+
+                    const modalElement = document.getElementById("pdfPreviewModal");
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+
+                    previewFrame.style.display = "none";
+                    previewFrame.src = "";
+                    loadingContainer.classList.remove("d-none");
+                    errorContainer.classList.add("d-none");
+
+                    try {
+                        const response = await fetch(`/ProcurementDocuments/PreviewUrl/${docId}?workOrderId=@Model!.ProcurementId`);
+                        const data = await response.json();
+
+                        if (data.ok && data.url) {
+                            currentPreviewUrl = data.url;
+                            previewFrame.src = data.url;
+
+                            previewFrame.onload = () => {
+                                loadingContainer.classList.add("d-none");
+                                previewFrame.style.display = "block";
+                            };
+
+                            previewFrame.onerror = () => {
+                                loadingContainer.classList.add("d-none");
+                                errorContainer.classList.remove("d-none");
+                            };
+                        } else {
+                            throw new Error("Failed to get preview URL" ||data.error);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching preview URL:", error);
+                        loadingContainer.classList.add("d-none");
+                        errorContainer.classList.remove("d-none");
+                    }
+                })
+            })
+
+            document.getElementById("downloadFromPreview").addEventListener('click', () => {
+                if (!currentDownloadDocId) return;
+
+                const btn = document.querySelector(`.btn-download[data-doc-id='${currentDownloadDocId}']`);
+                btn.click();
+            });
+        }
+
+        const toggleButtonGroup = document.getElementById("buttonNavToggle");
+        const buttonGroupWrap = document.getElementById("groupNavButton");
+
+        toggleButtonGroup.addEventListener("click", () => {
+        buttonGroupWrap.classList.toggle("show");
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var triggerEl = document.querySelector('#procurement-tab')
+            var tab = new bootstrap.Tab(triggerEl)
+            tab.show()
+
+            initPreviewHandlers();
+        });
+    </script>
+}

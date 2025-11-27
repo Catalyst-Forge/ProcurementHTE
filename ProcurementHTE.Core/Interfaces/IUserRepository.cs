@@ -1,7 +1,9 @@
 ﻿using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Core.Interfaces {
-    public interface IUserRepository {
+namespace ProcurementHTE.Core.Interfaces
+{
+    public interface IUserRepository
+    {
         Task<User?> FindByEmailAsync(string email, CancellationToken ct = default);
         Task<bool> CheckPasswordAsync(User user, string password);
         Task<IReadOnlyList<string>> GetRolesAsync(User user);

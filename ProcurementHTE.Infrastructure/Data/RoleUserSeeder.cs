@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
@@ -30,15 +30,20 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
                 "HTE",
+                "Operation",
                 "Assistant Manager HTE",
                 "Vice President",
                 "HSE",
                 "Supply Chain Management",
+                "AP-PO",
             ];
 
-            foreach (var roleName in roles) {
-                if (!await roleManager.RoleExistsAsync(roleName)) {
-                    var role = new Role {
+            foreach (var roleName in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    var role = new Role
+                    {
                         Name = roleName,
                         NormalizedName = roleName.ToUpperInvariant(),
                         Description = $"{roleName} system role",
@@ -62,10 +67,10 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Admin",
-                Permissions.WO.Read,
-                Permissions.WO.Create,
-                Permissions.WO.Edit,
-                Permissions.WO.Delete,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
+                Permissions.Procurement.Delete,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Create,
                 Permissions.Vendor.Edit,
@@ -77,7 +82,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Vice President",
-                Permissions.WO.Read,
+                Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
@@ -85,9 +90,9 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Assistant Manager HTE",
-                Permissions.WO.Read,
-                Permissions.WO.Create,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload,
@@ -96,7 +101,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Manager Transport & Logistic",
-                Permissions.WO.Read,
+                Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
@@ -104,17 +109,35 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "HTE",
-                Permissions.WO.Read,
-                Permissions.WO.Create,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload
+            );
+
+            await AddPermissions(
+                "Operation",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload
+            );
+
+            await AddPermissions(
+                "AP-PO",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload
             );
 
             await AddPermissions(
                 "Analyst HTE & LTS",
-                Permissions.WO.Read,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Edit,
                 Permissions.Doc.Read
@@ -122,7 +145,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "HSE",
-                Permissions.WO.Read,
+                Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
@@ -130,8 +153,8 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Supply Chain Management",
-                Permissions.WO.Read,
-                Permissions.WO.Edit,
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Create,
                 Permissions.Vendor.Edit,
@@ -144,9 +167,11 @@ namespace ProcurementHTE.Infrastructure.Data
             var users = new (string Username, string Email, string Password, string Role)[]
             {
                 ("admin", "admin@example.com", "Admin123!", "Admin"),
+                ("APPO", "appo@example.com", "Appo123!", "AP-PO"),
                 ("managerTL", "manager@example.com", "Manager123!", "Manager Transport & Logistic"),
                 ("AHte", "AHte@example.com", "AHte123!", "Analyst HTE & LTS"),
                 ("hte", "hte@example.com", "Hte1234!", "HTE"),
+                ("Operation", "pro.operation@example.com", "ProOperation123!", "Operation"),
                 (
                     "assistantmanagerhte",
                     "assistantmanagerhte@example.com",
@@ -170,8 +195,10 @@ namespace ProcurementHTE.Infrastructure.Data
                         Email = u.Email,
                         NormalizedEmail = u.Email.ToUpperInvariant(),
                         EmailConfirmed = true,
+                        LockoutEnabled = true,
                         FirstName = u.Username,
                         LastName = "Seeder",
+                        JobTitle = u.Role,
                         IsActive = true,
                     };
 

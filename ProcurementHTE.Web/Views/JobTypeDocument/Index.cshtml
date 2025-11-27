@@ -1,0 +1,85 @@
+@using ProcurementHTE.Core.Models
+@model IEnumerable<JobTypeDocuments>
+@{
+    ViewData["Title"] = "Job Type Documents";
+    var jobTypes = ViewBag.JobTypes as List<JobTypes> ?? new();
+    var selectedJobType = Context.Request.Query["jobTypeId"].ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Job Type Documents</h1>
+        <p class="text-muted mb-0">Atur mapping dokumen per job type: mandatory, generate/upload, dan approval.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Mapping</a>
+    </div>
+</div>
+
+<form method="get" class="border rounded-3 p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <div class="w-auto">
+        <label class="form-label small text-muted mb-1">Filter Job Type</label>
+        <select class="form-select" name="jobTypeId" onchange="this.form.submit()"
+                asp-items="@(new SelectList(jobTypes, "JobTypeId", "TypeName", selectedJobType))">
+            <option value="">All Job Types</option>
+        </select>
+    </div>
+    <div class="ms-auto">
+        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    </div>
+</form>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover mobile-table">
+        <thead class="table-light">
+            <tr>
+                <th>Job Type</th>
+                <th>Document</th>
+                <th class="text-center">Sequence</th>
+                <th class="text-center">Flags</th>
+                <th>Note</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No mappings available.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.JobType?.TypeName</td>
+                        <td>@item.DocumentType?.Name</td>
+                        <td class="text-center">@item.Sequence</td>
+                        <td class="text-center">
+                            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                @if (item.IsMandatory) { <span class="badge bg-danger-subtle text-danger">Mandatory</span> }
+                                @if (item.IsGenerated) { <span class="badge bg-success-subtle text-success">Generate</span> }
+                                @if (item.IsUploadRequired) { <span class="badge bg-primary-subtle text-primary">Upload</span> }
+                                @if (item.RequiresApproval) { <span class="badge bg-warning-subtle text-dark">Approval</span> }
+                            </div>
+                        </td>
+                        <td class="small text-muted">@item.Note</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-action="Edit" asp-route-id="@item.JobTypeDocumentId" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this mapping?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.JobTypeDocumentId" />
+                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

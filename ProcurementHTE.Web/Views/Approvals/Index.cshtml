@@ -1,13 +1,13 @@
-﻿@model IEnumerable<ProcurementHTE.Core.Models.WoDocumentApprovals>
+@model IEnumerable<ProcurementHTE.Core.Models.ProcDocumentApprovals>
 @{
     ViewData["Title"] = "Approval Documents";
 }
 
-<h3>Daftar Dokumen Menunggu Approval</h3>
+<h3>Documents Awaiting Approval</h3>
 <table class="table mobile-table">
     <thead>
         <tr>
-            <th>Work Order</th>
+            <th>Procurement</th>
             <th>Document</th>
             <th>Status</th>
             <th>Action</th>
@@ -16,21 +16,21 @@
     <tbody>
         @if (!Model.Any() || Model == null) {
                 <tr>
-                    <td colspan="8" class="text-center text-muted">Belum ada dokumen untuk diapprove</td>
+                    <td colspan="8" class="text-center text-muted">No documents require approval.</td>
                 </tr>
         } else {
             @foreach (var a in Model) {
                 <tr>
-                    <td class="d-flex d-sm-table-cell" data-label="Work Order">@a.WorkOrder.WoNum</td>
-                    <td class="d-flex d-sm-table-cell" data-label="Document">@a.WoDocument.DocumentType.Name</td>
+                    <td class="d-flex d-sm-table-cell" data-label="Procurement">@a.Procurement.ProcNum</td>
+                    <td class="d-flex d-sm-table-cell" data-label="Document">@a.ProcDocument.DocumentType.Name</td>
                     <td class="d-flex d-sm-table-cell" data-label="Status">@a.Status</td>
                     <td>
                         <form asp-action="Approve" method="post" style="display:inline">
-                            <input type="hidden" name="id" value="@a.WoDocumentApprovalId" />
+                            <input type="hidden" name="id" value="@a.ProcDocumentApprovalId" />
                             <button type="submit" class="btn btn-success btn-sm">Approve</button>
                         </form>
                         <form asp-action="Reject" method="post" style="display:inline">
-                            <input type="hidden" name="id" value="@a.WoDocumentApprovalId" />
+                            <input type="hidden" name="id" value="@a.ProcDocumentApprovalId" />
                             <button type="submit" class="btn btn-danger btn-sm">Reject</button>
                         </form>
                     </td>

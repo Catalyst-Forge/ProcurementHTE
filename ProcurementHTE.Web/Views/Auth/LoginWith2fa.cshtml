@@ -1,0 +1,412 @@
+@using ProcurementHTE.Core.Models.Enums
+@model LoginWith2faViewModel
+@{
+    ViewData["Title"] = "Verifikasi Two-Factor";
+    Layout = "_AuthenticationLayout";
+    var isAuthenticator = Model.Method == TwoFactorMethod.AuthenticatorApp;
+    var devTwoFactorCode = ViewBag.DevTwoFactorCode as string;
+    var autoMessage = ViewBag.Auto2faMessage as string;
+    var autoError = ViewBag.Auto2faError as string;
+    var requireEmailVerification = (ViewBag.RequireEmailVerification as bool?) ?? false;
+    var requirePhoneVerification = (ViewBag.RequirePhoneVerification as bool?) ?? false;
+    var blockOtp = !isAuthenticator && (requireEmailVerification || requirePhoneVerification);
+    var devMagicLink = (TempData["TwoFactorFlashDevLink"] as string) ?? ViewBag.DevMagicLink as string;
+    var devPhoneOtp = (TempData["TwoFactorFlashDevOtp"] as string) ?? ViewBag.DevPhoneOtp as string;
+    var emailAddress = ViewBag.EmailAddress as string;
+    var phoneNumber = ViewBag.PhoneNumber as string;
+    var loginEmailCooldown = ViewBag.LoginEmailCooldown as int? ?? 0;
+    var loginSmsCooldown = ViewBag.LoginSmsCooldown as int? ?? 0;
+    var resendCooldown = Model.Method == TwoFactorMethod.Email
+        ? loginEmailCooldown
+        : Model.Method == TwoFactorMethod.Sms
+            ? loginSmsCooldown
+            : 0;
+}
+
+<div class="d-flex justify-content-center">
+  <div class="card p-4 shadow-sm" style="width: 500px">
+    <header class="mb-3 text-center">
+      <h1 class="fs-3 mb-1">Two-Factor Authentication</h1>
+      <p class="text-muted mb-0">
+        @if (isAuthenticator)
+        {
+          <text>Masukkan kode dari aplikasi authenticator Anda.</text>
+        }
+        else if (Model.Method == TwoFactorMethod.Email)
+        {
+          <text>Kami telah mengirim kode OTP ke email terdaftar Anda.</text>
+        }
+        else
+        {
+          <text>Kami telah mengirim kode melalui SMS.</text>
+        }
+      </p>
+    </header>
+
+    <div class="card-body">
+      @if (!string.IsNullOrWhiteSpace(autoMessage))
+      {
+        <div class="alert alert-success small">@autoMessage</div>
+      }
+      @if (!string.IsNullOrWhiteSpace(autoError))
+      {
+        <div class="alert alert-danger small">@autoError</div>
+      }
+      @if (!string.IsNullOrWhiteSpace(devTwoFactorCode))
+      {
+        <div class="alert alert-info small">
+          Dev kode verifikasi: <strong>@devTwoFactorCode</strong>
+        </div>
+      }
+      @if (blockOtp)
+      {
+        <div class="row g-3 mt-2">
+          @if (requireEmailVerification)
+          {
+              <div class="col">
+                  <div class="card border-warning-subtle h-100 twofactor-pending-card">
+                      <div class="card-body">
+                          <h6 class="text-warning fw-semibold mb-1">
+                              Verifikasi Email
+                          </h6>
+                          <p class="small mb-2">
+                              Email <strong>@emailAddress</strong> belum terverifikasi. Klik magic link terbaru untuk mengaktifkan kembali 2FA Email.
+                          </p>
+                          @if (!string.IsNullOrWhiteSpace(devMagicLink))
+                          {
+                              <div class="alert alert-info small py-2">
+                                  Dev magic link: <a href="@devMagicLink">Buka tautan</a>
+                              </div>
+                          }
+                          <form asp-action="ResendPendingEmailVerification" method="post" class="d-flex flex-column gap-2">
+                              <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                              <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                              <button type="submit"
+                                      class="btn btn-outline-primary btn-sm"
+                                      data-cooldown-button
+                                      data-label="Kirim ulang magic link"
+                                      data-cooldown-seconds="@loginEmailCooldown"
+                                      data-status-target="#pendingEmailStatus">
+                                  Kirim ulang magic link
+                              </button>
+                              <small class="text-muted">
+                                  Setelah email terverifikasi, ulangi login 2FA.
+                              </small>
+                          </form>
+                          <div class="small text-muted mt-1" id="pendingEmailStatus"></div>
+                      </div>
+                  </div>
+              </div>
+          }
+          @if (requirePhoneVerification)
+          {
+              <div class="col">
+                  <div class="card border-warning-subtle h-100 twofactor-pending-card">
+                      <div class="card-body">
+                          <h6 class="text-warning fw-semibold mb-1">
+                              Verifikasi Nomor HP
+                          </h6>
+                          <p class="small mb-2">
+                              Nomor <strong>@phoneNumber</strong> belum terverifikasi. Gunakan OTP terbaru untuk mengaktifkan kembali 2FA SMS.
+                          </p>
+                          @if (!string.IsNullOrWhiteSpace(devPhoneOtp))
+                          {
+                              <div class="alert alert-info small py-2">
+                                  Dev OTP: <strong>@devPhoneOtp</strong>
+                              </div>
+                          }
+                          <form asp-action="VerifyPendingPhone" method="post" class="d-flex flex-column gap-2">
+                              <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                              <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                              <label class="form-label small mb-1">Masukkan OTP Verifikasi</label>
+                              <input type="hidden" name="code" data-otp-hidden="pending.phone" />
+                              <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="pending.phone">
+                                  @for (var i = 0; i < 6; i++)
+                                  {
+                                      <input type="text"
+                                             inputmode="numeric"
+                                             maxlength="1"
+                                             class="form-control text-center otp-input"
+                                             data-otp-input
+                                             autocomplete="one-time-code" />
+                                  }
+                              </div>
+                              <button type="submit" class="btn btn-primary btn-sm mt-2">
+                                  Verifikasi Nomor
+                              </button>
+                          </form>
+                          <form asp-action="ResendPendingPhoneVerification" method="post" class="d-flex flex-column gap-2 mt-2">
+                              <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                              <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                              <button type="submit"
+                                      class="btn btn-outline-primary btn-sm"
+                                      data-cooldown-button
+                                      data-label="Kirim ulang OTP verifikasi"
+                                      data-cooldown-seconds="@loginSmsCooldown"
+                                      data-status-target="#pendingPhoneStatus">
+                                  Kirim ulang OTP verifikasi
+                              </button>
+                              <small class="text-muted">
+                                  Setelah nomor terverifikasi, ulangi login 2FA.
+                              </small>
+                          </form>
+                          <div class="small text-muted mt-1" id="pendingPhoneStatus"></div>
+                      </div>
+                  </div>
+              </div>
+          }
+        </div>
+        <div class="alert alert-info small mt-3">
+            Masuk menggunakan recovery code untuk memperbarui informasi verifikasi, kemudian aktifkan kembali 2FA Email/SMS.
+        </div>
+      }
+      @if (!blockOtp)
+      {
+        <form asp-action="LoginWith2fa" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]" data-otp-form>
+        <div class="text-danger" asp-validation-summary="All"></div>
+        <input type="hidden" asp-for="RememberMe" />
+
+        <div class="mb-3">
+          <label asp-for="TwoFactorCode" class="form-label"></label>
+          <input asp-for="TwoFactorCode" type="hidden" data-otp-hidden="TwoFactorCode" />
+          <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactorCode">
+            @for (var i = 0; i < 6; i++)
+            {
+              <input type="text"
+                     inputmode="numeric"
+                     maxlength="1"
+                     class="form-control text-center otp-input"
+                     autocomplete="one-time-code"
+                     data-otp-input />
+            }
+          </div>
+          @if (!isAuthenticator)
+          {
+            <div class="text-end mt-2">
+              <button type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      id="btnSendLoginCode"
+                      data-method="@Model.Method"
+                      data-cooldown-button
+                      data-label="Kirim ulang kode"
+                      data-status-target="#loginCodeStatus"
+                      data-cooldown-seconds="@resendCooldown">
+                Kirim ulang kode
+              </button>
+              <div class="small text-muted mt-1" id="loginCodeStatus"></div>
+            </div>
+          }
+          <span asp-validation-for="TwoFactorCode" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+          <input asp-for="RememberMachine" class="form-check-input" />
+          <label asp-for="RememberMachine" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-2">Verifikasi &amp; Masuk</button>
+      </form>
+      }
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        @if ((ViewBag.HasRecoveryCodes as bool?) ?? false)
+        {
+            <form asp-action="LoginWithRecoveryCode" method="get" class="mb-0">
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                <button type="submit" class="btn btn-link p-0">Gunakan recovery code</button>
+            </form>
+        }
+        <a asp-action="Login" class="small ms-auto">Kembali ke login</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+  <partial name="_ValidationScriptsPartial" />
+  <script>
+    (() => {
+      window.startCooldownButton = function (button, seconds, statusSelector, baseMessage) {
+        if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
+          return;
+
+        button.dataset.cooldownActive = '1';
+        let remaining = seconds;
+        button.disabled = true;
+        const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
+        const baseText = baseMessage ? `${baseMessage} ` : '';
+
+        const update = () => {
+          if (statusEl) {
+            statusEl.textContent = `${baseText}Tunggu ${remaining} detik sebelum mengirim ulang.`;
+            statusEl.classList.add('text-warning');
+          }
+        };
+
+        update();
+
+        const intervalId = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(intervalId);
+            button.disabled = false;
+            button.dataset.cooldownActive = '';
+            if (statusEl) {
+              statusEl.textContent = baseMessage ?? '';
+              statusEl.classList.remove('text-warning');
+            }
+          } else {
+            update();
+          }
+        }, 1000);
+      };
+
+      document.querySelectorAll('[data-cooldown-button]').forEach(button => {
+        const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
+        if (seconds > 0) {
+          window.startCooldownButton(button, seconds, button.dataset.statusTarget, null);
+        }
+      });
+    })();
+  </script>
+  <script>
+    (() => {
+      const form = document.querySelector('form[data-otp-form]');
+      if (!form) return;
+
+      const hidden = form.querySelector('input[data-otp-hidden]');
+      const inputs = Array.from(form.querySelectorAll('input[data-otp-input]'));
+      if (!hidden || inputs.length === 0) return;
+
+      const syncHidden = () => {
+        hidden.value = inputs.map(i => i.value ?? '').join('');
+      };
+
+      const syncFromHidden = () => {
+        const value = (hidden.value || '').replace(/[^0-9]/g, '').split('');
+        inputs.forEach((input, index) => {
+          input.value = value[index] ?? '';
+        });
+        syncHidden();
+      };
+
+      const trySubmit = () => {
+        if (form.dataset.autoSubmitting === '1')
+          return;
+
+        const value = hidden.value;
+        if (value.length === inputs.length && /^\d+$/.test(value)) {
+          form.dataset.autoSubmitting = '1';
+          form.submit();
+        }
+      };
+
+      const focusNext = (idx) => {
+        if (idx + 1 < inputs.length)
+          inputs[idx + 1].focus();
+      };
+
+      const focusPrev = (idx) => {
+        if (idx - 1 >= 0)
+          inputs[idx - 1].focus();
+      };
+
+      inputs.forEach((input, index) => {
+        input.addEventListener('focus', () => input.select());
+
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Backspace' && !input.value) {
+            event.preventDefault();
+            focusPrev(index);
+          }
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            focusPrev(index);
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            focusNext(index);
+          }
+        });
+
+        input.addEventListener('input', (event) => {
+          const sanitized = event.target.value.replace(/[^0-9]/g, '');
+          event.target.value = sanitized.slice(-1);
+          syncHidden();
+          if (sanitized.length) {
+            focusNext(index);
+          }
+          trySubmit();
+        });
+
+        input.addEventListener('paste', (event) => {
+          event.preventDefault();
+          const content = (event.clipboardData?.getData('text') ?? '').replace(/[^0-9]/g, '');
+          if (!content.length) return;
+          inputs.forEach((inp, idx) => {
+            inp.value = content[idx] ?? '';
+          });
+          syncHidden();
+          const targetIndex = Math.min(content.length, inputs.length - 1);
+          inputs[targetIndex]?.focus();
+          trySubmit();
+        });
+      });
+
+      syncFromHidden();
+    })();
+  </script>
+  @if (!isAuthenticator)
+  {
+    <script>
+      (function () {
+        const btn = document.getElementById('btnSendLoginCode');
+        if (!btn) return;
+        const url = '@Url.Action("SendTwoFactorCode", "Auth")';
+        const DEFAULT_COOLDOWN = 60;
+
+        const initialCooldown = parseInt(btn.dataset.cooldownSeconds ?? '0', 10);
+        if (initialCooldown > 0) {
+          window.startCooldownButton(btn, initialCooldown, btn.dataset.statusTarget);
+        }
+
+        btn.addEventListener('click', () => {
+          const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token ?? ''
+              }
+            })
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                const cooldownSeconds = res.cooldown ?? DEFAULT_COOLDOWN;
+                if (res.devCode) {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Kode dikirim',
+                    html: `<div class="fw-bold fs-4">${res.devCode}</div><small class="text-muted d-block mt-2">Kode ditampilkan untuk kebutuhan pengujian.</small>`
+                  });
+                } else {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Kode dikirim',
+                    text: res.message ?? 'Silakan cek email atau SMS Anda.'
+                  });
+                }
+                window.startCooldownButton(btn, cooldownSeconds, btn.dataset.statusTarget);
+              } else {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: res.message ?? 'Tidak dapat mengirim kode.' });
+                if (res?.remaining) {
+                  window.startCooldownButton(btn, res.remaining, btn.dataset.statusTarget);
+                }
+              }
+            })
+            .catch(() => Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat mengirim kode.' }));
+        });
+      })();
+    </script>
+  }
+}

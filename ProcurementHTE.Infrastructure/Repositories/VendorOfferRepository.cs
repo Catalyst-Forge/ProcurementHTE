@@ -12,11 +12,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public VendorOfferRepository(AppDbContext context) =>
             _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<IReadOnlyList<VendorOffer>> GetByWorkOrderAsync(string woId)
+        public async Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string woId)
         {
             return await _context
-                .VendorOffers
-                .Where(offer => offer.WorkOrderId == woId)
+                .VendorOffers.Where(offer => offer.ProcurementId == woId)
                 .OrderBy(offer => offer.VendorId)
                 .ThenBy(offer => offer.Round)
                 .AsNoTracking()
@@ -29,10 +28,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveByWorkOrderAsync(string woId)
+        public async Task RemoveByProcurementAsync(string woId)
         {
             var olds = await _context
-                .VendorOffers.Where(offer => offer.WorkOrderId == woId)
+                .VendorOffers.Where(offer => offer.ProcurementId == woId)
                 .ToListAsync();
             if (olds.Count > 0)
                 _context.RemoveRange(olds);

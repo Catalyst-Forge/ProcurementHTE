@@ -14,12 +14,12 @@ namespace ProcurementHTE.Core.Models
 
         // Foreign Keys
         public string RoleId { get; set; } = null!;
-        public string WoTypeDocumentId { get; set; } = null!;
+        public string JobTypeDocumentId { get; set; } = null!;
 
         [ForeignKey("RoleId")]
         public Role Role { get; set; } = default!;
 
-        [ForeignKey("WoTypeDocumentId")]
-        public WoTypeDocuments WoTypeDocument { get; set; } = default!;
+        [ForeignKey("JobTypeDocumentId")]
+        public JobTypeDocuments JobTypeDocument { get; set; } = default!;
     }
 }

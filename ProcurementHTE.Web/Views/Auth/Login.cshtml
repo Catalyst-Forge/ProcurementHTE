@@ -24,18 +24,20 @@
         <div class="form-group mb-3">
           <div class="d-flex justify-content-between">
             <label asp-for="Password" class="form-label"></label>
-            <a class="link-secondary link-opacity-50-hover text-decoration-none" asp-action="">Forgot your password?</a>
+            <a class="link-secondary link-opacity-50-hover text-decoration-none" asp-action="ForgotPassword">Forgot your password?</a>
           </div>
           <input asp-for="Password" class="form-control" type="password" />
           <span asp-validation-for="Password" class="text-danger"></span>
         </div>
 
+        <div class="form-check mb-3">
+          <input asp-for="RememberMe" class="form-check-input" />
+          <label asp-for="RememberMe" class="form-check-label"></label>
+        </div>
+
         <button type="submit" class="btn btn-primary login-button w-100">Submit</button>
       </form>
 
-      <div class="text-center mt-3">
-        <p>Belum punya akun? <a asp-action="Register">Daftar di sini</a></p>
-      </div>
     </div>
   </div>
 </div>

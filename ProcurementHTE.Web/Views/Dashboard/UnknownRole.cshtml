@@ -1,0 +1,12 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="alert alert-warning mt-4">
+    <h4 class="alert-heading mb-2">Dashboard Tidak Tersedia</h4>
+    <p>
+        Akun Anda belum memiliki role yang dikenali untuk dashboard ini.
+        Silakan hubungi administrator untuk memastikan role sudah diatur dengan benar.
+    </p>
+    <a asp-controller="Auth" asp-action="Logout" class="btn btn-outline-secondary btn-sm">Keluar</a>
+</div>

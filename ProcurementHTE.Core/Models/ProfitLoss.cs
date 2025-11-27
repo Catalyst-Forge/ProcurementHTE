@@ -13,11 +13,22 @@ namespace ProcurementHTE.Core.Models
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal SelectedVendorFinalOffer { get; set; }
 
+        public string NoLetterSelectedVendor { get; set; } = null!;
+
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Profit { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
         public decimal ProfitPercent { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? AccrualAmount { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? RealizationAmount { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal Distance { get; set; }
 
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -27,17 +38,19 @@ namespace ProcurementHTE.Core.Models
 
         // Foreign Keys
         [Required, StringLength(450)]
-        public string WorkOrderId { get; set; } = null!;
+        public string ProcurementId { get; set; } = null!;
 
         [Required, StringLength(450)]
         public string? SelectedVendorId { get; set; } = null!;
 
-        [ForeignKey("WorkOrderId")]
-        public WorkOrder WorkOrder { get; set; } = default!;
+        [ForeignKey("ProcurementId")]
+        public Procurement Procurement { get; set; } = default!;
 
         [ForeignKey("SelectedVendorId")]
         public Vendor SelectedVendor { get; set; } = default!;
 
         public ICollection<ProfitLossItem> Items { get; set; } = [];
+        public ICollection<ProfitLossSelectedVendor> VendorList { get; set; } = [];
+        public ICollection<VendorOffer> VendorOffers { get; set; } = [];
     }
 }

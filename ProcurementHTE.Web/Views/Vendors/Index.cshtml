@@ -1,4 +1,4 @@
-ï»¿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Authorization
 @using ProcurementHTE.Core.Common
 @using ProcurementHTE.Core.Models
 @using ProcurementHTE.Core.Authorization
@@ -6,9 +6,10 @@
 @inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Vendors";
-    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.WO.Create);
-    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.WO.Edit);
-    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.WO.Delete);
+    ViewData["DisableHxBoost"] = true;
+    var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Create);
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "active" => "bg-success-subtle text-success-emphasis border border-success-subtle",
@@ -97,13 +98,13 @@
                         <td>
                             <div class="fw-semibold">
                                 @v.VendorName
-                                <span class="text-body-secondary"> Â· </span>
+                                <span class="text-body-secondary"> · </span>
                                 <a asp-action="Details" asp-route-id="@v.VendorId" class="link-primary text-decoration-none">@v.VendorCode</a>
                             </div>
 
                             <div class="small text-body-secondary">
                                 <a href="mailto:@v.Email" class="text-decoration-none">@v.Email</a>
-                                <span class="mx-1">â€¢</span>
+                                <span class="mx-1">•</span>
                                 NPWP @MaskNpwp(v.NPWP)
                             </div>
                         </td>
@@ -127,8 +128,10 @@
                             <form asp-action="DeleteConfirmed"
                                   asp-route-id="@v.VendorId"
                                   method="post"
-                                  class="d-inline delete-form"
-                                  data-name="@v.VendorName">
+                                  class="d-inline delete-form"\r\n                                  hx-boost="false"\r\n                                  hx-ignore="true"
+                                  data-loading-overlay="true"
+                                  data-confirm-title="Delete @v.VendorName?"
+                                  data-confirm-message="You are about to delete &quot;@v.VendorName&quot;. This action cannot be undone.">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn link-danger link-opacity-50-hover text-decoration-none me-2 mb-1 p-0" title="Delete">
                                     <span class="visually-hidden">Delete</span>
@@ -179,34 +182,7 @@
             form.submit();
             });
         })();
-        document.addEventListener("submit", async function (e) {
-          const form = e.target.closest(".delete-form");
-          if (!form) return;
 
-          e.preventDefault();
-
-          const name = form.dataset.name || "vendor ini";
-          const result = await Swal.fire({
-            icon: "warning",
-            title: "Hapus vendor?",
-            html: `Anda akan menghapus <strong>${name}</strong>.<br/>Tindakan ini tidak dapat dibatalkan.`,
-            showCancelButton: true,
-            confirmButtonText: "Ya, hapus",
-            cancelButtonText: "Batal",
-            confirmButtonColor: "#dc3545",
-            cancelButtonColor: "#6c757d",
-            reverseButtons: true,
-            focusCancel: true
-          });
-
-          if (result.isConfirmed) form.submit();
-        });
-
-        document.addEventListener("DOMContentLoaded", () => {
-          const success = '@(TempData["SuccessMessage"] ?? "")';
-          const error = '@(TempData["ErrorMessage"] ?? "")';
-          if (success) Swal.fire({ icon: "success", title: "Berhasil", text: success, timer: 2200, showConfirmButton: false });
-          if (error) Swal.fire({ icon: "error", title: "Gagal", text: error });
-        });
     </script>
 }
+

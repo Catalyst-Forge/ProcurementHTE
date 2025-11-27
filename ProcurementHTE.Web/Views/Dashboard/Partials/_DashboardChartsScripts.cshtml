@@ -1,0 +1,130 @@
+@using System.Text.Json
+@model ProcurementHTE.Web.Models.ViewModels.DashboardSummaryViewModel
+@{
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    var procurementStatusJson = JsonSerializer.Serialize(Model.ProcurementsByStatus ?? Array.Empty<ProcurementHTE.Core.Models.DTOs.ProcurementStatusCountDto>(), jsonOptions);
+    var revenuePerMonthJson = JsonSerializer.Serialize(Model.RevenuePerMonth ?? Array.Empty<ProcurementHTE.Core.Models.DTOs.RevenuePerMonthDto>(), jsonOptions);
+    var approvalStatusJson = JsonSerializer.Serialize(Model.ApprovalStatus ?? Array.Empty<ProcurementHTE.Core.Models.DTOs.ApprovalStatusCountDto>(), jsonOptions);
+}
+<script>
+    (function renderDashboardCharts(retry = 0) {
+        const MAX_RETRIES = 5;
+        if (typeof window.Chart === "undefined") {
+            if (retry < MAX_RETRIES) {
+                setTimeout(() => renderDashboardCharts(retry + 1), 250);
+            }
+            return;
+        }
+
+        const procurementStatusCanvas = document.getElementById("procurementStatusChart");
+        const revenueCanvas = document.getElementById("revenueChart");
+        const approvalCanvas = document.getElementById("approvalStatusChart");
+
+        const destroyExistingChart = (canvas) => {
+            if (!canvas || typeof Chart === "undefined") return;
+            let existing = Chart.getChart ? (Chart.getChart(canvas) || Chart.getChart(canvas.id)) : null;
+            if (!existing && Chart.instances) {
+                if (Chart.instances instanceof Map) {
+                    existing = Chart.instances.get(canvas) || Chart.instances.get(canvas.id);
+                } else if (Array.isArray(Chart.instances)) {
+                    existing = Chart.instances.find(inst => inst?.canvas === canvas);
+                } else {
+                    existing = Chart.instances[canvas.id] || Chart.instances[canvas];
+                }
+            }
+            if (existing && typeof existing.destroy === "function") {
+                existing.destroy();
+            }
+        };
+
+        if (!procurementStatusCanvas || !revenueCanvas || !approvalCanvas) {
+            return;
+        }
+
+        const procurementStatusData = @Html.Raw(procurementStatusJson);
+        const revenuePerMonth = @Html.Raw(revenuePerMonthJson);
+        const approvalStatus = @Html.Raw(approvalStatusJson);
+
+        const procurementStatusCtx = procurementStatusCanvas.getContext("2d");
+        destroyExistingChart(procurementStatusCanvas);
+        new Chart(procurementStatusCtx, {
+            type: "doughnut",
+            data: {
+                labels: procurementStatusData.map(item => item.status),
+                datasets: [{
+                    data: procurementStatusData.map(item => item.count),
+                    backgroundColor: ["#0d6efd","#198754","#ffc107","#dc3545","#6c757d"],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
+                }
+            }
+        });
+
+        const revenueCtx = revenueCanvas.getContext("2d");
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const revenueLabels = revenuePerMonth.map(item => monthNames[item.month - 1]);
+        const revenueData = revenuePerMonth.map(item => item.total);
+
+        destroyExistingChart(revenueCanvas);
+        new Chart(revenueCtx, {
+            type: "line",
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    label: "Revenue",
+                    data: revenueData,
+                    borderColor: "#0d6efd",
+                    backgroundColor: "rgba(13, 110, 253, 0.12)",
+                    tension: 0.35,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return "Rp " + Number(value).toLocaleString("id-ID");
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const approvalCtx = approvalCanvas.getContext("2d");
+        destroyExistingChart(approvalCanvas);
+        new Chart(approvalCtx, {
+            type: "doughnut",
+            data: {
+                labels: approvalStatus.map(x => x.status),
+                datasets: [{
+                    data: approvalStatus.map(x => x.count),
+                    backgroundColor: ["#198754", "#ffc107", "#dc3545"],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: "bottom" }
+                }
+            }
+        });
+    })();
+</script>

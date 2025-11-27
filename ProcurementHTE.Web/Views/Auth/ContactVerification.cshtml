@@ -1,0 +1,251 @@
+@model ProcurementHTE.Web.Models.Auth.ContactVerificationViewModel
+@{
+    ViewData["Title"] = "Verifikasi Kontak";
+    Layout = "_AuthenticationLayout";
+    var hasEmail = Model.RequiresEmail;
+    var hasPhone = Model.RequiresPhone;
+    var returnUrl = Model.ReturnUrl;
+    var contactEmailCooldown = ViewBag.ContactEmailCooldown as int? ?? 0;
+    var contactPhoneCooldown = ViewBag.ContactPhoneCooldown as int? ?? 0;
+}
+
+<div class="card shadow-sm mx-auto" style="max-width: 720px">
+    <div class="card-body">
+        <div class="text-center mb-4">
+            <h2 class="mb-1">Konfirmasi Identitas</h2>
+            <p class="text-muted mb-0">Verifikasi email dan nomor HP sebelum melanjutkan.</p>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+            @if (hasEmail)
+            {
+                <div class="col">
+                    <div class="card border-warning-subtle h-100 twofactor-pending-card">
+                        <div class="card-body">
+                            <h6 class="text-warning fw-semibold mb-1">Verifikasi Email</h6>
+                            <p class="small mb-2">
+                                Email <strong>@Model.Email</strong> belum terverifikasi. Klik magic link terbaru yang kami kirim.
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(Model.DevMagicLink))
+                            {
+                                <div class="alert alert-info small py-2">
+                                    Dev magic link: <a href="@Model.DevMagicLink">Buka tautan</a>
+                                </div>
+                            }
+                            <form asp-action="SendContactEmailVerification"
+                                  method="post"
+                                  class="d-flex flex-column gap-2">
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <button type="submit"
+                                        class="btn btn-outline-primary btn-sm"
+                                        data-cooldown-button
+                                        data-label="Kirim ulang magic link"
+                                        data-cooldown-seconds="@contactEmailCooldown"
+                                        data-status-target="#contactEmailStatus">
+                                    Kirim ulang magic link
+                                </button>
+                                <small class="text-muted">
+                                    Setelah email terverifikasi, kembali ke halaman ini.
+                                </small>
+                            </form>
+                            <div class="small text-muted" id="contactEmailStatus"></div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (hasPhone)
+            {
+                <div class="col">
+                    <div class="card border-warning-subtle h-100 twofactor-pending-card">
+                        <div class="card-body">
+                            <h6 class="text-warning fw-semibold mb-1">Verifikasi Nomor HP</h6>
+                            <p class="small mb-2">
+                                Nomor <strong>@Model.PhoneNumber</strong> belum terverifikasi. Masukkan OTP verifikasi untuk mengaktifkannya.
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(Model.DevPhoneOtp))
+                            {
+                                <div class="alert alert-info small py-2">
+                                    Dev OTP: <strong>@Model.DevPhoneOtp</strong>
+                                </div>
+                            }
+                            <form asp-action="VerifyContactPhone"
+                                  method="post"
+                                  class="d-flex flex-column gap-2">
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <label class="form-label small mb-1">Masukkan OTP</label>
+                                <input type="hidden" name="code" data-otp-hidden="contact.phone" />
+                                <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="contact.phone">
+                                    @for (var i = 0; i < 6; i++)
+                                    {
+                                        <input type="text"
+                                               inputmode="numeric"
+                                               maxlength="1"
+                                               class="form-control text-center otp-input"
+                                               autocomplete="one-time-code"
+                                               data-otp-input />
+                                    }
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    Verifikasi Nomor
+                                </button>
+                            </form>
+                            <form asp-action="SendContactPhoneVerification"
+                                  method="post"
+                                  class="d-flex flex-column gap-2">
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <button type="submit"
+                                        class="btn btn-outline-primary btn-sm"
+                                        data-cooldown-button
+                                        data-label="Kirim ulang OTP"
+                                        data-cooldown-seconds="@contactPhoneCooldown"
+                                        data-status-target="#contactPhoneStatus">
+                                    Kirim ulang OTP
+                                </button>
+                                <small class="text-muted">
+                                    Setelah nomor terverifikasi, ulangi login 2FA.
+                                </small>
+                            </form>
+                            <div class="small text-muted" id="contactPhoneStatus"></div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="alert alert-info mt-3 small">
+            Sudah melakukan verifikasi? <a asp-action="ContactVerification" asp-route-returnUrl="@returnUrl">Periksa status lagi</a>.
+        </div>
+
+        <div class="text-center mt-3">
+            <a asp-action="Login" class="link-secondary">Keluar &amp; ganti akun</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            function initOtpInputs() {
+                document.querySelectorAll('[data-otp-container]').forEach(container => {
+                    const target = container.dataset.otpContainer;
+                    if (!target) return;
+                    const hidden = document.querySelector(`input[data-otp-hidden="${target}"]`);
+                    if (!hidden) return;
+                    const inputs = Array.from(container.querySelectorAll('input[data-otp-input]'));
+                    if (!inputs.length) return;
+
+                    const syncFromHidden = () => {
+                        const value = (hidden.value || '').split('');
+                        inputs.forEach((input, index) => {
+                            input.value = value[index] ?? '';
+                        });
+                    };
+
+                    const syncHidden = () => {
+                        hidden.value = inputs.map(i => i.value ?? '').join('');
+                    };
+
+                    const focusNext = (currentIndex) => {
+                        if (currentIndex + 1 < inputs.length) {
+                            inputs[currentIndex + 1].focus();
+                        }
+                    };
+
+                    const focusPrev = (currentIndex) => {
+                        if (currentIndex - 1 >= 0) {
+                            inputs[currentIndex - 1].focus();
+                        }
+                    };
+
+                    inputs.forEach((input, index) => {
+                        input.addEventListener('focus', () => {
+                            input.select();
+                        });
+
+                        input.addEventListener('keydown', (event) => {
+                            if (event.key === 'Backspace' && !input.value) {
+                                event.preventDefault();
+                                focusPrev(index);
+                            }
+                            if (event.key === 'ArrowLeft') {
+                                event.preventDefault();
+                                focusPrev(index);
+                            }
+                            if (event.key === 'ArrowRight') {
+                                event.preventDefault();
+                                focusNext(index);
+                            }
+                        });
+
+                        input.addEventListener('input', (event) => {
+                            const value = event.target.value.replace(/[^0-9]/g, '');
+                            event.target.value = value.slice(-1);
+                            syncHidden();
+                            if (value.length) {
+                                focusNext(index);
+                            }
+                        });
+
+                        input.addEventListener('paste', (event) => {
+                            event.preventDefault();
+                            const pasted = (event.clipboardData?.getData('text') ?? '').replace(/[^0-9]/g, '');
+                            if (!pasted.length) return;
+                            inputs.forEach((inp, idx) => {
+                                inp.value = pasted[idx] ?? '';
+                            });
+                            syncHidden();
+                            const filled = Math.min(pasted.length, inputs.length - 1);
+                            inputs[filled]?.focus();
+                        });
+                    });
+
+                    syncFromHidden();
+                });
+            }
+
+            function startCooldown(button, seconds, statusSelector) {
+                if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
+                    return;
+
+                button.dataset.cooldownActive = '1';
+                let remaining = seconds;
+                button.disabled = true;
+                const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
+
+                const updateStatus = () => {
+                    if (statusEl) {
+                        statusEl.textContent = `Tunggu ${remaining} detik sebelum mengirim ulang.`;
+                        statusEl.classList.add('text-warning');
+                    }
+                };
+
+                updateStatus();
+
+                const intervalId = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(intervalId);
+                        button.disabled = false;
+                        button.dataset.cooldownActive = '';
+                        if (statusEl) {
+                            statusEl.textContent = '';
+                            statusEl.classList.remove('text-warning');
+                        }
+                    } else {
+                        updateStatus();
+                    }
+                }, 1000);
+            }
+
+            document.querySelectorAll('[data-cooldown-button]').forEach(button => {
+                const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
+                if (seconds > 0) {
+                    startCooldown(button, seconds, button.dataset.statusTarget);
+                }
+            });
+
+            initOtpInputs();
+        })();
+    </script>
+}

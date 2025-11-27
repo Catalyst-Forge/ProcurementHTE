@@ -1,21 +1,24 @@
-﻿using DinkToPdf;
+using System.Security.Claims;
+using System.Text;
+using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Authorization.Handlers;
 using ProcurementHTE.Core.Authorization.Requirements;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Options;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Infrastructure.Repositories;
+using ProcurementHTE.Infrastructure.Services;
 using ProcurementHTE.Infrastructure.Storage;
-using System.Security.Claims;
-using System.Text;
 
 namespace ProcurementHTE.Web.Extensions
 {
@@ -59,7 +62,7 @@ namespace ProcurementHTE.Web.Extensions
             {
                 options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
                 options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
-                options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role; // ← penting
+                options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role; // ? penting
             });
 
             // ---------- Authorization Policies ----------
@@ -76,20 +79,22 @@ namespace ProcurementHTE.Web.Extensions
                     p => p.Requirements.Add(new MinimumRoleRequirement("Manager"))
                 )
                 .AddPolicy(
-                    Permissions.WO.Read,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Read))
+                    Permissions.Procurement.Read,
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Read))
                 )
                 .AddPolicy(
-                    Permissions.WO.Create,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Create))
+                    Permissions.Procurement.Create,
+                    p =>
+                        p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Create))
                 )
                 .AddPolicy(
-                    Permissions.WO.Edit,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Edit))
+                    Permissions.Procurement.Edit,
+                    p => p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Edit))
                 )
                 .AddPolicy(
-                    Permissions.WO.Delete,
-                    p => p.AddRequirements(new PermissionRequirement(Permissions.WO.Delete))
+                    Permissions.Procurement.Delete,
+                    p =>
+                        p.AddRequirements(new PermissionRequirement(Permissions.Procurement.Delete))
                 )
                 .AddPolicy(
                     Permissions.Vendor.Read,
@@ -128,7 +133,7 @@ namespace ProcurementHTE.Web.Extensions
                 )
                 .AddPolicy(
                     Permissions.Doc.Approve,
-                    p => p.AddRequirements(new CanApproveWoDocumentRequirement())
+                    p => p.AddRequirements(new CanApproveProcDocumentRequirement())
                 );
 
             // ------------- Options Binding -------------
@@ -243,69 +248,28 @@ namespace ProcurementHTE.Web.Extensions
                         {
                             OnAuthenticationFailed = context =>
                             {
-                                var logger = context.HttpContext.RequestServices.GetRequiredService<
-                                    ILogger<Program>
-                                >();
-
-                                logger.LogError(
-                                    "JWT Authentication Failed: {Exception}",
-                                    context.Exception.Message
-                                );
-
                                 if (
                                     context.Exception.GetType()
                                     == typeof(SecurityTokenExpiredException)
                                 )
                                 {
                                     context.Response.Headers.Append("Token-Expired", "true");
-                                    logger.LogWarning("Token expired");
                                 }
 
                                 return Task.CompletedTask;
                             },
                             OnMessageReceived = context =>
                             {
-                                var logger = context.HttpContext.RequestServices.GetRequiredService<
-                                    ILogger<Program>
-                                >();
-
                                 var token = context.Request.Headers.Authorization.ToString();
-                                if (!string.IsNullOrEmpty(token))
-                                {
-                                    logger.LogInformation("JWT Token received in header");
-                                }
-                                else
-                                {
-                                    logger.LogWarning("No Authorization header found");
-                                }
                                 return Task.CompletedTask;
                             },
                             OnTokenValidated = context =>
                             {
-                                var logger = context.HttpContext.RequestServices.GetRequiredService<
-                                    ILogger<Program>
-                                >();
-
-                                logger.LogInformation("JWT Token validated successfully");
-                                logger.LogInformation(
-                                    "User: {User}",
-                                    context.Principal?.Identity?.Name
-                                );
                                 return Task.CompletedTask;
                             },
                             OnChallenge = context =>
                             {
                                 context.HandleResponse();
-
-                                var logger = context
-                                    .HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                                    .CreateLogger("JwtAuth");
-
-                                logger.LogWarning(
-                                    "JWT Challenge: {Error} - {Description}",
-                                    context.Error,
-                                    context.ErrorDescription
-                                );
 
                                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                                 context.Response.ContentType = "application/json";
@@ -373,59 +337,79 @@ namespace ProcurementHTE.Web.Extensions
 
             services.AddAuthorization();
 
-            // ------------- Storage (MinIO) -------------
-            // NOTE: Interface yang benar adalah IObjectStorage (bukan IObjectStorageRepository)
+            // ------------- Storage & Utilities -------------
             services.AddSingleton<IObjectStorage, MinioStorage>();
             services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+            services.Configure<EmailSenderOptions>(configuration.GetSection("EmailSender"));
+            services.Configure<SmsSenderOptions>(configuration.GetSection("SmsSender"));
+            services.AddHttpClient("SmsProvider");
 
             // ------------- Repositories -------------
-            services.AddScoped<IWorkOrderRepository, WorkOrderRepository>();
+            services.AddScoped<IProcurementRepository, ProcurementRepository>();
             services.AddScoped<IVendorRepository, VendorRepository>();
             services.AddScoped<ITenderRepository, TenderRepository>();
-            services.AddScoped<IWoTypeRepository, WoTypesRepository>();
+            services.AddScoped<IJobTypeRepository, JobTypesRepository>();
             services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
             services.AddScoped<IProfitLossRepository, ProfitLossRepository>();
             services.AddScoped<IVendorOfferRepository, VendorOfferRepository>();
-            services.AddScoped<IWoDocumentRepository, WoDocumentRepository>();
-            services.AddScoped<IWoTypeDocumentRepository, WoTypeDocumentRepository>();
-            services.AddScoped<IWoDocumentApprovalRepository, WoDocumentApprovalRepository>();
-            services.AddScoped<IWoDocApprovalFlowRepository, WoDocApprovalFlowRepository>();
+            services.AddScoped<IProcDocumentRepository, ProcDocumentRepository>();
+            services.AddScoped<IJobTypeDocumentRepository, JobTypeDocumentRepository>();
+            services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();
+            services.AddScoped<IProcDocApprovalFlowRepository, ProcDocApprovalFlowRepository>();
             services.AddScoped<IApprovalRepository, ApprovalRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+            services.AddScoped<IUserSecurityLogRepository, UserSecurityLogRepository>();
             services.AddScoped<IDashboardRepository, DashboardRepository>();
 
             // ------------- Services (Core) -------------
-            services.AddScoped<IWorkOrderService, WorkOrderService>();
+            services.AddScoped<IProcurementService, ProcurementService>();
             services.AddScoped<IVendorService, VendorService>();
             services.AddScoped<ITenderService, TenderService>();
-            services.AddScoped<IWoTypeService, WoTypesService>();
+            services.AddScoped<IJobTypeService, JobTypesService>();
             services.AddScoped<IDocumentTypeService, DocumentTypeService>();
             services.AddScoped<IProfitLossService, ProfitLossService>();
             services.AddScoped<IVendorOfferService, VendorOfferService>();
-            services.AddScoped<IWoDocumentService, WoDocumentService>();
-            services.AddScoped<IWoTypeDocumentService, WoTypeDocumentService>();
-            services.AddScoped<IWoDocumentApprovalService, WoDocumentApprovalService>();
-            services.AddScoped<IWoDocApprovalFlowService, WoDocApprovalFlowService>();
+            services.AddScoped<IProcDocumentService, ProcDocumentService>();
+            services.AddScoped<IJobTypeDocumentService, JobTypeDocumentService>();
+            services.AddScoped<IProcDocumentApprovalService, ProcDocumentApprovalService>();
+            services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
             services.AddScoped<IPdfGenerator, PdfGeneratorService>();
             services.AddScoped<IApprovalService, ApprovalService>();
             services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<ITemplateProvider, FileSystemTemplateProvider>();
             services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
             services.AddScoped<IDocumentGenerator, DocumentGenerator>();
+            services.AddSingleton<IEmailSender>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<EmailSenderOptions>>().Value;
+                if (opts.UseDevelopmentMode)
+                    return ActivatorUtilities.CreateInstance<ConsoleEmailSender>(sp);
+                return ActivatorUtilities.CreateInstance<SmtpEmailSender>(sp);
+            });
+
+            services.AddSingleton<ISmsSender>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<SmsSenderOptions>>().Value;
+                if (opts.UseDevelopmentMode)
+                    return ActivatorUtilities.CreateInstance<ConsoleSmsSender>(sp);
+                return ActivatorUtilities.CreateInstance<HttpSmsSender>(sp);
+            });
 
             // ------------- Query Services -------------
-            // INI YANG BENAR: WorkOrderDocumentQuery di-bind ke IWorkOrderDocumentQuery (bukan ke IWoDocumentRepository)
-            services.AddScoped<IWorkOrderDocumentQuery, WorkOrderDocumentQuery>();
+            // INI YANG BENAR: ProcurementDocumentQuery di-bind ke IProcurementDocumentQuery (bukan ke IProcDocumentRepository)
+            services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
 
             // ------------- Authorization Handlers -------------
             services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
-            services.AddScoped<IAuthorizationRequirement, CanApproveWoDocumentRequirement>();
-            services.AddScoped<IAuthorizationHandler, CanApproveWoDocumentHandler>();
+            services.AddScoped<IAuthorizationRequirement, CanApproveProcDocumentRequirement>();
+            services.AddScoped<IAuthorizationHandler, CanApproveProcDocumentHandler>();
 
             // Configure Controllers with JSON options
             services
