@@ -213,10 +213,12 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
+          debug: true
           envs: DEPLOY_DIR,RELEASE_NAME,DB_USER,DB_PASS,DB_NAME,DB_PORT,MSSQL_CONTAINER
           script_stop: true
           script: |
             set -Eeuo pipefail
+            set -x
 
             # default kalau env kosong
             : "${DB_NAME:=ProcurementHTE}"
