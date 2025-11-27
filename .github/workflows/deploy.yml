@@ -123,14 +123,22 @@ jobs:
             : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
 
             echo "[INFO] DEPLOY_DIR=$DEPLOY_DIR, RELEASE_NAME=$RELEASE_NAME"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/releases"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$DEPLOY_DIR/publish"
+            # Create directories as the SSH user (avoid install -o/-g which requires root)
+            install -d -m 755 "$DEPLOY_DIR" || mkdir -p "$DEPLOY_DIR"
+            install -d -m 755 "$DEPLOY_DIR/releases" || mkdir -p "$DEPLOY_DIR/releases"
+            install -d -m 755 "$DEPLOY_DIR/publish" || mkdir -p "$DEPLOY_DIR/publish"
 
             RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            install -d -m 755 -o "$(whoami)" -g "$(whoami)" "$RELEASE"
+            install -d -m 755 "$RELEASE" || mkdir -p "$RELEASE"
+
+            # Write release path for downstream steps
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
+
+            # If the SSH user can sudo without a password, set ownership to the SSH user (optional)
+            if sudo -n true 2>/dev/null; then
+              sudo chown -R "$(whoami):$(whoami)" "$DEPLOY_DIR" || true
+            fi
 
       - name: Upload release files (DLL + Migrations.sql)
         uses: appleboy/scp-action@v0.1.7
