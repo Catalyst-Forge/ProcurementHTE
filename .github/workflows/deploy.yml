@@ -245,10 +245,11 @@ jobs:
               if [ -n "${MSSQL_CONTAINER:-}" ]; then
                 local exact="$($DOCKER ps -q -f id=\"$MSSQL_CONTAINER\")"
                 [ -n "$exact" ] || exact="$($DOCKER ps -q -f name=\"^${MSSQL_CONTAINER}$\")"
-                [ -n "$exact" ] && echo "$exact" && return 0
-
-                echo "[ERR] MSSQL_CONTAINER='$MSSQL_CONTAINER' not found."
-                return 1
+                if [ -n "$exact" ]; then
+                  echo "$exact"
+                  return 0
+                fi
+                echo "[WARN] MSSQL_CONTAINER='$MSSQL_CONTAINER' not found, fallback to image search."
               fi
 
               # 2) Cari SQL container berdasarkan image
