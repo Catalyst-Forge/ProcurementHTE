@@ -6,6 +6,7 @@
 @inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Vendors";
+    ViewData["DisableHxBoost"] = true;
     var canCreate = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Create);
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
@@ -127,8 +128,10 @@
                             <form asp-action="DeleteConfirmed"
                                   asp-route-id="@v.VendorId"
                                   method="post"
-                                  class="d-inline delete-form"
-                                  data-name="@v.VendorName">
+                                  class="d-inline delete-form"\r\n                                  hx-boost="false"\r\n                                  hx-ignore="true"
+                                  data-loading-overlay="true"
+                                  data-confirm-title="Delete @v.VendorName?"
+                                  data-confirm-message="You are about to delete &quot;@v.VendorName&quot;. This action cannot be undone.">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn link-danger link-opacity-50-hover text-decoration-none me-2 mb-1 p-0" title="Delete">
                                     <span class="visually-hidden">Delete</span>
@@ -179,34 +182,7 @@
             form.submit();
             });
         })();
-        document.addEventListener("submit", async function (e) {
-          const form = e.target.closest(".delete-form");
-          if (!form) return;
 
-          e.preventDefault();
-
-          const name = form.dataset.name || "this vendor";
-          const result = await Swal.fire({
-            icon: "warning",
-            title: "Delete vendor?",
-            html: `You are about to delete <strong>${name}</strong>.<br/>This action cannot be undone.`,
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete",
-            cancelButtonText: "Cancel",
-            confirmButtonColor: "#dc3545",
-            cancelButtonColor: "#6c757d",
-            reverseButtons: true,
-            focusCancel: true
-          });
-
-          if (result.isConfirmed) form.submit();
-        });
-
-        document.addEventListener("DOMContentLoaded", () => {
-          const success = '@(TempData["SuccessMessage"] ?? "")';
-          const error = '@(TempData["ErrorMessage"] ?? "")';
-          if (success) Swal.fire({ icon: "success", title: "Success", text: success, timer: 2200, showConfirmButton: false });
-          if (error) Swal.fire({ icon: "error", title: "Error", text: error });
-        });
     </script>
 }
+

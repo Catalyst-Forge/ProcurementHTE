@@ -104,7 +104,13 @@
 </div>
 
 <!-- Hidden Delete Form -->
-<form id="deleteForm" method="post" asp-controller="ProcurementDocuments" asp-action="Delete" style="display: none;">
+<form id="deleteForm"
+      method="post"
+      asp-controller="ProcurementDocuments"
+      asp-action="Delete"
+      style="display: none;"
+      class="js-loading-form"
+      data-loading-overlay="true">
     @Html.AntiForgeryToken()
     <input type="hidden" name="id" id="deleteDocId" />
     <input type="hidden" name="procurementId" id="deleteProcurementId" />

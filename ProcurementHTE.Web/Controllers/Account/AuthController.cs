@@ -316,13 +316,13 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (user.EmailConfirmed)
             {
-                TempData["TwoFactorFlashSuccess"] = "Email sudah terverifikasi.";
+                TempData["SuccessMessage"] = "Email sudah terverifikasi.";
                 return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
             }
 
             if (IsCooldownActive(PendingEmailCooldownKey, out var remaining))
             {
-                TempData["TwoFactorFlashError"] = $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
+                TempData["ErrorMessage"] = $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
                 return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
             }
 
@@ -340,7 +340,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 );
                 if (string.IsNullOrWhiteSpace(callbackUrl))
                 {
-                    TempData["TwoFactorFlashError"] = "Tidak dapat membuat magic link saat ini.";
+                    TempData["ErrorMessage"] = "Tidak dapat membuat magic link saat ini.";
                 }
                 else
                 {
@@ -349,7 +349,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                         callbackUrl,
                         HttpContext.RequestAborted
                     );
-                    TempData["TwoFactorFlashSuccess"] = "Magic link verifikasi telah dikirim ulang.";
+                    TempData["SuccessMessage"] = "Magic link verifikasi telah dikirim ulang.";
                     if (_emailOptions.UseDevelopmentMode)
                         TempData["TwoFactorFlashDevLink"] = callbackUrl;
                     StartCooldown(PendingEmailCooldownKey);
@@ -358,7 +358,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Gagal mengirim ulang magic link untuk user {User}", user.Id);
-                TempData["TwoFactorFlashError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -374,13 +374,13 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (user.PhoneNumberConfirmed)
             {
-                TempData["TwoFactorFlashSuccess"] = "Nomor HP sudah terverifikasi.";
+                TempData["SuccessMessage"] = "Nomor HP sudah terverifikasi.";
                 return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
             }
 
             if (IsCooldownActive(PendingPhoneCooldownKey, out var remaining))
             {
-                TempData["TwoFactorFlashError"] = $"Tunggu {remaining} detik sebelum mengirim ulang OTP.";
+                TempData["ErrorMessage"] = $"Tunggu {remaining} detik sebelum mengirim ulang OTP.";
                 return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
             }
 
@@ -395,7 +395,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                     verificationCode,
                     HttpContext.RequestAborted
                 );
-                TempData["TwoFactorFlashSuccess"] = "OTP verifikasi SMS telah dikirim ulang.";
+                TempData["SuccessMessage"] = "OTP verifikasi SMS telah dikirim ulang.";
                 if (_smsOptions.UseDevelopmentMode)
                     TempData["TwoFactorFlashDevOtp"] = verificationCode;
                 StartCooldown(PendingPhoneCooldownKey);
@@ -403,7 +403,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Gagal mengirim ulang OTP verifikasi HP untuk user {User}", user.Id);
-                TempData["TwoFactorFlashError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -419,7 +419,7 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                TempData["TwoFactorFlashError"] = "Kode OTP harus diisi.";
+                TempData["ErrorMessage"] = "Kode OTP harus diisi.";
                 return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
             }
 
@@ -430,12 +430,12 @@ namespace ProcurementHTE.Web.Controllers.Account
                     code,
                     HttpContext.RequestAborted
                 );
-                TempData["TwoFactorFlashSuccess"] = "Nomor HP berhasil diverifikasi. Silakan lanjutkan login.";
+                TempData["SuccessMessage"] = "Nomor HP berhasil diverifikasi. Silakan lanjutkan login.";
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Verifikasi nomor HP 2FA gagal untuk user {User}", user.Id);
-                TempData["TwoFactorFlashError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -464,8 +464,6 @@ namespace ProcurementHTE.Web.Controllers.Account
                 RequiresEmail = requireEmail,
                 RequiresPhone = requirePhone,
                 ReturnUrl = returnUrl,
-                SuccessMessage = TempData["ContactSuccess"] as string,
-                ErrorMessage = TempData["ContactError"] as string,
                 DevMagicLink = _emailOptions.UseDevelopmentMode ? TempData["ContactDevMagicLink"] as string : null,
                 DevPhoneOtp = _smsOptions.UseDevelopmentMode ? TempData["ContactDevPhoneOtp"] as string : null,
             };
@@ -489,7 +487,7 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (IsCooldownActive(ContactEmailCooldownKey, out var remaining))
             {
-                TempData["ContactError"] = $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
+                TempData["ErrorMessage"] = $"Tunggu {remaining} detik sebelum mengirim ulang magic link.";
                 return RedirectToAction(nameof(ContactVerification), new { returnUrl });
             }
 
@@ -508,7 +506,7 @@ namespace ProcurementHTE.Web.Controllers.Account
 
                 if (string.IsNullOrWhiteSpace(callbackUrl))
                 {
-                    TempData["ContactError"] = "Tidak dapat membuat magic link saat ini.";
+                    TempData["ErrorMessage"] = "Tidak dapat membuat magic link saat ini.";
                 }
                 else
                 {
@@ -517,7 +515,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                         callbackUrl,
                         HttpContext.RequestAborted
                     );
-                    TempData["ContactSuccess"] = "Magic link telah dikirim ke email Anda.";
+                    TempData["SuccessMessage"] = "Magic link telah dikirim ke email Anda.";
                     if (_emailOptions.UseDevelopmentMode)
                         TempData["ContactDevMagicLink"] = callbackUrl;
                     StartCooldown(ContactEmailCooldownKey);
@@ -526,7 +524,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Gagal mengirim magic link verifikasi untuk user {UserId}", user?.Id);
-                TempData["ContactError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -543,13 +541,13 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (string.IsNullOrWhiteSpace(user.PhoneNumber))
             {
-                TempData["ContactError"] = "Nomor HP belum diisi.";
+                TempData["ErrorMessage"] = "Nomor HP belum diisi.";
                 return RedirectToAction(nameof(ContactVerification), new { returnUrl });
             }
 
             if (IsCooldownActive(ContactPhoneCooldownKey, out var remaining))
             {
-                TempData["ContactError"] = $"Tunggu {remaining} detik sebelum mengirim ulang OTP.";
+                TempData["ErrorMessage"] = $"Tunggu {remaining} detik sebelum mengirim ulang OTP.";
                 return RedirectToAction(nameof(ContactVerification), new { returnUrl });
             }
 
@@ -564,7 +562,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                     code,
                     HttpContext.RequestAborted
                 );
-                TempData["ContactSuccess"] = "OTP verifikasi dikirim ke nomor Anda.";
+                TempData["SuccessMessage"] = "OTP verifikasi dikirim ke nomor Anda.";
                 if (_smsOptions.UseDevelopmentMode)
                     TempData["ContactDevPhoneOtp"] = code;
                 StartCooldown(ContactPhoneCooldownKey);
@@ -572,7 +570,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Gagal mengirim OTP verifikasi nomor untuk user {UserId}", user.Id);
-                TempData["ContactError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -608,8 +606,8 @@ namespace ProcurementHTE.Web.Controllers.Account
                 AuthenticatorUri = summary.AuthenticatorUri,
                 AuthenticatorQrBase64 = summary.AuthenticatorQrBase64,
                 ReturnUrl = returnUrl,
-                SuccessMessage = TempData["TwoFactorSetupSuccess"] as string,
-                ErrorMessage = TempData["TwoFactorSetupError"] as string,
+                SuccessMessage = TempData["SuccessMessage"] as string,
+                ErrorMessage = TempData["ErrorMessage"] as string,
                 ActiveTab = defaultTab,
             };
 
@@ -634,21 +632,21 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (string.IsNullOrWhiteSpace(verificationCode))
             {
-                TempData["TwoFactorSetupError"] = "Kode verifikasi wajib diisi.";
+                TempData["ErrorMessage"] = "Kode verifikasi wajib diisi.";
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
 
             if (method == TwoFactorMethod.Email && !user.EmailConfirmed)
             {
-                TempData["TwoFactorSetupError"] = "Email belum terverifikasi.";
+                TempData["ErrorMessage"] = "Email belum terverifikasi.";
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
 
             if (method == TwoFactorMethod.Sms && RequiresPhoneVerification(user))
             {
-                TempData["TwoFactorSetupError"] = "Nomor HP belum terverifikasi.";
+                TempData["ErrorMessage"] = "Nomor HP belum terverifikasi.";
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
@@ -661,12 +659,12 @@ namespace ProcurementHTE.Web.Controllers.Account
                     verificationCode,
                     HttpContext.RequestAborted
                 );
-                TempData["TwoFactorSetupSuccess"] = "Two-factor authentication berhasil diaktifkan.";
+                TempData["SuccessMessage"] = "Two-factor authentication berhasil diaktifkan.";
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Gagal mengaktifkan 2FA untuk user {UserId}", user.Id);
-                TempData["TwoFactorSetupError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
@@ -754,7 +752,7 @@ namespace ProcurementHTE.Web.Controllers.Account
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                TempData["ContactError"] = "Kode OTP wajib diisi.";
+                TempData["ErrorMessage"] = "Kode OTP wajib diisi.";
                 return RedirectToAction(nameof(ContactVerification), new { returnUrl });
             }
 
@@ -765,12 +763,12 @@ namespace ProcurementHTE.Web.Controllers.Account
                     code,
                     HttpContext.RequestAborted
                 );
-                TempData["ContactSuccess"] = "Nomor HP berhasil diverifikasi.";
+                TempData["SuccessMessage"] = "Nomor HP berhasil diverifikasi.";
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Verifikasi nomor HP gagal untuk user {UserId}", user.Id);
-                TempData["ContactError"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });

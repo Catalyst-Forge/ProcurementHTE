@@ -37,7 +37,7 @@
     </a>
 </header>
 
-<form asp-action="Edit" method="post" enctype="multipart/form-data">
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="js-loading-form">
     @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="ProcurementId" />
@@ -56,11 +56,6 @@
                         <option value="">Select contract type</option>
                     </select>
                     <span asp-validation-for="ContractType" class="text-danger"></span>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="JobTypeOther" class="form-label"></label>
-                    <input asp-for="JobTypeOther" class="form-control" maxlength="255" />
-                    <span asp-validation-for="JobTypeOther" class="text-danger"></span>
                 </div>
             </div>
 

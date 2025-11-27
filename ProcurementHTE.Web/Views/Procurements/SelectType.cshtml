@@ -45,7 +45,7 @@ else
         }
     </div>
 
-    <form id="selectTypeForm" asp-action="SelectType" method="post" class="d-none">
+    <form id="selectTypeForm" asp-action="SelectType" method="post" class="d-none js-loading-form">
         <input type="hidden" name="jobTypeId" id="jobTypeId" />
         @Html.AntiForgeryToken()
     </form>
@@ -54,8 +54,20 @@ else
 @section Scripts {
 <script>
     function selectType(id) {
+        const form = document.getElementById('selectTypeForm');
+        if (!form) return;
+
         document.getElementById('jobTypeId').value = id;
-        document.getElementById('selectTypeForm').submit();
+
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+            return;
+        }
+
+        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+        if (form.dispatchEvent(submitEvent)) {
+            form.submit();
+        }
     }
 </script>
 }

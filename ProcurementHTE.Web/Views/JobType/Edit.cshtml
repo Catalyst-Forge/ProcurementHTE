@@ -11,7 +11,7 @@
     <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to list</a>
 </div>
 
-<form asp-action="Edit">
+<form asp-action="Edit" class="js-loading-form">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input type="hidden" asp-for="JobTypeId" />
 

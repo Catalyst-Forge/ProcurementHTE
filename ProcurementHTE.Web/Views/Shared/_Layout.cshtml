@@ -73,6 +73,14 @@
         </div>
     </div>
 
+    <div id="global-loading-overlay" class="global-loading-overlay d-none" aria-hidden="true">
+        <div class="global-loading-overlay__backdrop"></div>
+        <div class="global-loading-overlay__content text-center text-white">
+            <div class="spinner-border text-light" role="status" aria-hidden="true"></div>
+            <p class="mt-3 mb-0 fw-semibold">Processing...</p>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @await Html.PartialAsync("_SweetAlerts")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -86,4 +94,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

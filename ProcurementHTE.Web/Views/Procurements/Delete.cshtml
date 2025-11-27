@@ -60,7 +60,7 @@
             <span>This action cannot be undone.</span>
         </div>
 
-        <form asp-action="Delete" method="post" class="d-flex gap-2">
+        <form asp-action="Delete" method="post" class="d-flex gap-2 js-loading-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@Model.ProcurementId" />
             <button type="submit" class="btn btn-danger">

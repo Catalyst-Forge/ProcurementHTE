@@ -3,6 +3,7 @@
 @model PagedResult<DocumentType>
 @{
     ViewData["Title"] = "Document Type Data";
+    ViewData["DisableHxBoost"] = true;
     var currentSearch = Context.Request.Query["search"].ToString();
     var currentFields = (Context.Request.Query["fields"].ToString() ?? "ProcNum,Description")
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -96,7 +97,11 @@
                                   asp-route-id="@item.DocumentTypeId"
                                   method="post"
                                   class="d-inline delete-form"
-                                  data-name="@item.Name">
+                                  data-loading-overlay="true"
+                                  hx-boost="false"
+                                  hx-ignore="true"
+                                  data-confirm-title="Delete @item.Name?"
+                                  data-confirm-message="You are about to delete &quot;@item.Name&quot;. This action cannot be undone.">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-link link-danger link-opacity-50-hover p-0 border-0 bg-transparent">
                                     <span class="visually-hidden">Delete</span>
@@ -148,38 +153,5 @@
                 form.submit();
             });
         })();
-        
-        document.addEventListener("submit", async function (e) {
-            const form = e.target.closest(".delete-form");
-            if (!form) return;
-
-            e.preventDefault();
-
-            const name = form.dataset.name || "this record";
-            const result = await Swal.fire({
-                icon: "warning",
-                title: "Delete this record?",
-                html: `You are about to delete <strong>${name}</strong>.<br>This action cannot be undone.`,
-                showCancelButton: true,
-                confirmButtonText: "Yes, delete",
-                cancelButtonText: "Cancel",
-                confirmButtonColor: "#dc3545",
-                cancelButtonColor: "#6c757d",
-                reverseButtons: true
-            });
-
-            if (result.isConfirmed) form.submit();
-        });
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const success = '@TempData["SuccessMessage"]';
-            const error = '@TempData["ErrorMessage"]';
-
-            if (success)
-                Swal.fire({ icon: "success", title: "Success", text: success, timer: 2500, showConfirmButton: false });
-
-            if (error)
-                Swal.fire({ icon: "error", title: "Error", text: error });
-        });
     </script>
 }

@@ -13,7 +13,7 @@
         var procurementSettingsExpanded = procurementSettingsOpen ? "true" : "false";
         var procurementSettingsChevronClass = procurementSettingsOpen ? "rotate" : string.Empty;
 
-        var masterDataControllers = new[] { "JobType", "DocumentType" };
+        var masterDataControllers = new[] { "JobType", "DocumentType", "JobTypeDocument", "DocumentApprovals" };
         var masterDataShowClass = Html.CollapseState(controllers: masterDataControllers);
         var masterDataOpen = !string.IsNullOrEmpty(masterDataShowClass);
         var masterDataExpanded = masterDataOpen ? "true" : "false";
@@ -115,7 +115,7 @@
                             <i class="bi bi-chevron-down small ms-auto @masterDataChevronClass"></i>
                         </a>
 
-                        <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="JobType,DocumentType">
+                        <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="JobType,DocumentType,JobTypeDocument,DocumentApprovals">
                             <ul class="list-unstyled fw-normal pb-1 ps-4 small">
                                 <li>
                                     <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobType" }))"
@@ -135,6 +135,26 @@
                                        asp-action="Index"
                                        data-page="Index Document Types">
                                         Document Types
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobTypeDocument" }))"
+                                       
+                                       data-nav-controller="JobTypeDocument"
+                                       asp-controller="JobTypeDocument"
+                                       asp-action="Index"
+                                       data-page="Index Job Type Documents">
+                                        Job Type Documents
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentApprovals" }))"
+                                       
+                                       data-nav-controller="DocumentApprovals"
+                                       asp-controller="DocumentApprovals"
+                                       asp-action="Index"
+                                       data-page="Index Document Approvals">
+                                        Document Approvals
                                     </a>
                                 </li>
                             </ul>

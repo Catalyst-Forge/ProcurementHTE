@@ -12,14 +12,6 @@
     </a>
 </div>
 
-@if (TempData["SuccessMessage"] is string successMessage)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @successMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
 <div class="row mb-3">
     <div class="col-md-3">
         <div class="card mb-2">
@@ -163,14 +155,29 @@
                                     @(user.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")
                                 </td>
                                 <td class="text-end">
+                                    @{
+                                        var currentUserId = User?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                                        var isSelf = string.Equals(user.Id, currentUserId, StringComparison.OrdinalIgnoreCase);
+                                    }
                                     <div class="btn-group btn-group-sm">
-                                        <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary">
+                                        <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary" title="Edit user">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>
                                         <form asp-action="ToggleActive" asp-route-id="@user.Id" method="post" class="d-inline">
                                             <button type="submit" class="btn btn-outline-warning"
+                                                    title="Aktif/Nonaktif"
                                                     onclick="return confirm('Ubah status aktif user ini?');">
                                                 <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="Delete" asp-route-id="@user.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger"
+                                                    title="Hapus user"
+                                                    @(isSelf ? "disabled" : "")
+                                                    onclick="return confirm('Hapus user ini? Tindakan tidak dapat dibatalkan.');">
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
                                     </div>

@@ -17,5 +17,7 @@
     @RenderBody()
 </div>
 
+@await Html.PartialAsync("_SweetAlerts")
+
 @await RenderSectionAsync("HeadScripts", required: false)
 @await RenderSectionAsync("Scripts", required: false)

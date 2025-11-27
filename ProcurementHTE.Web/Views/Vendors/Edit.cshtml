@@ -12,7 +12,7 @@
     </a>
 </div>
 
-<form asp-action="Edit" method="post" asp-antiforgery="true" novalidate>
+<form asp-action="Edit" method="post" asp-antiforgery="true" novalidate class="js-loading-form">
     <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
     <input type="hidden" asp-for="VendorId" />
     <input type="hidden" asp-for="VendorCode" />

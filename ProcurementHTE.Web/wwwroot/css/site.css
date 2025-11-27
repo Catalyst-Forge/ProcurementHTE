@@ -7,6 +7,37 @@ html {
   interpolate-size: allow-keywords;
 }
 
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.global-loading-overlay:not(.d-none) {
+  pointer-events: all;
+}
+
+.global-loading-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.global-loading-overlay__content {
+  position: relative;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 1.75rem 2.5rem;
+  border-radius: 1rem;
+  min-width: 220px;
+  box-shadow: 0 25px 55px rgba(15, 23, 42, 0.45);
+}
+
 @media (min-width: 768px) {
   html {
     font-size: 16px;

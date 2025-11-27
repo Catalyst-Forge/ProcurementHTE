@@ -35,6 +35,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Vice President",
                 "HSE",
                 "Supply Chain Management",
+                "AP-PO"
             ];
 
             foreach (var roleName in roles) {
@@ -122,6 +123,15 @@ namespace ProcurementHTE.Infrastructure.Data
             );
 
             await AddPermissions(
+                "AP-PO",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
+                Permissions.Procurement.Edit,
+                Permissions.Doc.Read,
+                Permissions.Doc.Upload
+            );
+
+            await AddPermissions(
                 "Analyst HTE & LTS",
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Edit,
@@ -154,6 +164,7 @@ namespace ProcurementHTE.Infrastructure.Data
             var users = new (string Username, string Email, string Password, string Role)[]
             {
                 ("admin", "admin@example.com", "Admin123!", "Admin"),
+                ("APPO", "appo@example.com", "Appo123!", "AP-PO"),
                 ("managerTL", "manager@example.com", "Manager123!", "Manager Transport & Logistic"),
                 ("AHte", "AHte@example.com", "AHte123!", "Analyst HTE & LTS"),
                 ("hte", "hte@example.com", "Hte1234!", "HTE"),

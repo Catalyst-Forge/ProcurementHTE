@@ -34,9 +34,6 @@ public class ProcurementCreateDto
     [MaxLength(32)]
     public string? JobType { get; set; }
 
-    [MaxLength(255)]
-    public string? JobTypeOther { get; set; }
-
     [MaxLength(100)]
     public string? ContractType { get; set; }
 

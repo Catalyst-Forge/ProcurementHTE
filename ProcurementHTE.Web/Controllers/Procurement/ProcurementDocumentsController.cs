@@ -1,5 +1,7 @@
-using System.Security.Claims;
+using System.IO;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
@@ -92,7 +94,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] Error load Index for Procurement={Procurement}.", procurementId);
-            TempData["error"] = "Failed to load document list.";
+            TempData["ErrorMessage"] = "Failed to load document list.";
             return RedirectToAction("Index", "Error");
         }
     }
@@ -110,38 +112,57 @@ public class ProcurementDocumentsController : Controller
     {
         if (string.IsNullOrWhiteSpace(ProcurementId) || string.IsNullOrWhiteSpace(DocumentTypeId))
         {
-            TempData["error"] = "Missing required parameters.";
+            TempData["ErrorMessage"] = "Missing required parameters.";
             return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
         }
 
         if (File is null || File.Length == 0)
         {
-            TempData["error"] = "No file selected.";
+            TempData["ErrorMessage"] = "No file selected.";
             return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
         }
 
-        // opsional: enforce PDF
-        var contentType = (File.ContentType ?? "").ToLowerInvariant();
+        var ext = (Path.GetExtension(File.FileName) ?? string.Empty).ToLowerInvariant();
+        var isPdf = ext == ".pdf";
+        if (!isPdf)
+        {
+            TempData["ErrorMessage"] = "Only PDF files are allowed.";
+            return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
+        }
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         try
         {
-            await using var stream = File.OpenReadStream();
+            var docType = await _docTypeRepo.GetByIdAsync(DocumentTypeId);
+            var baseName = SanitizeFileNameBase(docType?.Name) ?? DocumentTypeId;
+
+            Stream uploadStream;
+            long uploadSize;
+            string uploadFileName;
+            string uploadContentType;
+
+            uploadStream = File.OpenReadStream();
+            uploadSize = File.Length;
+            uploadFileName = $"{baseName}.pdf";
+            uploadContentType = "application/pdf";
+
+            await using var stream = uploadStream;
             var req = new UploadProcDocumentRequest
             {
                 ProcurementId = ProcurementId,
                 DocumentTypeId = DocumentTypeId,
                 Content = stream,
-                Size = File.Length,
-                FileName = File.FileName,
-                ContentType = contentType,
+                Size = uploadSize,
+                FileName = uploadFileName,
+                ContentType = uploadContentType,
                 Description = Description,
                 UploadedByUserId = userId,
                 NowUtc = DateTime.UtcNow,
             };
 
             var result = await _docSvc.UploadAsync(req, HttpContext.RequestAborted);
-            var message = $"Successfully uploaded \"{File.FileName}\".";
+            var message = $"Successfully uploaded \"{uploadFileName}\".";
 
             if (IsAjaxRequest())
             {
@@ -160,7 +181,7 @@ public class ProcurementDocumentsController : Controller
                 });
             }
 
-            TempData["success"] = message;
+            TempData["SuccessMessage"] = message;
         }
         catch (Exception ex)
         {
@@ -177,7 +198,7 @@ public class ProcurementDocumentsController : Controller
                 return BadRequest(new { ok = false, error = ex.Message });
             }
 
-            TempData["error"] = ex.Message;
+            TempData["ErrorMessage"] = ex.Message;
         }
 
         return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
@@ -247,7 +268,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] Download gagal: id={Id}", id);
-            TempData["error"] = "Failed to download document.";
+            TempData["ErrorMessage"] = "Failed to download document.";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
     }
@@ -292,7 +313,7 @@ public class ProcurementDocumentsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] Delete gagal: id={Id}", id);
-            TempData["error"] = ex.Message;
+            TempData["ErrorMessage"] = ex.Message;
         }
 
         return RedirectToAction(nameof(Index), new { procurementId });
@@ -305,19 +326,19 @@ public class ProcurementDocumentsController : Controller
     {
         if (string.IsNullOrWhiteSpace(procDocumentId))
         {
-            TempData["error"] = "Invalid document.";
+            TempData["ErrorMessage"] = "Invalid document.";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
         try
         {
             var userId = User?.Identity?.Name ?? "-";
             await _docSvc.SendApprovalAsync(procDocumentId, userId, HttpContext.RequestAborted);
-            TempData["success"] = "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
+            TempData["SuccessMessage"] = "Dokumen dikirim untuk approval. Status menjadi Pending Approval.";
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[ProcDocs] SendApprovalPerDoc gagal: doc={Doc}", procDocumentId);
-            TempData["error"] = ex.Message;
+            TempData["ErrorMessage"] = ex.Message;
         }
         return RedirectToAction(nameof(Index), new { procurementId });
     }
@@ -384,14 +405,14 @@ public class ProcurementDocumentsController : Controller
             var procurementEntity = await _procurementService.GetProcurementByIdAsync(procurementId);
             if (procurementEntity == null)
             {
-                TempData["error"] = "Procurement was not found";
+                TempData["ErrorMessage"] = "Procurement was not found";
                 return RedirectToAction("Index", new { procurementId });
             }
 
             var docType = await _docTypeRepo.GetByIdAsync(documentTypeId);
             if (docType == null)
             {
-                TempData["error"] = "Document type was not found";
+                TempData["ErrorMessage"] = "Document type was not found";
                 return RedirectToAction("Index", new { procurementId });
             }
 
@@ -435,7 +456,7 @@ public class ProcurementDocumentsController : Controller
                 }
             );
 
-            TempData["success"] = $"Dokumen '{docType.Name}' berhasil digenerate!";
+            TempData["SuccessMessage"] = $"Dokumen '{docType.Name}' berhasil digenerate!";
             _logger.LogInformation(
                 "Document generated: Procurement={Procurement}, DocType={DocType}, Size={Size}",
                 procurementEntity.ProcNum,
@@ -447,7 +468,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (NotImplementedException ex)
         {
-            TempData["error"] = ex.Message;
+            TempData["ErrorMessage"] = ex.Message;
             _logger.LogWarning(
                 ex,
                 "Template not implemented for DocumentTypeId={DocTypeId}",
@@ -457,7 +478,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            TempData["error"] = $"Failed to generate documents: {ex.Message}";
+            TempData["ErrorMessage"] = $"Failed to generate documents: {ex.Message}";
             _logger.LogError(ex, "Error generating document for Procurement={Procurement}", procurementId);
             return RedirectToAction("Index", new { procurementId });
         }
@@ -529,5 +550,21 @@ public class ProcurementDocumentsController : Controller
             _logger.LogError(ex, "[ProcDocs] ApprovalTimeline gagal: doc={Doc}", procDocumentId);
             return StatusCode(500, new { ok = false, message = "Failed to load approval timeline." });
         }
+    }
+
+    private static string SanitizeFileNameBase(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "document";
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var sb = new StringBuilder();
+
+        foreach (var ch in name.Trim())
+        {
+            sb.Append(invalid.Contains(ch) ? '_' : ch);
+        }
+
+        var result = sb.ToString().Replace(' ', '_').Trim('_');
+        return string.IsNullOrWhiteSpace(result) ? "document" : result;
     }
 }

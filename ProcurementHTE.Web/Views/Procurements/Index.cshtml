@@ -182,14 +182,28 @@
                             </a>
                             @if (canDelete.Succeeded)
                             {
-                                <button type="button"
-                                        class="btn btn-link p-0 border-0 link-danger link-opacity-50-hover text-decoration-none me-2 js-delete-procurement"
-                                        data-procurement-id="@item.ProcurementId"
-                                        data-wo-number="@(string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum)"
-                                        data-job-name="@item.JobName">
-                                    <span class="visually-hidden">Delete</span>
-                                    <i class="bi bi-trash-fill"></i>
-                                </button>
+                                var deleteTitle = string.IsNullOrWhiteSpace(item.Wonum)
+                                    ? "Delete procurement?"
+                                    : $"Delete {item.Wonum}?";
+                                var deleteMessage = string.IsNullOrWhiteSpace(item.JobName)
+                                    ? "This action cannot be undone."
+                                    : $"You are about to delete \"{item.JobName}\". This action cannot be undone.";
+                                <form asp-action="Delete"
+                                      method="post"
+                                      class="d-inline delete-form"
+                                      hx-boost="false"
+                                      hx-ignore="true"
+                                      data-loading-overlay="true"
+                                      data-confirm-title="@deleteTitle"
+                                      data-confirm-message="@System.Text.Encodings.Web.HtmlEncoder.Default.Encode(deleteMessage)">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.ProcurementId" />
+                                    <button type="submit"
+                                            class="btn btn-link p-0 border-0 link-danger link-opacity-50-hover text-decoration-none me-2">
+                                        <span class="visually-hidden">Delete</span>
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
                             }
                         </td>
                     </tr>
@@ -198,14 +212,6 @@
         </tbody>
     </table>
 </div>
-
-@if (canDelete.Succeeded)
-{
-    <form asp-action="Delete" method="post" id="deleteProcurementForm" class="d-none">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="id" id="deleteProcurementFormId" />
-    </form>
-}
 
 @await Html.PartialAsync("_Pager", Model)
 
@@ -243,36 +249,6 @@
                 form.submit();
             });
 
-            const deleteButtons = document.querySelectorAll('.js-delete-procurement');
-            const deleteForm = document.getElementById('deleteProcurementForm');
-            const deleteIdInput = document.getElementById('deleteProcurementFormId');
-
-            if (deleteButtons.length && deleteForm && deleteIdInput && window.Swal) {
-                deleteButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        const procId = button.getAttribute('data-procurement-id');
-                        const woNumber = button.getAttribute('data-wo-number') || 'WO Number -';
-                        const jobName = button.getAttribute('data-job-name') || '';
-
-                        Swal.fire({
-                            icon: 'warning',
-                            title: `Delete ${woNumber}?`,
-                            html: jobName ? `<div class="text-muted">${jobName}</div>` : '',
-                            showCancelButton: true,
-                            confirmButtonText: 'Delete',
-                            cancelButtonText: 'Cancel',
-                            confirmButtonColor: '#dc3545',
-                            cancelButtonColor: '#6c757d',
-                            focusCancel: true
-                        }).then(result => {
-                            if (result.isConfirmed) {
-                                deleteIdInput.value = procId;
-                                deleteForm.submit();
-                            }
-                        });
-                    });
-                });
-            }
         })();
     </script>
 }

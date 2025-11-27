@@ -165,7 +165,7 @@ namespace ProcurementHTE.Web.Controllers.Account
 
                 if (emailChanged || requiresPhoneVerification)
                 {
-                    TempData["ContactSuccess"] =
+                    TempData["SuccessMessage"] =
                         "Profil berhasil diperbarui. Silakan verifikasi kontak yang baru diperbarui.";
                     var returnUrl = Url.Action(nameof(Settings), "Account") ?? "/";
                     return RedirectToAction("ContactVerification", "Auth", new { returnUrl });

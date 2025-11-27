@@ -166,6 +166,7 @@
                                                           asp-action="Upload"
                                                           method="post"
                                                           enctype="multipart/form-data"
+                                                          hx-boost="false"
                                                           data-row="@rowIndex"
                                                           data-upload-form="true">
                                                         @Html.AntiForgeryToken()
@@ -183,7 +184,7 @@
                                                                 <input class="d-none file-input"
                                                                        type="file"
                                                                        name="File"
-                                                                       accept="application/pdf"
+                                                                       accept="application/pdf,.pdf"
                                                                        required
                                                                        data-row="@rowIndex" />
                                                             </label>
@@ -206,22 +207,34 @@
 
                                                 @if (item.IsGenerated)
                                                 {
-                                                    <div>
-                                                        <form asp-controller="ProcurementDocuments" asp-action="Generate" method="post" class="d-inline">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
-                                                            <input type="hidden" name="documentTypeId" value="@item.DocumentTypeId" />
-                                                            @if (!string.IsNullOrEmpty(item.ProcDocumentId))
-                                                            {
-                                                                <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
-                                                            }
+                                    <div>
+                                        <form asp-controller="ProcurementDocuments"
+                                              asp-action="Generate"
+                                              method="post"
+                                              class="d-inline js-generate-form"
+                                              hx-boost="false"
+                                              data-generate-form="true">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                                            <input type="hidden" name="documentTypeId" value="@item.DocumentTypeId" />
+                                            @if (!string.IsNullOrEmpty(item.ProcDocumentId))
+                                            {
+                                                <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
+                                            }
 
-                                                            <button type="submit" class="btn btn-sm btn-success">
-                                                                <i class="bi bi-file-earmark-arrow-down me-1"></i>
-                                                                @(item.Uploaded ? "Regenerate" : "Generate")
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                            @{
+                                                var disableGenerate = item.RequiresApproval && (string.Equals(status, "Pending Approval", StringComparison.OrdinalIgnoreCase) || string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase));
+                                                var disableReason = disableGenerate ? "Disabled while approval in progress/approved" : string.Empty;
+                                            }
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-success js-generate-btn"
+                                                    @(disableGenerate ? "disabled" : "")
+                                                    title="@(disableReason)">
+                                                <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                                                @(item.Uploaded ? "Regenerate" : "Generate")
+                                            </button>
+                                        </form>
+                                    </div>
                                                 }
 
                                                 @if (isUploaded && !string.IsNullOrEmpty(item.ProcDocumentId))
@@ -300,7 +313,7 @@
 
                                                 @if (item.RequiresApproval && item.Uploaded && !isPending && !string.Equals(item.Status, "Approved", StringComparison.OrdinalIgnoreCase))
                                                 {
-                                                    <form asp-controller="ProcurementDocuments" asp-action="SendApprovalPerDoc" method="post" class="d-inline">
+                                                    <form asp-controller="ProcurementDocuments" asp-action="SendApprovalPerDoc" method="post" class="d-inline" hx-boost="false">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
                                                         <input type="hidden" name="procurementId" value="@Model.ProcurementId" />

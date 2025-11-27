@@ -1,0 +1,55 @@
+@using ProcurementHTE.Core.Models
+@model DocumentApprovals
+@{
+    ViewData["Title"] = "Create Document Approval";
+    var jobTypeDocs = ViewBag.JobTypeDocuments as List<JobTypeDocuments> ?? new();
+    var roles = ViewBag.Roles as List<Role> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Create Document Approval</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Create" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+
+            <div class="col-md-6">
+                <label asp-for="JobTypeDocumentId" class="form-label">Job Type - Document</label>
+                <select asp-for="JobTypeDocumentId" class="form-select"
+                        asp-items="@(new SelectList((IEnumerable<dynamic>)ViewBag.JobTypeDocumentSelect, "JobTypeDocumentId", "Display"))">
+                    <option value="">-- Select Mapping --</option>
+                </select>
+                <span asp-validation-for="JobTypeDocumentId" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="RoleId" class="form-label">Role</label>
+                <select asp-for="RoleId" class="form-select" asp-items="@(new SelectList(roles, "Id", "Name"))">
+                    <option value="">-- Select Role --</option>
+                </select>
+                <span asp-validation-for="RoleId" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Level" class="form-label">Level</label>
+                <input asp-for="Level" class="form-control" type="number" min="1" />
+                <span asp-validation-for="Level" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="SequenceOrder" class="form-label">Sequence</label>
+                <input asp-for="SequenceOrder" class="form-control" type="number" min="1" />
+                <span asp-validation-for="SequenceOrder" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-light">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<partial name="_ValidationScriptsPartial" />

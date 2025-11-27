@@ -14,8 +14,6 @@
     var devPhoneOtp = (TempData["TwoFactorFlashDevOtp"] as string) ?? ViewBag.DevPhoneOtp as string;
     var emailAddress = ViewBag.EmailAddress as string;
     var phoneNumber = ViewBag.PhoneNumber as string;
-    var flashSuccess = TempData["TwoFactorFlashSuccess"] as string;
-    var flashError = TempData["TwoFactorFlashError"] as string;
     var loginEmailCooldown = ViewBag.LoginEmailCooldown as int? ?? 0;
     var loginSmsCooldown = ViewBag.LoginSmsCooldown as int? ?? 0;
     var resendCooldown = Model.Method == TwoFactorMethod.Email
@@ -53,14 +51,6 @@
       @if (!string.IsNullOrWhiteSpace(autoError))
       {
         <div class="alert alert-danger small">@autoError</div>
-      }
-      @if (!string.IsNullOrWhiteSpace(flashSuccess))
-      {
-        <div class="alert alert-success small">@flashSuccess</div>
-      }
-      @if (!string.IsNullOrWhiteSpace(flashError))
-      {
-        <div class="alert alert-danger small">@flashError</div>
       }
       @if (!string.IsNullOrWhiteSpace(devTwoFactorCode))
       {

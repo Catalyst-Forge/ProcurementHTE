@@ -35,10 +35,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule {
 
             try {
                 await _approvalService.ApproveAsync(id, user.Id);
-                TempData["success"] = "Dokumen disetujui.";
+                TempData["SuccessMessage"] = "Dokumen disetujui.";
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error saat approve {ApprovalId}", id);
-                TempData["error"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -53,10 +53,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule {
 
             try {
                 await _approvalService.RejectAsync(id, user.Id, note);
-                TempData["error"] = "Dokumen ditolak.";
+                TempData["ErrorMessage"] = "Dokumen ditolak.";
             } catch (Exception ex) {
                 _logger.LogError(ex, "Error saat reject {ApprovalId}", id);
-                TempData["error"] = ex.Message;
+                TempData["ErrorMessage"] = ex.Message;
             }
             return RedirectToAction(nameof(Index));
         }

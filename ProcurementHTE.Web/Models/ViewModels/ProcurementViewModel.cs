@@ -31,9 +31,6 @@ public class ProcurementEditViewModel
     [DisplayName("Job Type")]
     public string? JobType { get; set; }
 
-    [DisplayName("Job Type (Other)")]
-    public string? JobTypeOther { get; set; }
-
     [DisplayName("Contract Type")]
     public ContractType ContractType { get; set; }
 

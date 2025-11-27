@@ -205,7 +205,6 @@ public class ProcurementService : IProcurementService
 
     private static void UpdateProcurementProperties(Procurement existing, Procurement updated)
     {
-        existing.JobTypeOther = updated.JobTypeOther;
         existing.ContractType = updated.ContractType;
         existing.JobName = updated.JobName;
         existing.StartDate = updated.StartDate;

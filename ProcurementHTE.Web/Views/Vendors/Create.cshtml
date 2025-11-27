@@ -10,7 +10,7 @@
     <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to list</a>
 </div>
 
-<form asp-action="Create" method="post" asp-antiforgery="true" novalidate>
+<form asp-action="Create" method="post" asp-antiforgery="true" novalidate class="js-loading-form">
     <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 
     <section class="card shadow-sm mb-3 p-2 rounded-4">

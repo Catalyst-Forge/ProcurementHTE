@@ -8,14 +8,6 @@
 
 <h1 class="h3 mb-3">@title</h1>
 
-@if (TempData["SuccessMessage"] is string successMessage)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @successMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
 <div class="card">
     <div class="card-body">
         <form asp-action="@(Model.IsEdit ? "Edit" : "Create")" method="post">

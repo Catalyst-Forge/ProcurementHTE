@@ -22,9 +22,6 @@ public class Procurement
     [DisplayName("WO Number")]
     public string? Wonum { get; set; }
 
-    [MaxLength(255)]
-    public string? JobTypeOther { get; set; }
-
     [Required]
     [DisplayName("Contract Type")]
     public ContractType ContractType { get; set; }

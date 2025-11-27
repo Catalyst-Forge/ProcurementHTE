@@ -9,6 +9,7 @@
     var pageTitle = isEdit ? "Edit Profit & Loss" : "Create Profit & Loss";
     var submitLabel = isEdit ? "Update Profit & Loss" : "Save & Calculate";
     ViewData["Title"] = pageTitle;
+    ViewData["DisableHxBoost"] = true;
     var selectedVendorSet = new HashSet<string>(
         Model.SelectedVendorIds ?? new List<string>(),
         StringComparer.OrdinalIgnoreCase
@@ -18,7 +19,10 @@
 <form asp-action="@(isEdit ? "EditProfitLoss" : "CreateProfitLossPost")"
       asp-controller="Procurements"
       method="post"
-      id="pl-form">
+      id="pl-form"
+      class="js-loading-form"
+      data-loading-overlay="true"
+      hx-boost="false">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="ProcurementId" />
     @if (isEdit && editModel != null)
@@ -288,13 +292,11 @@
             (Model.VendorChoices ?? System.Linq.Enumerable.Empty<ProcurementHTE.Web.Models.ViewModels.VendorChoiceViewModel>())
                 .Select(v => new { id = v.Id, name = v.Name })
         );
-        var vendorChoicesJsonLiteral = System.Text.Json.JsonSerializer.Serialize(vendorChoicesJson);
 
         var procItemsJson = System.Text.Json.JsonSerializer.Serialize(
             (Model.OfferItems ?? new System.Collections.Generic.List<ProcurementHTE.Web.Models.ViewModels.ProcOfferLiteVm>())
                 .Select(i => new { procOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran })
         );
-        var procItemsJsonLiteral = System.Text.Json.JsonSerializer.Serialize(procItemsJson);
 
         var vendorPresetJson = System.Text.Json.JsonSerializer.Serialize(
             (Model.Vendors ?? new List<ProcurementHTE.Web.Models.ViewModels.VendorItemOfferInputVm>())
@@ -314,7 +316,6 @@
                         .ToList()
                 })
         );
-        var vendorPresetJsonLiteral = System.Text.Json.JsonSerializer.Serialize(vendorPresetJson);
 
         var modelStateErrorsJson = System.Text.Json.JsonSerializer.Serialize(
             ViewData.ModelState
@@ -324,15 +325,15 @@
                     kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).FirstOrDefault() ?? string.Empty
                 )
         );
-        var modelStateErrorsLiteral = System.Text.Json.JsonSerializer.Serialize(modelStateErrorsJson);
     }
 
     <script>
+        (function () {
         // --- data server ---
-        const vendorsAll = JSON.parse(@Html.Raw(vendorChoicesJsonLiteral));
-        const procItems = JSON.parse(@Html.Raw(procItemsJsonLiteral));
-        const presetVendors = JSON.parse(@Html.Raw(vendorPresetJsonLiteral));
-        const modelStateErrors = JSON.parse(@Html.Raw(modelStateErrorsLiteral));
+        const vendorsAll = @Html.Raw(vendorChoicesJson);
+        const procItems = @Html.Raw(procItemsJson);
+        const presetVendors = @Html.Raw(vendorPresetJson);
+        const modelStateErrors = @Html.Raw(modelStateErrorsJson);
 
         // helpers
         const fmtClean = n => { 
@@ -346,6 +347,71 @@
         const currencySelector = '[data-format-currency]';
         const thousandGroupRegex = /\B(?=(\d{3})+(?!\d))/g;
         const vendorCheckboxSelector = 'input[name="SelectedVendorIds"]';
+        const addVendorBtn = document.getElementById('btnAddVendor');
+        const plForm = document.getElementById('pl-form');
+
+        if (!plForm) {
+            return;
+        }
+
+        // Disable jQuery unobtrusive validation so long-running submits are not blocked client-side.
+        if (window.jQuery && jQuery.validator) {
+            const $form = jQuery(plForm);
+            $form.removeData("validator");
+            $form.removeData("unobtrusiveValidation");
+        }
+
+        const instanceKey = '__plCreateEditInstance';
+        const previousInstance = window[instanceKey];
+        if (previousInstance?.dispose) {
+            previousInstance.dispose();
+        }
+
+        const cleanupCallbacks = [];
+        const registerCleanup = (fn) => {
+            if (typeof fn === 'function') {
+                cleanupCallbacks.push(fn);
+            }
+        };
+
+        const bind = (target, eventName, handler, options) => {
+            if (!target || typeof target.addEventListener !== 'function' || typeof handler !== 'function') {
+                return;
+            }
+            target.addEventListener(eventName, handler, options);
+            registerCleanup(() => {
+                try {
+                    target.removeEventListener(eventName, handler, options);
+                } catch {
+                    /* ignore cleanup errors */
+                }
+            });
+        };
+
+        const instance = {
+            dispose() {
+                while (cleanupCallbacks.length) {
+                    const dispose = cleanupCallbacks.pop();
+                    try {
+                        dispose();
+                    } catch {
+                        /* ignore cleanup errors */
+                    }
+                }
+                if (window[instanceKey] === instance) {
+                    delete window[instanceKey];
+                }
+            }
+        };
+        window[instanceKey] = instance;
+
+        const detachOnSwap = (event) => {
+            const target = event.detail?.target;
+            if (target && (target === plForm || target.contains(plForm))) {
+                instance.dispose();
+            }
+        };
+        bind(document.body, 'htmx:beforeSwap', detachOnSwap);
 
         const cleanDecimal = val => {
             const num = parseFloat(val);
@@ -371,21 +437,32 @@
 
         function setVendorCheckboxes(state) {
             document.querySelectorAll(vendorCheckboxSelector).forEach(cb => {
-                if (!cb.disabled) {
-                    cb.checked = state;
+                if (cb.disabled) return;
+                cb.checked = state;
+                try {
                     cb.dispatchEvent(new Event('change', { bubbles: true }));
+                } catch {
+                    if (typeof document.createEvent === 'function') {
+                        const fallback = document.createEvent('HTMLEvents');
+                        fallback.initEvent('change', true, false);
+                        cb.dispatchEvent(fallback);
+                    } else if (typeof cb.fireEvent === 'function') {
+                        cb.fireEvent('onchange');
+                    }
                 }
             });
+            updateVendorBlocks();
         }
 
-        toggleVendorBtn?.addEventListener('click', () => {
+        const handleToggleClick = () => {
             const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector))
                 .filter(cb => !cb.disabled);
             const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
             const nextState = !allChecked;
             setVendorCheckboxes(nextState);
             syncToggleButtonLabel(nextState);
-        });
+        };
+        bind(toggleVendorBtn, 'click', handleToggleClick);
 
         // initial label
         (() => {
@@ -562,7 +639,7 @@
             recalcHeader();
         }
 
-        document.addEventListener('input', e => {
+        const handleGlobalInput = e => {
             if (e.target.matches(currencySelector)) {
                 updateCurrencyInput(e.target, true);
                 return;
@@ -572,14 +649,16 @@
             if (e.target.matches('[data-km],[data-quantity]')) {
                 recalcHeader(); // recalcHeader sudah memanggil recalcSummary() di dalamnya
             }
-        });
+        };
+        bind(document, 'input', handleGlobalInput);
 
 
-        document.addEventListener('blur', e => {
+        const handleCurrencyBlur = e => {
             if (e.target.matches(currencySelector)) {
                 updateCurrencyInput(e.target);
             }
-        }, true);
+        };
+        bind(document, 'blur', handleCurrencyBlur, true);
 
         // ===== vendor selections =====
         const vendorsContainer = document.getElementById('vendors');
@@ -637,7 +716,9 @@
             document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
                 if (card.dataset.vendorId && !sel.has(card.dataset.vendorId)) card.remove();
             });
-            document.getElementById('btnAddVendor').disabled = availableVendors().length === 0 || procItems.length === 0;
+            if (addVendorBtn) {
+                addVendorBtn.disabled = availableVendors().length === 0 || procItems.length === 0;
+            }
             document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
                 refreshCardVendorOptions(card);
                 reindexVendorItems(card);
@@ -646,7 +727,7 @@
             recalcSummary();
         }
 
-        getAll('input[name="SelectedVendorIds"]').forEach(cb => cb.addEventListener('change', updateVendorBlocks));
+        getAll('input[name="SelectedVendorIds"]').forEach(cb => bind(cb, 'change', updateVendorBlocks));
 
         function getVendorItemIds(card) {
             return [...card.querySelectorAll('[data-item-block]')]
@@ -1218,7 +1299,8 @@
             }
         }
 
-        document.getElementById('btnAddVendor').addEventListener('click', () => addVendor());
+        const handleAddVendorClick = () => addVendor();
+        bind(addVendorBtn, 'click', handleAddVendorClick);
 
         // ===== Summary (Σ last round / item) =====
         function recalcSummary() {
@@ -1294,8 +1376,8 @@
 
             const distanceInput = document.getElementById("Distance")
             if (distanceInput) {
-                distanceInput.addEventListener('input', recalcKmPer25FromDistance);
-                distanceInput.addEventListener('change', recalcKmPer25FromDistance);
+                bind(distanceInput, 'input', recalcKmPer25FromDistance);
+                bind(distanceInput, 'change', recalcKmPer25FromDistance);
 
                 if (distanceInput.value) {
                     recalcKmPer25FromDistance();
@@ -1315,16 +1397,13 @@
                     addVendor(vendor);
                 });
             }
-            const form = document.getElementById('pl-form');
-            if (form) {
-                form.addEventListener('submit', () => {
-                    document.querySelectorAll(currencySelector).forEach(input => {
-                        input.value = input.dataset?.rawValue ?? digitsOnly(input.value);
-                    });
+            bind(plForm, 'submit', () => {
+                document.querySelectorAll(currencySelector).forEach(input => {
+                    input.value = input.dataset?.rawValue ?? digitsOnly(input.value);
                 });
-            }
+            });
         })();
-
         
+        })();
     </script>
 }
