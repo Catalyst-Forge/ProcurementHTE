@@ -203,7 +203,7 @@ jobs:
             set -Eeuo pipefail
 
             # Default DB_NAME/DB_PORT kalau kosong
-            DB_NAME="${DB_NAME:-project_25_07}"
+            DB_NAME="${DB_NAME:-ProcurementHTE}"
             DB_PORT="${DB_PORT:-1433}"
 
             echo "[INFO] Using DB: $DB_NAME (port $DB_PORT) as $DB_USER on MSSQL_CONTAINER=$MSSQL_CONTAINER"
