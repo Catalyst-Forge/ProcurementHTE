@@ -201,10 +201,16 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
+            trap 'echo "[ERR] Failed at line $LINENO: $BASH_COMMAND"' ERR
 
             # Default DB_NAME/DB_PORT kalau kosong
             DB_NAME="${DB_NAME:-ProcurementHTE}"
             DB_PORT="${DB_PORT:-1433}"
+
+            if [ -z "${DB_USER:-}" ] || [ -z "${DB_PASS:-}" ]; then
+              echo "[ERR] DB_USER/DB_PASS missing"
+              exit 1
+            fi
 
             echo "[INFO] Using DB: $DB_NAME (port $DB_PORT) as $DB_USER on MSSQL_CONTAINER=$MSSQL_CONTAINER"
 
@@ -226,9 +232,12 @@ jobs:
                 echo "[INFO] docker ps failed, trying sudo docker ps"
                 DOCKER="sudo docker"
               else
-                echo "[ERR] Docker not accessible"; exit 1
-              fi
+              echo "[ERR] Docker not accessible"; exit 1
             fi
+            fi
+
+            echo "[INFO] docker ps -a (debug)"
+            $DOCKER ps -a
 
             # ============================================================
             #  DETERMINISTIC CONTAINER SELECTION (CANNOT RETURN MULTILINE)
@@ -238,6 +247,7 @@ jobs:
               if [ -n "${MSSQL_CONTAINER:-}" ]; then
                 local by_name
                 by_name="$($DOCKER ps -q -f name="$MSSQL_CONTAINER" | tr -s '\n' ' ')"
+                echo "[INFO] Candidate containers by name '$MSSQL_CONTAINER': $by_name"
                 if [ -n "$by_name" ]; then
                   set -- $by_name
                   echo "$1"
@@ -263,6 +273,8 @@ jobs:
             echo "[INFO] Using SQL container: $CONTAINER_ID"
 
             RELEASE_PATH="$DEPLOY_DIR/releases/$RELEASE_NAME/Migrations.sql"
+            echo "[INFO] RELEASE_PATH=$RELEASE_PATH"
+            ls -la "$(dirname "$RELEASE_PATH")" || true
             if [ ! -f "$RELEASE_PATH" ]; then
               echo "[WARN] No Migrations.sql found, skipping DB migrations."
               exit 0
@@ -271,8 +283,21 @@ jobs:
             echo "[INFO] Copy Migrations.sql into container..."
             $DOCKER cp "$RELEASE_PATH" "$CONTAINER_ID:/tmp/Migrations.sql"
 
-            echo "[INFO] Running migrations inside container..."
-            $DOCKER exec "$CONTAINER_ID" /opt/mssql-tools/bin/sqlcmd \
+            # Detect sqlcmd path inside the container
+            SQLCMD_BIN=""
+            for candidate in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
+              if $DOCKER exec "$CONTAINER_ID" test -x "$candidate" 2>/dev/null; then
+                SQLCMD_BIN="$candidate"
+                break
+              fi
+            done
+            if [ -z "$SQLCMD_BIN" ]; then
+              echo "[ERR] sqlcmd not found inside container $CONTAINER_ID"
+              exit 1
+            fi
+
+            echo "[INFO] Running migrations inside container using $SQLCMD_BIN..."
+            $DOCKER exec "$CONTAINER_ID" "$SQLCMD_BIN" \
               -S "127.0.0.1,$DB_PORT" \
               -U "$DB_USER" \
               -P "$DB_PASS" \
