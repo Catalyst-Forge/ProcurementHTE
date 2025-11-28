@@ -203,6 +203,7 @@ jobs:
             set -Eeuo pipefail
             trap 'echo "[ERR] Failed at line $LINENO: $BASH_COMMAND"' ERR
 
+            echo "[STEP] start-migrate"
             # Default DB_NAME/DB_PORT kalau kosong
             DB_NAME="${DB_NAME:-ProcurementHTE}"
             DB_PORT="${DB_PORT:-1433}"
@@ -226,18 +227,20 @@ jobs:
               DOCKER="docker"
             fi
 
+            echo "[STEP] docker-command=$DOCKER"
             # Coba cek akses docker tanpa password
             if ! $DOCKER ps >/dev/null 2>&1; then
               if command -v sudo >/dev/null 2>&1; then
                 echo "[INFO] docker ps failed, trying sudo docker ps"
                 DOCKER="sudo docker"
               else
-              echo "[ERR] Docker not accessible"; exit 1
-            fi
+                echo "[ERR] Docker not accessible"; exit 1
+              fi
             fi
 
             echo "[INFO] docker ps -a (debug)"
             $DOCKER ps -a
+            echo "[STEP] docker-ps-done"
 
             # ============================================================
             #  DETERMINISTIC CONTAINER SELECTION (CANNOT RETURN MULTILINE)
@@ -280,8 +283,10 @@ jobs:
               exit 0
             fi
 
+            echo "[STEP] release-path-ok"
             echo "[INFO] Copy Migrations.sql into container..."
             $DOCKER cp "$RELEASE_PATH" "$CONTAINER_ID:/tmp/Migrations.sql"
+            echo "[STEP] cp-done"
 
             # Detect sqlcmd path inside the container
             SQLCMD_BIN=""
@@ -296,10 +301,12 @@ jobs:
               exit 1
             fi
 
+            echo "[STEP] sqlcmd-found=$SQLCMD_BIN"
             echo "[INFO] Preview Migrations.sql (first 30 lines)"
             head -n 30 "$RELEASE_PATH" || true
 
             echo "[INFO] Running migrations inside container using $SQLCMD_BIN..."
+            set +x  # avoid leaking credentials
             if ! $DOCKER exec "$CONTAINER_ID" "$SQLCMD_BIN" \
               -S "127.0.0.1,$DB_PORT" \
               -U "$DB_USER" \
@@ -309,10 +316,12 @@ jobs:
               -b \
               -i "/tmp/Migrations.sql"
             then
+              set +x
               echo "[ERR] sqlcmd failed. Showing last 50 container logs for context:"
               $DOCKER logs "$CONTAINER_ID" | tail -n 50 || true
               exit 1
             fi
+            set +x
 
             echo "[OK] Migrations applied successfully."
 
