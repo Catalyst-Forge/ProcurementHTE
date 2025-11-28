@@ -56,7 +56,6 @@ jobs:
           dotnet tool list
 
       - name: Publish + generate Migrations.sql (idempotent)
-        shell: bash
         env:
           EF_CONNECTION: ${{ secrets.DB_CONNECTION }} # jika DesignTimeDbContextFactory perlu
         run: |
@@ -73,13 +72,10 @@ jobs:
           
           ls -la out
 
-      - name: Install Playwright into publish directory
-        shell: pwsh
-        working-directory: out
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ./.playwright
-        run: |
-          pwsh ./playwright.ps1 install --with-deps
+      # NOTE:
+      # Runtime Playwright untuk .NET sekarang di-install sekali di server (Pola B)
+      # ke /var/www/ProcurementHTE/.playwright, bukan lewat npx di artifact.
+      # Step lama `npx playwright install chromium --with-deps` dihapus.
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -145,25 +141,6 @@ jobs:
               echo "[WARN] sudo NOT available - using default ownership"
             fi
 
-            echo "[INFO] After prepare:"
-            ls -ld "$DEPLOY_DIR"
-
-      - name: Create release dir on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,RELEASE_NAME
-          script_stop: true
-          script: |
-            set -Eeuo pipefail
-            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
-            : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
-
-            echo "[INFO] DEPLOY_DIR=$DEPLOY_DIR, RELEASE_NAME=$RELEASE_NAME"
             # Create directories as the SSH user (avoid install -o/-g which requires root)
             install -d -m 755 "$DEPLOY_DIR" || mkdir -p "$DEPLOY_DIR"
             install -d -m 755 "$DEPLOY_DIR/releases" || mkdir -p "$DEPLOY_DIR/releases"
@@ -179,12 +156,7 @@ jobs:
             echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
             echo "[INFO] Release path: $RELEASE"
 
-            # If the SSH user can sudo without a password, set ownership to the SSH user (optional)
-            if sudo -n true 2>/dev/null; then
-              sudo chown -R "$(whoami):$(whoami)" "$DEPLOY_DIR" || true
-            fi
-
-      - name: Upload release files (DLL + Migrations.sql)
+      - name: Upload release to server (scp)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -196,31 +168,6 @@ jobs:
           target: "${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_NAME }}"
           strip_components: 1
           overwrite: true
-
-      - name: Sync Playwright runtime to app root
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ secrets.SSH_PORT }}
-          debug: true
-          envs: DEPLOY_DIR,RELEASE_NAME
-          script_stop: true
-          script: |
-            set -Eeuo pipefail
-            SRC="$DEPLOY_DIR/releases/$RELEASE_NAME/.playwright"
-            DST="$DEPLOY_DIR/.playwright"
-            echo "[INFO] ls release dir:"
-            ls -la "$DEPLOY_DIR/releases/$RELEASE_NAME" || true
-            if [ ! -d "$SRC" ]; then
-              echo "[ERR] .playwright not found in release; aborting"
-              exit 1
-            fi
-            mkdir -p "$DST"
-            cp -a "$SRC/." "$DST/"
-            echo "[OK] Playwright runtime synced to $DST"
 
       - name: Verify release contents
         uses: appleboy/ssh-action@v1.2.0
@@ -249,26 +196,33 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          debug: true
           envs: DEPLOY_DIR,RELEASE_NAME,DB_USER,DB_PASS,DB_NAME,DB_PORT,MSSQL_CONTAINER
           script_stop: true
           script: |
             set -Eeuo pipefail
-            set -x
 
-            echo "[INFO] MSSQL_CONTAINER='${MSSQL_CONTAINER:-<not set>}' DB_NAME='${DB_NAME:-ProcurementHTE}' DB_PORT='${DB_PORT:-1433}'"
+            # Default DB_NAME/DB_PORT kalau kosong
+            DB_NAME="${DB_NAME:-project_25_07}"
+            DB_PORT="${DB_PORT:-1433}"
 
-            # default kalau env kosong
-            : "${DB_NAME:=ProcurementHTE}"
-            : "${DB_PORT:=1433}"
+            echo "[INFO] Using DB: $DB_NAME (port $DB_PORT) as $DB_USER on MSSQL_CONTAINER=$MSSQL_CONTAINER"
 
-            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            MIG="$RELEASE/Migrations.sql"
-            [ -s "$MIG" ] || { echo "[INFO] No migrations to apply (file missing or empty)"; exit 0; }
+            # Pastikan Docker ada
+            if ! command -v docker >/dev/null 2>&1; then
+              if command -v sudo >/dev/null 2>&1; then
+                echo "[INFO] docker not in PATH, trying with sudo docker"
+                DOCKER="sudo docker"
+              else
+                echo "[ERR] Docker not installed"; exit 1
+              fi
+            else
+              DOCKER="docker"
+            fi
 
-            DOCKER="docker"
-            if ! $DOCKER info >/dev/null 2>&1; then
-              if command -v sudo >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
+            # Coba cek akses docker tanpa password
+            if ! $DOCKER ps >/dev/null 2>&1; then
+              if command -v sudo >/dev/null 2>&1; then
+                echo "[INFO] docker ps failed, trying sudo docker ps"
                 DOCKER="sudo docker"
               else
                 echo "[ERR] Docker not accessible"; exit 1
@@ -284,95 +238,51 @@ jobs:
                 local by_name
                 by_name="$($DOCKER ps -q -f name="$MSSQL_CONTAINER" | tr -s '\n' ' ')"
                 if [ -n "$by_name" ]; then
-                  echo "$by_name" | awk '{print $1}'
+                  set -- $by_name
+                  echo "$1"
                   return 0
                 fi
-                echo "[WARN] MSSQL_CONTAINER='$MSSQL_CONTAINER' not found by name. Available containers:"
-                $DOCKER ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
               fi
 
-              # 2) Cari SQL container berdasarkan image
-              local sql_list
-              sql_list="$($DOCKER ps -q -f ancestor=mcr.microsoft.com/mssql/server | tr -s '\n' ' ')"
-
-              if [ -z "$sql_list" ]; then
-                echo "[ERR] No SQL Server container running. Current containers:"
-                $DOCKER ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
+              # 2) Fallback: cari container yang expose port 1433
+              local by_port
+              by_port="$($DOCKER ps -q -f publish=1433 | tr -s '\n' ' ')"
+              if [ -z "$by_port" ]; then
+                echo "[ERR] No SQL Server container found (MSSQL_CONTAINER empty and no port 1433 exposed)" >&2
                 return 1
               fi
 
-              # 3) Validasi hanya satu
-              local count
-              count=$(echo "$sql_list" | wc -w)
-
-              if [ "$count" -gt 1 ]; then
-                echo "[ERR] Multiple SQL containers detected:"
-                $DOCKER ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
-                echo "[HINT] Set MSSQL_CONTAINER in GitHub secrets."
-                return 1
-              fi
-
-              echo "$sql_list"
+              # Ambil container pertama
+              set -- $by_port
+              echo "$1"
+              return 0
             }
 
-            CID="$(get_single_container)" || exit 1
-            echo "[INFO] SQL container selected: $CID"
+            CONTAINER_ID="$(get_single_container)" || exit 1
+            echo "[INFO] Using SQL container: $CONTAINER_ID"
 
-            # ============================================================
-            #  FIND SQLCMD INSIDE CONTAINER (GUARANTEED SINGLE-LINE)
-            # ============================================================
-            BIN="$(
-              $DOCKER exec "$CID" bash -lc '
-                for b in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd sqlcmd; do
-                  if command -v "$b" >/dev/null 2>&1; then echo "$b"; exit 0; fi
-                done; exit 1
-              '
-            )"
-
-            # Pastikan DB ada (create jika hilang)
-            $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-              $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -C \
-                -Q \"IF DB_ID('${DB_NAME}') IS NULL CREATE DATABASE [${DB_NAME}];\"
-            "
-
-            # ============================================================
-            #  CHECK DATABASE STATE
-            # ============================================================
-            HAS_HIST="$(
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-                $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -h -1 -W \
-                  -Q \"SET NOCOUNT ON; SELECT CASE WHEN OBJECT_ID('__EFMigrationsHistory') IS NULL THEN 0 ELSE 1 END\" \
-                  | tr -d '\r'
-              "
-            )"
-
-            TABLES_COUNT="$(
-              $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-                $BIN -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -h -1 -W \
-                  -Q \"SET NOCOUNT ON; SELECT COUNT(*) FROM sys.tables\" \
-                  | tr -d '\r'
-              "
-            )"
-
-            echo "[INFO] HasHistory=${HAS_HIST:-?}, Tables=${TABLES_COUNT:-?}"
-
-            # Stop kalau DB sudah berisi tabel tapi __EFMigrationsHistory belum ada
-            if [ "${HAS_HIST:-0}" = "0" ] && [ "${TABLES_COUNT:-0}" -gt 0 ]; then
-              echo "[ERR] __EFMigrationsHistory missing but tables exist. Do manual baseline then rerun."
-              exit 1
+            RELEASE_PATH="$DEPLOY_DIR/releases/$RELEASE_NAME/Migrations.sql"
+            if [ ! -f "$RELEASE_PATH" ]; then
+              echo "[WARN] No Migrations.sql found, skipping DB migrations."
+              exit 0
             fi
 
-            # ============================================================
-            #  APPLY MIGRATIONS
-            # ============================================================
-            echo "[INFO] Apply Migrations.sql..."
-            $DOCKER cp "$MIG" "$CID:/tmp/mig.sql"
-            $DOCKER exec -e DB_USER -e DB_PASS -e DB_NAME "$CID" bash -lc "
-              $BIN -I -S localhost,${DB_PORT} -U \"\$DB_USER\" -P \"\$DB_PASS\" -d \"\$DB_NAME\" -C -b -V16 -i /tmp/mig.sql
-            "
-            echo "[OK] DB migrations applied."
+            echo "[INFO] Copy Migrations.sql into container..."
+            $DOCKER cp "$RELEASE_PATH" "$CONTAINER_ID:/tmp/Migrations.sql"
 
-      - name: Activate & restart service
+            echo "[INFO] Running migrations inside container..."
+            $DOCKER exec "$CONTAINER_ID" /opt/mssql-tools/bin/sqlcmd \
+              -S "127.0.0.1,$DB_PORT" \
+              -U "$DB_USER" \
+              -P "$DB_PASS" \
+              -d "$DB_NAME" \
+              -l 30 \
+              -b \
+              -i "/tmp/Migrations.sql"
+
+            echo "[OK] Migrations applied successfully."
+
+      - name: Switch current release & restart service
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -380,26 +290,34 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR,APP_SERVICE,RELEASE_NAME
-          script_stop: true
+          envs: DEPLOY_DIR,RELEASE_NAME,APP_SERVICE
           script: |
             set -Eeuo pipefail
-            : "${DEPLOY_DIR:?DEPLOY_DIR is empty or not set}"
-            : "${APP_SERVICE:?APP_SERVICE is empty or not set}"
-            : "${RELEASE_NAME:?RELEASE_NAME is empty or not set}"
-            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
-            test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] Missing DLL in $RELEASE"; exit 1; }
-            ln -sfn "$RELEASE" "$DEPLOY_DIR/publish/current"
-            echo "[INFO] current -> $(readlink -f "$DEPLOY_DIR/publish/current")"
-            sudo systemctl daemon-reload || true
-            sudo systemctl restart "$APP_SERVICE"
-            sudo systemctl --no-pager --full status "$APP_SERVICE" || true
+            : "${DEPLOY_DIR:?DEPLOY_DIR is empty}"
+            : "${APP_SERVICE:?APP_SERVICE is empty}"
 
-      - name: Smoke check (wait until 5159 is ready)
+            RELEASE="$DEPLOY_DIR/releases/$RELEASE_NAME"
+            test -f "$RELEASE/ProcurementHTE.Web.dll" || { echo "[ERR] DLL not found in $RELEASE"; exit 1; }
+
+            # Update .release_path
+            echo "$RELEASE" > "$DEPLOY_DIR/.release_path"
+            echo "[INFO] Now pointing .release_path to $RELEASE"
+
+            # Restart systemd service
+            if command -v sudo >/dev/null 2>&1; then
+              echo "[INFO] Restarting systemd service $APP_SERVICE via sudo..."
+              sudo systemctl daemon-reload || true
+              sudo systemctl restart "$APP_SERVICE"
+            else
+              echo "[ERR] sudo not available; cannot restart systemd service $APP_SERVICE"
+              exit 1
+            fi
+
+      - name: Verify app responds on 5159 (with Host header)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: deploy
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
@@ -407,14 +325,13 @@ jobs:
           script: |
             set -Eeuo pipefail
 
-            echo "[INFO] waiting up to 60s for Kestrel :5159 ..."
-            deadline=$((SECONDS+60))
-            while [ $SECONDS -lt $deadline ]; do
-              if ss -tln | awk '{print $4}' | grep -qE '(^|:)5159$'; then
-                echo "[OK] 5159 is listening"
-                curl -sS -I -m 5 -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 || true
+            echo "[INFO] Checking app health on http://127.0.0.1:5159/"
+            for i in $(seq 1 60); do
+              if curl -sS -m 5 -H 'Host: procurementhte.dev' -H 'X-Forwarded-Proto: https' http://127.0.0.1:5159/ | head -n1 >/dev/null 2>&1; then
+                echo "[OK] App responded on attempt $i"
                 exit 0
               fi
+              echo "[WARN] Attempt $i: app not responding yet, retrying..."
               sleep 1
             done
 

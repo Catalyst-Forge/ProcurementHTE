@@ -373,3 +373,5 @@ FodyWeavers.xsd
 .config/dotnet-tools.json
 /ProcurementHTE.Core.Tests
 /ProcurementHTE.Core.Tests/ProcurementHTE.Core.Tests.csproj
+../.release_path
+../keys/
