@@ -196,6 +196,28 @@ jobs:
           strip_components: 1
           overwrite: true
 
+      - name: Sync Playwright runtime to app root
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_DIR,RELEASE_NAME
+          script_stop: true
+          script: |
+            set -Eeuo pipefail
+            SRC="$DEPLOY_DIR/releases/$RELEASE_NAME/.playwright"
+            DST="$DEPLOY_DIR/.playwright"
+            if [ -d "$SRC" ]; then
+              mkdir -p "$DST"
+              cp -a "$SRC/." "$DST/"
+              echo "[OK] Playwright runtime synced to $DST"
+            else
+              echo "[WARN] .playwright not found in release; skipping copy"
+            fi
+
       - name: Verify release contents
         uses: appleboy/ssh-action@v1.2.0
         with:
