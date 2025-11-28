@@ -73,6 +73,12 @@ jobs:
             
           ls -la out
 
+      - name: Install Playwright browsers (pack into artifact)
+        shell: pwsh
+        run: |
+          Set-Location out
+          ./playwright.ps1 install --with-deps
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
