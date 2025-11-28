@@ -369,9 +369,10 @@ FodyWeavers.xsd
 /docker-compose.minio.yml
 /mc-init.sh
 /minio-policy.json
-.dotnet-tools
-.config/dotnet-tools.json
-/ProcurementHTE.Core.Tests
-/ProcurementHTE.Core.Tests/ProcurementHTE.Core.Tests.csproj
-../.release_path
-../keys/
+# Deployment artifacts
+/publish/
+/releases/
+/.release_path
+
+# DataProtection keys
+/keys/
