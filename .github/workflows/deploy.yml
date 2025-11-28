@@ -201,6 +201,7 @@ jobs:
           script_stop: true
           script: |
             set -Eeuo pipefail
+            set +H  # allow passwords containing '!' (disable history expansion)
             trap 'echo "[ERR] Failed at line $LINENO: $BASH_COMMAND"' ERR
             set -x  # debug until sqlcmd execution (disabled before credentials)
 
@@ -333,22 +334,23 @@ jobs:
 
             echo "[INFO] Running migrations inside container using $SQLCMD_BIN..."
             set +x  # avoid leaking credentials
-            if ! $DOCKER exec "$CONTAINER_ID" "$SQLCMD_BIN" \
+            set +e  # we handle rc manually
+            SQLCMD_OUTPUT="$($DOCKER exec -e SQLCMDPASSWORD="$DB_PASS" "$CONTAINER_ID" "$SQLCMD_BIN" \
               -S "127.0.0.1,$DB_PORT" \
               -U "$DB_USER" \
-              -P "$DB_PASS" \
               -C \
               -d "$DB_NAME" \
               -l 30 \
               -b \
-              -i "/tmp/Migrations.sql"
-            then
-              set +x
-              echo "[ERR] sqlcmd failed. Showing last 50 container logs for context:"
+              -i "/tmp/Migrations.sql" 2>&1)"
+            SQLCMD_EXIT=$?
+            set -e
+            printf '%s\n' "$SQLCMD_OUTPUT"
+            if [ $SQLCMD_EXIT -ne 0 ]; then
+              echo "[ERR] sqlcmd failed with exit $SQLCMD_EXIT. Showing last 50 container logs for context:"
               $DOCKER logs "$CONTAINER_ID" | tail -n 50 || true
-              exit 1
+              exit $SQLCMD_EXIT
             fi
-            set +x
 
             echo "[OK] Migrations applied successfully."
 
