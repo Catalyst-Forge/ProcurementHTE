@@ -70,23 +70,16 @@ jobs:
             --framework net9.0 \
             --idempotent \
             --output out/Migrations.sql
-            
+          
           ls -la out
 
-      - name: Install Playwright browsers (pack into artifact)
+      - name: Install Playwright into publish directory
         shell: pwsh
         working-directory: out
         env:
           PLAYWRIGHT_BROWSERS_PATH: ./.playwright
         run: |
-          Write-Host "Listing publish output before Playwright install"
-          Get-ChildItem -Force
-          ./playwright.ps1 install --with-deps
-          if (-not (Test-Path ".playwright")) {
-            Write-Error "Playwright runtime missing in publish output"
-          }
-          Write-Host "Listing .playwright after install"
-          Get-ChildItem -Recurse -Force ".playwright"
+          pwsh ./playwright.ps1 install --with-deps
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
