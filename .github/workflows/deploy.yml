@@ -296,8 +296,11 @@ jobs:
               exit 1
             fi
 
+            echo "[INFO] Preview Migrations.sql (first 30 lines)"
+            head -n 30 "$RELEASE_PATH" || true
+
             echo "[INFO] Running migrations inside container using $SQLCMD_BIN..."
-            $DOCKER exec "$CONTAINER_ID" "$SQLCMD_BIN" \
+            if ! $DOCKER exec "$CONTAINER_ID" "$SQLCMD_BIN" \
               -S "127.0.0.1,$DB_PORT" \
               -U "$DB_USER" \
               -P "$DB_PASS" \
@@ -305,6 +308,11 @@ jobs:
               -l 30 \
               -b \
               -i "/tmp/Migrations.sql"
+            then
+              echo "[ERR] sqlcmd failed. Showing last 50 container logs for context:"
+              $DOCKER logs "$CONTAINER_ID" | tail -n 50 || true
+              exit 1
+            fi
 
             echo "[OK] Migrations applied successfully."
 
