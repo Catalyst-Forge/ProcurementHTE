@@ -265,9 +265,17 @@ jobs:
             get_single_container() {
               # 1) Jika MSSQL_CONTAINER ditentukan -> cari by name (no strict anchor)
               if [ -n "${MSSQL_CONTAINER:-}" ]; then
-                local by_name
+                local exact by_name
+                exact="$($DOCKER ps -q -f name="^/${MSSQL_CONTAINER}$" | tr -s '\n' ' ')"
+                echo "[INFO] Candidate containers by exact name '$MSSQL_CONTAINER': $exact" >&2
+                if [ -n "$exact" ]; then
+                  set -- $exact
+                  echo "$1"
+                  return 0
+                fi
+
                 by_name="$($DOCKER ps -q -f name="$MSSQL_CONTAINER" | tr -s '\n' ' ')"
-                echo "[INFO] Candidate containers by name '$MSSQL_CONTAINER': $by_name"
+                echo "[INFO] Candidate containers by partial name '$MSSQL_CONTAINER': $by_name" >&2
                 if [ -n "$by_name" ]; then
                   set -- $by_name
                   echo "$1"
@@ -285,6 +293,7 @@ jobs:
 
               # Ambil container pertama
               set -- $by_port
+              echo "[INFO] Candidate containers by port 1433: $by_port" >&2
               echo "$1"
               return 0
             }
