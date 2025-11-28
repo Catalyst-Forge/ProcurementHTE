@@ -122,10 +122,11 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
-          envs: DEPLOY_DIR
+          envs: DEPLOY_DIR,RELEASE_NAME
           script: |
             set -Eeuo pipefail
             : "${DEPLOY_DIR:?DEPLOY_DIR is empty}"
+            : "${RELEASE_NAME:?RELEASE_NAME is empty}"
 
             echo "[INFO] Preparing DEPLOY_DIR=$DEPLOY_DIR"
 
