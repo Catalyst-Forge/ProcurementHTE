@@ -204,12 +204,15 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: ${{ secrets.SSH_PORT }}
+          debug: true
           envs: DEPLOY_DIR,RELEASE_NAME
           script_stop: true
           script: |
             set -Eeuo pipefail
             SRC="$DEPLOY_DIR/releases/$RELEASE_NAME/.playwright"
             DST="$DEPLOY_DIR/.playwright"
+            echo "[INFO] ls release dir:"
+            ls -la "$DEPLOY_DIR/releases/$RELEASE_NAME" || true
             if [ -d "$SRC" ]; then
               mkdir -p "$DST"
               cp -a "$SRC/." "$DST/"
