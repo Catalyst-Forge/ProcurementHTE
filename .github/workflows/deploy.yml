@@ -79,7 +79,14 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: ./.playwright
         run: |
+          Write-Host "Listing publish output before Playwright install"
+          Get-ChildItem -Force
           ./playwright.ps1 install --with-deps
+          if (-not (Test-Path ".playwright")) {
+            Write-Error "Playwright runtime missing in publish output"
+          }
+          Write-Host "Listing .playwright after install"
+          Get-ChildItem -Recurse -Force ".playwright"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -214,13 +221,13 @@ jobs:
             DST="$DEPLOY_DIR/.playwright"
             echo "[INFO] ls release dir:"
             ls -la "$DEPLOY_DIR/releases/$RELEASE_NAME" || true
-            if [ -d "$SRC" ]; then
-              mkdir -p "$DST"
-              cp -a "$SRC/." "$DST/"
-              echo "[OK] Playwright runtime synced to $DST"
-            else
-              echo "[WARN] .playwright not found in release; skipping copy"
+            if [ ! -d "$SRC" ]; then
+              echo "[ERR] .playwright not found in release; aborting"
+              exit 1
             fi
+            mkdir -p "$DST"
+            cp -a "$SRC/." "$DST/"
+            echo "[OK] Playwright runtime synced to $DST"
 
       - name: Verify release contents
         uses: appleboy/ssh-action@v1.2.0
