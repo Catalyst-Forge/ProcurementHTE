@@ -26,4 +26,12 @@
     <ProjectReference Include="..\ProcurementHTE.Core\ProcurementHTE.Core.csproj" />
     <ProjectReference Include="..\ProcurementHTE.Infrastructure\ProcurementHTE.Infrastructure.csproj" />
   </ItemGroup>
+
+  <!-- Pastikan template dokumen ikut dipublish -->
+  <ItemGroup>
+    <Content Include="Templates\Documents\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
