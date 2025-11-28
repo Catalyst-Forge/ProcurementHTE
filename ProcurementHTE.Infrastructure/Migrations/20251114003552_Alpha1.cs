@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Beta1 : Migration
+    public partial class Alpha1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -35,15 +35,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    JobTitle = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    AvatarObjectKey = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    AvatarFileName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    AvatarUpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PasswordChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TwoFactorMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "None"),
-                    RecoveryCodesJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RecoveryCodesHidden = table.Column<bool>(type: "bit", nullable: false),
-                    RecoveryCodesGeneratedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -92,6 +83,20 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_JobTypes", x => x.JobTypeId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProfitLossSelectedVendors",
+                columns: table => new
+                {
+                    ProfitLossSelectedVendorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProcurementId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VendorId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfitLossSelectedVendors", x => x.ProfitLossSelectedVendorId);
                 });
 
             migrationBuilder.CreateTable(
@@ -295,57 +300,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserSecurityLogs",
-                columns: table => new
-                {
-                    UserSecurityLogId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    EventType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    IsSuccess = table.Column<bool>(type: "bit", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    IpAddress = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    UserAgent = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserSecurityLogs", x => x.UserSecurityLogId);
-                    table.ForeignKey(
-                        name: "FK_UserSecurityLogs_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserSessions",
-                columns: table => new
-                {
-                    UserSessionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Device = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    Browser = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    UserAgent = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    IpAddress = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    Location = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    LastAccessedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    IsCurrent = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserSessions", x => x.UserSessionId);
-                    table.ForeignKey(
-                        name: "FK_UserSessions_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "JobTypeDocuments",
                 columns: table => new
                 {
@@ -383,34 +337,64 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     ProcurementId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProcNum = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     SpkNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Wonum = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ContractType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    JobName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ProjectRegion = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    JobType = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    JobTypeOther = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    ContractType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    JobName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ProjectRegion = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    DistanceKm = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    AccrualAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RealizationAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     PotentialAccrualDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     SpmpNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     MemoNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OeNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    SelectedVendorName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    VendorSphNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     RaNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     ProjectCode = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     LtcName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Note = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    PicOpsUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    AnalystHteUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    AssistantManagerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    ManagerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     JobTypeId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     StatusId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    PicOpsUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    AnalystHteSignerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    AssistantManagerSignerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    ManagerSignerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Procurements", x => x.ProcurementId);
+                    table.ForeignKey(
+                        name: "FK_Procurements_AspNetUsers_AnalystHteSignerUserId",
+                        column: x => x.AnalystHteSignerUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Procurements_AspNetUsers_AssistantManagerSignerUserId",
+                        column: x => x.AssistantManagerSignerUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Procurements_AspNetUsers_ManagerSignerUserId",
+                        column: x => x.ManagerSignerUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Procurements_AspNetUsers_PicOpsUserId",
+                        column: x => x.PicOpsUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Procurements_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -421,7 +405,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         name: "FK_Procurements_JobTypes_JobTypeId",
                         column: x => x.JobTypeId,
                         principalTable: "JobTypes",
-                        principalColumn: "JobTypeId");
+                        principalColumn: "JobTypeId",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Procurements_Statuses_StatusId",
                         column: x => x.StatusId,
@@ -463,7 +448,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 {
                     ProcDetailId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ItemName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Quantity = table.Column<int>(type: "int", nullable: true),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Unit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DetailKind = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     VendorId = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -551,12 +536,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 {
                     ProfitLossId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     SelectedVendorFinalOffer = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    NoLetterSelectedVendor = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Profit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ProfitPercent = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    AccrualAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    RealizationAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Distance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProcurementId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
@@ -576,7 +557,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         column: x => x.SelectedVendorId,
                         principalTable: "Vendors",
                         principalColumn: "VendorId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -587,7 +568,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     ProcurementId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProcDocumentId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    AssignedApproverId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ApproverId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Level = table.Column<int>(type: "int", nullable: false),
                     SequenceOrder = table.Column<int>(type: "int", nullable: false),
@@ -611,12 +591,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_ProcDocumentApprovals_AspNetUsers_AssignedApproverId",
-                        column: x => x.AssignedApproverId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
                         name: "FK_ProcDocumentApprovals_ProcDocuments_ProcDocumentId",
                         column: x => x.ProcDocumentId,
                         principalTable: "ProcDocuments",
@@ -631,14 +605,49 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "VendorOffers",
+                columns: table => new
+                {
+                    VendorOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Round = table.Column<int>(type: "int", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    NoLetter = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ProcurementId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProcOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    VendorId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VendorOffers", x => x.VendorOfferId);
+                    table.ForeignKey(
+                        name: "FK_VendorOffers_ProcOffers_ProcOfferId",
+                        column: x => x.ProcOfferId,
+                        principalTable: "ProcOffers",
+                        principalColumn: "ProcOfferId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VendorOffers_Procurements_ProcurementId",
+                        column: x => x.ProcurementId,
+                        principalTable: "Procurements",
+                        principalColumn: "ProcurementId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_VendorOffers_Vendors_VendorId",
+                        column: x => x.VendorId,
+                        principalTable: "Vendors",
+                        principalColumn: "VendorId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ProfitLossItems",
                 columns: table => new
                 {
                     ProfitLossItemId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
                     TarifAwal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TarifAdd = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    KmPer25 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    KmPer25 = table.Column<int>(type: "int", nullable: false),
                     OperatorCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Revenue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ProfitLossId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
@@ -659,83 +668,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         principalTable: "ProfitLosses",
                         principalColumn: "ProfitLossId",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProfitLossSelectedVendors",
-                columns: table => new
-                {
-                    ProfitLossSelectedVendorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProcurementId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    VendorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProfitLossId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProfitLossSelectedVendors", x => x.ProfitLossSelectedVendorId);
-                    table.ForeignKey(
-                        name: "FK_ProfitLossSelectedVendors_Procurements_ProcurementId",
-                        column: x => x.ProcurementId,
-                        principalTable: "Procurements",
-                        principalColumn: "ProcurementId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ProfitLossSelectedVendors_ProfitLosses_ProfitLossId",
-                        column: x => x.ProfitLossId,
-                        principalTable: "ProfitLosses",
-                        principalColumn: "ProfitLossId");
-                    table.ForeignKey(
-                        name: "FK_ProfitLossSelectedVendors_Vendors_VendorId",
-                        column: x => x.VendorId,
-                        principalTable: "Vendors",
-                        principalColumn: "VendorId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "VendorOffers",
-                columns: table => new
-                {
-                    VendorOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Round = table.Column<int>(type: "int", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    NoLetter = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    Trip = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ProcurementId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProcOfferId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    VendorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProfitLossId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_VendorOffers", x => x.VendorOfferId);
-                    table.ForeignKey(
-                        name: "FK_VendorOffers_ProcOffers_ProcOfferId",
-                        column: x => x.ProcOfferId,
-                        principalTable: "ProcOffers",
-                        principalColumn: "ProcOfferId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_VendorOffers_Procurements_ProcurementId",
-                        column: x => x.ProcurementId,
-                        principalTable: "Procurements",
-                        principalColumn: "ProcurementId",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_VendorOffers_ProfitLosses_ProfitLossId",
-                        column: x => x.ProfitLossId,
-                        principalTable: "ProfitLosses",
-                        principalColumn: "ProfitLossId",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_VendorOffers_Vendors_VendorId",
-                        column: x => x.VendorId,
-                        principalTable: "Vendors",
-                        principalColumn: "VendorId",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -813,11 +745,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "ApproverId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProcDocumentApprovals_AssignedApproverId",
-                table: "ProcDocumentApprovals",
-                column: "AssignedApproverId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ProcDocumentApprovals_ProcDocumentId",
                 table: "ProcDocumentApprovals",
                 column: "ProcDocumentId");
@@ -854,9 +781,29 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Procurements_AnalystHteSignerUserId",
+                table: "Procurements",
+                column: "AnalystHteSignerUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Procurements_AssistantManagerSignerUserId",
+                table: "Procurements",
+                column: "AssistantManagerSignerUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Procurements_JobTypeId",
                 table: "Procurements",
                 column: "JobTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Procurements_ManagerSignerUserId",
+                table: "Procurements",
+                column: "ManagerSignerUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Procurements_PicOpsUserId",
+                table: "Procurements",
+                column: "PicOpsUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Procurements_StatusId",
@@ -890,34 +837,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 column: "ProfitLossId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProfitLossSelectedVendors_ProcurementId",
-                table: "ProfitLossSelectedVendors",
-                column: "ProcurementId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProfitLossSelectedVendors_ProfitLossId",
-                table: "ProfitLossSelectedVendors",
-                column: "ProfitLossId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProfitLossSelectedVendors_VendorId",
-                table: "ProfitLossSelectedVendors",
-                column: "VendorId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserRole_RoleId",
                 table: "UserRole",
                 column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserSecurityLogs_UserId",
-                table: "UserSecurityLogs",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserSessions_UserId",
-                table: "UserSessions",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VendorOffers_ProcOfferId",
@@ -928,11 +850,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "IX_VendorOffers_ProcurementId",
                 table: "VendorOffers",
                 column: "ProcurementId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VendorOffers_ProfitLossId",
-                table: "VendorOffers",
-                column: "ProfitLossId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VendorOffers_VendorId",
@@ -989,12 +906,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "UserRole");
 
             migrationBuilder.DropTable(
-                name: "UserSecurityLogs");
-
-            migrationBuilder.DropTable(
-                name: "UserSessions");
-
-            migrationBuilder.DropTable(
                 name: "VendorOffers");
 
             migrationBuilder.DropTable(
@@ -1004,22 +915,22 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 name: "ProcDocuments");
 
             migrationBuilder.DropTable(
+                name: "ProfitLosses");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "ProcOffers");
 
             migrationBuilder.DropTable(
-                name: "ProfitLosses");
-
-            migrationBuilder.DropTable(
                 name: "DocumentTypes");
 
             migrationBuilder.DropTable(
-                name: "Procurements");
+                name: "Vendors");
 
             migrationBuilder.DropTable(
-                name: "Vendors");
+                name: "Procurements");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

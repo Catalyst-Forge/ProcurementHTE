@@ -12,8 +12,8 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251127230308_Beta1")]
-    partial class Beta1
+    [Migration("20251115134803_Alpha3")]
+    partial class Alpha3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -289,9 +289,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("ApproverId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("AssignedApproverId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -321,8 +318,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasKey("ProcDocumentApprovalId");
 
                     b.HasIndex("ApproverId");
-
-                    b.HasIndex("AssignedApproverId");
 
                     b.HasIndex("ProcDocumentId");
 
@@ -476,6 +471,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("JobTypeId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("JobTypeOther")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("LtcName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -543,10 +542,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Wonum")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("ProcurementId");
 
                     b.HasIndex("JobTypeId");
@@ -575,13 +570,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Distance")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("NoLetterSelectedVendor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProcurementId")
                         .IsRequired()
@@ -623,8 +611,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("KmPer25")
-                        .HasColumnType("decimal(18, 2)");
+                    b.Property<int>("KmPer25")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("OperatorCost")
                         .HasColumnType("decimal(18, 2)");
@@ -638,9 +626,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
 
                     b.Property<decimal>("Revenue")
                         .HasColumnType("decimal(18, 2)");
@@ -670,22 +655,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<string>("ProcurementId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProfitLossId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VendorId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ProfitLossSelectedVendorId");
-
-                    b.HasIndex("ProcurementId");
-
-                    b.HasIndex("ProfitLossId");
-
-                    b.HasIndex("VendorId");
 
                     b.ToTable("ProfitLossSelectedVendors");
                 });
@@ -814,17 +790,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("AvatarFileName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("AvatarObjectKey")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime?>("AvatarUpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -852,10 +817,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("JobTitle")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
 
@@ -878,9 +839,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTime?>("PasswordChangedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
@@ -890,27 +848,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("RecoveryCodesGeneratedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("RecoveryCodesHidden")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("RecoveryCodesJson")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
-
-                    b.Property<string>("TwoFactorMethod")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("None");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -952,99 +894,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRole");
-                });
-
-            modelBuilder.Entity("ProcurementHTE.Core.Models.UserSecurityLog", b =>
-                {
-                    b.Property<string>("UserSecurityLogId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<bool>("IsSuccess")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("UserSecurityLogId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserSecurityLogs");
-                });
-
-            modelBuilder.Entity("ProcurementHTE.Core.Models.UserSession", b =>
-                {
-                    b.Property<string>("UserSessionId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Browser")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Device")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCurrent")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastAccessedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Location")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("UserSessionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserSessions");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Vendor", b =>
@@ -1111,7 +960,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NoLetter")
-                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
@@ -1126,17 +974,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ProfitLossId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
                     b.Property<int>("Round")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Trip")
                         .HasColumnType("int");
 
                     b.Property<string>("VendorId")
@@ -1148,8 +986,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasIndex("ProcOfferId");
 
                     b.HasIndex("ProcurementId");
-
-                    b.HasIndex("ProfitLossId");
 
                     b.HasIndex("VendorId");
 
@@ -1270,11 +1106,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasForeignKey("ApproverId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("ProcurementHTE.Core.Models.User", "AssignedApprover")
-                        .WithMany()
-                        .HasForeignKey("AssignedApproverId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("ProcurementHTE.Core.Models.ProcDocuments", "ProcDocument")
                         .WithMany("Approvals")
                         .HasForeignKey("ProcDocumentId")
@@ -1294,8 +1125,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Approver");
-
-                    b.Navigation("AssignedApprover");
 
                     b.Navigation("ProcDocument");
 
@@ -1370,7 +1199,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasOne("ProcurementHTE.Core.Models.Vendor", "SelectedVendor")
                         .WithMany()
                         .HasForeignKey("SelectedVendorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Procurement");
@@ -1397,31 +1226,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("ProfitLoss");
                 });
 
-            modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLossSelectedVendor", b =>
-                {
-                    b.HasOne("ProcurementHTE.Core.Models.Procurement", "Procurement")
-                        .WithMany()
-                        .HasForeignKey("ProcurementId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ProcurementHTE.Core.Models.ProfitLoss", "ProfitLoss")
-                        .WithMany("VendorList")
-                        .HasForeignKey("ProfitLossId");
-
-                    b.HasOne("ProcurementHTE.Core.Models.Vendor", "Vendor")
-                        .WithMany()
-                        .HasForeignKey("VendorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Procurement");
-
-                    b.Navigation("ProfitLoss");
-
-                    b.Navigation("Vendor");
-                });
-
             modelBuilder.Entity("ProcurementHTE.Core.Models.UserRole", b =>
                 {
                     b.HasOne("ProcurementHTE.Core.Models.Role", "Role")
@@ -1441,28 +1245,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ProcurementHTE.Core.Models.UserSecurityLog", b =>
-                {
-                    b.HasOne("ProcurementHTE.Core.Models.User", "User")
-                        .WithMany("SecurityLogs")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("ProcurementHTE.Core.Models.UserSession", b =>
-                {
-                    b.HasOne("ProcurementHTE.Core.Models.User", "User")
-                        .WithMany("Sessions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("ProcurementHTE.Core.Models.VendorOffer", b =>
                 {
                     b.HasOne("ProcurementHTE.Core.Models.ProcOffer", "ProcOffer")
@@ -1477,12 +1259,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ProcurementHTE.Core.Models.ProfitLoss", "ProfitLoss")
-                        .WithMany("VendorOffers")
-                        .HasForeignKey("ProfitLossId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("ProcurementHTE.Core.Models.Vendor", "Vendor")
                         .WithMany("VendorOffers")
                         .HasForeignKey("VendorId")
@@ -1492,8 +1268,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("ProcOffer");
 
                     b.Navigation("Procurement");
-
-                    b.Navigation("ProfitLoss");
 
                     b.Navigation("Vendor");
                 });
@@ -1540,19 +1314,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLoss", b =>
                 {
                     b.Navigation("Items");
-
-                    b.Navigation("VendorList");
-
-                    b.Navigation("VendorOffers");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.User", b =>
                 {
                     b.Navigation("Procurements");
-
-                    b.Navigation("SecurityLogs");
-
-                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Vendor", b =>
