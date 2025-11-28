@@ -74,11 +74,12 @@ jobs:
           ls -la out
 
       - name: Install Playwright browsers (pack into artifact)
+        shell: pwsh
         working-directory: out
         env:
           PLAYWRIGHT_BROWSERS_PATH: ./.playwright
         run: |
-          npx playwright install chromium --with-deps
+          ./playwright.ps1 install --with-deps
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
