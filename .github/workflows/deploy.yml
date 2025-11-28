@@ -221,23 +221,35 @@ jobs:
             echo "[INFO] Using DB: $DB_NAME (port $DB_PORT) as $DB_USER on MSSQL_CONTAINER=$MSSQL_CONTAINER"
 
             # Pastikan Docker ada
-            if ! command -v docker >/dev/null 2>&1; then
-              if command -v sudo >/dev/null 2>&1; then
-                echo "[INFO] docker not in PATH, trying with sudo docker"
-                DOCKER="sudo docker"
-              else
-                echo "[ERR] Docker not installed"; exit 1
-              fi
-            else
+            DOCKER=""
+            DOCKER_BIN="$(command -v docker 2>/dev/null || true)"
+            if [ -n "$DOCKER_BIN" ]; then
               DOCKER="docker"
+            else
+              SUDO_BIN="$(command -v sudo 2>/dev/null || true)"
+              if [ -n "$SUDO_BIN" ]; then
+                SUDO_DOCKER_BIN="$(sudo command -v docker 2>/dev/null || true)"
+                if [ -n "$SUDO_DOCKER_BIN" ]; then
+                  echo "[INFO] docker not in PATH, using sudo docker"
+                  DOCKER="sudo docker"
+                fi
+              fi
+            fi
+
+            if [ -z "$DOCKER" ]; then
+              echo "[ERR] Docker not available on remote host; install docker or adjust migrations to run without container."
+              exit 1
             fi
 
             echo "[STEP] docker-command=$DOCKER"
             # Coba cek akses docker tanpa password
-            if ! $DOCKER ps; then
-              if command -v sudo >/dev/null 2>&1; then
+            DOCKER_PS_OK=0
+            $DOCKER ps >/dev/null 2>&1 && DOCKER_PS_OK=1 || true
+            if [ $DOCKER_PS_OK -ne 1 ]; then
+              if [ "$DOCKER" != "sudo docker" ] && command -v sudo >/dev/null 2>&1; then
                 echo "[INFO] docker ps failed, trying sudo docker ps"
                 DOCKER="sudo docker"
+                $DOCKER ps >/dev/null 2>&1 || { echo "[ERR] Docker not accessible (sudo)"; exit 1; }
               else
                 echo "[ERR] Docker not accessible"; exit 1
               fi
