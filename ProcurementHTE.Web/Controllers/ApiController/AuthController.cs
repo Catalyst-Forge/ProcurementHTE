@@ -78,7 +78,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                     }
                 );
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
                 return Unauthorized(
                     new LoginResponseDto
@@ -88,7 +88,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                     }
                 );
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(
                     500,
@@ -113,11 +113,11 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                 var res = await _authService.RefreshAsync(dto, ct);
                 return Ok(res);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
                 return Unauthorized(new { success = false, message = "Refresh token is invalid." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(
                     500,
@@ -172,7 +172,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                     }
                 );
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(
                     500,
@@ -215,7 +215,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                     }
                 );
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { message = "An internal server error occurred." });
             }

@@ -7,10 +7,15 @@ namespace ProcurementHTE.Core.Services
     public class JobTypeDocumentService : IJobTypeDocumentService
     {
         private readonly IJobTypeDocumentRepository _repository;
+        private readonly ILogger<JobTypeDocumentService> _logger;
 
-        public JobTypeDocumentService(IJobTypeDocumentRepository repository)
+        public JobTypeDocumentService(
+            IJobTypeDocumentRepository repository,
+            ILogger<JobTypeDocumentService> logger
+        )
         {
             _repository = repository;
+            _logger = logger;
         }
 
         public async Task<JobTypeDocuments?> GetRequiredDocumentAsync(
@@ -43,6 +48,12 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(
+                    ex,
+                    "Failed to get required document for JobType {JobTypeId} and DocumentType {DocumentTypeId}",
+                    jobTypeId,
+                    documentTypeId
+                );
                 throw;
             }
         }

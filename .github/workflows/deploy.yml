@@ -202,8 +202,13 @@ jobs:
           script: |
             set -Eeuo pipefail
             trap 'echo "[ERR] Failed at line $LINENO: $BASH_COMMAND"' ERR
+            set -x  # debug until sqlcmd execution (disabled before credentials)
 
             echo "[STEP] start-migrate"
+            echo "[INFO] host=$(hostname) pwd=$(pwd)"
+            uname -a || true
+            whoami || true
+
             # Default DB_NAME/DB_PORT kalau kosong
             DB_NAME="${DB_NAME:-ProcurementHTE}"
             DB_PORT="${DB_PORT:-1433}"
@@ -229,7 +234,7 @@ jobs:
 
             echo "[STEP] docker-command=$DOCKER"
             # Coba cek akses docker tanpa password
-            if ! $DOCKER ps >/dev/null 2>&1; then
+            if ! $DOCKER ps; then
               if command -v sudo >/dev/null 2>&1; then
                 echo "[INFO] docker ps failed, trying sudo docker ps"
                 DOCKER="sudo docker"

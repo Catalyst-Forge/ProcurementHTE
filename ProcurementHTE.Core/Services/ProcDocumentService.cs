@@ -331,7 +331,7 @@ public sealed class ProcDocumentService : IProcDocumentService
                         }
                     }
                 }
-                catch (Exception ex) { }
+                catch (Exception) { }
 
                 if (extraRoles.Count > 0)
                     await _approvalFlowService.GenerateFlowAsync(
@@ -613,7 +613,7 @@ public sealed class ProcDocumentService : IProcDocumentService
         {
             await _objectStorage.DeleteAsync(_storageOptions.Bucket, objectKey);
         }
-        catch (Exception ex) { }
+        catch (Exception) { }
     }
 
     #endregion

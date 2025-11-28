@@ -7,10 +7,15 @@ namespace ProcurementHTE.Core.Services
     public class ProcDocumentApprovalService : IProcDocumentApprovalService
     {
         private readonly IProcDocumentApprovalRepository _repository;
+        private readonly ILogger<ProcDocumentApprovalService> _logger;
 
-        public ProcDocumentApprovalService(IProcDocumentApprovalRepository repository)
+        public ProcDocumentApprovalService(
+            IProcDocumentApprovalRepository repository,
+            ILogger<ProcDocumentApprovalService> logger
+        )
         {
             _repository = repository;
+            _logger = logger;
         }
 
         public async Task<IReadOnlyList<ProcDocumentApprovals>> GetApprovedDocumentsAsync(
@@ -30,6 +35,11 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(
+                    ex,
+                    "Failed to get approved documents for ProcDocument {ProcDocumentId}",
+                    procDocumentId
+                );
                 throw;
             }
         }

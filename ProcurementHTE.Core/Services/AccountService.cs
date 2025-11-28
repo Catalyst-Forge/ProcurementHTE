@@ -904,7 +904,7 @@ namespace ProcurementHTE.Core.Services
             {
                 await _objectStorage.DeleteAsync(_storageOptions.Bucket, objectKey);
             }
-            catch (Exception ex) { }
+            catch (Exception) { }
         }
 
         private async Task ResetPasswordInternalAsync(
