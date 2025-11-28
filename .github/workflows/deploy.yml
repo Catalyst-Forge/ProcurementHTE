@@ -337,6 +337,7 @@ jobs:
               -S "127.0.0.1,$DB_PORT" \
               -U "$DB_USER" \
               -P "$DB_PASS" \
+              -C \
               -d "$DB_NAME" \
               -l 30 \
               -b \

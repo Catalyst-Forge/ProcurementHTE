@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 
@@ -14,14 +15,17 @@ namespace ProcurementHTE.Web.Controllers.ApiController
         // NOTE: sementara tetap pakai service query lama (IApprovalServiceApi) untuk paging by QR.
         private readonly IApprovalServiceApi _approvalQuery;
         private readonly IProcDocumentService _docSvc;
+        private readonly ILogger<DocumentsApiController> _logger;
 
         public DocumentsApiController(
             IApprovalServiceApi approvalQuery,
-            IProcDocumentService docSvc
+            IProcDocumentService docSvc,
+            ILogger<DocumentsApiController> logger
         )
         {
             _approvalQuery = approvalQuery;
             _docSvc = docSvc;
+            _logger = logger;
         }
 
         [HttpPost("by-qr")]
@@ -80,7 +84,14 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                         ct
                     );
                 }
-                catch (Exception ex) { }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Failed to presign view URL for document {DocumentId}",
+                        d.ProcDocumentId
+                    );
+                }
 
                 list.Add(
                     new ProcDocumentLiteWithUrlDto(
