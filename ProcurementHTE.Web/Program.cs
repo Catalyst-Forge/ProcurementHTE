@@ -76,7 +76,10 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.Error.WriteLine($"Failed to migrate or seed database: {ex.Message}");
+        throw new InvalidOperationException(
+            $"Failed to migrate or seed database: {ex.Message}",
+            ex
+        );
     }
 }
 
