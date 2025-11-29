@@ -177,19 +177,6 @@ namespace ProcurementHTE.Web.Extensions
                 throw new InvalidOperationException("JWT Audience is not configured");
             }
 
-            Console.WriteLine($"[JWT Config] Issuer: {jwtSettings.Issuer}");
-            Console.WriteLine($"[JWT Config] Audience: {jwtSettings.Audience}");
-            Console.WriteLine($"[JWT Config] Secret Length: {jwtSettings.Secret.Length} chars");
-            Console.WriteLine(
-                $"[JWT Config] Secret Preview: {jwtSettings.Secret.Substring(0, Math.Min(20, jwtSettings.Secret.Length))}..."
-            );
-            Console.WriteLine(
-                $"[JWT Config] Secret Last 10 chars: ...{jwtSettings.Secret.Substring(Math.Max(0, jwtSettings.Secret.Length - 10))}"
-            );
-            Console.WriteLine(
-                $"[JWT Config] Expiration: {jwtSettings.ExpirationInMinutes} minutes"
-            );
-
             services
                 .AddAuthentication(options =>
                 {

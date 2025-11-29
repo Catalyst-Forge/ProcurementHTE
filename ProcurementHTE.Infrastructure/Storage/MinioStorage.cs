@@ -29,11 +29,6 @@ namespace ProcurementHTE.Infrastructure.Storage
             if (schemeIdx >= 0)
                 endpoint = endpoint[(schemeIdx + 3)..]; // potong "http(s)://"
 
-            // --- Log untuk verifikasi (tanpa menampilkan secret) ---
-            Console.WriteLine(
-                $"[MinIO cfg] Endpoint={endpoint}, SSL={_options.UseSSL}, Bucket={_options.Bucket}"
-            );
-
             var client = new MinioClient()
                 .WithEndpoint(endpoint)
                 .WithCredentials(_options.AccessKey, _options.SecretKey);
