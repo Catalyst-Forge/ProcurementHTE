@@ -2,7 +2,6 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -23,7 +22,6 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly IAccountService _accountService;
         private readonly EmailSenderOptions _emailOptions;
         private readonly SmsSenderOptions _smsOptions;
-        private readonly ILogger<AccountController> _logger;
         private const int VerificationCooldownSeconds = 60;
         private const string EmailVerificationCooldownKey = "settings.email";
         private const string PhoneVerificationCooldownKey = "settings.phone";
@@ -33,8 +31,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             SignInManager<User> signInManager,
             IAccountService accountService,
             IOptions<EmailSenderOptions> emailOptions,
-            IOptions<SmsSenderOptions> smsOptions,
-            ILogger<AccountController> logger
+            IOptions<SmsSenderOptions> smsOptions
         )
         {
             _userManager = userManager;
@@ -42,7 +39,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             _accountService = accountService;
             _emailOptions = emailOptions.Value;
             _smsOptions = smsOptions.Value;
-            _logger = logger;
         }
 
         public async Task<IActionResult> Settings()
@@ -194,7 +190,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to update profile for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -232,7 +227,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to change password for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -281,7 +275,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email verification for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -304,7 +297,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to confirm email for user {UserId}", userId);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -349,7 +341,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send phone verification for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -378,7 +369,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to verify phone for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
                 TempData["ShowPhoneVerify"] = "1";
             }
@@ -418,7 +408,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to upload avatar for user {UserId}", user.Id);
                 TempData["ErrorMessage"] =
                     "Gagal mengunggah foto profil. Pastikan format gambar valid.";
             }
@@ -462,7 +451,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to enable two-factor for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -484,7 +472,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to disable two-factor for user {UserId}", user.Id);
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -630,7 +617,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send two-factor code via {Method} for user {UserId}", method, user.Id);
                 return Json(new { success = false, message = ex.Message });
             }
         }

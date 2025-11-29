@@ -2,7 +2,6 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ProcurementHTE.Core.Interfaces;
@@ -14,17 +13,11 @@ namespace ProcurementHTE.Core.Services
     {
         private readonly JwtSettings _jwtSettings;
         private readonly UserManager<User> _userManager;
-        private readonly ILogger<JwtTokenService> _logger;
 
-        public JwtTokenService(
-            IOptions<JwtSettings> jwtSettings,
-            UserManager<User> userManager,
-            ILogger<JwtTokenService> logger
-        )
+        public JwtTokenService(IOptions<JwtSettings> jwtSettings, UserManager<User> userManager)
         {
             _jwtSettings = jwtSettings.Value;
             _userManager = userManager;
-            _logger = logger;
         }
 
         public async Task<string> GenerateTokenAsync(User user)
@@ -83,7 +76,6 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate JWT token for user {UserId}", user.Id);
                 throw;
             }
         }

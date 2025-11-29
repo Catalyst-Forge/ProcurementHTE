@@ -2,7 +2,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
@@ -19,7 +18,6 @@ public class ProcurementDocumentsController : Controller
     private readonly IDocumentGenerator _docGenerator;
     private readonly IDocumentTypeRepository _docTypeRepo;
     private readonly IApprovalService _approvalSvc;
-    private readonly ILogger<ProcurementDocumentsController> _logger;
 
     public ProcurementDocumentsController(
         IProcurementDocumentQuery query,
@@ -28,8 +26,7 @@ public class ProcurementDocumentsController : Controller
         IHttpClientFactory http,
         IDocumentGenerator docGenerator,
         IDocumentTypeRepository docTypeRepo,
-        IApprovalService approvalSvc,
-        ILogger<ProcurementDocumentsController> logger
+        IApprovalService approvalSvc
     )
     {
         _query = query;
@@ -39,7 +36,6 @@ public class ProcurementDocumentsController : Controller
         _docGenerator = docGenerator;
         _docTypeRepo = docTypeRepo;
         _approvalSvc = approvalSvc;
-        _logger = logger;
     }
 
     // GET: /ProcurementDocuments/Index/{procurementId}
@@ -90,8 +86,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load required docs for procurement {ProcurementId}", procurementId);
-            TempData["ErrorMessage"] = "Failed to load document list.";
+            TempData["ErrorMessage"] = $"{ex}. Failed to load document list.";
             return RedirectToAction("Index", "Error");
         }
     }
@@ -184,12 +179,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to upload document type {DocumentTypeId} for procurement {ProcurementId}",
-                DocumentTypeId,
-                ProcurementId
-            );
             if (IsAjaxRequest())
             {
                 return BadRequest(new { ok = false, error = ex.Message });
@@ -271,7 +260,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to download document {DocumentId} for procurement {ProcurementId}", id, procurementId);
             TempData["ErrorMessage"] = "Failed to download document.";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
@@ -294,7 +282,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate preview URL for document {DocumentId}", id);
             return Json(new { ok = false, error = "Failed to create preview link." });
         }
     }
@@ -314,7 +301,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete document {DocumentId}", id);
             TempData["ErrorMessage"] = ex.Message;
         }
 
@@ -343,7 +329,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send approval for document {ProcDocumentId}", procDocumentId);
             TempData["ErrorMessage"] = ex.Message;
         }
         return RedirectToAction(nameof(Index), new { procurementId });
@@ -363,7 +348,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate QR URL for document {DocumentId}", id);
             return Json(new { ok = false, error = "Failed to create QR link." });
         }
     }
@@ -396,7 +380,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to download QR for document {DocumentId}", id);
             return BadRequest("Failed to download QR.");
         }
     }
@@ -492,12 +475,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to generate document type {DocumentTypeId} for procurement {ProcurementId}",
-                documentTypeId,
-                procurementId
-            );
             TempData["ErrorMessage"] = $"Failed to generate documents: {ex.Message}";
 
             return RedirectToAction("Index", new { procurementId });
@@ -554,12 +531,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to preview generated document type {DocumentTypeId} for procurement {ProcurementId}",
-                documentTypeId,
-                procurementId
-            );
             return BadRequest(new { error = ex.Message });
         }
     }
@@ -584,7 +555,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load approval timeline for document {ProcDocumentId}", procDocumentId);
             return StatusCode(
                 500,
                 new { ok = false, message = "Failed to load approval timeline." }

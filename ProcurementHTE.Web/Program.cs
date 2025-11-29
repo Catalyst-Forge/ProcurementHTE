@@ -66,7 +66,6 @@ app.MapControllerRoute(name: "default", pattern: "{controller=Dashboard}/{action
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
 
     try
     {
@@ -75,10 +74,7 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
         await DataSeeder.SeedAsync(services);
     }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Failed to migrate or seed database.");
-    }
+    catch (Exception ex) { }
 }
 
 app.Run();
