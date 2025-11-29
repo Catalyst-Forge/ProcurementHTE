@@ -42,7 +42,10 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(
+                    $"Gagal mengambil konfigurasi dokumen untuk job type '{jobTypeId}': {ex.Message}",
+                    ex
+                );
             }
         }
     }

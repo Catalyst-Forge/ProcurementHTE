@@ -74,7 +74,10 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
         await DataSeeder.SeedAsync(services);
     }
-    catch (Exception ex) { }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Failed to migrate or seed database: {ex.Message}");
+    }
 }
 
 app.Run();

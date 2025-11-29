@@ -43,7 +43,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal menyetujui dokumen: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));
@@ -64,7 +64,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal menolak dokumen: {ex.Message}";
             }
             return RedirectToAction(nameof(Index));
         }

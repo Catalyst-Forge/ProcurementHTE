@@ -76,7 +76,7 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException("Gagal membuat token JWT.", ex);
             }
         }
     }

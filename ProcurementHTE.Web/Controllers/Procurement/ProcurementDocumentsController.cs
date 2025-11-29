@@ -86,7 +86,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            TempData["ErrorMessage"] = $"{ex}. Failed to load document list.";
+            TempData["ErrorMessage"] = $"Failed to load document list: {ex.Message}";
             return RedirectToAction("Index", "Error");
         }
     }
@@ -181,10 +181,12 @@ public class ProcurementDocumentsController : Controller
         {
             if (IsAjaxRequest())
             {
-                return BadRequest(new { ok = false, error = ex.Message });
+                return BadRequest(
+                    new { ok = false, error = $"Failed to upload document: {ex.Message}" }
+                );
             }
 
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["ErrorMessage"] = $"Failed to upload document: {ex.Message}";
         }
 
         return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
@@ -260,7 +262,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            TempData["ErrorMessage"] = "Failed to download document.";
+            TempData["ErrorMessage"] = $"Failed to download document: {ex.Message}";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
     }
@@ -282,7 +284,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = "Failed to create preview link." });
+            return Json(new { ok = false, error = $"Failed to create preview link: {ex.Message}" });
         }
     }
 
@@ -301,7 +303,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["ErrorMessage"] = $"Failed to delete document: {ex.Message}";
         }
 
         return RedirectToAction(nameof(Index), new { procurementId });
@@ -329,7 +331,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["ErrorMessage"] = $"Failed to send approval request: {ex.Message}";
         }
         return RedirectToAction(nameof(Index), new { procurementId });
     }
@@ -348,7 +350,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { ok = false, error = "Failed to create QR link." });
+            return Json(new { ok = false, error = $"Failed to create QR link: {ex.Message}" });
         }
     }
 
@@ -380,7 +382,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            return BadRequest("Failed to download QR.");
+            return BadRequest($"Failed to download QR: {ex.Message}");
         }
     }
 
@@ -531,7 +533,9 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return BadRequest(
+                new { error = $"Failed to preview generated document: {ex.Message}" }
+            );
         }
     }
 
@@ -557,7 +561,7 @@ public class ProcurementDocumentsController : Controller
         {
             return StatusCode(
                 500,
-                new { ok = false, message = "Failed to load approval timeline." }
+                new { ok = false, message = $"Failed to load approval timeline: {ex.Message}" }
             );
         }
     }

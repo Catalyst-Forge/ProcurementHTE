@@ -29,7 +29,10 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception ex)
             {
-                throw;
+                throw new InvalidOperationException(
+                    $"Failed to load approved approvals for ProcDocumentId '{procDocumentId}': {ex.Message}",
+                    ex
+                );
             }
         }
     }

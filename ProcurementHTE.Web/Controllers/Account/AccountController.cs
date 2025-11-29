@@ -190,7 +190,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memperbarui profil: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -227,7 +227,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memperbarui password: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -275,7 +275,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim tautan verifikasi email: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -297,7 +297,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memverifikasi email: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -341,7 +341,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim OTP SMS: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -369,7 +369,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memverifikasi nomor HP: {ex.Message}";
                 TempData["ShowPhoneVerify"] = "1";
             }
 
@@ -409,7 +409,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] =
-                    "Gagal mengunggah foto profil. Pastikan format gambar valid.";
+                    $"Gagal mengunggah foto profil: {ex.Message}. Pastikan format gambar valid.";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -451,7 +451,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] =
+                    $"Gagal mengaktifkan two-factor authentication: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -472,7 +473,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] =
+                    $"Gagal menonaktifkan two-factor authentication: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Settings));
@@ -617,7 +619,13 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = $"Gagal mengirim kode verifikasi: {ex.Message}",
+                    }
+                );
             }
         }
 

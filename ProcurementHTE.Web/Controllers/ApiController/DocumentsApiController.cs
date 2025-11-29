@@ -66,6 +66,7 @@ namespace ProcurementHTE.Web.Controllers.ApiController
             // presign untuk setiap item
             var ttl = TimeSpan.FromMinutes(15);
             var list = new List<ProcDocumentLiteWithUrlDto>(res.Items.Count);
+            var warnings = new List<string>();
 
             foreach (var d in res.Items)
             {
@@ -80,7 +81,12 @@ namespace ProcurementHTE.Web.Controllers.ApiController
                         ct
                     );
                 }
-                catch (Exception ex) { }
+                catch (Exception ex)
+                {
+                    warnings.Add(
+                        $"Failed to create view link for document {d.ProcDocumentId}: {ex.Message}"
+                    );
+                }
 
                 list.Add(
                     new ProcDocumentLiteWithUrlDto(
@@ -101,8 +107,16 @@ namespace ProcurementHTE.Web.Controllers.ApiController
 
             var totalPages = (int)Math.Ceiling((double)res.TotalItems / pageSize);
             var meta = new PagedMeta(page, pageSize, res.TotalItems, totalPages);
+            var responseMessage =
+                warnings.Count > 0 ? $"OK with warnings: {string.Join(" | ", warnings)}" : "OK";
 
-            return Ok(ApiResponse<IReadOnlyList<ProcDocumentLiteWithUrlDto>>.Ok(list, "OK", meta));
+            return Ok(
+                ApiResponse<IReadOnlyList<ProcDocumentLiteWithUrlDto>>.Ok(
+                    list,
+                    responseMessage,
+                    meta
+                )
+            );
         }
 
         [HttpPost("resolve-qr")]

@@ -65,7 +65,13 @@ namespace ProcurementHTE.Core.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine($"[DEBUG] {e}");
+                var identifier = string.IsNullOrWhiteSpace(jobTypes.JobTypeId)
+                    ? jobTypes.TypeName
+                    : jobTypes.JobTypeId;
+                throw new InvalidOperationException(
+                    $"Failed to delete job type '{identifier ?? "-"}': {e.Message}",
+                    e
+                );
             }
         }
 

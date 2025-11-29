@@ -147,12 +147,10 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 // tampilkan pesan SQL aslinya
                 var inner = ex.InnerException?.Message ?? ex.Message;
                 TempData["ErrorMessage"] = $"DBUpdateException: {inner}";
-                Console.WriteLine("[DEBUG] SQL ERROR: " + inner);
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Failed to delete document type: " + ex.Message;
-                Console.WriteLine("[DEBUG] ERROR: " + ex.Message);
             }
             return RedirectToAction(nameof(Index));
         }

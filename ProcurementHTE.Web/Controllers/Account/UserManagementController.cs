@@ -233,7 +233,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(ex.Message, $"{ex}. Terjadi kesalahan saat membuat user.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Terjadi kesalahan saat membuat user: {ex.Message}"
+                );
 
                 model.Roles = await GetRoleOptionsAsync();
                 if (string.IsNullOrWhiteSpace(model.GeneratedPassword))
@@ -383,8 +386,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 ModelState.AddModelError(
-                    ex.Message,
-                    $"{ex}. Terjadi kesalahan saat mengubah user."
+                    string.Empty,
+                    $"Terjadi kesalahan saat mengubah user: {ex.Message}"
                 );
 
                 model.Roles = await GetRoleOptionsAsync();
@@ -450,7 +453,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] =
-                    $"{ex}. Gagal menghapus user. Pastikan user tidak dipakai di data lain.";
+                    $"Gagal menghapus user. Pastikan user tidak dipakai di data lain. Detail: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

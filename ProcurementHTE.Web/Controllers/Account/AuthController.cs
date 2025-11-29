@@ -211,7 +211,8 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Auto2faError = ex.Message;
+                    ViewBag.Auto2faError =
+                        $"Gagal mengirim verifikasi email otomatis: {ex.Message}";
                 }
             }
             else if (requiresPhoneVerification)
@@ -235,7 +236,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Auto2faError = ex.Message;
+                    ViewBag.Auto2faError = $"Gagal mengirim OTP otomatis: {ex.Message}";
                 }
             }
             else if (user.TwoFactorMethod is TwoFactorMethod.Email or TwoFactorMethod.Sms)
@@ -273,7 +274,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Auto2faError = ex.Message;
+                    ViewBag.Auto2faError = $"Gagal mengirim kode verifikasi otomatis: {ex.Message}";
                 }
 
                 var loginCooldownKey =
@@ -351,7 +352,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim ulang magic link: {ex.Message}";
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -398,7 +399,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim ulang OTP SMS: {ex.Message}";
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -430,7 +431,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memverifikasi OTP: {ex.Message}";
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -523,7 +524,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] =
+                    $"Gagal mengirim magic link verifikasi email: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -568,7 +570,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim OTP verifikasi kontak: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -668,7 +670,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] =
+                    $"Gagal mengaktifkan two-factor authentication: {ex.Message}";
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
@@ -753,7 +756,13 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = $"Gagal mengirim kode verifikasi: {ex.Message}",
+                    }
+                );
             }
         }
 
@@ -779,7 +788,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memverifikasi nomor HP: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -964,7 +973,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Recovery.RecoveryCode", ex.Message);
+                ModelState.AddModelError(
+                    "Recovery.RecoveryCode",
+                    $"Gagal mereset password dengan recovery code: {ex.Message}"
+                );
                 return ForgotPasswordView("recovery", recovery: model);
             }
         }
@@ -1068,7 +1080,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("EmailReset.Code", ex.Message);
+                ModelState.AddModelError(
+                    "EmailReset.Code",
+                    $"Gagal mereset password via email: {ex.Message}"
+                );
                 return ForgotPasswordView("email", emailReset: model);
             }
         }
@@ -1182,7 +1197,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("SmsReset.Code", ex.Message);
+                ModelState.AddModelError(
+                    "SmsReset.Code",
+                    $"Gagal mereset password via SMS: {ex.Message}"
+                );
                 return ForgotPasswordView("sms", smsReset: model);
             }
         }
@@ -1229,7 +1247,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Gagal memperbarui password dengan recovery reset: {ex.Message}"
+                );
                 return View(model);
             }
         }
