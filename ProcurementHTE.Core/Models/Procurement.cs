@@ -96,6 +96,10 @@ public class Procurement
     [DisplayName("Manager User")]
     public string ManagerUserId { get; set; } = null!;
 
+    [Required]
+    [DisplayName("Jenis Pengadaan")]
+    public ProcurementCategory ProcurementCategory { get; set; }
+
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     [DisplayName("Created At")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

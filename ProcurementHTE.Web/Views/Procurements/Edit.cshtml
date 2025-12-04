@@ -13,6 +13,7 @@
     var jobTypeName = ViewBag.SelectedJobTypeName as string ?? "Other";
 
     var contractTypeOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ContractType>();
+    var categoryOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProcurementCategory>();
     var projectRegionOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProjectRegion>();
 
     var picOpsOptions = (Model.PicOpsUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
@@ -56,6 +57,13 @@
                         <option value="">Select contract type</option>
                     </select>
                     <span asp-validation-for="ContractType" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ProcurementCategory" class="form-label">Jenis Pengadaan</label>
+                    <select asp-for="ProcurementCategory" class="form-select" asp-items="categoryOptions">
+                        <option value="">Goods atau Services</option>
+                    </select>
+                    <span asp-validation-for="ProcurementCategory" class="text-danger"></span>
                 </div>
             </div>
 

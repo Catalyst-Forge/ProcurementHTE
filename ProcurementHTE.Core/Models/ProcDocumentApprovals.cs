@@ -25,9 +25,6 @@ public class ProcDocumentApprovals
     [Required]
     public int Level { get; set; } = 1;
 
-    [Required]
-    public int SequenceOrder { get; set; } = 1;
-
     [Required, MaxLength(16)]
     public string Status { get; set; } = "Pending";
 

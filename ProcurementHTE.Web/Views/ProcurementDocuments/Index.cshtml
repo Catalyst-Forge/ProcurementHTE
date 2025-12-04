@@ -654,7 +654,6 @@
                 procDocumentId: d.ProcDocumentId ?? d.procDocumentId ?? null,
                 docStatus: d.DocStatus ?? d.docStatus ?? null,
                 currentGateLevel: d.CurrentGateLevel ?? d.currentGateLevel ?? null,
-                currentGateSequence: d.CurrentGateSequence ?? d.currentGateSequence ?? null,
                 requiredRoles: Array.isArray(d.RequiredRoles) ? d.RequiredRoles : (Array.isArray(d.requiredRoles) ? d.requiredRoles : []),
                 steps: Array.isArray(d.Steps) ? d.Steps : (Array.isArray(d.steps) ? d.steps : [])
             };
@@ -663,7 +662,6 @@
             norm.steps = norm.steps.map(s => ({
                 procDocumentApprovalId: s.ProcDocumentApprovalId ?? s.procDocumentApprovalId ?? null,
                 level: s.Level ?? s.level ?? 0,
-                sequenceOrder: s.SequenceOrder ?? s.sequenceOrder ?? 0,
                 roleId: s.RoleId ?? s.roleId ?? null,
                 roleName: s.RoleName ?? s.roleName ?? null,
                 status: s.Status ?? s.status ?? null,
@@ -679,7 +677,6 @@
                 roleName: r.RoleName ?? r.roleName ?? null,
                 procDocumentApprovalId: r.ProcDocumentApprovalId ?? r.procDocumentApprovalId ?? null,
                 level: r.Level ?? r.level ?? null,
-                sequenceOrder: r.SequenceOrder ?? r.sequenceOrder ?? null,
                 status: r.Status ?? r.status ?? null,
                 note: r.Note ?? r.note ?? null,
                 approverId: r.ApproverId ?? r.approverId ?? null,
@@ -744,14 +741,14 @@
             docStatusBadge.textContent = 'Status: ' + text;
 
             // Gate indicator
-            if (data?.currentGateLevel && data?.currentGateSequence) {
+            if (data?.currentGateLevel) {
                 currentGateBadge.classList.remove('d-none');
-                currentGateBadge.textContent = `Gate: L${data.currentGateLevel}.S${data.currentGateSequence}`;
+                currentGateBadge.textContent = `Gate: L${data.currentGateLevel}`;
             }
 
             // Steps
             const steps = Array.isArray(data?.steps) ? data.steps.slice() : [];
-            steps.sort((a, b) => (a.level - b.level) || (a.sequenceOrder - b.sequenceOrder));
+            steps.sort((a, b) => (a.level - b.level) || ((a.roleName || '').localeCompare(b.roleName || '')));
 
             if (steps.length === 0) {
                 loading.classList.add('d-none');
@@ -790,7 +787,7 @@
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                                <span class="badge bg-light text-dark border">L${s.level}.S${s.sequenceOrder}</span>
+                                <span class="badge bg-light text-dark border">L${s.level}</span>
                                 <span class="fw-semibold">${s.roleName ?? '�'}</span>
                                 <span class="badge rounded-pill bg-${color} ${badgeTextColor} text-capitalize">${s.status ?? '�'}</span>
                             </div>

@@ -11,14 +11,12 @@
         public string? ProcDocumentId { get; set; }
         public string? DocStatus { get; set; }
         public int? CurrentGateLevel { get; set; }
-        public int? CurrentGateSequence { get; set; }
         public List<RoleInfoDto> RequiredRoles { get; set; } = new();
 
         // Debug/UX helper
         public List<string> YourRoles { get; set; } = new();
         public bool? AlreadyApprovedByYou { get; set; }
         public int? YourLastApprovalLevel { get; set; }
-        public int? YourLastApprovalSequence { get; set; }
         public DateTime? YourLastApprovalAt { get; set; }
 
         // detail untuk kasus Rejected

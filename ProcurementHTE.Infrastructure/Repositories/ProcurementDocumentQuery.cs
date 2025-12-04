@@ -24,7 +24,7 @@ public sealed class ProcurementDocumentQuery : IProcurementDocumentQuery
         var procurement = await _db
             .Procurements.AsNoTracking()
             .Where(x => x.ProcurementId == procurementId)
-            .Select(x => new { x.ProcurementId, x.JobTypeId })
+            .Select(x => new { x.ProcurementId, x.JobTypeId, x.ProcurementCategory })
             .FirstOrDefaultAsync();
 
         if (procurement is null)
@@ -52,9 +52,55 @@ public sealed class ProcurementDocumentQuery : IProcurementDocumentQuery
             .Where(d => d.ProcurementId == procurementId)
             .CountAsync();
 
+        var latestPnl = await _db
+            .ProfitLosses.AsNoTracking()
+            .Where(p => p.ProcurementId == procurementId)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        // Jika PNL ada, hitung threshold justifikasi berdasarkan final offer (atau kalkulasi dari vendor offers).
+        decimal bestFinalOffer = 0m;
+        if (latestPnl != null)
+        {
+            bestFinalOffer = latestPnl.SelectedVendorFinalOffer;
+
+            if (bestFinalOffer <= 0m)
+            {
+                var offers = await _db
+                    .VendorOffers.AsNoTracking()
+                    .Where(o => o.ProfitLossId == latestPnl.ProfitLossId)
+                    .ToListAsync();
+
+                if (offers.Count > 0)
+                {
+                    bestFinalOffer = offers
+                        .GroupBy(o => o.VendorId)
+                        .Select(group =>
+                        {
+                            // ambil harga last round per item, lalu jumlahkan (qty * trip * price)
+                            var perItem = group
+                                .GroupBy(x => x.ProcOfferId)
+                                .Select(gg =>
+                                {
+                                    var last = gg.OrderBy(x => x.Round).Last();
+                                    return last.Price * last.Quantity * last.Trip;
+                                });
+
+                            return perItem.Sum();
+                        })
+                        .DefaultIfEmpty(0m)
+                        .Min();
+                }
+            }
+        }
+
+        var needJustifikasi = bestFinalOffer > 300_000_000m;
+
         var q =
             from cfg in _db.JobTypeDocuments.AsNoTracking()
             where cfg.JobTypeId == procurement.JobTypeId
+                && (cfg.ProcurementCategory == null || cfg.ProcurementCategory == procurement.ProcurementCategory)
+                && (cfg.DocumentType.Name != "Justifikasi" || needJustifikasi)
             let lastDoc = _db
                 .ProcDocuments.AsNoTracking()
                 .Where(d =>

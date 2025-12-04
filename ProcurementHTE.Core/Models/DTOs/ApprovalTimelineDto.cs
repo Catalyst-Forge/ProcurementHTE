@@ -1,4 +1,4 @@
-﻿// Core/DTOs/ApprovalTimelineDto.cs
+// Core/DTOs/ApprovalTimelineDto.cs
 namespace ProcurementHTE.Core.Models.DTOs
 {
     public sealed class ApprovalTimelineDto
@@ -6,8 +6,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string ProcurementId { get; set; } = default!;
         public string ProcDocumentId { get; set; } = default!;
         public string? DocStatus { get; set; }
-        public int? CurrentGateLevel { get; set; } // ← int?
-        public int? CurrentGateSequence { get; set; } // ← int?
+        public int? CurrentGateLevel { get; set; }
         public List<RoleInfoDto> RequiredRoles { get; set; } = new();
         public List<ApprovalStepDto> Steps { get; set; } = new();
     }
@@ -15,8 +14,7 @@ namespace ProcurementHTE.Core.Models.DTOs
     public sealed class ApprovalStepDto
     {
         public string? ProcDocumentApprovalId { get; set; }
-        public int? Level { get; set; } // ← int?
-        public int? SequenceOrder { get; set; } // ← int?
+        public int? Level { get; set; }
         public string? RoleId { get; set; }
         public string? RoleName { get; set; }
         public string? Status { get; set; }

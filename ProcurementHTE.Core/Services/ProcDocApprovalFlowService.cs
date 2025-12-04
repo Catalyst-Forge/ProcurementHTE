@@ -54,7 +54,6 @@ namespace ProcurementHTE.Core.Services
 
             var approvalsMaster = jobTypeDoc
                 .DocumentApprovals.OrderBy(approval => approval.Level)
-                .ThenBy(approval => approval.SequenceOrder)
                 .ToList();
 
             if (approvalsMaster.Count == 0)
@@ -62,6 +61,7 @@ namespace ProcurementHTE.Core.Services
                 return;
             }
 
+            var firstLevel = approvalsMaster.Min(a => a.Level);
             var flows = new List<ProcDocumentApprovals>(
                 approvalsMaster.Count + (extraRoleNames?.Count() ?? 0)
             );
@@ -76,8 +76,7 @@ namespace ProcurementHTE.Core.Services
                         RoleId = approval.RoleId,
                         AssignedApproverId = assignedApproverId,
                         Level = approval.Level,
-                        SequenceOrder = approval.SequenceOrder,
-                        Status = "Pending",
+                        Status = approval.Level == firstLevel ? "Pending" : "Blocked",
                     }
                 );
             }
@@ -86,7 +85,6 @@ namespace ProcurementHTE.Core.Services
             if (extraRoleNames != null && extraRoleNames.Any())
             {
                 var maxLevel = approvalsMaster.Max(a => a.Level);
-                int seq = 1;
                 foreach (var roleName in extraRoleNames)
                 {
                     if (string.IsNullOrWhiteSpace(roleName))
@@ -103,8 +101,7 @@ namespace ProcurementHTE.Core.Services
                             ProcurementId = woId,
                             RoleId = role.Id,
                             Level = maxLevel + 1,
-                            SequenceOrder = seq++,
-                            Status = "Pending",
+                            Status = "Blocked",
                         }
                     );
                 }

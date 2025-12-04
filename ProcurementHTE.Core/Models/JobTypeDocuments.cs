@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ProcurementHTE.Core.Models;
 
@@ -20,6 +21,9 @@ public class JobTypeDocuments
 
     public string? Note { get; set; }
 
+    // Goods / Services selector (null = all)
+    public ProcurementHTE.Core.Enums.ProcurementCategory? ProcurementCategory { get; set; }
+
     [Required]
     public string JobTypeId { get; set; } = null!;
 
@@ -27,9 +31,11 @@ public class JobTypeDocuments
     public string DocumentTypeId { get; set; } = null!;
 
     [ForeignKey(nameof(JobTypeId))]
+    [ValidateNever]
     public JobTypes JobType { get; set; } = default!;
 
     [ForeignKey(nameof(DocumentTypeId))]
+    [ValidateNever]
     public DocumentType DocumentType { get; set; } = default!;
 
     public ICollection<DocumentApprovals> DocumentApprovals { get; set; } = [];

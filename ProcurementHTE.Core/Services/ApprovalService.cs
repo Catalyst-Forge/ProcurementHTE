@@ -157,7 +157,6 @@ namespace ProcurementHTE.Core.Services
                     ProcurementId = gate.ProcurementId,
                     ProcDocumentId = gate.ProcDocumentId,
                     CurrentGateLevel = gate.Level,
-                    CurrentGateSequence = gate.SequenceOrder,
                     RequiredRoles = gate.RequiredRoles,
                 };
             }
@@ -312,13 +311,11 @@ namespace ProcurementHTE.Core.Services
                 ProcDocumentId = gate.ProcDocumentId!,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
-                CurrentGateSequence = gate.SequenceOrder,
                 RequiredRoles = gate.RequiredRoles, // List<RoleInfoDto>
                 Steps = chain
                     .Select(c => new ApprovalStepDto
                     {
                         Level = c.Level,
-                        SequenceOrder = c.SequenceOrder,
                         RoleName = c.RoleName,
                         Status = c.Status,
                         AssignedApproverUserId = c.AssignedApproverUserId,

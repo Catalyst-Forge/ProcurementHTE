@@ -87,6 +87,16 @@
                             </dl>
 
                             <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">Job Type</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@((Model?.JobType?.TypeName) ?? "-")</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcurementCategory)</dt>
+                                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcurementCategory)</dd>
+                            </dl>
+
+                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
                                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
                                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
                             </dl>

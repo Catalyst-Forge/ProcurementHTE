@@ -58,8 +58,9 @@ namespace ProcurementHTE.Infrastructure.Data
 
             var jobType =
                 await db.JobTypes.FirstOrDefaultAsync(t => t.TypeName == "Moving & Mobilization")
+                ?? await db.JobTypes.FirstOrDefaultAsync(t => t.TypeName == "Moving")
                 ?? throw new Exception(
-                    "JobType 'Moving & Mobilization' belum ada. Jalankan JobTypeMovingMobilizationSeeder dulu."
+                    "JobType 'Moving' belum ada. Jalankan JobTypeMovingMobilizationSeeder dulu."
                 );
 
             var sampleProcurements = new List<ProcurementSeedData>
@@ -68,6 +69,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     StatusName = "Draft",
                     ContractType = ContractType.LTC,
+                    ProcurementCategory = ProcurementCategory.Services,
                     JobName =
                         "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
                     SpkNumber = "1063/PROC-DS/DSI1310/2025",
@@ -103,6 +105,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     StatusName = "Created",
                     ContractType = ContractType.Spot,
+                    ProcurementCategory = ProcurementCategory.Goods,
                     JobName = "Pengadaan chemical injection skid untuk sumur WKP Kamojang.",
                     SpkNumber = "221/PROC-CHM/CHEM45/2025",
                     Wonum = "112 / DSI1131/2025",
@@ -238,6 +241,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     ProjectCode = seed.ProjectCode,
                     LtcName = seed.LtcName,
                     Note = seed.Note,
+                    ProcurementCategory = seed.ProcurementCategory,
                     PicOpsUserId = picOpsUser.Id,
                     AnalystHteUserId = analystUser.Id,
                     AssistantManagerUserId = assistantManagerUser.Id,
@@ -255,6 +259,24 @@ namespace ProcurementHTE.Infrastructure.Data
                         ProcurementId = procurement.ProcurementId,
                     })
                     .ToList();
+
+                procurement.ProcOffers =
+                [
+                    new ProcOffer
+                    {
+                        ItemPenawaran = "HighBed",
+                        Qty = 1,
+                        Unit = "Unit",
+                        ProcurementId = procurement.ProcurementId,
+                    },
+                    new ProcOffer
+                    {
+                        ItemPenawaran = "LightTruck",
+                        Qty = 1,
+                        Unit = "Unit",
+                        ProcurementId = procurement.ProcurementId,
+                    },
+                ];
 
                 procurementEntities.Add(procurement);
             }
@@ -287,6 +309,7 @@ namespace ProcurementHTE.Infrastructure.Data
             public string StatusName { get; init; } = null!;
             public ContractType ContractType { get; init; }
             public string JobName { get; init; } = null!;
+            public ProcurementCategory ProcurementCategory { get; init; } = ProcurementCategory.Goods;
             public string SpkNumber { get; init; } = null!;
             public string Wonum { get; init; } = null!;
             public DateTime StartDate { get; init; }

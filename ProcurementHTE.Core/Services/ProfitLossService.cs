@@ -51,99 +51,46 @@ namespace ProcurementHTE.Core.Services
                 )
                 .ToList();
 
-            // ⬇️ BAGIAN INI YANG DIUBAH: pakai harga TERENDAH per item (MIN), sesuai rumus Excel
-            var vendorTotals = offers
+            var requiredItemIds = pnl
+                .Items.Select(item => item.ProcOfferId)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var vendorComparisons = offers
                 .GroupBy(vendorOffer => vendorOffer.VendorId)
                 .Select(group =>
                 {
-                    // per item (ProcOfferId), ambil MIN harga dari semua ronde
-                    var finalPerItem = group
+                    var perItemCosts = group
                         .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
                         .ToDictionary(
                             g => g.Key,
-                            g => g.Min(vo => vo.Price) // ✅ MIN, bukan last round
+                            g =>
+                            {
+                                var ordered = g.OrderBy(vo => vo.Round).ToList();
+                                var last = ordered.Last();
+                                var minPrice = ordered.Min(vo => vo.Price);
+                                return ComputeVendorItemCost(minPrice, last.Quantity, last.Trip);
+                            },
+                            StringComparer.OrdinalIgnoreCase
                         );
 
-                    var qtyPerItem = group
-                        .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
-                        .ToDictionary(
-                            groupVendorOffer => groupVendorOffer.Key,
-                            groupVendorOffer =>
-                                groupVendorOffer
-                                    .OrderBy(VendorOffer => VendorOffer.Round)
-                                    .Last()
-                                    .Quantity
-                        );
+                    var requiredTotal = ComputeRequiredTotal(perItemCosts, requiredItemIds);
+                    var finalOffer = requiredTotal != decimal.MaxValue
+                        ? requiredTotal
+                        : SafeSum(perItemCosts.Values);
 
-                    var tripPerItem = group
-                        .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
-                        .ToDictionary(
-                            groupVendorOffer => groupVendorOffer.Key,
-                            groupVendorOffer =>
-                                groupVendorOffer
-                                    .OrderBy(vendorOffer => vendorOffer.Round)
-                                    .Last()
-                                    .Trip
-                        );
-
-                    // Wajib quote semua item agar valid
-                    var requiredItemIds = pnl.Items.Select(item => item.ProcOfferId).ToList();
-                    var totalPriceOffer = ComputeRequiredTotal(finalPerItem, requiredItemIds);
-                    var qtyItemOffer = ComputeRequiredTotal(
-                        qtyPerItem.ToDictionary(kvp => kvp.Key, kvp => (decimal)kvp.Value),
-                        requiredItemIds
-                    );
-                    var tripItemOffer = ComputeRequiredTotal(
-                        tripPerItem.ToDictionary(kvp => kvp.Key, kvp => (decimal)kvp.Value),
-                        requiredItemIds
-                    );
-
-                    return new
-                    {
-                        group.Key,
-                        finalPerItem,
-                        totalPriceOffer,
-                        qtyItemOffer,
-                        tripItemOffer,
-                    };
-                })
-                .Where(x => x.totalPriceOffer < decimal.MaxValue)
-                .ToList();
-
-            var vendorComparisons = vendorTotals
-                .Select(x =>
-                {
-                    if (
-                        x.totalPriceOffer == decimal.MaxValue
-                        || x.qtyItemOffer == decimal.MaxValue
-                        || x.tripItemOffer == decimal.MaxValue
-                    )
-                    {
-                        return new VendorComparisonDto
-                        {
-                            VendorName =
-                                allVendors
-                                    .FirstOrDefault(vendor => vendor.VendorId == x.Key)
-                                    ?.VendorName ?? x.Key,
-                            FinalOffer = decimal.MaxValue,
-                            Profit = decimal.MinValue,
-                            ProfitPercent = decimal.MinValue,
-                            IsSelected = pnl.SelectedVendorId == x.Key,
-                        };
-                    }
-
-                    var final = SafeMultiply(x.totalPriceOffer, x.qtyItemOffer, x.tripItemOffer);
-                    var profit = totalRevenue - final;
-                    var profitPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100m : 0m;
                     var vendorName =
-                        allVendors.FirstOrDefault(vendor => vendor.VendorId == x.Key)?.VendorName
-                        ?? x.Key;
-                    var isSelected = pnl.SelectedVendorId == x.Key;
+                        allVendors.FirstOrDefault(vendor => vendor.VendorId == group.Key)?.VendorName
+                        ?? group.Key;
+
+                    var profit = totalRevenue - finalOffer;
+                    var profitPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100m : 0m;
+                    var isSelected = pnl.SelectedVendorId == group.Key;
 
                     return new VendorComparisonDto
                     {
                         VendorName = vendorName,
-                        FinalOffer = final,
+                        FinalOffer = finalOffer,
                         Profit = profit,
                         ProfitPercent = profitPercent,
                         IsSelected = isSelected,
@@ -186,7 +133,11 @@ namespace ProcurementHTE.Core.Services
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
                 SelectedVendorName = vendorComparisons
                     .FirstOrDefault(vendor => vendor.IsSelected)
-                    ?.VendorName,
+                    ?.VendorName
+                    ?? allVendors
+                        .FirstOrDefault(vendor => vendor.VendorId == pnl.SelectedVendorId)
+                        ?.VendorName
+                    ?? pnl.SelectedVendorId,
                 SelectedFinalOffer = pnl.SelectedVendorFinalOffer,
                 Profit = pnl.Profit,
                 ProfitPercent = pnl.ProfitPercent,
@@ -600,8 +551,10 @@ namespace ProcurementHTE.Core.Services
                             gg => gg.Key,
                             gg =>
                             {
-                                var last = gg.OrderBy(x => x.Round).Last();
-                                return ComputeVendorItemCost(last.Price, last.Quantity, last.Trip);
+                                var ordered = gg.OrderBy(x => x.Round).ToList();
+                                var last = ordered.Last();
+                                var minPrice = ordered.Min(x => x.Price);
+                                return ComputeVendorItemCost(minPrice, last.Quantity, last.Trip);
                             }
                         ),
                 })
@@ -636,12 +589,10 @@ namespace ProcurementHTE.Core.Services
                                 gg => gg.Key,
                                 gg =>
                                 {
-                                    var last = gg.OrderBy(x => x.Round).Last();
-                                    return ComputeVendorItemCost(
-                                        last.Price,
-                                        last.Quantity,
-                                        last.Trip
-                                    );
+                                    var ordered = gg.OrderBy(x => x.Round).ToList();
+                                    var last = ordered.Last();
+                                    var minPrice = ordered.Min(x => x.Price);
+                                    return ComputeVendorItemCost(minPrice, last.Quantity, last.Trip);
                                 }
                             ),
                     })
@@ -758,5 +709,7 @@ namespace ProcurementHTE.Core.Services
 
             return best?.NoLetter;
         }
+
+        // Coverage check dihapus agar penawaran parsial tetap diproses; PickBestVendor sudah meng-handle fallback.
     }
 }

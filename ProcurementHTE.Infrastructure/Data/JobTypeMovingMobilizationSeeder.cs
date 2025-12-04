@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
@@ -12,17 +13,49 @@ namespace ProcurementHTE.Infrastructure.Data
             using var tx = await context.Database.BeginTransactionAsync();
 
             // === 1) Pastikan JobType ada (lookup by TypeName)
-            var typeName = "Moving & Mobilization";
+            var typeName = "Moving";
+            var legacyTypeName = "Moving & Mobilization";
+            var description = "Konfigurasi dokumen untuk proses Moving & Mobilization";
+
             var jobType = await context.JobTypes.FirstOrDefaultAsync(t => t.TypeName == typeName);
+
+            // Bila data lama memakai nama berbeda, upgrade ke nama yang diinginkan
+            if (jobType == null)
+            {
+                jobType = await context.JobTypes.FirstOrDefaultAsync(t =>
+                    t.TypeName == legacyTypeName
+                );
+            }
+
             if (jobType == null)
             {
                 jobType = new JobTypes
                 {
                     TypeName = typeName,
-                    Description = "Konfigurasi dokumen untuk proses Moving & Mobilization",
+                    Description = description,
                 };
                 context.JobTypes.Add(jobType);
                 await context.SaveChangesAsync();
+            }
+            else
+            {
+                var updated = false;
+                if (jobType.TypeName != typeName)
+                {
+                    jobType.TypeName = typeName;
+                    updated = true;
+                }
+                if (jobType.Description != description)
+                {
+                    jobType.Description = description;
+                    updated = true;
+                }
+
+                if (updated)
+                {
+                    context.JobTypes.Update(jobType);
+                    await context.SaveChangesAsync();
+                }
             }
 
             // === 2) Pastikan DocumentTypes yang diperlukan ada (lookup by Name)
@@ -30,6 +63,7 @@ namespace ProcurementHTE.Infrastructure.Data
             {
                 "Memorandum",
                 "Permintaan Pekerjaan",
+                "PR Service",
                 "Service Order",
                 "Market Survey",
                 "Profit & Loss",
@@ -40,6 +74,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Risk Assessment (RA)",
                 "Owner Estimate (OE)",
                 "Bill of Quantity (BOQ)",
+                "Justifikasi",
             };
 
             var existingDocs = await context
@@ -56,7 +91,17 @@ namespace ProcurementHTE.Infrastructure.Data
             await context.SaveChangesAsync();
 
             // Helper: ambil DocumentType by Name
-            DocumentType DT(string name) => existingDocs.First(d => d.Name == name);
+            DocumentType DT(string name)
+            {
+                var dt = existingDocs.FirstOrDefault(d => d.Name == name);
+                if (dt == null)
+                {
+                    dt = new DocumentType { Name = name, Description = name };
+                    context.DocumentTypes.Add(dt);
+                    existingDocs.Add(dt);
+                }
+                return dt;
+            }
 
             // === 3) Konfigurasi JobTypeDocuments (idempotent, lookup by (JobTypeId, DocumentTypeId))
             var cfg = new (
@@ -66,17 +111,19 @@ namespace ProcurementHTE.Infrastructure.Data
                 bool Generated,
                 bool UploadReq,
                 bool RequiresApproval,
-                string? Note
+                string? Note,
+                ProcurementCategory? Category
             )[]
             {
                 (
                     "Memorandum",
                     1,
                     true,
+                    true,
                     false,
                     true,
-                    true,
-                    "Memorandum upload dengan approval Manager"
+                    "Memorandum upload dengan approval Manager",
+                    null
                 ),
                 (
                     "Permintaan Pekerjaan",
@@ -85,81 +132,119 @@ namespace ProcurementHTE.Infrastructure.Data
                     false,
                     true,
                     false,
-                    "Dokumen eksternal; tidak di-generate; tidak perlu approval"
+                    "Dokumen eksternal; tidak di-generate; tidak perlu approval",
+                    null
                 ),
                 (
-                    "Service Order",
+                    "PR Service",
                     3,
                     true,
                     false,
                     true,
                     true,
-                    "Service Order upload dengan approval Manager"
+                    "PR Service upload dengan approval Manager",
+                    null // berlaku Goods & Services
+                ),
+                (
+                    "Service Order",
+                    4,
+                    true,
+                    true,
+                    false,
+                    true,
+                    "Digenerate sistem; approval Manager Transport & Logistic",
+                    null
                 ),
                 (
                     "Market Survey",
-                    4,
+                    5,
                     true,
                     false,
                     true,
                     false,
-                    "Upload dari HTE; mempengaruhi progress"
+                    "Upload dari HTE; mempengaruhi progress",
+                    null
                 ),
                 (
                     "Profit & Loss",
-                    5,
+                    6,
                     true,
                     true,
                     false,
                     true,
-                    "Digenerate sistem; approval Analyst HTE & LTS -> AM HTE -> Manager"
+                    "Digenerate sistem; approval Analyst HTE & LTS -> AM HTE -> Manager",
+                    null
                 ),
                 (
                     "Surat Perintah Mulai Pekerjaan (SPMP)",
-                    6,
+                    7,
+                    true,
                     true,
                     false,
                     true,
-                    true,
-                    "SPMP upload dengan approval Manager"
+                    "SPMP upload dengan approval Manager",
+                    null
                 ),
-                ("Surat Penawaran Harga", 7, true, false, true, false, "Upload dari HTE"),
-                ("Surat Negosiasi Harga", 8, true, false, true, false, "Upload dari HTE"),
+                (
+                    "Surat Penawaran Harga",
+                    8,
+                    true,
+                    false,
+                    true,
+                    false,
+                    "Upload dari HTE",
+                    null
+                ),
+                ("Surat Negosiasi Harga", 9, true, false, true, false, "Upload dari HTE", null),
                 (
                     "Rencana Kerja dan Syarat-Syarat (RKS)",
-                    9,
+                    10,
+                    true,
                     true,
                     false,
                     true,
-                    true,
-                    "Digenerate sistem; approval AM HTE -> Manager"
+                    "Digenerate sistem; approval AM HTE -> Manager",
+                    ProcurementCategory.Services
                 ),
                 (
                     "Risk Assessment (RA)",
-                    10,
+                    11,
+                    true,
                     true,
                     false,
                     true,
-                    true,
-                    "Upload (khusus pengadaan jasa); approval HSE -> AM HTE -> Manager"
+                    "Upload (khusus pengadaan jasa); approval HSE -> AM HTE -> Manager",
+                    ProcurementCategory.Services
                 ),
                 (
                     "Owner Estimate (OE)",
-                    11,
+                    12,
+                    true,
                     true,
                     false,
                     true,
-                    true,
-                    "Digenerate sistem; approval AM HTE -> Manager"
+                    "Digenerate sistem; approval AM HTE -> Manager",
+                    null
                 ),
                 (
                     "Bill of Quantity (BOQ)",
-                    12,
+                    13,
+                    true,
                     true,
                     false,
                     true,
+                    "BOQ digenerate otomatis oleh sistem",
+                    null
+                ),
+                (
+                    "Justifikasi",
+                    14,
                     true,
-                    "BOQ digenerate otomatis oleh sistem"
+                    true,
+                    false,
+                    true,
+                    "Justifikasi (>=300jt, approval kondisional saat generate flow)",
+                    null
                 ),
             };
 
@@ -186,6 +271,7 @@ namespace ProcurementHTE.Infrastructure.Data
                             IsUploadRequired = c.UploadReq,
                             RequiresApproval = c.RequiresApproval,
                             Note = c.Note,
+                            ProcurementCategory = c.Category,
                         }
                     );
                 }
@@ -199,12 +285,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 return role?.Id; // jangan melempar; biarkan skip kalau role belum ada
             }
 
-            async Task AddApprovalIfMissing(
-                string docName,
-                string roleName,
-                int level,
-                int seqOrder
-            )
+            async Task AddApprovalIfMissing(string docName, string roleName, int level)
             {
                 var wtd = await wtdSet
                     .Include(x => x.DocumentType)
@@ -219,7 +300,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     a.JobTypeDocumentId == wtd.JobTypeDocumentId
                     && a.RoleId == roleId
                     && a.Level == level
-                    && a.SequenceOrder == seqOrder
                 );
 
                 if (!exists)
@@ -230,61 +310,60 @@ namespace ProcurementHTE.Infrastructure.Data
                             JobTypeDocumentId = wtd.JobTypeDocumentId,
                             RoleId = roleId,
                             Level = level,
-                            SequenceOrder = seqOrder,
                         }
                     );
                 }
             }
 
-            var approvalMatrix = new (string Doc, (string Role, int Level, int Seq)[] Steps)[]
+            var approvalMatrix = new (string Doc, (string Role, int Level)[] Steps)[]
             {
-                ("Memorandum", new[] { ("Manager Transport & Logistic", 1, 1) }),
-                ("Service Order", new[] { ("Manager Transport & Logistic", 1, 1) }),
+                ("Memorandum", new[] { ("Manager Transport & Logistic", 1) }),
+                ("Service Order", new[] { ("Manager Transport & Logistic", 1) }),
                 (
                     "Surat Perintah Mulai Pekerjaan (SPMP)",
-                    new[] { ("Manager Transport & Logistic", 1, 1) }
+                    new[] { ("Manager Transport & Logistic", 1) }
                 ),
                 (
                     "Profit & Loss",
                     new[]
                     {
-                        ("Analyst HTE & LTS", 1, 1),
-                        ("Assistant Manager HTE", 2, 2),
-                        ("Manager Transport & Logistic", 3, 3),
+                        ("Analyst HTE & LTS", 1),
+                        ("Assistant Manager HTE", 2),
+                        ("Manager Transport & Logistic", 3),
                     }
                 ),
                 (
                     "Rencana Kerja dan Syarat-Syarat (RKS)",
                     new[]
                     {
-                        ("Assistant Manager HTE", 1, 1),
-                        ("Manager Transport & Logistic", 2, 2),
+                        ("Assistant Manager HTE", 1),
+                        ("Manager Transport & Logistic", 2),
                     }
                 ),
                 (
                     "Risk Assessment (RA)",
                     new[]
                     {
-                        ("HSE", 1, 1),
-                        ("Assistant Manager HTE", 2, 2),
-                        ("Manager Transport & Logistic", 3, 3),
+                        ("HSE", 1),
+                        ("Assistant Manager HTE", 2),
+                        ("Manager Transport & Logistic", 3),
                     }
                 ),
                 (
                     "Owner Estimate (OE)",
                     new[]
                     {
-                        ("Assistant Manager HTE", 1, 1),
-                        ("Manager Transport & Logistic", 2, 2),
+                        ("Assistant Manager HTE", 1),
+                        ("Manager Transport & Logistic", 2),
                     }
                 ),
             };
 
             foreach (var (doc, steps) in approvalMatrix)
             {
-                foreach (var (role, level, seq) in steps)
+                foreach (var (role, level) in steps)
                 {
-                    await AddApprovalIfMissing(doc, role, level, seq);
+                    await AddApprovalIfMissing(doc, role, level);
                 }
             }
 

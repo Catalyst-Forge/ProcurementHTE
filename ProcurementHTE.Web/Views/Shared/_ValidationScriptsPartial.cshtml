@@ -1,12 +1,31 @@
 <script>
-    (function ($) {
-        if (!$ || !$.validator || !$.validator.unobtrusive) {
-            console.warn("jQuery validation scripts are not loaded.");
+    (function () {
+        var script = document.currentScript;
+        var container =
+            (script && typeof script.closest === "function" && script.closest("[data-partial-root]")) ||
+            document;
+
+        var parseValidation = function () {
+            var $ = window.jQuery;
+            if (!$ || !$.validator || !$.validator.unobtrusive) {
+                return false;
+            }
+            $.validator.unobtrusive.parse(container);
+            return true;
+        };
+
+        if (parseValidation()) {
             return;
         }
 
-        var script = document.currentScript;
-        var container = script?.closest("[data-partial-root]") ?? document;
-        $.validator.unobtrusive.parse(container);
-    })(window.jQuery);
+        window.addEventListener(
+            "load",
+            function () {
+                if (!parseValidation()) {
+                    console.warn("jQuery validation scripts are not loaded.");
+                }
+            },
+            { once: true }
+        );
+    })();
 </script>

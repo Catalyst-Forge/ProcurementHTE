@@ -58,11 +58,16 @@
                 <fieldset class="card-body">
                     <legend class="card-title fw-semibold d-flex flex-wrap justify-content-between align-items-center gap-2" id="vendor-section-title">
                         <span>Select Participating Vendors</span>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleVendors">
-                            <i class="bi bi-check2-square me-1"></i>
-                            <span data-label-checked="Uncheck All" data-label-unchecked="Check All">Check All</span>
-                        </button>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Vendor selection helpers">
+                            <button type="button" class="btn btn-outline-primary" id="btnToggleVendors">
+                                <i class="bi bi-check2-square me-1"></i>
+                                <span data-label-checked="Uncheck All" data-label-unchecked="Check All">Check All</span>
+                            </button>
+                        </div>
                     </legend>
+                    <p class="text-muted small mb-3">
+                        Pilih minimal dua vendor untuk dibandingkan. Tombol <em>Check All</em> akan otomatis menambahkan atau menghapus semua vendor.
+                    </p>
                     <hr />
                     <div class="row row-cols-2 row-cols-md-3 g-3">
                         @foreach (var vendor in Model.VendorChoices) {
@@ -231,7 +236,7 @@
                             </tfoot>
                         </table>
                     </div>
-                    <small class="text-muted">KM/25 = (Distance - 400) × 25 <br /> Operator cost per item = <em>Additional Rate × KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
+                    <small class="text-muted">KM/25 = (Distance - 400) +� 25 <br /> Operator cost per item = <em>Additional Rate +� KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
                 </fieldset>
             </div>
         </section>
@@ -240,11 +245,24 @@
         <section class="col-12" aria-labelledby="offer-section-title">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <h3 class="card-title fw-semibold mb-0 h4" id="offer-section-title">Vendor Offers</h3>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddVendor">
-                            <i class="bi bi-person-plus"></i> Add Vendor
-                        </button>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div>
+                            <h3 class="card-title fw-semibold mb-1 h4" id="offer-section-title">Vendor Offers</h3>
+                            <p class="text-muted small mb-0">Checklist vendor terlebih dahulu, klik <strong>Add Vendor</strong> untuk membuka satu form dengan daftar vendor terpilih, lalu pilih vendor pada form tersebut sebelum melanjutkan. Tombol expand/collapse membantu mengatur tampilan item.</p>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddVendor" disabled>
+                                <i class="bi bi-person-plus me-1"></i> Add Vendor
+                            </button>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Vendor offer layout">
+                                <button type="button" class="btn btn-outline-secondary" id="btnExpandVendors">
+                                    <i class="bi bi-arrows-expand me-1"></i> Expand All
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btnCollapseVendors">
+                                    <i class="bi bi-arrows-collapse me-1"></i> Collapse All
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <hr />
                     <div id="vendors" class="vstack gap-3 overflow-auto pe-2"></div>
@@ -263,7 +281,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Vendor</th>
-                                    <th class="text-end">Final Offer (Σ min / item)</th>
+                                    <th class="text-end">Final Offer (+� min / item)</th>
                                     <th class="text-end">Profit</th>
                                     <th class="text-end">Profit %</th>
                                 </tr>
@@ -295,7 +313,7 @@
 
         var procItemsJson = System.Text.Json.JsonSerializer.Serialize(
             (Model.OfferItems ?? new System.Collections.Generic.List<ProcurementHTE.Web.Models.ViewModels.ProcOfferLiteVm>())
-                .Select(i => new { procOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran })
+                .Select(i => new { procOfferId = i.ProcOfferId, itemPenawaran = i.ItemPenawaran, quantity = i.Quantity })
         );
 
         var vendorPresetJson = System.Text.Json.JsonSerializer.Serialize(
@@ -329,1081 +347,1008 @@
 
     <script>
         (function () {
-        // --- data server ---
-        const vendorsAll = @Html.Raw(vendorChoicesJson);
-        const procItems = @Html.Raw(procItemsJson);
-        const presetVendors = @Html.Raw(vendorPresetJson);
-        const modelStateErrors = @Html.Raw(modelStateErrorsJson);
+            const vendorsAll = @Html.Raw(vendorChoicesJson);
+            const procItems = @Html.Raw(procItemsJson);
+            const presetVendors = @Html.Raw(vendorPresetJson);
+            const modelStateErrors = @Html.Raw(modelStateErrorsJson);
 
-        // helpers
-        const fmtClean = n => { 
-            const x = Number(n||0); 
-            return x % 1 === 0 ? 
-                x.toLocaleString('id-ID',{maximumFractionDigits:0}) 
-                : 
-                x.toLocaleString('id-ID'); };
-        const getEl = sel => document.querySelector(sel);
-        const getAll = sel => document.querySelectorAll(sel);
-        const currencySelector = '[data-format-currency]';
-        const thousandGroupRegex = /\B(?=(\d{3})+(?!\d))/g;
-        const vendorCheckboxSelector = 'input[name="SelectedVendorIds"]';
-        const addVendorBtn = document.getElementById('btnAddVendor');
-        const plForm = document.getElementById('pl-form');
+            const vendorCheckboxSelector = 'input[name="SelectedVendorIds"]';
+            const currencySelector = '[data-format-currency]';
+            const thousandGroupRegex = /\B(?=(\d{3})+(?!\d))/g;
+            const vendorNameMap = new Map((vendorsAll || []).map(v => [v.id, v.name]));
+            const vendorsHost = document.getElementById('vendors');
+            const addVendorBtn = document.getElementById('btnAddVendor');
+            const plForm = document.getElementById('pl-form');
+            const distanceInput = document.getElementById('Distance');
+            let forcedSubmitInProgress = false;
 
-        if (!plForm) {
-            return;
-        }
+            const debugLog = (...args) => {
+                if (window?.console?.info) {
+                    console.info('[PnL]', ...args);
+                }
+            };
+            const debugWarn = (...args) => {
+                if (window?.console?.warn) {
+                    console.warn('[PnL]', ...args);
+                }
+            };
+            const debugError = (...args) => {
+                if (window?.console?.error) {
+                    console.error('[PnL]', ...args);
+                }
+            };
+            const enqueueMicrotask = typeof window.queueMicrotask === 'function'
+                ? window.queueMicrotask.bind(window)
+                : (fn) => Promise.resolve().then(fn);
 
-        // Disable jQuery unobtrusive validation so long-running submits are not blocked client-side.
-        if (window.jQuery && jQuery.validator) {
-            const $form = jQuery(plForm);
-            $form.removeData("validator");
-            $form.removeData("unobtrusiveValidation");
-        }
+            const disableJqueryValidation = (form) => {
+                if (!window.jQuery || !jQuery.validator || !form) {
+                    return;
+                }
+                const $form = jQuery(form);
+                try {
+                    $form.removeData('validator');
+                    $form.removeData('unobtrusiveValidation');
+                } catch {}
+                try {
+                    $form.off('.validate');
+                    $form.find(':input').off('.validate');
+                } catch {}
+            };
 
-        const instanceKey = '__plCreateEditInstance';
-        const previousInstance = window[instanceKey];
-        if (previousInstance?.dispose) {
-            previousInstance.dispose();
-        }
-
-        const cleanupCallbacks = [];
-        const registerCleanup = (fn) => {
-            if (typeof fn === 'function') {
-                cleanupCallbacks.push(fn);
-            }
-        };
-
-        const bind = (target, eventName, handler, options) => {
-            if (!target || typeof target.addEventListener !== 'function' || typeof handler !== 'function') {
+            if (!plForm || !vendorsHost) {
+                debugWarn('ProfitLoss script aborted: missing critical DOM nodes', {
+                    hasForm: Boolean(plForm),
+                    hasVendorsHost: Boolean(vendorsHost)
+                });
                 return;
             }
-            target.addEventListener(eventName, handler, options);
-            registerCleanup(() => {
-                try {
-                    target.removeEventListener(eventName, handler, options);
-                } catch {
-                    /* ignore cleanup errors */
-                }
-            });
-        };
 
-        const instance = {
-            dispose() {
-                while (cleanupCallbacks.length) {
-                    const dispose = cleanupCallbacks.pop();
+            disableJqueryValidation(plForm);
+
+            debugLog('ProfitLoss script initialized', {
+                procurementId: plForm.querySelector('input[name="ProcurementId"]')?.value,
+                vendorChoiceCount: vendorsAll?.length ?? 0,
+                presetVendorCount: presetVendors?.length ?? 0,
+                isEdit: Boolean(plForm.querySelector('input[name="ProfitLossId"]'))
+            });
+
+            if (window.jQuery && jQuery.validator) {
+                const $form = jQuery(plForm);
+                $form.removeData('validator');
+                $form.removeData('unobtrusiveValidation');
+            }
+
+            const instanceKey = '__plCreateEditInstance';
+            const previousInstance = window[instanceKey];
+            previousInstance?.dispose?.();
+
+            const cleanup = [];
+            const registerCleanup = (fn) => {
+                if (typeof fn === 'function') {
+                    cleanup.push(fn);
+                }
+            };
+            const bind = (target, eventName, handler, options) => {
+                if (!target?.addEventListener || typeof handler !== 'function') {
+                    return;
+                }
+                target.addEventListener(eventName, handler, options);
+                registerCleanup(() => {
                     try {
-                        dispose();
-                    } catch {
-                        /* ignore cleanup errors */
+                        target.removeEventListener(eventName, handler, options);
+                    } catch { /* ignore */ }
+                });
+            };
+
+            const instance = {
+                dispose() {
+                    while (cleanup.length) {
+                        const dispose = cleanup.pop();
+                        try {
+                            dispose?.();
+                        } catch { /* ignore */ }
+                    }
+                    if (window[instanceKey] === instance) {
+                        delete window[instanceKey];
                     }
                 }
-                if (window[instanceKey] === instance) {
-                    delete window[instanceKey];
-                }
-            }
-        };
-        window[instanceKey] = instance;
+            };
+            window[instanceKey] = instance;
 
-        const detachOnSwap = (event) => {
-            const target = event.detail?.target;
-            if (target && (target === plForm || target.contains(plForm))) {
-                instance.dispose();
-            }
-        };
-        bind(document.body, 'htmx:beforeSwap', detachOnSwap);
-
-        const cleanDecimal = val => {
-            const num = parseFloat(val);
-            return isNaN(num) ? val : (Number.isInteger(num) ? num.toString() : val);
-        };
-
-        const digitsOnly = value => (value ?? '').toString().replace(/\D/g, '');
-
-        // region: vendor select toggle
-        const toggleVendorBtn = document.getElementById('btnToggleVendors');
-        function syncToggleButtonLabel(allChecked) {
-            const labelSpan = toggleVendorBtn?.querySelector('span[data-label-checked]');
-            if (!labelSpan) return;
-            const nextLabel = allChecked
-                ? labelSpan.getAttribute('data-label-checked')
-                : labelSpan.getAttribute('data-label-unchecked');
-            labelSpan.textContent = nextLabel || (allChecked ? 'Uncheck All' : 'Check All');
-            const icon = toggleVendorBtn.querySelector('i');
-            if (icon) {
-                icon.className = allChecked ? 'bi bi-square me-1' : 'bi bi-check2-square me-1';
-            }
-        }
-
-        function setVendorCheckboxes(state) {
-            document.querySelectorAll(vendorCheckboxSelector).forEach(cb => {
-                if (cb.disabled) return;
-                cb.checked = state;
-                try {
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch {
-                    if (typeof document.createEvent === 'function') {
-                        const fallback = document.createEvent('HTMLEvents');
-                        fallback.initEvent('change', true, false);
-                        cb.dispatchEvent(fallback);
-                    } else if (typeof cb.fireEvent === 'function') {
-                        cb.fireEvent('onchange');
-                    }
+            bind(document.body, 'htmx:beforeSwap', (event) => {
+                const target = event.detail?.target;
+                if (target && (target === plForm || target.contains(plForm))) {
+                    instance.dispose();
                 }
             });
-            updateVendorBlocks();
-        }
 
-        const handleToggleClick = () => {
-            const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector))
-                .filter(cb => !cb.disabled);
-            const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
-            const nextState = !allChecked;
-            setVendorCheckboxes(nextState);
-            syncToggleButtonLabel(nextState);
-        };
-        bind(toggleVendorBtn, 'click', handleToggleClick);
-
-        // initial label
-        (() => {
-            const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector))
-                .filter(cb => !cb.disabled);
-            const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
-            syncToggleButtonLabel(allChecked);
-        })();
-        // endregion
-
-        function setCurrencyDisplay(input, rawValue) {
-            if (!input) return;
-            const normalized = digitsOnly(cleanDecimal(rawValue));
-            input.dataset.rawValue = normalized;
-            input.value = normalized ? normalized.replace(thousandGroupRegex, '.') : '';
-        }
-
-        function updateCurrencyInput(input, notify = false) {
-            if (!input) return;
-            const selectionStart = input.selectionStart ?? input.value.length;
-            const digitsBefore = input.value.slice(0, selectionStart).replace(/\D/g, '').length;
-            const raw = digitsOnly(input.value);
-            setCurrencyDisplay(input, raw);
-            if (document.activeElement === input) {
-                const formatted = input.value;
-                if (!formatted) {
-                    input.setSelectionRange(0, 0);
-                } else {
-                    let cursorPos = formatted.length;
-                    if (digitsBefore === 0) {
-                        cursorPos = 0;
+            const digitsOnly = (value) => (value ?? '').toString().replace(/\D/g, '');
+            const formatInteger = (value) => {
+                const num = Number(value ?? 0);
+                if (!Number.isFinite(num)) {
+                    return '0';
+                }
+                return Math.round(num).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+            };
+            const numberValue = (input) => {
+                if (!input) return 0;
+                if (input.dataset?.rawValue) {
+                    const parsed = parseFloat(input.dataset.rawValue.replace(',', '.'));
+                    if (Number.isFinite(parsed)) {
+                        return parsed;
+                    }
+                }
+                const digits = digitsOnly(input.value);
+                if (digits.length) {
+                    const parsed = parseFloat(digits);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                }
+                const fallback = parseFloat((input.value ?? '0').toString().replace(',', '.'));
+                return Number.isFinite(fallback) ? fallback : 0;
+            };
+            const handleCurrencyChange = (input) => {
+                if (!input) return;
+                if (input.closest('#pdcItems')) {
+                    recalcHeader();
+                } else if (input.closest('#vendors')) {
+                    recalcSummary();
+                }
+            };
+            const setCurrencyDisplay = (input, rawValue) => {
+                if (!input) return;
+                const normalized = digitsOnly(rawValue ?? input.value);
+                input.dataset.rawValue = normalized;
+                input.value = normalized ? normalized.replace(thousandGroupRegex, '.') : '';
+            };
+            const updateCurrencyInput = (input, notify) => {
+                if (!input) return;
+                const cursorPos = input.selectionStart ?? input.value.length;
+                const digitsBefore = input.value.slice(0, cursorPos).replace(/\D/g, '').length;
+                setCurrencyDisplay(input, input.value);
+                if (document.activeElement === input) {
+                    const formatted = input.value;
+                    if (!formatted) {
+                        input.setSelectionRange(0, 0);
                     } else {
-                        let digitCount = 0;
-                        for (let idx = 0; idx < formatted.length; idx++) {
-                            if (/\d/.test(formatted[idx])) {
-                                digitCount++;
-                                if (digitCount >= digitsBefore) {
-                                    cursorPos = idx + 1;
+                        let seen = 0;
+                        let caret = formatted.length;
+                        for (let i = 0; i < formatted.length; i++) {
+                            if (/\d/.test(formatted[i])) {
+                                seen += 1;
+                                if (seen >= digitsBefore) {
+                                    caret = i + 1;
                                     break;
                                 }
                             }
                         }
-                    }
-                    input.setSelectionRange(cursorPos, cursorPos);
-                }
-            }
-            if (notify) handleCurrencyChange(input);
-        }
-
-        function bindCurrencyInput(input) {
-            if (!input || input.dataset.currencyBound === '1') return;
-            input.dataset.currencyBound = '1';
-            setCurrencyDisplay(input, input.value);
-        }
-
-        function bindCurrencyInputs(scope) {
-            (scope || document).querySelectorAll(currencySelector).forEach(bindCurrencyInput);
-        }
-
-        function handleCurrencyChange(input) {
-            if (input.matches('[data-tarif-awal],[data-tarif-add]')) {
-                recalcHeader();
-            } else if (input.matches('[data-price]')) {
-                recalcSummary();
-            }
-        }
-
-        function numberValue(input) {
-            if (!input) return 0;
-            const raw = input.dataset?.rawValue;
-            if (raw && raw.length) return parseFloat(raw);
-            const fallback = digitsOnly(input.value);
-            return fallback ? parseFloat(fallback) : 0;
-        }
-
-        function getVendorName(selectEl) {
-            if (!selectEl) return '';
-            if (selectEl.selectedOptions && selectEl.selectedOptions.length > 0) {
-                return selectEl.selectedOptions[0].text || '';
-            }
-
-            const idx = typeof selectEl.selectedIndex === 'number' ? selectEl.selectedIndex : -1;
-            if (idx >= 0 && selectEl.options && selectEl.options.length > idx) {
-                return selectEl.options[idx].text || '';
-            }
-            
-            return '';
-        }
-
-        // ===== per-item -> total calc =====
-        function distanceValue() {
-            const distInput = document.querySelector('input[name="Distance"]');
-            if (!distInput) return 0;
-            const raw = distInput.value ? distInput.value.replace(',', '.') : '';
-            const distance = parseFloat(raw);
-            return Number.isFinite(distance) ? distance : 0;
-        }
-
-        function recalcHeader() {
-            let opTotal = 0, revTotal = 0;
-
-            const distance = distanceValue();
-
-            getAll('#pdcItems [data-item-row]').forEach(row => {
-                const qty = numberValue(row.querySelector('[data-quantity]'));
-                const a   = numberValue(row.querySelector('[data-tarif-awal]'));
-                const add = numberValue(row.querySelector('[data-tarif-add]'));
-
-                let km = parseFloat(row.querySelector('[data-km]').value || 0);
-
-                // KmPer25 otomatis dari Distance jika diisi; kalau tidak, pakai nilai input
-                if (distance > 0) {
-                    const computedKm = distance > 400 ? (distance - 400) / 25 : 0;
-                    if (Number.isFinite(computedKm) && computedKm >= 0) {
-                        km = computedKm;
-                        const kmInput = row.querySelector('[data-km]');
-                        if (kmInput) {
-                            kmInput.value = km.toString();
-                        }
+                        input.setSelectionRange(caret, caret);
                     }
                 }
-
-                const op  = add * km;
-                const rev = (a + op) * qty;
-
-                row.querySelector('[data-operator]').value = fmtClean(op);
-                row.querySelector('[data-rev]').value      = fmtClean(rev);
-
-                opTotal += op;
-                revTotal += rev;
-            });
-
-            const opField = getEl('#operatorCost');
-            if (opField) {
-                opField.value = fmtClean(opTotal);
-                opField.dataset.rawValue = opTotal.toString();
-            }
-
-            const revField = getEl('#revenue');
-            if (revField) {
-                revField.value = fmtClean(revTotal);
-                revField.dataset.rawValue = revTotal.toString();
-            }
-
-            recalcSummary();
-        }
-
-        function recalcKmPer25FromDistance() {
-            const distanceInput = document.getElementById("Distance")
-            if (!distanceInput) return;
-
-            const raw =(distanceInput.value || '').toString().replace(',', '.');
-            const distance = parseFloat(raw);
-            if (isNaN(distance)) {
-                getAll('[data-km]').forEach(input => {
-                    input.value = '';
-                });
-
-                recalcHeader();
-                return;
-            }
-
-            let kmPer25 = (distance - 400) / 25;
-            if (!Number.isFinite(kmPer25) || kmPer25 < 0) {
-                kmPer25 = 0;
-            }
-
-            kmPer25 = Math.round(kmPer25 * 100) / 100;
-
-            getAll('[data-km]').forEach(input => {
-                input.value = kmPer25;
-            })
-
-            recalcHeader();
-        }
-
-        const handleGlobalInput = e => {
-            if (e.target.matches(currencySelector)) {
-                updateCurrencyInput(e.target, true);
-                return;
-            }
-
-            // KM/25 atau Quantity berubah → hitung ulang header + summary
-            if (e.target.matches('[data-km],[data-quantity]')) {
-                recalcHeader(); // recalcHeader sudah memanggil recalcSummary() di dalamnya
-            }
-        };
-        bind(document, 'input', handleGlobalInput);
-
-
-        const handleCurrencyBlur = e => {
-            if (e.target.matches(currencySelector)) {
-                updateCurrencyInput(e.target);
-            }
-        };
-        bind(document, 'blur', handleCurrencyBlur, true);
-
-        // ===== vendor selections =====
-        const vendorsContainer = document.getElementById('vendors');
-        let vendorIdx = 0;
-
-        function selectedVendorIds() { 
-            return [...document.querySelectorAll('input[name="SelectedVendorIds"]:checked')].map(x=>x.value); 
-        }
-
-        function usedVendorIds() { 
-            return [...document.querySelectorAll('#vendors .card [name$=".VendorId"]')].map(x=>x.value).filter(Boolean); 
-        }
-
-        function availableVendors() {
-            const sel = new Set(selectedVendorIds());
-            const used = new Set(usedVendorIds());
-            
-            return vendorsAll.filter(v => sel.has(v.id) && !used.has(v.id));
-        }
-
-        function vendorOptionsForCard(card) {
-            const used = new Set(usedVendorIds());
-            const select = card.querySelector('select');
-            const currentId = card.dataset.vendorId || select?.value || '';
-            const allowed = new Set(selectedVendorIds());
-            if (currentId) used.delete(currentId);
-
-            return vendorsAll.filter(v => allowed.has(v.id) && !used.has(v.id));
-        }
-
-        function refreshCardVendorOptions(card) {
-            const select = card.querySelector('select');
-            if (!select) return;
-
-            const currentId = card.dataset.vendorId || select.value || '';
-            const options = vendorOptionsForCard(card);
-            if (options.length === 0) {
-                select.innerHTML = '<option value="">(Select vendor)</option>';
-                select.value = '';
-                card.dataset.vendorId = '';
-                return;
-            }
-
-            select.innerHTML = options.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
-            if (currentId && options.some(v => v.id === currentId)) {
-                select.value = currentId;
-            } else {
-                select.value = options[0].id;
-                card.dataset.vendorId = select.value;
-            }
-        }
-
-        function updateVendorBlocks() {
-            const sel = new Set(selectedVendorIds());
-            document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
-                if (card.dataset.vendorId && !sel.has(card.dataset.vendorId)) card.remove();
-            });
-            if (addVendorBtn) {
-                addVendorBtn.disabled = availableVendors().length === 0 || procItems.length === 0;
-            }
-            document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
-                refreshCardVendorOptions(card);
-                reindexVendorItems(card);
-            });
-
-            recalcSummary();
-        }
-
-        getAll('input[name="SelectedVendorIds"]').forEach(cb => bind(cb, 'change', updateVendorBlocks));
-
-        function getVendorItemIds(card) {
-            return [...card.querySelectorAll('[data-item-block]')]
-                .map(block => block.dataset.procOfferId)
-                .filter(Boolean);
-        }
-
-        function availableProcItemsForCard(card, currentProcOfferId) {
-            const used = new Set(getVendorItemIds(card));
-            if (currentProcOfferId) used.delete(currentProcOfferId);
-            return procItems.filter(item => !used.has(item.procOfferId));
-        }
-
-        function nextAvailableProcItem(card) {
-            return availableProcItemsForCard(card, null)[0];
-        }
-
-        function findProcItem(procOfferId) {
-            return (
-                procItems.find(item => item.procOfferId === procOfferId) ?? {
-                    procOfferId,
-                    itemPenawaran: procOfferId
+                if (notify) {
+                    handleCurrencyChange(input);
                 }
-            );
-        }
+            };
+            const bindCurrencyInput = (input) => {
+                if (!input || input.dataset.currencyBound === '1') {
+                    return;
+                }
+                input.dataset.currencyBound = '1';
+                setCurrencyDisplay(input, input.value);
+            };
+            const bindCurrencyWithin = (scope) => {
+                (scope || document).querySelectorAll(currencySelector).forEach(bindCurrencyInput);
+            };
+            const setDisplayNumber = (element, value) => {
+                if (!element) return;
+                const numeric = Number(value ?? 0);
+                const sanitized = Number.isFinite(numeric) ? numeric : 0;
+                if (element.dataset) {
+                    element.dataset.rawValue = sanitized.toString();
+                }
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    element.value = formatInteger(sanitized);
+                } else {
+                    element.textContent = formatInteger(sanitized);
+                }
+            };
+            const setKmDisplay = (input, value) => {
+                if (!input) return;
+                const numeric = Number(value ?? 0);
+                const sanitized = Number.isFinite(numeric) ? numeric : 0;
+                input.dataset.rawValue = sanitized.toString();
+                input.value = formatInteger(sanitized);
+            };
+            const getKmValue = (input) => {
+                if (!input) return 0;
+                if (input.dataset?.rawValue) {
+                    const parsed = parseFloat(input.dataset.rawValue);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                }
+                const parsed = parseFloat((input.value ?? '0').toString().replace(',', '.'));
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
 
-        function addItemToVendor(card, presetItem, forceNew = false) {
-            const idx = card.dataset.vendorIndex;
-            if (idx === undefined) return;
-            const host = card.querySelector('[data-itemhost]');
-            if (!host) return;
+            const vendorCards = new Set();
+            const vendorAssignments = new Map();
+            const presetVendorMap = new Map((presetVendors || []).map(v => [v.vendorId, v]));
 
-            const existingBlock = host.querySelector('[data-item-block]');
-            if (existingBlock && !forceNew) {
-                existingBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return;
-            }
+            const getSelectedVendorIds = () =>
+                Array.from(document.querySelectorAll(`${vendorCheckboxSelector}:checked`)).map(cb => cb.value);
+            const getAssignedVendorIds = () => Array.from(vendorAssignments.keys());
+            const getAddableVendorIds = () => {
+                const selected = new Set(getSelectedVendorIds());
+                getAssignedVendorIds().forEach(id => selected.delete(id));
+                return Array.from(selected);
+            };
+            const hasUnassignedCard = () => Array.from(vendorCards).some(card => !card.dataset.vendorId);
 
-            let itemInfo;
-            if (presetItem?.procOfferId) {
-                itemInfo = findProcItem(presetItem.procOfferId);
-            } else {
-                itemInfo = nextAvailableProcItem(card);
-                if (!itemInfo) {
-                    if (!procItems.length) {
-                        alert('No offer items (ProcOffer) are available.');
+            const syncAddVendorButtonState = () => {
+                if (!addVendorBtn) return;
+                const selectedCount = getSelectedVendorIds().length;
+                const available = getAddableVendorIds();
+                addVendorBtn.disabled = selectedCount === 0 || available.length === 0 || hasUnassignedCard();
+            };
+
+            const refreshVendorSelectOptions = () => {
+                const selected = getSelectedVendorIds();
+                vendorCards.forEach(card => {
+                    const select = card.querySelector('[data-vendor-select]');
+                    if (!select) {
                         return;
                     }
-                    itemInfo = procItems[0];
-                }
-            }
+                    const current = card.dataset.vendorId || '';
+                    select.innerHTML = '';
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = selected.length ? '-- Pilih Vendor --' : 'Tidak ada vendor terpilih';
+                    placeholder.disabled = selected.length === 0;
+                    placeholder.selected = !current;
+                    select.appendChild(placeholder);
 
-            const block = buildVendorItemBlock(card, itemInfo, presetItem);
-            if (!block) return;
-            host.appendChild(block);
-            reindexVendorItems(card);
-            recalcSummary();
-        }
-
-        function buildVendorItemBlock(card, itemInfo, presetItem) {
-            const block = document.createElement('div');
-            block.dataset.itemBlock = '';
-            block.dataset.procOfferId = itemInfo.procOfferId;
-            block.innerHTML = `
-                <input type="hidden" data-proc-input value="${itemInfo.procOfferId}" />
-                <div class="mt-2 vstack gap-2" data-rounds></div>
-            `;
-
-            const hiddenInput = block.querySelector('[data-proc-input]');
-            const rounds = block.querySelector('[data-rounds]');
-            const addRoundRow = (letterValue = '', roundPreset = null) => {
-                const row = document.createElement('div');
-                row.dataset.roundRow = '1';
-
-                row.innerHTML = `
-                    <div class="d-flex gap-2 mb-1">
-                        <div class="flex-grow-1">
-                            <input class="form-control form-control-sm border-warning"
-                                asp-for="NoLetter"
-                                type="text"
-                                data-letter
-                                placeholder="No Letter"
-                                value="${letterValue ?? ''}" />
-                                <span class="text-danger small field-validation-valid" data-valmsg-letter data-valmsg-replace="true"></span>
-                        </div>
-                        <button type="button"
-                            class="btn btn-outline-primary btn-sm"
-                            data-add-item>
-                            Add item
-                        </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" data-delround>Remove Round</button>
-                    </div>
-                    <table class="table table-sm mb-2">
-                        <thead class="table-info">
-                            <tr>
-                                <th scope="col" style="min-width: 220px">Item</th>
-                                <th scope="col" style="width: 140px" class="text-end">Quantity</th>
-                                <th scope="col" style="width: 140px" class="text-end">Trip</th>
-                                <th scope="col" style="width: 180px" class="text-end">Harga Penawaran</th>
-                                <th scope="col" style="width: 180px" class="text-end">Total</th>
-                                <th scope="col" style="width: 100px" class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody data-round-body></tbody>
-                        <tfoot class="table-light">
-                            <tr>
-                                <td colspan="4" class="text-end">Total</td>
-                                <td colspan="2" class="">
-                                    <input class="form-control text-end" data-format-currency data-round-total readonly />
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                `;
-
-                rounds.appendChild(row);
-                
-                const letterInput = row.querySelector('[data-letter]');
-                if (letterInput) {
-                    letterInput.value = letterValue ?? '';
-                }
-                
-                const addItemBtn = row.querySelector('[data-add-item]')
-                if (addItemBtn) {
-                    addItemBtn.addEventListener('click', () => {
-                        addRoundItemRow(row);
-                    })
-                }
-
-                recalcRoundTotals(row);
-                row.querySelector('[data-delround]').addEventListener('click', () => {
-                    row.remove();
-                    reindexVendorItems(card);
-                    recalcSummary();
+                    selected.forEach(id => {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = vendorNameMap.get(id) ?? id;
+                        if (vendorAssignments.has(id) && card.dataset.vendorId !== id) {
+                            option.disabled = true;
+                        }
+                        if (current === id) {
+                            option.selected = true;
+                            placeholder.selected = false;
+                        }
+                        select.appendChild(option);
+                    });
                 });
-
-                if (roundPreset) {
-                    addRoundItemRow(row, roundPreset);
-                }
-
-                return row;
             };
-            block._addRoundRow = preset => addRoundRow('', preset);
 
-            const addRoundButton = block.querySelector('[data-item-add-round]');
-            if (addRoundButton) {
-                addRoundButton.addEventListener('click', () => {
-                    addRoundRow('', { procOfferId: block.dataset.procOfferId });
-                    reindexVendorItems(card);
-                    recalcSummary();
-                });
-            }
-
-            const removeItemButton = block.querySelector('[data-remove-item]');
-            if (removeItemButton) {
-                removeItemButton.addEventListener('click', () => {
-                    block.remove();
-                    reindexVendorItems(card);
-                    recalcSummary();
-                });
-            }
-
-            function addRoundItemRow(roundRow, presetRow) {
-                if (!roundRow) return null;
-
-                const tbody = roundRow.querySelector('[data-round-body]')
-                if (!tbody) return null;
-
-                const pdcRows = getAll('#pdcItems [data-item-row]');
-                if (!pdcRows.length) {
-                    alert("Belum ada item di tagihan PDC!")
-                    return null;
-                }
-
-                let optionsHtml = '<option value="">-- Pilih item --</option>'
-                pdcRows.forEach((pdcRow, idx) => {
-                    const procId = pdcRow.dataset.procOfferId || '';
-                    const nameCell = pdcRow.querySelector('[data-item-name]') || pdcRow.querySelector('td');
-                    const rawName = nameCell ? (nameCell.textContent || '').trim() : `Item ${idx + 1}`;
-                    const safeName = rawName.replace(/"/g, '&quot;');
-                    const optionValue = procId || `row-${idx}`;
-
-                    optionsHtml += `<option value="${optionValue}" data-proc-offer-id="${procId}">${safeName}</option>`;
-                });
-
-                const tr = document.createElement('tr')
-                tr.dataset.roundItemRow = '1'
-                tr.innerHTML = `
-                    <td>
-                        <select class="form-select form-select-sm" data-item-select>
-                            ${optionsHtml}
-                        </select>
-                    </td>
-                    <td class="text-end">
-                        <div class="input-group input-group-sm">
-                            <input class="form-control text-end"
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="off"
-                                data-qty
-                                readonly />
-                        </div>
-                        <span class="text-danger small field-validation-valid" data-valmsg-qty data-valmsg-replace="true"></span>
-                    </td>
-                    <td class="text-end">
-                        <div class="input-group input-group-sm">
-                            <input class="form-control text-end"
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="off"
-                                data-trip />
-                        </div>
-                        <span class="text-danger small field-validation-valid" data-valmsg-trip data-valmsg-replace="true"></span>
-                    </td>
-                    <td class="text-end">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">Rp</span>
-                            <input class="form-control text-end"
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="off"
-                                data-offer-price
-                                data-format-currency />
-                        </div>
-                        <span class="text-danger small field-validation-valid" data-valmsg-price data-valmsg-replace="true"></span>
-                    </td>
-                    <td class="text-end">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">Rp</span>
-                            <input class="form-control text-end"
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="off"
-                                data-item-total
-                                data-format-currency
-                                readonly />
-                        </div>
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-round-item>
-                            <i class="bi bi-trash"></i> Hapus
-                        </button>
-                    </td>
-                `;
-
-                tbody.appendChild(tr);
-
-                const select = tr.querySelector('[data-item-select]')
-                const qtyInput = tr.querySelector("[data-qty]")
-                const tripInput = tr.querySelector('[data-trip]')
-                const priceInput = tr.querySelector('[data-offer-price]')
-                const removeBtn = tr.querySelector('[data-remove-round-item]')
-
-                bindCurrencyInputs(tr)
-
-                if (select && qtyInput) {
-                    select.addEventListener('change', () => {
-                        const selectedOption = select.selectedOptions?.[0];
-                        const rawValue = select.value || '';
-                        const selectedProcId = (
-                            selectedOption?.dataset?.procOfferId
-                            ?? rawValue
-                        ).toLowerCase();
-
-                        if (!selectedProcId) {
-                            qtyInput.value = '';
-                            recalcRoundTotals(roundRow);
+            const setVendorItemsCollapsed = (collapsed) => {
+                vendorCards.forEach(card => {
+                    card.querySelectorAll('[data-vendor-item]').forEach(block => {
+                        const body = block.querySelector('[data-item-body]');
+                        const toggleBtn = block.querySelector('[data-toggle-item]');
+                        if (!body || !toggleBtn) {
                             return;
                         }
+                        body.classList.toggle('d-none', collapsed);
+                        toggleBtn.innerHTML = collapsed
+                            ? '<i class="bi bi-chevron-down"></i>'
+                            : '<i class="bi bi-chevron-up"></i>';
+                    });
+                });
+            };
 
-                        const pdcMatch = [...pdcRows].find(
-                            row => (row.dataset.procOfferId ?? '').toLowerCase() === selectedProcId
-                        );
+            const buildRoundRow = (block, preset) => {
+                const row = document.createElement('div');
+                row.className = 'row g-2 align-items-end border rounded-3 p-2';
+                row.dataset.roundRow = '1';
+                row.innerHTML = `
+                    <div class="col-md-5">
+                        <label class="form-label">No Letter</label>
+                        <input class="form-control form-control-sm" data-letter-input value="${preset?.letter ?? ''}" />
+                        <span class="text-danger small field-validation-valid" data-valmsg-letter data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Harga Penawaran</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Rp</span>
+                            <input class="form-control text-end" data-price-input data-format-currency value="${preset?.price ?? ''}" inputmode="numeric" />
+                        </div>
+                        <span class="text-danger small field-validation-valid" data-valmsg-price data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-remove-round>
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>`;
 
-                        let qty = 0;
-                        if (pdcMatch) {
-                            const qtyField = pdcMatch.querySelector('[data-quantity]');
-                            qty = qtyField ? numberValue(qtyField) : qty;
-                        } else {
-                            const offerMatch = procItems.find(item => item.procOfferId === procOfferId);
-                            qty = offerMatch ? offerMatch.quantity ?? offerMatch.Quantity ?? 0 : 0;
-                        }
+                const removeBtn = row.querySelector('[data-remove-round]');
+                removeBtn?.addEventListener('click', () => {
+                    const host = row.parentElement;
+                    row.remove();
+                    if (host && host.querySelectorAll('[data-round-row]').length === 0) {
+                        host.appendChild(buildRoundRow(block));
+                    }
+                    reindexVendorCards();
+                    recalcSummary();
+                });
 
-                        qtyInput.value = qty.toString();
-
-                        const tripInput = tr.querySelector('[data-trip]');
-                        if (!pdcMatch && tripInput && !tripInput.value) {
-                            const offerMatch = procItems.find(
-                                item => (item.procOfferId ?? '').toLowerCase() === selectedProcId
-                            );
-                            const tripVal = offerMatch?.trip ?? offerMatch?.Trip;
-                            if (tripVal !== undefined && tripVal !== null) {
-                                tripInput.value = tripVal ?? '';
-                            }
-                        }
-
-                        recalcRoundTotals(roundRow);
-                    })
+                const priceInput = row.querySelector('[data-price-input]');
+                if (priceInput && preset?.price) {
+                    setCurrencyDisplay(priceInput, preset.price.toString());
                 }
+                bindCurrencyWithin(row);
+                row.querySelectorAll('[data-letter-input],[data-price-input]').forEach(input => {
+                    input.addEventListener('input', () => {
+                        reindexVendorCards();
+                        recalcSummary();
+                    });
+                });
+                return row;
+            };
 
-                if (removeBtn) {
-                    removeBtn.addEventListener('click', () => {
-                        tr.remove();
-                        recalcRoundTotals(roundRow);
-                        // Reindex after removal
-                        const card = roundRow.closest('.card[data-vendor-id]');
-                        if (card) reindexVendorItems(card);
+            const buildVendorItem = (meta, preset) => {
+                const block = document.createElement('div');
+                block.className = 'border rounded-3 p-3 bg-body-tertiary';
+                block.dataset.vendorItem = '1';
+                block.dataset.procOfferId = meta.procOfferId;
+                block.dataset.itemName = meta.itemPenawaran;
+                block.innerHTML = `
+                    <input type="hidden" value="${meta.procOfferId}" data-proc-offer-input />
+                    <input type="hidden" data-item-index />
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <div class="fw-semibold">${meta.itemPenawaran}</div>
+                            <div class="small text-muted">WO Qty: ${formatInteger(meta.quantity ?? 0)}</div>
+                        </div>
+                        <div class="hstack gap-1">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle-item>
+                                <i class="bi bi-chevron-up"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-add-round>
+                                <i class="bi bi-plus-circle"></i> Round
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3" data-item-body>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Quantity</label>
+                                <input class="form-control form-control-sm text-end" data-quantity-input value="${preset?.quantity ?? meta.quantity ?? ''}" inputmode="numeric" />
+                                <span class="text-danger small field-validation-valid" data-valmsg-qty data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Trip</label>
+                                <input class="form-control form-control-sm text-end" data-trip-input value="${preset?.trip ?? ''}" inputmode="numeric" />
+                                <span class="text-danger small field-validation-valid" data-valmsg-trip data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                        <div class="mt-3 vstack gap-2" data-rounds></div>
+                    </div>`;
+
+                const roundsHost = block.querySelector('[data-rounds]');
+                const presetRounds = Array.isArray(preset?.prices) && preset.prices.length
+                    ? preset.prices.map((price, idx) => ({ price, letter: preset.letters?.[idx] ?? '' }))
+                    : [{ price: '', letter: '' }];
+                presetRounds.forEach(round => roundsHost.appendChild(buildRoundRow(block, round)));
+
+                block.querySelector('[data-add-round]')?.addEventListener('click', () => {
+                    roundsHost.appendChild(buildRoundRow(block));
+                    reindexVendorCards();
+                });
+
+                const body = block.querySelector('[data-item-body]');
+                const toggleBtn = block.querySelector('[data-toggle-item]');
+                if (toggleBtn && body) {
+                    toggleBtn.addEventListener('click', () => {
+                        const collapsed = body.classList.toggle('d-none');
+                        toggleBtn.innerHTML = collapsed
+                            ? '<i class="bi bi-chevron-down"></i>'
+                            : '<i class="bi bi-chevron-up"></i>';
                     });
                 }
 
-                [tripInput, priceInput].forEach(input => {
-                    if (!input) return;
+                block.querySelectorAll('[data-quantity-input],[data-trip-input]').forEach(input => {
+                    input.addEventListener('input', () => {
+                        reindexVendorCards();
+                        recalcSummary();
+                    });
+                });
 
-                    ['input', 'change', 'blur'].forEach(evt => {
-                        input.addEventListener(evt, () => {
-                            setTimeout(() => recalcRoundTotals(roundRow), 0);
+                return block;
+            };
+
+            const cssEscape = (value) => value ? value.replace(/([:./\[\],])/g, '\\$1') : '';
+            const applyModelErrors = () => {
+                if (!modelStateErrors || Object.keys(modelStateErrors).length === 0) {
+                    return;
+                }
+                Object.entries(modelStateErrors).forEach(([field, message]) => {
+                    const selector = `[data-valmsg-for="${cssEscape(field)}"]`;
+                    document.querySelectorAll(selector).forEach(span => {
+                        if (!span) return;
+                        span.textContent = message;
+                        if (message) {
+                            span.classList.add('field-validation-error');
+                            span.classList.remove('field-validation-valid');
+                        } else {
+                            span.classList.remove('field-validation-error');
+                            span.classList.add('field-validation-valid');
+                        }
+                    });
+                });
+            };
+
+            const reindexVendorCards = () => {
+                const cards = Array.from(vendorsHost.querySelectorAll('[data-vendor-card]'));
+                cards.forEach((card, vendorIdx) => {
+                    const vendorHidden = card.querySelector('[data-vendor-id-input]');
+                    const vendorId = card.dataset.vendorId || '';
+                    if (vendorHidden) {
+                        vendorHidden.name = `Vendors[${vendorIdx}].VendorId`;
+                        vendorHidden.value = vendorId;
+                    }
+
+                    card.querySelectorAll('[data-vendor-item]').forEach((block, itemIdx) => {
+                        const base = `Vendors[${vendorIdx}].Items[${itemIdx}]`;
+                        const procInput = block.querySelector('[data-proc-offer-input]');
+                        const qtyInput = block.querySelector('[data-quantity-input]');
+                        const tripInput = block.querySelector('[data-trip-input]');
+                        const qtyMsg = block.querySelector('[data-valmsg-qty]');
+                        const tripMsg = block.querySelector('[data-valmsg-trip]');
+                        if (procInput) procInput.name = `${base}.ProcOfferId`;
+                        if (qtyInput) qtyInput.name = `${base}.Quantity`;
+                        if (tripInput) tripInput.name = `${base}.Trip`;
+                        if (qtyMsg) {
+                            qtyMsg.setAttribute('data-valmsg-for', qtyInput?.name ?? '');
+                            qtyMsg.dataset.valmsgFor = qtyInput?.name ?? '';
+                        }
+                        if (tripMsg) {
+                            tripMsg.setAttribute('data-valmsg-for', tripInput?.name ?? '');
+                            tripMsg.dataset.valmsgFor = tripInput?.name ?? '';
+                        }
+
+                        block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
+                            const letterInput = row.querySelector('[data-letter-input]');
+                            const priceInput = row.querySelector('[data-price-input]');
+                            const letterMsg = row.querySelector('[data-valmsg-letter]');
+                            const priceMsg = row.querySelector('[data-valmsg-price]');
+                            if (letterInput) letterInput.name = `${base}.Letters[${roundIdx}]`;
+                            if (priceInput) priceInput.name = `${base}.Prices[${roundIdx}]`;
+                            if (letterMsg) {
+                                letterMsg.setAttribute('data-valmsg-for', letterInput?.name ?? '');
+                                letterMsg.dataset.valmsgFor = letterInput?.name ?? '';
+                            }
+                            if (priceMsg) {
+                                priceMsg.setAttribute('data-valmsg-for', priceInput?.name ?? '');
+                                priceMsg.dataset.valmsgFor = priceInput?.name ?? '';
+                            }
                         });
                     });
                 });
+                applyModelErrors();
+            };
 
-                recalcRoundTotals(roundRow);
-                
-                // Reindex immediately after adding
-                const card = roundRow.closest('.card[data-vendor-id]');
-                if (card) reindexVendorItems(card);
-                
-                if (presetRow) {
-                    const targetProc =
-                        (presetRow.procOfferId
-                            ?? block?.dataset?.procOfferId
-                            ?? '').toLowerCase();
-
-                    if (select && targetProc) {
-                        const match = procItems.find(
-                            item =>
-                                (item.procOfferId ?? '').toLowerCase() === targetProc
-                        );
-                        if (match) {
-                            select.value = match.procOfferId;
-                            select.dispatchEvent(new Event('change'));
-                        }
-                    }
-
-                    if (tripInput && presetRow.trip !== undefined && presetRow.trip !== null) {
-                        tripInput.value = presetRow.trip;
-                    }
-
-                    if (priceInput && presetRow.priceValue !== undefined && presetRow.priceValue !== null) {
-                        setCurrencyDisplay(priceInput, presetRow.priceValue?.toString() ?? '');
-                    }
+            const resetVendorCardDisplay = (card) => {
+                if (!card) return;
+                card.dataset.vendorId = '';
+                const hidden = card.querySelector('[data-vendor-id-input]');
+                if (hidden) {
+                    hidden.value = '';
                 }
-
-                recalcRoundTotals(roundRow);
-                
-                return tr;
-            }
-
-            function recalcRoundTotals(roundRow) {
-                if (!roundRow) return;
-
-                let roundTotal = 0;
-
-                roundRow.querySelectorAll('tbody tr').forEach(tr => {
-                    const qtyInput = tr.querySelector('[data-qty]')
-                    const tripInput = tr.querySelector('[data-trip]')
-                    const priceInput = tr.querySelector('[data-offer-price]')
-                    const totalInput = tr.querySelector('[data-item-total]')
-
-                    const qty = qtyInput ? numberValue(qtyInput) : 0;
-                    const trip = tripInput ?numberValue(tripInput) : 0;
-                    const price = priceInput ? numberValue(priceInput) : 0;
-
-                    const itemTotal = qty * trip * price;
-                    roundTotal += itemTotal;
-
-                    if (totalInput) {
-                        totalInput.dataset.rawValue = itemTotal.toString();
-                        totalInput.value = fmtClean(itemTotal);
-                    }
-                });
-
-                const totalSpan = roundRow.querySelector('[data-round-total]');
-                if (totalSpan) {
-                    totalSpan.value = roundTotal;
-                    totalSpan.dataset.rawValue = roundTotal.toString();
+                const itemsHost = card.querySelector('[data-items-host]');
+                if (itemsHost) {
+                    itemsHost.innerHTML = '';
+                    itemsHost.classList.add('d-none');
                 }
+                card.querySelector('[data-empty-state]')?.classList.remove('d-none');
+                card.querySelector('[data-total-row]')?.classList.add('d-none');
+                setDisplayNumber(card.querySelector('[data-vendor-total]'), 0);
+            };
 
-                recalcSummary();
-            }
-
-            const defaultProcOfferId = itemInfo?.procOfferId ?? '';
-            const presetRounds =
-                Array.isArray(presetItem?.prices) && presetItem.prices.length > 0
-                    ? presetItem.prices.map((price, index) => ({
-                          priceValue: price,
-                          letterValue: presetItem.letters?.[index] ?? '',
-                          quantity: presetItem.quantity,
-                          trip: presetItem.trip,
-                          procOfferId: presetItem.procOfferId ?? defaultProcOfferId,
-                      }))
-                    : [
-                          {
-                              priceValue: '',
-                              letterValue: '',
-                              procOfferId: defaultProcOfferId,
-                              quantity: presetItem?.quantity,
-                              trip: presetItem?.trip,
-                          },
-                      ];
-
-            presetRounds.forEach(r => addRoundRow(r.letterValue, r));
-
-
-            return block;
-        }
-
-        function reindexVendorItems(card) {
-            const idx = card.dataset.vendorIndex;
-            if (idx === undefined) return;
-
-            const blocks = card.querySelectorAll('[data-item-block]');
-            blocks.forEach((block, itemIdx) => {
-                block.dataset.itemIndex = itemIdx.toString();
-                const hiddenInput = block.querySelector('[data-proc-input]');
-                if (hiddenInput) {
-                    hiddenInput.name = `Vendors[${idx}].Items[${itemIdx}].ProcOfferId`;
-                }
-
-                block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
-                    const letter = row.querySelector('[data-letter]');
-                    if (letter) {
-                        letter.name = `Vendors[${idx}].Items[${itemIdx}].Letters[${roundIdx}]`;
-                    }
-                    
-                    // Update all round item rows
-                    row.querySelectorAll('[data-round-item-row]').forEach((itemRow, itemRowIdx) => {
-                        const qtyInput = itemRow.querySelector('[data-qty]');
-                        const tripInput = itemRow.querySelector('[data-trip]');
-                        const priceInput = itemRow.querySelector('[data-offer-price]');
-                        const qtyValMsg = itemRow.querySelector('[data-valmsg-qty]');
-                        const tripValMsg = itemRow.querySelector('[data-valmsg-trip]');
-                        const priceValMsg = itemRow.querySelector('[data-valmsg-price]');
-
-                        if (qtyInput) {
-                            qtyInput.name = `Vendors[${idx}].Items[${itemIdx}].Quantity`;
-                            if (qtyValMsg) {
-                                qtyValMsg.setAttribute('data-valmsg-for', qtyInput.name);
-                                if (modelStateErrors[qtyInput.name]) {
-                                    qtyValMsg.textContent = modelStateErrors[qtyInput.name];
-                                    qtyValMsg.classList.remove('field-validation-valid');
-                                    qtyValMsg.classList.add('field-validation-error');
-                                }
-                            }
-                        }
-                        if (tripInput) {
-                            tripInput.name = `Vendors[${idx}].Items[${itemIdx}].Trip`;
-                            if (tripValMsg) {
-                                tripValMsg.setAttribute('data-valmsg-for', tripInput.name);
-                                if (modelStateErrors[tripInput.name]) {
-                                    tripValMsg.textContent = modelStateErrors[tripInput.name];
-                                    tripValMsg.classList.remove('field-validation-valid');
-                                    tripValMsg.classList.add('field-validation-error');
-                                }
-                            }
-                        }
-                        if (priceInput) {
-                            priceInput.name = `Vendors[${idx}].Items[${itemIdx}].Prices[${roundIdx}]`;
-                            if (priceValMsg) {
-                                priceValMsg.setAttribute('data-valmsg-for', priceInput.name);
-                                if (modelStateErrors[priceInput.name]) {
-                                    priceValMsg.textContent = modelStateErrors[priceInput.name];
-                                    priceValMsg.classList.remove('field-validation-valid');
-                                    priceValMsg.classList.add('field-validation-error');
-                                }
-                            }
-                        }
-                    });
+            const populateVendorCardItems = (card, preset) => {
+                if (!card) return;
+                const itemsHost = card.querySelector('[data-items-host]');
+                if (!itemsHost) return;
+                itemsHost.innerHTML = '';
+                (procItems || []).forEach(item => {
+                    const presetItem = preset?.items?.find(it => it.procOfferId === item.procOfferId);
+                    itemsHost.appendChild(buildVendorItem(item, presetItem));
                 });
-            });
-        }
+                card.querySelector('[data-empty-state]')?.classList.add('d-none');
+                itemsHost.classList.remove('d-none');
+                card.querySelector('[data-total-row]')?.classList.remove('d-none');
+                bindCurrencyWithin(itemsHost);
+                setVendorItemsCollapsed(false);
+            };
 
-        function addVendor(presetVendor) {
-            const av = availableVendors();
-            const vendorIdPreset = presetVendor?.vendorId;
-            if (!vendorIdPreset && !av.length) { alert('Select a vendor first.'); return; }
-            if (!procItems.length && !presetVendor) { alert('No offer items (ProcOffer) are available.'); return; }
-
-            const vendorId = vendorIdPreset ?? (av[0]?.id ?? '');
-            if (!vendorId) { alert('Select a vendor first.'); return; }
-            const idx = vendorIdx++;
-            const card = document.createElement('div');
-
-            card.className = 'card border';
-            card.innerHTML = `
-                <div class="card-body">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-5">
-                            <label class="form-label fw-semibold">Vendor</label>
-                            <select name="Vendors[${idx}].VendorId" class="form-select"></select>
-                        </div>
-                        <div class="col-md-7">
-                            <div class="hstack gap-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-add-round>
-                                    <i class="bi bi-plus-lg"></i> Add Round
-                                </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm ms-auto" data-del>
-                                    <i class="bi bi-trash"></i> Remove Vendor
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <hr />
-                    <div class="mt-3" data-itemhost></div>
-                    <div class="d-flex justify-content-end mt-3 py-2 gap-5 border-top border-bottom">
-                        <div class="fw-semibold">Final Round</div>
-                        <div><span data-format-currency data-vendor-total>0</span></div>
-                    </div>
-                </div>
-            `;
-
-            vendorsContainer.appendChild(card);
-            card.dataset.vendorId = vendorId;
-            card.dataset.vendorIndex = idx;
-            const select = card.querySelector('select');
-
-            refreshCardVendorOptions(card);
-            if (vendorIdPreset && [...select.options].some(opt => opt.value === vendorIdPreset)) {
-                select.value = vendorIdPreset;
-                card.dataset.vendorId = vendorIdPreset;
-            } else {
-                select.value = vendorId;
-            }
-            select.addEventListener('change', () => {
-                card.dataset.vendorId = select.value;
-                updateVendorBlocks();
-            });
-
-            const addRoundBtn = card.querySelector('[data-add-round]');
-            if (addRoundBtn) {
-                addRoundBtn.addEventListener('click', () => {
-                    let blocks = card.querySelectorAll('[data-item-block]');
-                    if (!blocks.length) {
-                        addItemToVendor(card, null, true);
-                        blocks = card.querySelectorAll('[data-item-block]');
-                    }
-
-                    blocks.forEach(block => {
-                        if (typeof block._addRoundRow === 'function') {
-                            block._addRoundRow({ procOfferId: block.dataset.procOfferId });
-                        }
-                    });
-
-                    reindexVendorItems(card);
-                    recalcSummary();
-                });
-            }
-
-            card.querySelector('[data-del]').addEventListener('click', () => {
-                card.remove();
-                updateVendorBlocks();
-            });
-            updateVendorBlocks();
-            
-            const presetItems = Array.isArray(presetVendor?.items) ? presetVendor.items : [];
-            if (presetItems.length) {
-                presetItems.forEach(item => addItemToVendor(card, item));
-            } else {
-                addItemToVendor(card);
-            }
-        }
-
-        const handleAddVendorClick = () => addVendor();
-        bind(addVendorBtn, 'click', handleAddVendorClick);
-
-        // ===== Summary (Σ last round / item) =====
-        function recalcSummary() {
-            const revenueField = getEl('#revenue');
-            const revenue = revenueField?.dataset?.rawValue
-                ? parseFloat(revenueField.dataset.rawValue) || 0
-                : parseFloat(digitsOnly(revenueField?.value)) || 0;
-            const tbody = document.querySelector('#summary tbody');
-            tbody.innerHTML = '';
-
-            document.querySelectorAll('#vendors .card[data-vendor-id]').forEach(card => {
-                const sel = card.querySelector('select');
-                const vendorName = getVendorName(sel);
-
-                let vendorTotal = getVendorBestTotal(card);
-                if (!vendorTotal || !isFinite(vendorTotal)) {
+            const assignVendorToCard = (card, vendorId, preset) => {
+                if (!card) return;
+                const select = card.querySelector('[data-vendor-select]');
+                const previousVendor = card.dataset.vendorId || '';
+                if (vendorId === previousVendor) {
                     return;
                 }
 
-                const totalPenawaranNode = card.querySelector('[data-vendor-total]')
-                if (totalPenawaranNode) {
-                    totalPenawaranNode.textContent = fmtClean(vendorTotal)
-                    totalPenawaranNode.dataset.rawValue = vendorTotal.toString();
+                if (vendorId && vendorAssignments.has(vendorId) && vendorAssignments.get(vendorId) !== card) {
+                    if (window.Swal?.fire) {
+                        window.Swal.fire({
+                            icon: 'info',
+                            title: 'Vendor sudah digunakan',
+                            text: 'Vendor tersebut sudah memiliki form penawaran.'
+                        });
+                    } else {
+                        alert('Vendor tersebut sudah memiliki form penawaran.');
+                    }
+                    if (select) {
+                        select.value = previousVendor || '';
+                    }
+                    return;
                 }
-                
-                const profit = revenue - vendorTotal;
-                const pct = revenue > 0 ? (profit / revenue) * 100 : 0;
-                const tr = document.createElement('tr');
-                tr.dataset.totalRaw = vendorTotal.toString();
-                tr.innerHTML = `
-                    <td>${vendorName}</td>
-                    <td class="text-end">${fmtClean(vendorTotal)}</td>
-                    <td class="text-end">${fmtClean(profit)}</td>
-                    <td class="text-end">${pct.toFixed(2)}%</td>`;
-                tbody.appendChild(tr);
-            });
 
-            const rows = [...tbody.querySelectorAll('tr')];
-            if (rows.length){
-                rows.forEach(row => row.classList.remove('table-success'));
-                const best = rows.reduce((bestRow, current) => {
-                    const bestVal = parseFloat(bestRow.dataset.totalRaw || '0') || 0;
-                    const currentVal = parseFloat(current.dataset.totalRaw || '0') || 0;
-                    return currentVal < bestVal ? current : bestRow;
-                }, rows[0]);
-                best.classList.add('table-success');
-            }
-        }
-
-        function getVendorBestTotal(card) {
-            const spans = card.querySelectorAll('[data-round-total]')
-            if (!spans.length) return 0;
-
-            let best = Number.POSITIVE_INFINITY;
-            let hasValid = false;
-
-            spans.forEach(span => {
-                const raw = span.dataset?.rawValue ?? digitsOnly(span.textContent || '');
-                const val = parseFloat(raw);
-                if (!isNaN(val) && val > 0) {
-                    hasValid = true;
-                    if (val < best) best = val;
+                if (previousVendor) {
+                    vendorAssignments.delete(previousVendor);
                 }
-            })
 
-            return hasValid ? best : 0;
-        }
-
-        // init
-        (function init(){
-            bindCurrencyInputs(document);
-            document.querySelectorAll(currencySelector).forEach(input => updateCurrencyInput(input));
-
-            const distanceInput = document.getElementById("Distance")
-            if (distanceInput) {
-                bind(distanceInput, 'input', recalcKmPer25FromDistance);
-                bind(distanceInput, 'change', recalcKmPer25FromDistance);
-
-                if (distanceInput.value) {
-                    recalcKmPer25FromDistance();
+                if (!vendorId) {
+                    resetVendorCardDisplay(card);
+                    refreshVendorSelectOptions();
+                    syncAddVendorButtonState();
+                    reindexVendorCards();
+                    recalcSummary();
+                    return;
                 }
-            }
-            
-            recalcHeader();
-            updateVendorBlocks();
-            if (Array.isArray(presetVendors) && presetVendors.length) {
-                presetVendors.forEach(vendor => {
-                    if (vendor?.vendorId) {
-                        const checkbox = document.getElementById('vendor_' + vendor.vendorId);
+
+                vendorAssignments.set(vendorId, card);
+                card.dataset.vendorId = vendorId;
+                if (select && select.value !== vendorId) {
+                    select.value = vendorId;
+                }
+                const hidden = card.querySelector('[data-vendor-id-input]');
+                if (hidden) {
+                    hidden.value = vendorId;
+                }
+                populateVendorCardItems(card, preset ?? presetVendorMap.get(vendorId));
+                refreshVendorSelectOptions();
+                syncAddVendorButtonState();
+                reindexVendorCards();
+                recalcSummary();
+            };
+
+            const removeVendorCard = (card, options = {}) => {
+                if (!card) return;
+                const vendorId = card.dataset.vendorId;
+                if (vendorId) {
+                    vendorAssignments.delete(vendorId);
+                    if (options.uncheckVendor !== false) {
+                        const checkbox = document.getElementById(`vendor_${vendorId}`);
                         if (checkbox) {
-                            checkbox.checked = true;
+                            checkbox.checked = false;
                         }
                     }
-                    addVendor(vendor);
+                }
+                vendorCards.delete(card);
+                card.remove();
+                reindexVendorCards();
+                recalcSummary();
+                refreshVendorSelectOptions();
+                syncAddVendorButtonState();
+            };
+
+            const createVendorCard = (options = {}) => {
+                const card = document.createElement('div');
+                card.className = 'card border border-primary-subtle';
+                card.dataset.vendorCard = '1';
+                card.innerHTML = `
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="flex-grow-1">
+                            <label class="form-label small text-uppercase mb-1 fw-semibold">Vendor Penawaran</label>
+                            <select class="form-select form-select-sm" data-vendor-select>
+                                <option value="">-- Pilih Vendor --</option>
+                            </select>
+                            <div class="small text-muted">Hanya vendor yang tercentang yang akan muncul di daftar.</div>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-remove-vendor>
+                            <i class="bi bi-trash"></i> Hapus
+                        </button>
+                    </div>
+                    <div class="card-body vstack gap-3">
+                        <input type="hidden" data-vendor-index />
+                        <input type="hidden" data-vendor-id-input />
+                        <div class="alert alert-info small mb-0" data-empty-state>Pilih vendor untuk menampilkan detail penawaran.</div>
+                        <div class="vstack gap-3 d-none" data-items-host></div>
+                        <div class="d-flex justify-content-end gap-3 align-items-center border-top pt-2 d-none" data-total-row>
+                            <div class="fw-semibold">Final Offer</div>
+                            <span class="fw-bold" data-vendor-total>0</span>
+                        </div>
+                    </div>`;
+
+                vendorsHost.appendChild(card);
+                vendorCards.add(card);
+                resetVendorCardDisplay(card);
+
+                const vendorSelect = card.querySelector('[data-vendor-select]');
+                bind(vendorSelect, 'change', () => {
+                    const selectedVendorId = vendorSelect.value || '';
+                    assignVendorToCard(card, selectedVendorId, presetVendorMap.get(selectedVendorId));
                 });
-            }
-            bind(plForm, 'submit', () => {
+
+                card.querySelector('[data-remove-vendor]')?.addEventListener('click', () => removeVendorCard(card, { uncheckVendor: false }));
+
+                refreshVendorSelectOptions();
+                syncAddVendorButtonState();
+
+                if (options.vendorId) {
+                    assignVendorToCard(card, options.vendorId, options.preset ?? presetVendorMap.get(options.vendorId));
+                }
+
+                return card;
+            };
+
+            const computeVendorFinalOffer = (card) => {
+                if (!card) return 0;
+                let total = 0;
+                card.querySelectorAll('[data-vendor-item]').forEach(block => {
+                    const qty = numberValue(block.querySelector('[data-quantity-input]'));
+                    const trip = numberValue(block.querySelector('[data-trip-input]'));
+                    if (qty <= 0 || trip <= 0) return;
+                    let finalPrice = Number.POSITIVE_INFINITY;
+                    block.querySelectorAll('[data-price-input]').forEach(priceInput => {
+                        const price = numberValue(priceInput);
+                        if (price > 0 && price < finalPrice) {
+                            finalPrice = price;
+                        }
+                    });
+                    if (Number.isFinite(finalPrice) && finalPrice > 0) {
+                        total += finalPrice * qty * trip;
+                    }
+                });
+                return total;
+            };
+
+            const recalcSummary = () => {
+                const revenueField = document.getElementById('revenue');
+                const revenue = revenueField?.dataset?.rawValue
+                    ? parseFloat(revenueField.dataset.rawValue)
+                    : parseFloat(digitsOnly(revenueField?.value)) || 0;
+                const tbody = document.querySelector('#summary tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                }
+
+                const snapshot = [];
+                vendorAssignments.forEach((card, vendorId) => {
+                    const total = computeVendorFinalOffer(card);
+                    setDisplayNumber(card.querySelector('[data-vendor-total]'), total);
+                    if (!tbody || total <= 0) return;
+
+                    const vendorName = vendorNameMap.get(vendorId) ?? vendorId;
+                    const profit = revenue - total;
+                    const pct = revenue > 0 ? (profit / revenue) * 100 : 0;
+                    const pctDisplay = Math.round(pct);
+
+                    snapshot.push({ vendorId, vendorName, total, profit, pct });
+
+                    const tr = document.createElement('tr');
+                    tr.dataset.totalRaw = total.toString();
+                    tr.innerHTML = `
+                        <td>${vendorName}</td>
+                        <td class="text-end">${formatInteger(total)}</td>
+                        <td class="text-end">${formatInteger(profit)}</td>
+                        <td class="text-end">${pctDisplay}%</td>`;
+                    tbody.appendChild(tr);
+                });
+
+                if (tbody) {
+                    const rows = [...tbody.querySelectorAll('tr')];
+                    rows.forEach(row => row.classList.remove('table-success'));
+                    if (rows.length) {
+                        const best = rows.reduce((acc, row) => {
+                            const accVal = parseFloat(acc.dataset.totalRaw || '0') || 0;
+                            const rowVal = parseFloat(row.dataset.totalRaw || '0') || 0;
+                            return rowVal < accVal ? row : acc;
+                        }, rows[0]);
+                        best.classList.add('table-success');
+                    }
+                }
+
+                if (snapshot.length) {
+                    debugLog('Interim summary recalculated', {
+                        revenue,
+                        vendorCount: snapshot.length,
+                        rows: snapshot,
+                    });
+                } else {
+                    debugLog('Interim summary cleared (no vendor data)', { revenue });
+                }
+            };
+
+            const recalcHeader = () => {
+                const distance = parseFloat(distanceInput?.value?.toString().replace(',', '.') ?? '0') || 0;
+                let revenueSum = 0;
+                const itemSnapshots = [];
+                document.querySelectorAll('#pdcItems [data-item-row]').forEach(row => {
+                    const qty = numberValue(row.querySelector('[data-quantity]'));
+                    const tarifAwal = numberValue(row.querySelector('[data-tarif-awal]'));
+                    const tarifAdd = numberValue(row.querySelector('[data-tarif-add]'));
+                    const kmInput = row.querySelector('[data-km]');
+                    let km = 0;
+                    if (distance > 400) {
+                        km = Math.max(0, (distance - 400) / 25);
+                        setKmDisplay(kmInput, km);
+                    } else if (kmInput) {
+                        km = getKmValue(kmInput);
+                    }
+
+                    const operatorCost = tarifAdd * km;
+                    const revenue = (tarifAwal + operatorCost) * qty;
+
+                    setDisplayNumber(row.querySelector('[data-operator]'), operatorCost);
+                    setDisplayNumber(row.querySelector('[data-rev]'), revenue);
+
+                    revenueSum += revenue;
+
+                    itemSnapshots.push({
+                        procOfferId: row.dataset.procOfferId,
+                        qty,
+                        tarifAwal,
+                        tarifAdd,
+                        km,
+                        operatorCost,
+                        revenue,
+                    });
+                });
+
+                setDisplayNumber(document.getElementById('revenue'), revenueSum);
+                debugLog('Header totals recalculated', {
+                    distance,
+                    revenue: revenueSum,
+                    items: itemSnapshots,
+                });
+                recalcSummary();
+            };
+
+            const recalcKmPer25FromDistance = () => {
+                if (!distanceInput) {
+                    recalcHeader();
+                    return;
+                }
+                const distance = parseFloat(distanceInput.value.toString().replace(',', '.') || '0') || 0;
+                const kmValue = distance > 400 ? Math.max(0, (distance - 400) / 25) : 0;
+                document.querySelectorAll('[data-km]').forEach(input => setKmDisplay(input, kmValue));
+                recalcHeader();
+            };
+
+            const validateVendorCoverage = () => {
+                const errors = [];
+                const participatingVendors = Array.from(vendorAssignments.keys());
+
+                vendorCards.forEach(card => {
+                    if (!card.dataset.vendorId) {
+                        errors.push('Ada form Vendor Offer tanpa vendor terpilih. Mohon pilih vendor atau hapus form tersebut.');
+                    }
+                });
+
+                if (!participatingVendors.length) {
+                    errors.push('Minimal satu vendor harus mengirim penawaran lengkap.');
+                }
+
+                vendorAssignments.forEach((card, vendorId) => {
+                    const vendorName = vendorNameMap.get(vendorId) ?? vendorId;
+                    card.querySelectorAll('[data-vendor-item]').forEach(block => {
+                        const itemName = block.dataset.itemName ?? block.dataset.procOfferId ?? 'Item';
+                        const qty = numberValue(block.querySelector('[data-quantity-input]'));
+                        const trip = numberValue(block.querySelector('[data-trip-input]'));
+                        const hasPrice = [...block.querySelectorAll('[data-price-input]')].some(input => numberValue(input) > 0);
+                        if (qty <= 0 || trip <= 0 || !hasPrice) {
+                            errors.push(`${vendorName} - ${itemName}: lengkapi quantity, trip, dan minimal satu harga.`);
+                        }
+                    });
+                });
+
+                if (errors.length) {
+                    debugWarn('Vendor coverage blocked submission', {
+                        errors,
+                        participatingVendors
+                    });
+                    if (window.Swal?.fire) {
+                        window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Lengkapi Penawaran Vendor',
+                            html: errors.map(e => `• ${e}`).join('<br/>')
+                        });
+                    } else {
+                        alert('Lengkapi penawaran vendor berikut:\n- ' + errors.join('\n- '));
+                    }
+                    return false;
+                }
+                return true;
+            };
+
+            const syncToggleButtonLabel = () => {
+                const toggleVendorBtn = document.getElementById('btnToggleVendors');
+                if (!toggleVendorBtn) return;
+                const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector)).filter(cb => !cb.disabled);
+                const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+                const labelSpan = toggleVendorBtn.querySelector('span[data-label-checked]');
+                if (labelSpan) {
+                    labelSpan.textContent = allChecked
+                        ? labelSpan.getAttribute('data-label-checked') ?? 'Uncheck All'
+                        : labelSpan.getAttribute('data-label-unchecked') ?? 'Check All';
+                }
+                const icon = toggleVendorBtn.querySelector('i');
+                if (icon) {
+                    icon.className = allChecked ? 'bi bi-square me-1' : 'bi bi-check2-square me-1';
+                }
+            };
+
+            document.getElementById('btnToggleVendors')?.addEventListener('click', () => {
+                const checkboxes = Array.from(document.querySelectorAll(vendorCheckboxSelector)).filter(cb => !cb.disabled);
+                const shouldCheckAll = !(checkboxes.length > 0 && checkboxes.every(cb => cb.checked));
+                checkboxes.forEach(cb => {
+                    cb.checked = shouldCheckAll;
+                    cb.dispatchEvent(new Event('change'));
+                });
+                syncToggleButtonLabel();
+                syncAddVendorButtonState();
+            });
+
+            document.getElementById('btnExpandVendors')?.addEventListener('click', () => setVendorItemsCollapsed(false));
+            document.getElementById('btnCollapseVendors')?.addEventListener('click', () => setVendorItemsCollapsed(true));
+
+            document.querySelectorAll(vendorCheckboxSelector).forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (!cb.checked) {
+                        const card = vendorAssignments.get(cb.value);
+                        if (card) {
+                            removeVendorCard(card, { uncheckVendor: false });
+                        }
+                    }
+                    syncToggleButtonLabel();
+                    refreshVendorSelectOptions();
+                    syncAddVendorButtonState();
+                });
+            });
+
+            addVendorBtn?.addEventListener('click', () => {
+                if (addVendorBtn.disabled) {
+                    return;
+                }
+                if (!getAddableVendorIds().length) {
+                    syncAddVendorButtonState();
+                    return;
+                }
+                const card = createVendorCard();
+                const select = card.querySelector('[data-vendor-select]');
+                select?.focus();
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+
+            bind(plForm, 'submit', (event) => {
+                if (forcedSubmitInProgress) {
+                    debugLog('Skipping instrumentation for forced submission replay');
+                    return;
+                }
+                const selectedVendorIds = getSelectedVendorIds();
+                debugLog('Form submit triggered', {
+                    action: plForm.action,
+                    method: plForm.method,
+                    selectedVendorCount: selectedVendorIds.length,
+                    vendorCards: vendorCards.size,
+                    viaHtmxBoost: plForm.closest('#app-content')?.getAttribute('hx-boost'),
+                    defaultPrevented: event.defaultPrevented
+                });
+                if (!validateVendorCoverage()) {
+                    debugWarn('Submission cancelled by client-side validation');
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 document.querySelectorAll(currencySelector).forEach(input => {
                     input.value = input.dataset?.rawValue ?? digitsOnly(input.value);
                 });
+                debugLog('Currency fields normalized before submit');
+                enqueueMicrotask(() => {
+                    const prevented = event.defaultPrevented;
+                    debugLog('Submit bubble completed', { defaultPrevented: prevented });
+                    if (!prevented) {
+                        return;
+                    }
+                    if (!plForm.checkValidity()) {
+                        debugWarn('Submit prevented by browser validity; not forcing manual submit');
+                        return;
+                    }
+                    debugWarn('Submit was prevented by another handler. Forcing manual submit replay.');
+                    forcedSubmitInProgress = true;
+                    try {
+                        plForm.submit();
+                    } finally {
+                        forcedSubmitInProgress = false;
+                    }
+                });
             });
-        })();
-        
+
+            if (window.htmx) {
+                bind(document.body, 'htmx:beforeRequest', (event) => {
+                    const sourceElement = event.detail?.elt;
+                    const originForm = sourceElement?.closest?.('form');
+                    if (originForm === plForm) {
+                        debugLog('HTMX beforeRequest', {
+                            path: event.detail?.pathInfo,
+                            verb: event.detail?.verb,
+                            boosted: event.detail?.boosted,
+                            headers: event.detail?.headers
+                        });
+                    }
+                });
+                bind(document.body, 'htmx:afterRequest', (event) => {
+                    const sourceElement = event.detail?.elt;
+                    const originForm = sourceElement?.closest?.('form');
+                    if (originForm === plForm) {
+                        debugLog('HTMX afterRequest', {
+                            status: event.detail?.xhr?.status,
+                            path: event.detail?.pathInfo
+                        });
+                    }
+                });
+                bind(document.body, 'htmx:responseError', (event) => {
+                    const sourceElement = event.detail?.elt;
+                    const originForm = sourceElement?.closest?.('form');
+                    if (originForm === plForm) {
+                        debugError('HTMX response error', {
+                            status: event.detail?.xhr?.status,
+                            path: event.detail?.pathInfo,
+                            error: event.detail?.error
+                        });
+                    }
+                });
+            } else {
+                debugWarn('HTMX instance not detected while wiring debug hooks');
+            }
+
+            bind(document, 'input', (event) => {
+                const target = event.target;
+                if (!target) return;
+                if (target.matches(currencySelector)) {
+                    updateCurrencyInput(target, true);
+                } else if (target.matches('[data-quantity],[data-km]')) {
+                    recalcHeader();
+                } else if (target.matches('[data-quantity-input],[data-trip-input]')) {
+                    recalcSummary();
+                }
+            });
+            bind(document, 'blur', (event) => {
+                if (event.target?.matches(currencySelector)) {
+                    updateCurrencyInput(event.target);
+                }
+            }, true);
+
+            const initPresetVendors = () => {
+                if (!Array.isArray(presetVendors)) {
+                    return;
+                }
+                presetVendors.forEach(vendor => {
+                    if (!vendor?.vendorId) return;
+                    const checkbox = document.getElementById(`vendor_${vendor.vendorId}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                    createVendorCard({ vendorId: vendor.vendorId, preset: vendor });
+                });
+            };
+
+            bindCurrencyWithin(document);
+            if (distanceInput) {
+                bind(distanceInput, 'input', recalcKmPer25FromDistance);
+                bind(distanceInput, 'change', recalcKmPer25FromDistance);
+            }
+
+            initPresetVendors();
+            refreshVendorSelectOptions();
+            syncToggleButtonLabel();
+            syncAddVendorButtonState();
+            recalcKmPer25FromDistance();
+            reindexVendorCards();
         })();
     </script>
 }

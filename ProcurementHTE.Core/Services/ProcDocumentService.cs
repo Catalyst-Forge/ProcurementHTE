@@ -253,6 +253,7 @@ public sealed class ProcDocumentService : IProcDocumentService
 
         var jobTypeDocs = await _jobTypeDocumentRepository.ListByJobTypeAsync(
             procurement.JobTypeId,
+            procurement.ProcurementCategory,
             ct
         );
 
@@ -291,7 +292,11 @@ public sealed class ProcDocumentService : IProcDocumentService
         var procurement = await GetProcurementOrThrowAsync(doc.ProcurementId);
         var jobTypeDocs = string.IsNullOrWhiteSpace(procurement.JobTypeId)
             ? Array.Empty<JobTypeDocuments>()
-            : await _jobTypeDocumentRepository.ListByJobTypeAsync(procurement.JobTypeId, ct);
+            : await _jobTypeDocumentRepository.ListByJobTypeAsync(
+                procurement.JobTypeId,
+                procurement.ProcurementCategory,
+                ct
+            );
 
         await EnsureQrArtifactsAsync(doc, procurement, ct);
 
