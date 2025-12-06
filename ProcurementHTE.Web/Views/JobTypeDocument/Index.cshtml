@@ -16,6 +16,57 @@
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        (function () {
+            const handler = (event) => {
+                const btn = event.target && event.target.closest(".js-jtd-delete");
+                if (!btn) return;
+                event.preventDefault();
+
+                const form = btn.closest("form");
+                if (!form) return;
+
+                const title = btn.dataset.title || "Delete this mapping?";
+                const text = btn.dataset.message || "This action cannot be undone.";
+
+                const submitForm = () => {
+                    form.dataset.confirming = "true";
+                    if (typeof form.requestSubmit === "function") {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                };
+
+                if (window.Swal && typeof window.Swal.fire === "function") {
+                    window.Swal.fire({
+                        icon: "warning",
+                        title: title,
+                        text: text,
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete",
+                        cancelButtonText: "Cancel",
+                        confirmButtonColor: "#dc3545",
+                        cancelButtonColor: "#6c757d",
+                        focusCancel: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitForm();
+                        }
+                    });
+                } else {
+                    if (window.confirm(text)) {
+                        submitForm();
+                    }
+                }
+            };
+
+            document.addEventListener("click", handler);
+        })();
+    </script>
+}
+
 <form method="get" class="border rounded-3 p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
     <div class="w-auto">
         <label class="form-label small text-muted mb-1">Filter Job Type</label>
@@ -35,6 +86,7 @@
             <tr>
                 <th>Job Type</th>
                 <th>Document</th>
+                <th class="text-center">Category</th>
                 <th class="text-center">Sequence</th>
                 <th class="text-center">Flags</th>
                 <th>Note</th>
@@ -55,6 +107,20 @@
                     <tr>
                         <td>@item.JobType?.TypeName</td>
                         <td>@item.DocumentType?.Name</td>
+                        <td class="text-center">
+                            @if (item.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Goods)
+                            {
+                                <span class="badge bg-light text-dark border">Goods</span>
+                            }
+                            else if (item.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Services)
+                            {
+                                <span class="badge bg-light text-dark border">Services</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary">All</span>
+                            }
+                        </td>
                         <td class="text-center">@item.Sequence</td>
                         <td class="text-center">
                             <div class="d-flex flex-wrap gap-1 justify-content-center">
@@ -70,10 +136,27 @@
                                 <a asp-action="Edit" asp-route-id="@item.JobTypeDocumentId" class="btn btn-outline-secondary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this mapping?');">
+                                @{
+                                    var deleteTitle = "Delete this mapping?";
+                                    var deleteMessage =
+                                        $"Job Type: {item.JobType?.TypeName ?? "-"}, Document: {item.DocumentType?.Name ?? "-"}";
+                                }
+                                <form asp-action="Delete"
+                                      method="post"
+                                      class="d-inline delete-form"
+                                      hx-boost="false"
+                                      hx-ignore="true"
+                                      data-confirm-title="@deleteTitle"
+                                      data-confirm-message="@System.Text.Encodings.Web.HtmlEncoder.Default.Encode(deleteMessage)"
+                                      data-loading-overlay="true">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.JobTypeDocumentId" />
-                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    <button type="button"
+                                            class="btn btn-outline-danger js-jtd-delete"
+                                            data-title="@deleteTitle"
+                                            data-message="@deleteMessage">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>

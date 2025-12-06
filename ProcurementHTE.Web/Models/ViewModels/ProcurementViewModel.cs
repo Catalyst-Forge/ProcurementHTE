@@ -34,6 +34,10 @@ public class ProcurementEditViewModel
     [DisplayName("Contract Type")]
     public ContractType ContractType { get; set; }
 
+    [DisplayName("Procurement Category")]
+    [Required]
+    public ProcurementCategory ProcurementCategory { get; set; }
+
     [DisplayName("Job Name")]
     public string? JobName { get; set; }
 

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -27,6 +29,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private readonly IDocumentTypeService _docTypeService;
         private readonly IProcDocumentService _procDocService;
         private readonly UserManager<User> _userManager;
+        private readonly ILogger<ProcurementsController> _logger;
 
         public ProcurementsController(
             IProcurementService procurementService,
@@ -36,7 +39,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             IDocumentGenerator documentGenerator,
             IDocumentTypeService docTypeService,
             IProcDocumentService procDocService,
-            UserManager<User> userManager
+            UserManager<User> userManager,
+            ILogger<ProcurementsController> logger
         )
         {
             _procurementService = procurementService;
@@ -47,6 +51,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             _docTypeService = docTypeService;
             _procDocService = procDocService;
             _userManager = userManager;
+            _logger = logger;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -159,7 +164,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         // GET: Procurements/CreateByType?jobTypeId/1
         [HttpGet]
         //[Authorize(Policy = Permissions.Procurement.Create)]
-        public async Task<IActionResult> CreateByType(string jobTypeId)
+        public async Task<IActionResult> CreateByType(
+            string jobTypeId,
+            ProcurementHTE.Core.Enums.ProcurementCategory? category = null
+        )
         {
             var jobType = await _procurementService.GetJobTypeByIdAsync(jobTypeId);
             if (jobType is null)
@@ -172,7 +180,11 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             var createWoVM = new ProcurementCreateViewModel
             {
-                Procurement = new Procurement { JobTypeId = jobTypeId },
+                Procurement = new Procurement
+                {
+                    JobTypeId = jobTypeId,
+                    ProcurementCategory = category ?? ProcurementHTE.Core.Enums.ProcurementCategory.Goods,
+                },
                 Details = [],
                 Offers = [],
             };
@@ -280,6 +292,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     ProcNum = procurement.ProcNum,
                     JobTypeId = procurement.JobTypeId,
                     ContractType = procurement.ContractType,
+                    ProcurementCategory = procurement.ProcurementCategory,
                     JobName = procurement.JobName,
                     SpkNumber = procurement.SpkNumber,
                     StartDate = procurement.StartDate,
@@ -361,6 +374,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     Wonum = editViewModel.Wonum,
                     LtcName = editViewModel.LtcName,
                     Note = editViewModel.Note,
+                    ProcurementCategory = editViewModel.ProcurementCategory,
                     PicOpsUserId = editViewModel.PicOpsUserId!,
                     AnalystHteUserId = editViewModel.AnalystHteUserId!,
                     AssistantManagerUserId = editViewModel.AssistantManagerUserId!,
@@ -485,6 +499,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     .OfferItems.Select(o => new ItemTariffInputVm
                     {
                         ProcOfferId = o.ProcOfferId,
+                        Quantity = (int)Math.Round(o.Quantity),
                         TarifAwal = 0,
                         TarifAdd = 0,
                         KmPer25 = 0,
@@ -514,6 +529,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             [FromForm] ProfitLossInputViewModel viewModel
         )
         {
+            _logger.LogInformation(
+                "CreateProfitLossPost start for ProcurementId={ProcurementId} with {VendorCount} vendor blocks and {ItemCount} billing items",
+                viewModel.ProcurementId,
+                viewModel.Vendors?.Count ?? 0,
+                viewModel.Items?.Count ?? 0
+            );
+
             var offerKeys = Request.Form["Items.Index"].ToArray();
             foreach (var key in offerKeys)
             {
@@ -522,6 +544,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             if (!ModelState.IsValid)
             {
+                LogModelStateErrors("CreateProfitLossPost:InitialValidation");
                 await RepopulateVendorChoices(viewModel);
 
                 return View("CreateProfitLoss", viewModel);
@@ -534,6 +557,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     nameof(viewModel.SelectedVendorIds),
                     "Pilih minimal 1 vendor"
                 );
+                _logger.LogWarning(
+                    "CreateProfitLossPost missing selected vendors for ProcurementId={ProcurementId}",
+                    viewModel.ProcurementId
+                );
                 await RepopulateVendorChoices(viewModel);
 
                 return View(viewModel);
@@ -541,8 +568,22 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             try
             {
+                _logger.LogInformation(
+                    "CreateProfitLossPost proceeding with {SelectedVendorCount} selected vendors: {VendorIds}",
+                    selectedVendors.Count,
+                    string.Join(",", selectedVendors)
+                );
                 var dto = MapToDto(viewModel, selectedVendors);
+                _logger.LogInformation(
+                    "CreateProfitLossPost mapped DTO with {DtoVendorCount} vendor payloads and {DtoItemCount} items",
+                    dto.Vendors?.Count ?? 0,
+                    dto.Items?.Count ?? 0
+                );
                 var pnl = await _pnlService.SaveInputAndCalculateAsync(dto);
+                _logger.LogInformation(
+                    "CreateProfitLossPost calculation succeeded. ProfitLossId={ProfitLossId}",
+                    pnl?.ProfitLossId
+                );
 
                 var wo =
                     await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
@@ -589,10 +630,17 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (Exception ex)
             {
+                _logger.LogError(
+                    ex,
+                    "CreateProfitLossPost failed for ProcurementId={ProcurementId}: {Message}",
+                    viewModel.ProcurementId,
+                    ex.Message
+                );
                 ModelState.AddModelError("", $"Error: {ex.Message}");
             }
 
             await RepopulateVendorChoices(viewModel);
+            LogModelStateErrors("CreateProfitLossPost:ExceptionPath");
             return View("CreateProfitLoss", viewModel);
         }
 
@@ -941,8 +989,27 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 {
                     ProcOfferId = o.ProcOfferId,
                     ItemPenawaran = o.ItemPenawaran,
+                    Quantity = o.Qty,
                 })
                 .ToList();
+
+            // Backfill quantity ke Items (Billing) jika hilang
+            if (viewModel.Items != null && viewModel.Items.Count > 0)
+            {
+                var qtyMap = viewModel.OfferItems.ToDictionary(
+                    o => o.ProcOfferId,
+                    o => o.Quantity,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                foreach (var item in viewModel.Items)
+                {
+                    if (item.Quantity <= 0 && qtyMap.TryGetValue(item.ProcOfferId, out var q))
+                    {
+                        item.Quantity = (int)q;
+                    }
+                }
+            }
         }
 
         private void RemoveAutoGeneratedProcurementValidation()
@@ -950,6 +1017,48 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             var prefix = $"{nameof(ProcurementCreateViewModel.Procurement)}.";
             ModelState.Remove($"{prefix}{nameof(Procurement.ProcNum)}");
             ModelState.Remove($"{prefix}{nameof(Procurement.ProcurementId)}");
+        }
+
+        private void LogModelStateErrors(string context)
+        {
+            if (!_logger.IsEnabled(LogLevel.Warning))
+                return;
+
+            var entries = ModelState
+                .Where(entry => entry.Value?.Errors?.Count > 0)
+                .Select(entry => new
+                {
+                    entry.Key,
+                    Messages = entry.Value!.Errors
+                        .Select(err =>
+                            string.IsNullOrWhiteSpace(err.ErrorMessage)
+                                ? err.Exception?.Message
+                                : err.ErrorMessage
+                        )
+                        .Where(msg => !string.IsNullOrWhiteSpace(msg))
+                        .ToList(),
+                })
+                .Where(e => e.Messages.Count > 0)
+                .ToList();
+
+            if (entries.Count == 0)
+            {
+                _logger.LogWarning(
+                    "{Context}: ModelState invalid but no error messages were recorded",
+                    context
+                );
+                return;
+            }
+
+            foreach (var entry in entries)
+            {
+                _logger.LogWarning(
+                    "{Context}: Field '{Field}' errors => {Errors}",
+                    context,
+                    entry.Key,
+                    string.Join(" | ", entry.Messages)
+                );
+            }
         }
 
         private void RemoveDetailsValidation()

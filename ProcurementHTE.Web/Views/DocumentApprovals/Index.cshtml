@@ -16,6 +16,57 @@
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        (function () {
+            const handler = (event) => {
+                const btn = event.target && event.target.closest(".js-da-delete");
+                if (!btn) return;
+                event.preventDefault();
+
+                const form = btn.closest("form");
+                if (!form) return;
+
+                const title = btn.dataset.title || "Delete this approval step?";
+                const text = btn.dataset.message || "This action cannot be undone.";
+
+                const submitForm = () => {
+                    form.dataset.confirming = "true";
+                    if (typeof form.requestSubmit === "function") {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                };
+
+                if (window.Swal && typeof window.Swal.fire === "function") {
+                    window.Swal.fire({
+                        icon: "warning",
+                        title: title,
+                        text: text,
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete",
+                        cancelButtonText: "Cancel",
+                        confirmButtonColor: "#dc3545",
+                        cancelButtonColor: "#6c757d",
+                        focusCancel: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitForm();
+                        }
+                    });
+                } else {
+                    if (window.confirm(text)) {
+                        submitForm();
+                    }
+                }
+            };
+
+            document.addEventListener("click", handler);
+        })();
+    </script>
+}
+
 <form method="get" class="border rounded-3 p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
     <div class="w-auto">
         <label class="form-label small text-muted mb-1">Filter Job Type</label>
@@ -37,7 +88,6 @@
                 <th>Document</th>
                 <th>Role</th>
                 <th class="text-center">Level</th>
-                <th class="text-center">Sequence</th>
                 <th class="text-center">Actions</th>
             </tr>
         </thead>
@@ -45,7 +95,7 @@
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No approval steps available.</td>
+                    <td colspan="5" class="text-center text-muted py-4">No approval steps available.</td>
                 </tr>
             }
             else
@@ -57,16 +107,32 @@
                         <td>@item.JobTypeDocument?.DocumentType?.Name</td>
                         <td>@item.Role?.Name</td>
                         <td class="text-center">@item.Level</td>
-                        <td class="text-center">@item.SequenceOrder</td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
                                 <a asp-action="Edit" asp-route-id="@item.DocumentApprovalId" class="btn btn-outline-secondary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this approval step?');">
+                                @{
+                                    var deleteTitle = "Delete this approval step?";
+                                    var deleteMessage =
+                                        $"Job Type: {item.JobTypeDocument?.JobType?.TypeName ?? "-"}, Document: {item.JobTypeDocument?.DocumentType?.Name ?? "-"}, Role: {item.Role?.Name ?? "-"}, Level: {item.Level}";
+                                }
+                                <form asp-action="Delete"
+                                      method="post"
+                                      class="d-inline delete-form"
+                                      hx-boost="false"
+                                      hx-ignore="true"
+                                      data-confirm-title="@deleteTitle"
+                                      data-confirm-message="@System.Text.Encodings.Web.HtmlEncoder.Default.Encode(deleteMessage)"
+                                      data-loading-overlay="true">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.DocumentApprovalId" />
-                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    <button type="button"
+                                            class="btn btn-outline-danger js-da-delete"
+                                            data-title="@deleteTitle"
+                                            data-message="@deleteMessage">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>

@@ -49,12 +49,22 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<JobTypeDocuments>> ListByJobTypeAsync(
             string jobTypeId,
+            ProcurementHTE.Core.Enums.ProcurementCategory? category = null,
             CancellationToken ct = default
         )
         {
-            return await _context
+            var query = _context
                 .JobTypeDocuments.AsNoTracking()
-                .Where(x => x.JobTypeId == jobTypeId)
+                .Where(x => x.JobTypeId == jobTypeId);
+
+            if (category.HasValue)
+            {
+                query = query.Where(x =>
+                    x.ProcurementCategory == null || x.ProcurementCategory == category.Value
+                );
+            }
+
+            return await query
                 .Include(x => x.DocumentApprovals)
                 .ThenInclude(a => a.Role)
                 .ToListAsync(ct);

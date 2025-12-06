@@ -16,6 +16,7 @@ namespace ProcurementHTE.Infrastructure.Data
             await RoleUserSeeder.SeedAsync(userManager, roleManager, db);
             await JobTypeSeeder.SeedAsync(db, roleManager);
             await JobTypeMovingMobilizationSeeder.SeedAsync(db, roleManager);
+            await VendorSeeder.SeedAsync(db);
             await ProcurementSeeder.SeedAsync(db);
         }
     }

@@ -125,7 +125,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Primary key
                 entity.HasKey(procurement => procurement.ProcurementId);
                 // Properties
-                entity.Property(procurement => procurement.ProcurementId).ValueGeneratedOnAdd();
+                entity.Property(procurement => procurement.ProcurementId).ValueGeneratedNever();
                 entity.Property(procurement => procurement.ProcNum).IsRequired();
                 entity
                     .Property(procurement => procurement.CreatedAt)
@@ -208,7 +208,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder
                 .Entity<ProcOffer>()
                 .Property(procOffere => procOffere.ProcOfferId)
-                .ValueGeneratedOnAdd();
+                .ValueGeneratedNever();
         }
 
         #endregion
@@ -220,7 +220,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<JobTypes>(entity =>
             {
                 // Properties
-                entity.Property(job => job.JobTypeId).ValueGeneratedOnAdd();
+                entity.Property(job => job.JobTypeId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -246,7 +246,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProcDetail>(entity =>
             {
                 // Properties
-                entity.Property(detail => detail.ProcDetailId).ValueGeneratedOnAdd();
+                entity.Property(detail => detail.ProcDetailId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -274,7 +274,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Primary Key
                 entity.HasKey(vendor => vendor.VendorId);
                 // Properties
-                entity.Property(vendor => vendor.VendorId).ValueGeneratedOnAdd();
+                entity.Property(vendor => vendor.VendorId).ValueGeneratedNever();
                 entity.Property(vendor => vendor.VendorCode).IsRequired();
 
                 // Indexes
@@ -298,7 +298,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<VendorOffer>(entity =>
             {
                 // Properties
-                entity.Property(vendorOffer => vendorOffer.VendorOfferId).ValueGeneratedOnAdd();
+                entity.Property(vendorOffer => vendorOffer.VendorOfferId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -330,7 +330,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<DocumentType>(entity =>
             {
                 // Properties
-                entity.Property(documentType => documentType.DocumentTypeId).ValueGeneratedOnAdd();
+                entity.Property(documentType => documentType.DocumentTypeId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -356,7 +356,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProcDocuments>(entity =>
             {
                 // Properties
-                entity.Property(document => document.ProcDocumentId).ValueGeneratedOnAdd();
+                entity.Property(document => document.ProcDocumentId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -390,7 +390,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Properties
                 entity
                     .Property(documentApproval => documentApproval.ProcDocumentApprovalId)
-                    .ValueGeneratedOnAdd();
+                    .ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -434,7 +434,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProfitLoss>(entity =>
             {
                 // Properties
-                entity.Property(profitLoss => profitLoss.ProfitLossId).ValueGeneratedOnAdd();
+                entity.Property(profitLoss => profitLoss.ProfitLossId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -466,7 +466,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProfitLossItem>(entity =>
             {
                 // Properties
-                entity.Property(item => item.ProfitLossItemId).ValueGeneratedOnAdd();
+                entity.Property(item => item.ProfitLossItemId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -492,7 +492,8 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<JobTypeDocuments>(entity =>
             {
                 // Properties
-                entity.Property(jobTypeDoc => jobTypeDoc.JobTypeDocumentId).ValueGeneratedOnAdd();
+                // Use client-generated GUIDs; do not expect the database to generate the key.
+                entity.Property(jobTypeDoc => jobTypeDoc.JobTypeDocumentId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -526,7 +527,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Properties
                 entity
                     .Property(documentApproval => documentApproval.DocumentApprovalId)
-                    .ValueGeneratedOnAdd();
+                    .ValueGeneratedNever();
 
                 // Relationships
                 entity

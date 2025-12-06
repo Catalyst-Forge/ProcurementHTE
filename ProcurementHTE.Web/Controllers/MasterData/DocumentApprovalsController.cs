@@ -48,7 +48,6 @@ public class DocumentApprovalsController : Controller
             .OrderBy(x => x.JobTypeDocument.JobType.TypeName)
             .ThenBy(x => x.JobTypeDocument.DocumentType.Name)
             .ThenBy(x => x.Level)
-            .ThenBy(x => x.SequenceOrder)
             .ToListAsync(ct);
 
         ViewBag.JobTypes = await _db.JobTypes.OrderBy(x => x.TypeName).ToListAsync(ct);
@@ -59,7 +58,7 @@ public class DocumentApprovalsController : Controller
     public async Task<IActionResult> Create(CancellationToken ct = default)
     {
         await PopulateSelections(ct);
-        return View(new DocumentApprovals { Level = 1, SequenceOrder = 1 });
+        return View(new DocumentApprovals { Level = 1 });
     }
 
     // POST: DocumentApprovals/Create
@@ -67,8 +66,15 @@ public class DocumentApprovalsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(DocumentApprovals model, CancellationToken ct = default)
     {
+        if (model.Level <= 0)
+        {
+            ModelState.Remove(nameof(model.Level));
+            model.Level = 1;
+        }
+
         if (!ModelState.IsValid)
         {
+            LogModelErrors("Create");
             await PopulateSelections(ct);
             return View(model);
         }
@@ -98,11 +104,18 @@ public class DocumentApprovalsController : Controller
         CancellationToken ct = default
     )
     {
+        if (model.Level <= 0)
+        {
+            ModelState.Remove(nameof(model.Level));
+            model.Level = 1;
+        }
+
         if (id != model.DocumentApprovalId)
             return BadRequest();
 
         if (!ModelState.IsValid)
         {
+            LogModelErrors("Edit");
             await PopulateSelections(ct);
             return View(model);
         }
@@ -148,5 +161,26 @@ public class DocumentApprovalsController : Controller
             })
             .ToList();
         ViewBag.Roles = roles;
+    }
+
+    private void LogModelErrors(string actionName)
+    {
+        if (ModelState.IsValid)
+            return;
+
+        var errors = ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .Select(
+                kvp =>
+                    $"{kvp.Key}: {string.Join(" | ", kvp.Value?.Errors.Select(e => e.ErrorMessage ?? e.Exception?.Message ?? "<no message>") ?? Enumerable.Empty<string>())}"
+            )
+            .ToArray();
+
+        if (errors.Length > 0)
+        {
+            Console.WriteLine(
+                $"[DocumentApprovalsController:{actionName}] ModelState invalid ({HttpContext.TraceIdentifier}): {string.Join("; ", errors)}"
+            );
+        }
     }
 }

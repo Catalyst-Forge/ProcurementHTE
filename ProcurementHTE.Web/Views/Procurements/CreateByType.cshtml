@@ -10,6 +10,7 @@
     Model.Offers ??= new List<ProcOffer>();
 
     var contractTypeOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ContractType>();
+    var categoryOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProcurementCategory>();
     var projectRegionOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProjectRegion>();
 
     var picOpsOptions = (Model.PicOpsUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
@@ -51,6 +52,13 @@
                         <option value="">Select contract type</option>
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.ContractType"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Procurement.ProcurementCategory" class="form-label">Jenis Pengadaan</label>
+                    <select asp-for="Procurement.ProcurementCategory" class="form-select" asp-items="categoryOptions">
+                        <option value="">Goods atau Services</option>
+                    </select>
+                    <span class="text-danger" asp-validation-for="Procurement.ProcurementCategory"></span>
                 </div>
             </div>
 

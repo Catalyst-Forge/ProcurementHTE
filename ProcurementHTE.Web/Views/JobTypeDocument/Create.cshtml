@@ -15,6 +15,7 @@
     <div class="card-body">
         <form asp-action="Create" method="post" class="row g-3">
             @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="col-md-6">
                 <label asp-for="JobTypeId" class="form-label">Job Type</label>
                 <select asp-for="JobTypeId" class="form-select" asp-items="@(new SelectList(jobTypes, "JobTypeId", "TypeName"))">
@@ -28,6 +29,13 @@
                     <option value="">-- Select Document Type --</option>
                 </select>
                 <span asp-validation-for="DocumentTypeId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Procurement Category</label>
+                <select asp-for="ProcurementCategory" class="form-select" asp-items="@(ViewBag.Categories as IEnumerable<SelectListItem>)">
+                    <option value="">All (Goods & Services)</option>
+                </select>
+                <span asp-validation-for="ProcurementCategory" class="text-danger"></span>
             </div>
 
             <div class="col-md-4">

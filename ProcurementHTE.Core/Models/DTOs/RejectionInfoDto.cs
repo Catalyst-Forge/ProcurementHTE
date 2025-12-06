@@ -1,4 +1,4 @@
-﻿namespace ProcurementHTE.Core.Models.DTOs;
+namespace ProcurementHTE.Core.Models.DTOs;
 
 public sealed class RejectionInfoDto
 {
@@ -9,5 +9,4 @@ public sealed class RejectionInfoDto
     public DateTime? RejectedAt { get; set; }
     public string? RejectNote { get; set; }
     public int Level { get; set; }
-    public int SequenceOrder { get; set; }
 }

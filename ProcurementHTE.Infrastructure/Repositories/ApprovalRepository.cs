@@ -69,15 +69,21 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var docEntity =
                 approval.ProcDocument
                 ?? throw new InvalidOperationException("Dokumen tidak ditemukan.");
-            var pendings = (docEntity.Approvals ?? []).Where(a => a.Status == "Pending").ToList();
-            if (pendings.Count == 0)
+            var actives = (docEntity.Approvals ?? [])
+                .Where(a => a.Status is "Pending" or "Blocked")
+                .ToList();
+            if (actives.Count == 0)
                 throw new InvalidOperationException("Dokumen sudah final (no pending).");
 
-            // Gate check (level & sequence terendah)
-            var minLevel = pendings.Min(a => a.Level);
-            var minSeq = pendings.Where(a => a.Level == minLevel).Min(a => a.SequenceOrder);
+            // Gate check (level terendah saja, tanpa antrean sequence)
+            var minLevel = actives.Min(a => a.Level);
 
-            var isInGate = (approval.Level == minLevel) && (approval.SequenceOrder == minSeq);
+            foreach (
+                var blocked in actives.Where(a => a.Level == minLevel && a.Status == "Blocked")
+            )
+                blocked.Status = "Pending"; // buka gate level terendah
+
+            var isInGate = approval.Level == minLevel;
             if (!isInGate)
                 throw new InvalidOperationException(
                     "Approval masih terblokir oleh step sebelumnya (Blocked)."
@@ -104,7 +110,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             var docId = approval.ProcDocumentId;
             var currentLevel = approval.Level;
-            var currentSeq = approval.SequenceOrder;
 
             // 2) Ambil semua step untuk dokumen ini (tracking aktif)
             var all = await _context
@@ -118,31 +123,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 return (false, ProcurementId);
             }
 
-            // 3) Apakah masih ada sequence berikutnya pada level yang sama?
-            var nextSeqOnSameLevel = all.Where(x =>
-                    x.Level == currentLevel && x.SequenceOrder > currentSeq && x.Status == "Blocked"
-                )
-                .Select(x => x.SequenceOrder)
-                .DefaultIfEmpty()
-                .Min();
-
-            if (nextSeqOnSameLevel != 0) // ada sequence berikutnya
-            {
-                // ? Promote SEMUA step pada sequence berikutnya menjadi Pending
-                foreach (
-                    var step in all.Where(x =>
-                        x.Level == currentLevel
-                        && x.SequenceOrder == nextSeqOnSameLevel
-                        && x.Status == "Blocked"
-                    )
-                )
-                    step.Status = "Pending";
-
-                await _context.SaveChangesAsync();
-                return (false, ProcurementId);
-            }
-
-            // 4) Kalau semua step pada level saat ini sudah approved, buka level berikutnya (first sequence)
+            // 3) Kalau semua step pada level saat ini sudah approved, buka level berikutnya
             bool thisLevelAllApproved = all.Where(x => x.Level == currentLevel)
                 .All(x => x.Status == "Approved");
 
@@ -155,17 +136,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
                 if (nextLevel != 0) // ada level berikutnya
                 {
-                    var firstSeqNextLevel = all.Where(x => x.Level == nextLevel)
-                        .Select(x => x.SequenceOrder)
-                        .Min();
-
-                    // ? Promote SEMUA step pada first sequence di level berikutnya
+                    // ? Promote SEMUA step pada level berikutnya
                     foreach (
-                        var step in all.Where(x =>
-                            x.Level == nextLevel
-                            && x.SequenceOrder == firstSeqNextLevel
-                            && x.Status == "Blocked"
-                        )
+                        var step in all.Where(x => x.Level == nextLevel && x.Status == "Blocked")
                     )
                         step.Status = "Pending";
 
@@ -265,26 +238,25 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 DocStatus = doc.Status,
             };
 
-            var pendings = (doc.Approvals ?? []).Where(a => a.Status == "Pending").ToList();
-            if (pendings.Count == 0)
+            var actives = (doc.Approvals ?? [])
+                .Where(a => a.Status is "Pending" or "Blocked")
+                .ToList();
+            if (actives.Count == 0)
                 return gate;
 
-            var minLevel = pendings.Min(a => a.Level);
-            var minSeq = pendings.Where(a => a.Level == minLevel).Min(a => a.SequenceOrder);
+            var minLevel = actives.Min(a => a.Level);
 
             gate.Level = minLevel;
-            gate.SequenceOrder = minSeq;
 
             gate.RequiredRoles =
             [
-                .. doc.Approvals!.Where(a =>
-                        a.Status == "Pending" && a.Level == minLevel && a.SequenceOrder == minSeq
-                    )
+                .. doc.Approvals!.Where(a => a.Level == minLevel && a.Status is "Pending" or "Blocked")
                     .Select(a => new RoleInfoDto
                     { // < dari Core.DTOs
                         RoleId = a.RoleId,
                         RoleName = a.Role?.Name,
                         ProcDocumentApprovalId = a.ProcDocumentApprovalId,
+                        Status = a.Status,
                         ApproverId = a.AssignedApproverId,
                         ApproverFullName =
                             a.AssignedApprover != null
@@ -312,15 +284,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     a =>
                         a.ProcDocumentId == procDocumentId
                         && a.Level == level
-                        && a.SequenceOrder == sequenceOrder,
+                        && a.RoleId == roleId,
                     ct
                 );
 
             if (exists)
                 return;
 
-            // Insert step baru (step pertama ? Pending, sisanya ? Blocked)
-            var status = (level == 1 && sequenceOrder == 1) ? "Pending" : "Blocked";
+            // Insert step baru (level pertama langsung Pending, level berikutnya Blocked)
+            var status = level == 1 ? "Pending" : "Blocked";
 
             _context.ProcDocumentApprovals.Add(
                 new ProcDocumentApprovals
@@ -328,7 +300,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     ProcDocumentId = procDocumentId,
                     ProcurementId = procurementId, // kalau kamu putuskan menghapus kolom ini nanti, cukup hilangkan baris ini
                     Level = level,
-                    SequenceOrder = sequenceOrder,
                     RoleId = roleId,
                     Status = status,
                 }
@@ -486,12 +457,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(x => x.AssignedApprover)
                 .Include(x => x.Approver) // supaya full name bisa diambil
                 .OrderBy(x => x.Level)
-                .ThenBy(x => x.SequenceOrder)
                 .Select(x => new ApprovalStepDto
                 {
                     ProcDocumentApprovalId = x.ProcDocumentApprovalId,
                     Level = x.Level,
-                    SequenceOrder = x.SequenceOrder,
                     RoleId = x.RoleId,
                     RoleName = x.Role.Name,
                     Status = x.Status, // < PENTING
@@ -537,9 +506,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Where(a => a.ProcDocumentId == procDocumentId)
                 .ToListAsync(ct);
 
-            // Kalau tidak ada Pending sama sekali ? finalized
-            var pendings = approvals.Where(a => a.Status == "Pending").ToList();
-            if (pendings.Count == 0)
+            // Aktif = Pending atau Blocked
+            var actives = approvals.Where(a => a.Status is "Pending" or "Blocked").ToList();
+            if (actives.Count == 0)
             {
                 return new GateInfoDto
                 {
@@ -547,24 +516,22 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     ProcDocumentId = doc.ProcDocumentId,
                     DocStatus = doc.Status,
                     Level = null,
-                    SequenceOrder = null,
                     RequiredRoles = [], // kosong ? AlreadyFinalized
                 };
             }
 
-            // Gate aktif = level terendah + sequence terendah yang PENDING
-            var minLevel = pendings.Min(a => a.Level);
-            var minSeq = pendings.Where(a => a.Level == minLevel).Min(a => a.SequenceOrder);
+            // Gate aktif = level terendah yang masih Pending/Blocked
+            var minLevel = actives.Min(a => a.Level);
 
-            var required = pendings
-                .Where(a => a.Level == minLevel && a.SequenceOrder == minSeq)
+            var required = actives
+                .Where(a => a.Level == minLevel)
                 .Select(a => new RoleInfoDto
                 {
                     RoleId = a.RoleId,
                     RoleName = a.Role != null ? a.Role.Name : null,
                     ProcDocumentApprovalId = a.ProcDocumentApprovalId,
                     Level = a.Level,
-                    SequenceOrder = a.SequenceOrder,
+                    Status = a.Status,
                     ApproverId = a.AssignedApproverId,
                     ApproverFullName =
                         a.AssignedApprover != null
@@ -579,7 +546,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 ProcDocumentId = doc.ProcDocumentId,
                 DocStatus = doc.Status,
                 Level = minLevel,
-                SequenceOrder = minSeq,
                 RequiredRoles = required,
             };
         }
@@ -603,7 +569,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     RejectedAt = a.ApprovedAt, // lihat catatan di atas
                     RejectNote = a.Note,
                     Level = a.Level,
-                    SequenceOrder = a.SequenceOrder,
                 })
                 .FirstOrDefaultAsync(ct);
         }

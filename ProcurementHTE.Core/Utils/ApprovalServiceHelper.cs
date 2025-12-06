@@ -45,7 +45,6 @@ namespace ProcurementHTE.Core.Utils
                 ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = null,
-                CurrentGateSequence = null,
                 RequiredRoles = new(),
                 YourRoles = new(),
             };
@@ -90,12 +89,10 @@ namespace ProcurementHTE.Core.Utils
                 ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
-                CurrentGateSequence = gate.SequenceOrder,
                 RequiredRoles = gate.RequiredRoles,
                 YourRoles = userRoleNames.ToList(),
                 AlreadyApprovedByYou = last != null,
                 YourLastApprovalLevel = last?.Level,
-                YourLastApprovalSequence = last?.SequenceOrder,
                 YourLastApprovalAt = last?.ApprovedAt,
             };
         }
@@ -139,7 +136,6 @@ namespace ProcurementHTE.Core.Utils
                     ProcDocumentId = gate.ProcDocumentId,
                     DocStatus = gate.DocStatus,
                     CurrentGateLevel = gate.Level,
-                    CurrentGateSequence = gate.SequenceOrder,
                     RequiredRoles = gate.RequiredRoles,
                     YourRoles = userRoleNames.ToList(),
                 };
@@ -158,7 +154,6 @@ namespace ProcurementHTE.Core.Utils
                     ProcDocumentId = gate.ProcDocumentId,
                     DocStatus = gate.DocStatus,
                     CurrentGateLevel = gate.Level,
-                    CurrentGateSequence = gate.SequenceOrder,
                     RequiredRoles = gate.RequiredRoles,
                     YourRoles = userRoleNames.ToList(),
                 };
@@ -188,7 +183,6 @@ namespace ProcurementHTE.Core.Utils
                 ProcDocumentId = gate.ProcDocumentId,
                 DocStatus = gate.DocStatus,
                 CurrentGateLevel = gate.Level,
-                CurrentGateSequence = gate.SequenceOrder,
                 RequiredRoles = gate.RequiredRoles,
                 YourRoles = userRoleNames.ToList(),
             };

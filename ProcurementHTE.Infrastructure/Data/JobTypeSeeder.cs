@@ -24,7 +24,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 },
                 new()
                 {
-                    TypeName = "Moving & Mobilization",
+                    TypeName = "Moving",
                     Description = "Perpindahan aset/personel dari lokasi A ke B",
                 },
                 new()

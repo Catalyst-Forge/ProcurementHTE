@@ -62,7 +62,6 @@ namespace ProcurementHTE.Core.Authorization.Handlers
 
             var configured = config
                 .DocumentApprovals.OrderBy(a => a.Level)
-                .ThenBy(a => a.SequenceOrder)
                 .ToList();
 
             if (!needVP)
