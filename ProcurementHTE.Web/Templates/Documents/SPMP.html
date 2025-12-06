@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Memorandum - WO {{ProcNum}}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        margin: 20px 25px;
+        font-family: Calibri, Arial, Helvetica, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .page {
+        padding: 2cm;
+        page-break-after: always;
+      }
+
+      .page:last-of-type {
+        page-break-after: auto;
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="mt-5">
+        <p>Jakarta, {{ StartDate }}</p>
+      </header>
+
+      <table class="mb-4">
+        <tr>
+          <td style="width: 5rem">Nomor</td>
+          <td>:</td>
+          <td>{{ SpmpNumber }}</td>
+        </tr>
+        <tr>
+          <td>Lampiran</td>
+          <td>:</td>
+          <td>-</td>
+        </tr>
+        <tr>
+          <td>Perihal</td>
+          <td>:</td>
+          <td class="fw-semibold">Surat Perintah Mulai Pekerjaan (SPMP) {{ JobName }}</td>
+        </tr>
+      </table>
+
+      <div>
+        <p class="mb-4">
+          Kepada Yth. <br />
+          <br />
+          <strong>
+            {{ SelectedVendorName }} <br />di <br />
+            <span class="invisible">ace</span>Tempat
+          </strong>
+          <br />
+        </p>
+
+        <p>
+          Dengan hormat, <br />
+          Sehubungan dengan adanya {{ JobName }}, mohon agar dapat dilaksanakan pekerjaan tersebut sesuai dengan surat
+          penawaran harga negosiasi No {{ NoLetter }} tanggal {{ CreatedAt }} terlampir dengan jangka waktu pelaksanaan
+          terhitung mulai pada tanggal {{ StartDate }}.
+        </p>
+
+        <p>Adapun <em>Contact Person</em> yang dapat dihubungi yaitu:</p>
+
+        <ol>
+          <li>Dopiyanto: +62 818-1879-1784</li>
+          <li>LB. Johanis Ciputra: +62 813-1710-4341</li>
+        </ol>
+
+        <p>Demikian kami sampaikan, atas perhatian serta kerjasamanya kami ucapkan terima kasih.</p>
+      </div>
+
+      <div class="sign text-right">
+        <div class="text-uppercase">PT PATRA DRILLING CONTRACTOR</div>
+        <p>Pjs. Manager Transpor & Logistic,</p>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <hr class="border-black border" style="width: 9rem" />
+      </div>
+    </div>
+  </body>
+</html>

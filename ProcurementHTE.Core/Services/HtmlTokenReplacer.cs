@@ -84,7 +84,6 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "ProcNum", proc.ProcNum);
             html = ReplaceToken(html, "JobName", proc.JobName);
             html = ReplaceToken(html, "Note", proc.Note);
-            html = ReplaceToken(html, "SpkNumber", proc.SpkNumber);
             html = ReplaceToken(html, "Wonum", proc.Wonum);
             html = ReplaceToken(html, "StartDate", FormatDate(proc.StartDate));
             html = ReplaceToken(html, "EndDate", FormatDate(proc.EndDate));
@@ -111,6 +110,8 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "OeNumber", proc.OeNumber);
             html = ReplaceToken(html, "RaNumber", proc.RaNumber);
             html = ReplaceToken(html, "LtcName", proc.LtcName);
+            html = ReplaceToken(html, "SpkNumber", proc.SpkNumber);
+            //html = ReplaceToken(html, "PrNumber", proc.PrNumber);
 
             // Relations
             html = ReplaceToken(html, "JobTypeName", jobTypeName);
@@ -191,6 +192,9 @@ namespace ProcurementHTE.Core.Services
                 {
                     var itemsHtml = GenerateItemsTable(pnl.Items, templateKey);
                     html = ReplaceToken(html, "PnlItemsTable", itemsHtml);
+
+                    var detailOfferTable = GenerateOfferDetailTable(pnl.Items);
+                    html = ReplaceToken(html, "OfferDetailTable", detailOfferTable);
                 }
 
                 // Tabel penawaran vendor
@@ -355,6 +359,30 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine($"  <td>{offer.ItemPenawaran}</td>");
                 sb.AppendLine($"  <td class='text-center'>{qtyFormatted}</td>");
                 sb.AppendLine($"  <td class='text-center'>{offer.Unit}</td>");
+                sb.AppendLine("</tr>");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GenerateOfferDetailTable(ICollection<ProfitLossItem> od) {
+            var sb = new StringBuilder();
+            var no = 1;
+
+            foreach (var detail in od) {
+                var item = detail.ProcOffer.ItemPenawaran;
+                var qty = detail.Quantity;
+                var unit = detail.ProcOffer.Unit;
+                var pricePerItem = detail.TarifAwal + detail.OperatorCost;
+                var totalPrice = detail.Revenue;
+
+                sb.AppendLine("<tr>");
+                sb.AppendLine($"  <td class='text-center'>{no++}</td>");
+                sb.AppendLine($"  <td>{item}</td>");
+                sb.AppendLine($"  <td>{qty}</td>");
+                sb.AppendLine($"  <td>{unit}</td>");
+                sb.AppendLine($"  <td>{pricePerItem}</td>");
+                sb.AppendLine($"  <td>{totalPrice}</td>");
                 sb.AppendLine("</tr>");
             }
 
