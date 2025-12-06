@@ -239,7 +239,7 @@ namespace ProcurementHTE.Core.Services
                 {
                     Format = "A4",
                     PrintBackground = true,
-                    DisplayHeaderFooter = false,
+                    DisplayHeaderFooter = true,
                     Margin = new()
                     {
                         Top = "12mm",
@@ -248,7 +248,8 @@ namespace ProcurementHTE.Core.Services
                         Left = "12mm",
                     },
                     HeaderTemplate =
-                        $"<div style=\"font-size: 10px; width: 100%; text-align: right; padding-right: 8px;\">{System.Net.WebUtility.HtmlEncode(title)}</div>",
+                        //$"<div style=\"font-size: 10px; width: 100%; text-align: right; padding-right: 8px;\">{System.Net.WebUtility.HtmlEncode(title)}</div>",
+                        $"<img src=\"~/Content/images/logo.png\" alt=\"Pertamina PDC Logo\" />",
                     FooterTemplate =
                         "<div style='font-size: 10px; width: 100%; text-align: right; padding-right: 8px;'>Hal <span class=\"pageNumber\"></span><span class=\"totalPages\"></span></div>",
                 }
