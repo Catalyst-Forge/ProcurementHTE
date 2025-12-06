@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Memorandum - WO {{ProcNum}}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        font-size: 9pt;
+      }
+
+      body {
+        margin: 20px 25px;
+        font-family: Calibri, Arial, Helvetica, sans-serif;
+        line-height: 1.4;
+      }
+
+      .page {
+        padding: 2cm;
+        page-break-after: always;
+      }
+
+      .page:last-of-type {
+        page-break-after: auto;
+      }
+
+      @media print {
+        @page {
+          size: A4;
+          margin: 0 !important;
+          padding: 1.5cm;
+        }
+
+        body {
+          margin: 0;
+          background: white;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="border border-black border-bottom-0 text-center py-2">
+        <h1 class="h5 fw-bold text-uppercase">JUSTIFIKASI USULAN PENUNJUKKAN LANGSUNG</h1>
+      </header>
+
+      <div class="row g-0 border border-black border-bottom-0">
+        <div class="col-6 border-end border-black px-2">Nomor Justifikasi:</div>
+
+        <div class="col-6 px-2">Departmen Pengusul: Transport & Logistic</div>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2">
+        <p class="mb-0">Judul Pengadaan Barang/Jasa: {{ JobName }}</p>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2">
+        <p class="mb-0">Pengadaan ini mengacu kepada terbitnya SPK</p>
+      </div>
+
+      <div class="row g-0 border border-black border-bottom-0">
+        <div class="col-6 px-2 border-end border-black">
+          <p class="mb-0"><strong>Rincian nilai</strong></p>
+          <p class="mb-0">Perkiraaan nilai pengadaan: Rp {{ TotalRevenue }}</p>
+          <p class="mb-0">Termin pembayaran: 100% setelah pekerjaan selesai</p>
+        </div>
+
+        <div class="col-6 px-2">
+          <p class="mb-0"><strong>Periode Pelaksanaan Pekerjaan yang diharapkan</strong></p>
+          <p class="mb-0">Periode pekerjaan: 19 Hari Pekerjaan</p>
+          <p class="mb-0">Tanggal mulai pekerjaan: {{ StartDate }}</p>
+          <p class="mb-0">Tanggal berakhirnya pekerjaan: {{ EndDate }}</p>
+        </div>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2">
+        <p class="mb-0">Vendor yang diusulkan: {{ SelectedVendorName }}</p>
+        <p class="mb-0">Nomor Vendor: "Harusnya nomor vendor"</p>
+        <p class="mb-0">CSMS <em>(jika diperlukan)</em></p>
+        <div>
+          <input type="checkbox" class="form-check-input" />
+          <label class="form-label">Rendah</label>
+          <input type="checkbox" class="form-check-input" />
+          <label class="form-label">Menengah</label>
+          <input type="checkbox" class="form-check-input" />
+          <label class="form-label">Tinggi</label>
+        </div>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2 pb-2">
+        <p>
+          Surat Penawaran Harga dari Rp {{ TotalRevenue }} No. {{ NoLetter }} Tanggal "Harusnya tanggal penawaran" Surat
+          Negosiasi Penawaran Harga / Berita Acara Negosiasi No. "Harusnya nomor negosiasi atau berita acara" Tanggal
+          "Harusnya tanggal negosiasi" Untuk pengadaan telah didapatkan peanwaran dan dilakukan negosiasi terhadap calon
+          mitra dengan hasil sebagai berikut:
+        </p>
+
+        <table class="table table-bordered border-black mb-0">
+          <thead>
+            <tr class="table-primary border-black">
+              <th>Nama Perusahaan</th>
+              <th>Harga Penawaran 1</th>
+              <th>Harga Negosiasi</th>
+              <th>Keterangan/Rekomendasi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>"isi data"</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2">
+        <p class="mb-0 fw-semibold">
+          Justifikasi Penunjukan langsung:
+          <em
+            >(Lengkapi penjelasan mengapa dibutuhkan Penunjukan Langsung kepada Vendor tersebut di atas, termasuk alasan
+            jadwal pekerjaan dan dampaknya terhadap bisnis/operasi Perusahaan. Gunakan lembar tambahan jika
+            diperlukan)</em
+          >
+        </p>
+
+        <ol class="mb-0">
+          <li>
+            Berdasarkan permintaan dari PT PDSI terkait pekerjaan {{ JobName }}, direncanakan bahwa pekerjaan tersebut
+            akan segera dilaksanakan, dengan mengacu pada Work Order (WO) Nomor: {{ WoNum }} tanggal "WO Dibuat".
+          </li>
+          <li>
+            User telah melakukan proses inquiry pada tanggal <strong>"tanggal" "19 september 2025"</strong> kepada 28
+            mitra kerja, sebagaimana tercantum dalam daftar terlampir.
+          </li>
+          <li>
+            Dari total mitra yang dikirimi inquiry; terdapat 1 mitra yang memberikan tanggapan, yaitu: {{
+            SelectedVendorName }}.
+          </li>
+          <li>
+            {{ SelectedVendorName }} telah melakukan "jumlah penawaran harga" kali negosiasi, yaitu pada tanggal
+            "created at pnl".
+          </li>
+          <li>Rekapitulasi daftar negosiasi harga dapat dilihat pada tabel di atas.</li>
+          <li>
+            Penawaran dengan nilai terendah diperoleh nilai sebesar Rp {{ TotalRevenue }}, sebagaimana tercantum dalam
+            surat penawaran Nomor {{ NoLetter }} tanggal "created at pnl".
+          </li>
+          <li>
+            Estimasi revenue dari pekerjaan ini adalah sebesar {{ ProfitPercent }}, dengan estimasi profit sebesar Rp {{
+            Profit }}, mengacu pada nilai biaya sebagaimana tercantum pada poin 6.
+          </li>
+        </ol>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2">
+        <p class="fw-semibold mb-0">
+          Potensi kerugian:
+          <em
+            >(Berikan penjelasan atas dampak yang mungkin timbul jika Kontrak tidak terjadi, baik kerugian materil
+            maupun non materil)</em
+          >
+        </p>
+
+        <ol class="mb-0">
+          <li>Apabila tidak tersedia unit tersebut, maka PP Patra Drilling Contractor akan menerima denda</li>
+          <li>Menurunkan citra Perusahaan</li>
+        </ol>
+      </div>
+
+      <div class="border border-black border-bottom-0 row g-0 px-2">
+        <div class="col-2 border-end border-black text-center fw-semibold">*Persetujuan FPP</div>
+        <div class="col-4 border-end border-black text-center fw-semibold">Nama</div>
+        <div class="col-3 border-end border-black text-center fw-semibold">Tanggal</div>
+        <div class="col-3 text-center fw-semibold">Tanda tangan</div>
+      </div>
+
+      <div class="border border-black border-bottom-0 row g-0 px-2">
+        <div class="col-2 border-end border-black text-center">Initiator (FPP):</div>
+        <div class="col-4 border-end border-black text-center">Heri Wibisono</div>
+        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
+        <div class="col-3 text-center">&ThinSpace;</div>
+      </div>
+
+      <div class="border border-black border-bottom-0 row g-0 px-2">
+        <div class="col-2 border-end border-black text-center">Asst Manager:</div>
+        <div class="col-4 border-end border-black text-center">Edo Pradipta</div>
+        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
+        <div class="col-3 text-center">&ThinSpace;</div>
+      </div>
+
+      <div class="border border-black row g-0 px-2 mb-5">
+        <div class="col-2 border-end border-black text-center">Manager:</div>
+        <div class="col-4 border-end border-black text-center">Arfinal Diputra</div>
+        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
+        <div class="col-3 text-center">&ThinSpace;</div>
+      </div>
+
+      <div class="border border-black border-bottom-0 px-2">
+        <p>
+          Review SCM berdasarkan ketentuan yang berlaku terkait Penunjukan Langsung tsb:
+          <em
+            >(Tunjukan halaman, kutipan, pernyataan di dalam TKO atau ketentuan lainnya yang berlaku sebagai
+            rujukan)</em
+          >
+        </p>
+
+        <p class="fw-semibold mb-0">
+          Pedoman Pengadaan Barang & Jasa di Perusahaan No. A-10/PDC0000/2025-S9 rev.1 tanggal 21 April 2025 Bab VII.A.4
+          Metode Pengadaan Barang atau Jasa / Tender / Penunjukan Langsung:
+        </p>
+
+        <p>
+          D. Penunjukan Langsung dengan nilai lebih besar dari Rp 300.000.000,00 (Tiga Ratus Juta Rupiah) dapat juga
+          dilaksanakan untuk kondisi sebagai berikut, dengan dilengkapi justifikasi dari FPP dan disetujui oleh Pejabat
+          Berwenang FPP.
+        </p>
+
+        <ol>
+          <li>Penunjukkan BUMN/Anak Perusahaan BUMN (selain Pertamina).</li>
+          <li>
+            Pemegang hak paten atau hak atas kekayaan intelektual (HAKI) atau yang memiliki jaminan (warranty) dari
+            Original Equipment Manufacture (OEM).
+          </li>
+          <li>Do Not Substitute (DNS) berdasarkan Approved Manufacture List (AML).</li>
+          <li>Barang/Jasa yang bersifat knowledge intensive.</li>
+          <li>Penanganan Keadaan Mendesak.</li>
+          <li>Penanganan Keadaan Darurat (Emergency).</li>
+          <li>Pengadaan Jasa Konsultasi Perorangan.</li>
+          <li>Pengadaan Barang/Jasa dalam rangka uji coba (penelitian dan pengembangan).</li>
+          <li>Pengadaan Barang/Jasa terkait pekerjaan lanjutan/tambahan.</li>
+          <li>
+            Penyewaan ulang rumah, apartemen, kantor, gudang, lapangan penumpukan (termasuk shorebase) atau pelabuhan,
+            fasilitas produksi serta fasilitas yang sejenis fungsinya.
+          </li>
+          <li>Pembelian berulang (repeat order).</li>
+          <li>Kontrak payung antara Pertamina, Subholding Upstream atau Induk Perusahaan.</li>
+          <li>Pemanfaatan Kontrak yang sedang berjalan.</li>
+          <li>Pengadaan Konsultan Konstruksi dan Pekerjaan Konstruksi.</li>
+        </ol>
+
+        <p>*Silakan pilih salah satu alasan untuk penunjukan langsung vendor.</p>
+
+        <p class="mb-0">
+          Review SCM adalah hanya untuk kesesuaian dengan pedoman, sedangkan urgensi kebutuhan barang dan jasa yang
+          dipilih dan perusahaan yang dipilih sepenuhnya tanggung jawab dari fungsi peminta pengadaan atau perencana.
+        </p>
+      </div>
+
+      <div class="border border-black border-bottom-0 row g-0 px-2">
+        <div class="col-2 border-end border-black text-center fw-semibold">Review</div>
+        <div class="col-4 border-end border-black text-center">Name</div>
+        <div class="col-3 border-end border-black text-center">Tanggal</div>
+        <div class="col-3 text-center">Tanda tangan</div>
+      </div>
+
+      <div class="border border-black border-bottom-0 row g-0 px-2">
+        <div class="col-2 border-end border-black text-center">Ast. Man SCM:</div>
+        <div class="col-4 border-end border-black text-center">Sri Sumarni</div>
+        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
+        <div class="col-3 text-center">&ThinSpace;</div>
+      </div>
+
+      <div class="border border-black border-bottom-0 row g-0 px-2">
+        <div class="col-2 border-end border-black text-center">Manager SCM:</div>
+        <div class="col-4 border-end border-black text-center">Syahrul Ahyar</div>
+        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
+        <div class="col-3 text-center">&ThinSpace;</div>
+      </div>
+
+      <div class="border border-black px-2">
+        <p class="mb-0"><strong>*Ringkasan usulan Penunjukan Langsung:</strong></p>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="border border-black">
+        <p class="px-2">{{ JobName }}</p>
+
+        <div class="p-2">
+          <table class="table table-bordered border-black">
+            <thead>
+              <tr>
+                <th scope="col">No</th>
+                <th scope="col">Deskripsi</th>
+                <th scope="col">QTY</th>
+                <th scope="col">Satuan</th>
+                <th scope="col">Harga</th>
+                <th scope="col">Harga Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ OfferDetailTable }}
+              <tr>
+                <td colspan="6">
+                  <p>
+                    Catatan: Reff Penawaran Harga {{ SelectedVendorName }} <br />
+                    {{ NoLetter }}
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="6">
+                  <p>Periode Pekerjaan: {{ StartDate }} s.d {{ EndDate }}</p>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="5"><strong>TOTAL</strong></td>
+                <td>Rp "Total"</td>
+              </tr>
+              <tr>
+                <td colspan="6">Terbilang "harga terbilang"</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="px-2">
+          {{ SelectedVendorName }} ditetapkan sebagai penyedia jasa untuk pelaksanaan {{ JobName }} berdasarkan
+          Penawaran No. {{ NoLetter }} tanggal "tanggal", degnan nilai pekerjaan "total" ("terbilang"). Adapun pekerjaan
+          tersebut akan dilaksanakan dalam jangka waktu "terbilang hari" kalender.
+        </p>
+      </div>
+
+      <div class="border border-top-0 border-black">
+        <div class="row g-0">
+          <div class="col-6 px-2 border-end border-black">
+            <p class="fw-semibold" style="height: 7rem">**Mengetahui & Menyetujui:</p>
+          </div>
+          <div class="col-6 px-2">
+            <p class="fw-semibold" style="height: 7rem">Persetujuan Pejabat lebih tinggi:</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="border border-top-0 border-black">
+        <div class="row g-0">
+          <div class="col-6 px-2 border-end border-black">
+            <p class="mb-0">Jabatan: Pjs. Transport & Logistic Manager</p>
+          </div>
+          <div class="col-6 px-2">
+            <p class="mb-0">Jabatan: Pjs. VP Operation & Support</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="border border-top-0 border-black">
+        <div class="row g-0">
+          <div class="col-6 px-2 border-end border-black">
+            <p class="mb-0">Nama: Bagus Uji Widihartono</p>
+          </div>
+          <div class="col-6 px-2">
+            <p class="mb-0">Nama: Agus Sudjatmoko</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="border border-top-0 border-black">
+        <div class="row g-0">
+          <div class="col-6 px-2 border-end border-black">
+            <p class="mb-0">Tanggal:</p>
+          </div>
+          <div class="col-6 px-2">
+            <p class="mb-0">Tanggal:</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5">
+        <p class="fst-italic">
+          <u>Notes:</u>
+          <br />
+          Penunjukan Langsung ini sudah dilakukan degnan sourcing kepada 2 (dua) atau lebih vendor/kontraktor, dilakukan
+          negosiasi yang telah diketahui oleh pejabat FPP sesuai otorisasi dan diyakini bahwa vendor tersebut mampu
+          melaksanakan pekerjaan.
+          <br />
+          Ketentuan diatas dikecualikan untuk penunjukan langsung Repeat Order.
+          <br />
+          *Merujuk Pedoman Otorisasi {{ SelectedVendorName }}. Dalam hal FPP yang mempunyai otorisasi adalah
+          Direktur/Direktur Utama PT PDC, maka FPP pengusul tertinggi ditandatangani oleh VP/Manager di bawah
+          DIrektur/Direktur Utama.
+          <br />
+          **Diisi oleh pejabat yang mempunyai otorisasi yang sesuai
+          <br />
+          <strong>Perhatian:</strong>
+          <br />
+          Form ini hanya digunakan di lingkungan PT Patra Drilling Contractor (PDC). Perubahan atas form ini hanya dapat
+          dilakukan oleh Tim SCM. Pertanyaan atas tata cara penggunaa form ini dapat ditujukan kepada Tim SCM.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

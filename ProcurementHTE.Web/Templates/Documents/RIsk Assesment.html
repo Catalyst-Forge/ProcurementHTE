@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dokumen Kop Surat + Halaman</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+
+    <style>
+      :root {
+        font-size: 9pt;
+      }
+
+      body {
+        /* margin: 20px 25px; */
+        font-family: Calibri, Arial, Helvetica, sans-serif;
+        line-height: 1.4;
+      }
+
+      ul {
+        margin-bottom: 0 !important;
+      }
+
+      .bg-yellow {
+        background-color: yellow;
+      }
+
+      .bg-red {
+        background-color: red;
+      }
+
+      .bg-orange {
+        background-color: #ffc000;
+      }
+
+      .bg-yellow-green {
+        background-color: #92d050;
+      }
+
+      .bg-light-green {
+        background-color: #00b050;
+      }
+
+      .bg-pale-sky {
+        background-color: #bcd5ed !important;
+      }
+
+      .bg-powder-petal {
+        background-color: #fae3d4 !important;
+      }
+
+      .bg-white-smoke {
+        background-color: #f4f4f4 !important;
+      }
+
+      .bg-cornsilk {
+        background-color: #fff1cc !important;
+      }
+
+      .bg-tea-green {
+        background-color: #c5dfb3 !important;
+      }
+
+      .vertical-text {
+        writing-mode: sideways-lr;
+        text-orientation: mixed;
+      }
+
+      /* ------- RUNNING HEADER -------- */
+      #kopStamp {
+        position: running(header);
+      }
+
+      .kop-container {
+        text-align: center;
+        margin-top: 3cm;
+      }
+
+      .page {
+        /* padding: 2cm; */
+        page-break-after: always;
+      }
+
+      .page:last-of-type {
+        page-break-after: auto;
+      }
+
+      /* ------- PAGED.JS PAGE SETTINGS -------- */
+      @page {
+        size: A4;
+        padding: 1.5cm 0;
+
+        /* Header muncul di setiap halaman */
+        @top-center {
+          content: element(header);
+          margin-bottom: 3rem;
+        }
+      }
+
+      /* Nomor halaman otomatis */
+      .page-number::after {
+        content: counter(page) " dari " counter(pages);
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- HEADER YANG AKAN DIULANG DI SETIAP HALAMAN -->
+    <div id="kopStamp">
+      <div class="kop-container">
+        <table class="table table-bordered border-black">
+          <tbody>
+            <tr>
+              <td>
+                <img src="/ProcurementHTE.Web/wwwroot/images/logo.png" alt="Pertamina PDC Logo" style="width: 10rem" />
+              </td>
+              <td colspan="3" class="fw-bold fs-4 text-uppercase">PENILAIAN RISIKO PEKERJAAN KONTRAK</td>
+            </tr>
+
+            <tr>
+              <td class="fw-semibold p-0">NOMOR FORMULIR</td>
+              <td class="fw-semibold p-0">REVISI</td>
+              <td class="fw-semibold p-0">TANGGAL TERBIT</td>
+              <td class="fw-semibold p-0">HALAMAN</td>
+            </tr>
+
+            <tr>
+              <td class="p-0">QHSSE.FM.007</td>
+              <td class="p-0">00</td>
+              <td class="p-0">08.06.2020</td>
+              <td class="p-0">
+                <div class="page-number"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KONTEN -->
+    <div class="content">
+      <div class="page">
+        <header>
+          <h1 class="h4 text-center fw-semibold text-uppercase">PENILAIAN RISIKO PEKERJAAN</h1>
+        </header>
+
+        <table class="table table-borderless">
+          <tbody>
+            <tr>
+              <td>1.</td>
+              <td>Nomor Register</td>
+              <td>
+                :
+                ...........................................................................................................................................................
+              </td>
+            </tr>
+            <tr>
+              <td>2.</td>
+              <td>Nama Pekerjaan</td>
+              <td>: {{ JobName }}</td>
+            </tr>
+            <tr>
+              <td>3.</td>
+              <td>Lokasi Pekerjaan</td>
+              <td>: {{ ProjectRegion }}</td>
+            </tr>
+            <tr>
+              <td>4.</td>
+              <td>Tanggal Dimulai</td>
+              <td>: {{ StartDate }}</td>
+            </tr>
+            <tr>
+              <td>5.</td>
+              <td>Lama Pekerjaan</td>
+              <td>: 5 hari kalender</td>
+            </tr>
+            <tr>
+              <td>6.</td>
+              <td>Tingkat Risiko</td>
+              <td>
+                : R (RENDAH) / M (MENENGAH) /
+                <span class="px-3 py-2 border border-black rounded-circle">T (TINGGI)*</span>
+              </td>
+            </tr>
+            <tr>
+              <td>7.</td>
+              <td>Keterangan</td>
+              <td>
+                :
+                ...........................................................................................................................................................
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="border border-black">
+          <div class="row g-0">
+            <div class="col-12">
+              <div class="fw-semibold text-uppercase text-center border-bottom border-black bg-pale-sky">
+                FORMULIR PENILAIAN RISIKO PEKERJAAN KONTRAK
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-12">
+              <div class="fw-semibold text-uppercase text-center bg-powder-petal">
+                URAIAN PEKERJAAN YANG AKAN DINONAKTIFKAN
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-6 border border-black border-start-0">
+              <p class="mb-0 ps-2">
+                <strong>JUDUL PEKERJAAN:</strong>
+                <br />
+                {{ JobName }}
+              </p>
+            </div>
+
+            <div class="col-6 border border-black border-start-0 border-end-0">
+              <p class="mb-0 ps-2">
+                <strong>LOKASI PEKERJAAN:</strong>
+                <br />
+                {{ ProjectRegion }}
+              </p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-4 border-end border-black">
+              <div class="fw-semibold text-uppercase text-center bg-powder-petal">
+                TAHAPAN KEGIATAN (SEQUENCE OF WORK)
+              </div>
+            </div>
+
+            <div class="col-4 border-end border-black">
+              <div class="fw-semibold text-uppercase text-center bg-powder-petal">
+                DESKRIPSI BAHAYA (HAZARD DESCRIPTION)
+              </div>
+            </div>
+
+            <div class="col-4 bg-powder-petal">
+              <div class="fw-semibold text-uppercase text-center">DAMPAK (CONSEQUENCE)</div>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-4 border border-black border-start-0">
+              <p class="mb-0 ps-2">
+                Persiapan: <br />
+                - Persiapan perizinan pekerjaan <br />
+                - Inspeksi Unit HB, LB, Medium Truck
+              </p>
+            </div>
+
+            <div class="col-4 border border-start-0 border-black">
+              <p class="mb-0 ps-2">
+                <br />
+                - Unit under spec <br />
+                - Surat kendaraan expired atau tidak valid <br />
+                - Gangguan sosial dari masyarakat setempat
+              </p>
+            </div>
+
+            <div class="col-4 border-top border-bottom border-black">
+              <p class="mb-0 ps-2">
+                <br />
+                - Unit reject <br />
+                - Keterlambatan waktu pekerjaan menyebabkan Denda dan Complain <br />
+                - Biasa soasial tinggi dan waktu pekerjaan lebih lama
+              </p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-4 border-end border-bottom border-black">
+              <p class="mb-0 ps-2">
+                Pelaksanaan kegiatan: <br />
+                - Kegiatan loading dan unloading (tronton) <br />
+                - Kegiatan mobilisasi dengan kendaraan
+              </p>
+            </div>
+
+            <div class="col-4 border-end border-bottom border-black">
+              <p class="mb-0 ps-2">
+                <br />
+                - Tertimpa pada saat loading unloading <br />
+                - Terjepit pada saat loading unloading <br />
+                - Benda yang diangkat/diangkut terjatuh <br />
+                - Lakalantas kendaraan dijalan <br />
+                - Benda yang diangkut terkena kabel listrik
+              </p>
+            </div>
+
+            <div class="col-4 border-bottom border-black">
+              <p class="mb-0 ps-2">
+                <br />
+                - Injury body, fatality <br />
+                - Property damage (penggantian kerusakan) <br />
+                - Terjadi keterlambatan waktu pelaksanaan pekerjaan <br />
+                - Ganti rugi koraban lakalantas <br />
+                - Komplain warga akibat jaringan listrik terganggu
+              </p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-bottom border-end border-black">
+              <div>&ThinSpace;</div>
+            </div>
+
+            <div class="col-5 border-bottom border-end border-black">
+              <div class="fw-semibold text-uppercase text-center bg-powder-petal">SEVERITY (TINGKAT KEPARAHAN)</div>
+            </div>
+
+            <div class="col-5 border-bottom border-black">
+              <div class="fw-semibold text-uppercase text-center bg-white-smoke">LIKELIHOOD (KEMUNGKINAN KEJADIAN)</div>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-bottom border-end border-black">
+              <p class="mb-0 ps-2 fw-medium bg-white-smoke">Manusia</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-bottom border-end border-black">
+              <p class="mb-0 ps-2 fw-medium bg-white-smoke">Asset & Peralatan</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-bottom border-end border-black">
+              <p class="mb-0 ps-2 fw-medium bg-white-smoke">Lingkungan</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-bottom border-end border-black">
+              <p class="mb-0 ps-2 fw-medium bg-white-smoke">Citra</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-bottom border-end border-black">
+              <p class="mb-0 ps-2 fw-medium bg-white-smoke">Notifikasi Publik</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center bg-yellow">1</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">2</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">3</p>
+            </div>
+
+            <div class="col-1 border-bottom border-end border-black">
+              <p class="mb-0 text-center">4</p>
+            </div>
+
+            <div class="col-1 border-bottom border-black">
+              <p class="mb-0 text-center">5</p>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-2 border-end border-black">
+              <p class="mb-0 ps-2">
+                <span class="fw-medium">Angka Risiko</span> <br />
+                <small>(Severity x Likelihood)</small>
+              </p>
+            </div>
+
+            <div class="col-10">
+              <div class="mb-0 text-center d-flex align-items-center justify-content-center h-100 bg-red">16</div>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-12">
+              <div
+                class="bg-secondary-subtle border-top border-bottom border-black fw-semibold text-center text-uppercase bg-pale-sky"
+              >
+                RISK ASSESSMENT MATRIX (RAM) MAPPING
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-0">
+            <div class="col-7">
+              <div>&ThinSpace;</div>
+            </div>
+
+            <div class="col-5">
+              <div class="fw-semibold text-uppercase text-center border-start border-black">
+                PROBABILITY (LIKELIHOOD)
+              </div>
+            </div>
+          </div>
+
+          <table class="table table-bordered border-black mb-0">
+            <tbody>
+              <tr>
+                <td class="bg-powder-petal" rowspan="2">
+                  <div class="fw-semibold text-uppercase text-center vertical-text">SEVERITY (TINGKAT KEPARAHAN)</div>
+                </td>
+
+                <td class="align-middle text-center bg-powder-petal">Manusia</td>
+                <td class="align-middle text-center bg-powder-petal">Lingkungan</td>
+                <td class="align-middle text-center bg-powder-petal">Dampak Reputasi & Hukum</td>
+                <td class="align-middle text-center bg-powder-petal">Asset & Peralatan</td>
+                <td class="align-middle text-center bg-powder-petal">Notifikasi Publik</td>
+                <td class="bg-powder-petal">&ThinSpace;</td>
+                <td class="p-0" style="height: 0">
+                  <div class="row g-0">
+                    <div class="col-12 border-bottom border-black">
+                      <p class="mb-0 px-2 bg-powder-petal">
+                        Definisi level probability (Likelihood) dapat dilihat di tabel definisi kemungkinan kejadian
+                      </p>
+                    </div>
+
+                    <div class="border-end border-black text-center bg-powder-petal" style="width: 20%">
+                      &lt;10-6 per year
+                    </div>
+                    <div class="border-end border-black text-center bg-powder-petal" style="width: 20%">
+                      10-6 to 10-4 per year
+                    </div>
+                    <div class="border-end border-black text-center bg-powder-petal" style="width: 20%">
+                      10-4 to 10-2 per year
+                    </div>
+                    <div class="border-end border-black text-center bg-powder-petal" style="width: 20%">
+                      10-2 to 1 per year
+                    </div>
+                    <div class="text-center bg-powder-petal" style="width: 20%">&gt;1 per year</div>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="text-center">Definisi level severity manusia dapat dilihat di tabel definisi severity</td>
+                <td class="text-center">Definisi level severity lingkungan dapat dilihat di tabel definisi severity</td>
+                <td class="text-center">
+                  Definisi level severity dampak reputasi & hukum dapat dilihat di tabel definisi severity
+                </td>
+                <td class="text-center">
+                  Definisi level severity asset & peralatan dapat dilihat di tabel definisi severity
+                </td>
+                <td class="text-center">
+                  Definisi level severity notifikasi publik dapat dilihat di tabel definisi severity
+                </td>
+                <td class="p-0 text-center">
+                  <div class="d-flex flex-column">
+                    <div class="border-bottom border-black">Level</div>
+                    <div class="border-bottom border-black" style="height: 3.5rem">5 Catastropic</div>
+                    <div class="border-bottom border-black" style="height: 3.5rem">4 Significant</div>
+                    <div class="border-bottom border-black" style="height: 3.5rem">3 Moderate</div>
+                    <div class="border-bottom border-black" style="height: 3.5rem">2 Minor</div>
+                    <div class="border-bottom border-black" style="height: 3.5rem">1 Insignificant</div>
+                  </div>
+                </td>
+
+                <td class="p-0 text-center">
+                  <div class="row g-0">
+                    <div class="col-12 d-flex">
+                      <div class="border-bottom border-end border-black" style="width: 20%">1</div>
+                      <div class="border-bottom border-end border-black" style="width: 20%">2</div>
+                      <div class="border-bottom border-end border-black" style="width: 20%">3</div>
+                      <div class="border-bottom border-end border-black" style="width: 20%">4</div>
+                      <div class="border-bottom border-end border-black" style="width: 20%">5</div>
+                    </div>
+                  </div>
+
+                  <div class="row g-0">
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      5
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-orange"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      10
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-red"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      15
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-red"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      20
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-red"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      25
+                    </div>
+                  </div>
+
+                  <div class="row g-0">
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      4
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      8
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-orange"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      12
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-red"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      <span class="border border-black rounded-circle p-1"> 16 </span>
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-red"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      20
+                    </div>
+                  </div>
+
+                  <div class="row g-0">
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-light-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      3
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      6
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      9
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-orange"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      12
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-red"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      15
+                    </div>
+                  </div>
+
+                  <div class="row g-0">
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-light-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      2
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      4
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      6
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      8
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-orange"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      10
+                    </div>
+                  </div>
+
+                  <div class="row g-0">
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-light-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      1
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-light-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      2
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-light-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      3
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow-green"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      4
+                    </div>
+                    <div
+                      class="hstack justify-content-center border-bottom border-end border-black bg-yellow"
+                      style="width: 20%; height: 3.5rem"
+                    >
+                      5
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td rowspan="2" colspan="5"></td>
+                <td class="p-0" colspan="3">
+                  <div class="row g-0">
+                    <div class="col-12 text-center border-bottom border-black bg-powder-petal">KATEGORI RISIKO:</div>
+                  </div>
+
+                  <div class="row g-0">
+                    <div class="col ps-2 border-end border-black bg-light-green">RENDAH</div>
+                    <div class="col ps-2 border-end border-black bg-yellow">MENENGAH</div>
+                    <div class="col ps-2 border-end border-black bg-red">TINGGI</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <table class="table table-bordered border-black mt-5">
+          <thead>
+            <tr>
+              <td colspan="3" class="text-center fw-bold bg-powder-petal">REVIEWER:</td>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr class="text-center fw-bold">
+              <td>Disiapkan oleh</td>
+              <td>Direview oleh</td>
+              <td>Disetujui oleh</td>
+            </tr>
+            <tr>
+              <td style="height: 7rem"></td>
+              <td style="height: 7rem"></td>
+              <td style="height: 7rem"></td>
+            </tr>
+            <tr class="text-center fw-bold">
+              <td>Edo Pradipta</td>
+              <td>Erlambang Prima</td>
+              <td>Arfinal Diputra</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="page">
+        <section class="mb-5">
+          <header class="mb-3">
+            <h1 class="h5 text-center fw-semibold text-uppercase">DEFINISI RISIKO KEPARAHAN- MANUSIA (SEVERITY)</h1>
+          </header>
+
+          <table class="table table-bordered border-black">
+            <thead>
+              <tr class="text-center align-middle fw-semibold">
+                <td class="bg-cornsilk" colspan="2">SEVERITY (KEPARAHAN)</td>
+                <td class="bg-cornsilk">DEFINISI</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold text-center align-middle">5</td>
+                <td class="fw-semibold text-center align-middle">Catastropic</td>
+                <td>
+                  <ul>
+                    <li>Fasilitas ganda</li>
+                    <li>Menyebabkan wabah ke lingkungan</li>
+                    <li>Bahan dengan potensi menyebabkan banyak kematian, misal bahan kimia dengan efek toksis akut</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">4</td>
+                <td class="fw-semibold text-center align-middle">Significant</td>
+                <td>
+                  <ul>
+                    <li>Fasilitas tunggal/ catat permanen/ menyebabkan hilangnya hari kerja (Day Away from works)</li>
+                    <li>
+                      Bahan yang mampu menghasilkan efek serius dan tidak dapat dipulihkan sehingga menyebabkan
+                      terjadinya kematian
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">3</td>
+                <td class="fw-semibold text-center align-middle">Moderate</td>
+                <td>
+                  <ul>
+                    <li>Catat Non Permanen/ menyebabkan pembatasan aktifivats kerja (Restricted Work Cases)</li>
+                    <li>
+                      Bahan yang mampu menghasilkan efek yang tidak dapat dipulihkan tanpa menyebabkan kematian tetapi
+                      terjadi kecatatan yang serius dan rawat inap yang Lama
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">2</td>
+                <td class="fw-semibold text-center align-middle">Minor</td>
+                <td>
+                  <ul>
+                    <li>Kasus perawatan medis</li>
+                    <li>
+                      Bahan yang mampu memberikan efek kesehatan monor yang dapat dipulihkan (tidak ada rawat inap)
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">1</td>
+                <td class="fw-semibold text-center align-middle">Insignificant</td>
+                <td>
+                  <ul>
+                    <li>Kasus P3K</li>
+                    <li>Tidak mempengaruhi aktivitas kerja</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="mb-5">
+          <header class="mb-3">
+            <h1 class="h5 text-center fw-semibold text-uppercase">DEFINISI KEPARAHAN RISIKO- LINGKUNGAN (SEVERITY)</h1>
+          </header>
+
+          <table class="table table-bordered border-black">
+            <thead>
+              <tr class="text-center align-middle fw-semibold">
+                <td class="bg-cornsilk" colspan="2">SEVERITY (KEPARAHAN)</td>
+                <td class="bg-cornsilk">DEFINISI</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold text-center align-middle">5</td>
+                <td class="fw-semibold text-center align-middle">Catastropic</td>
+                <td>
+                  <ul>
+                    <li>
+                      Menyebabkan kerusakan lingkungan yang sangat serius, berdampak jangka panjang terhadap fungsi
+                      ekosistem atau Tumpahan Minyak &gt; 100 barel
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">4</td>
+                <td class="fw-semibold text-center align-middle">Significant</td>
+                <td>
+                  <ul>
+                    <li>
+                      Menyebabkan efek lingkungan yang serius dan berdampak jangka menengah atau Tumpahan Minyak 15-100
+                      barel
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">3</td>
+                <td class="fw-semibold text-center align-middle">Moderate</td>
+                <td>
+                  <ul>
+                    <li>
+                      Menyebabkan efek lingkungan yang sedang dan berdampak jangka pendek tetapi tidak mempengaruhi
+                      fungsi ekosistem atau Tumpahan Minyak 5-15 bbls
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">2</td>
+                <td class="fw-semibold text-center align-middle">Minor</td>
+                <td>
+                  <ul>
+                    <li>Menyebabkan efek minor pada lingkungan biologis atau fisik atau Tumpahan Minyak 1-5 bbls</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">1</td>
+                <td class="fw-semibold text-center align-middle">Insignificant</td>
+                <td>
+                  <ul>
+                    <li>
+                      Menyebabkan kerusakan terbatas pada area yang minimal dengan signifikasi yang rendah atau Tumpahan
+                      Minyak &lt; 1 bbls
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <br />
+
+        <section class="mb-5">
+          <header class="mb-3">
+            <h1 class="h5 text-center fw-semibold text-uppercase">
+              DEFINISI KEPARAHAN RISIKO- DAMPAK ASSET & PERALATAN (SEVERITY)
+            </h1>
+          </header>
+
+          <table class="table table-bordered border-black">
+            <thead>
+              <tr class="text-center align-middle fw-semibold">
+                <td class="bg-cornsilk" colspan="2">SEVERITY (KEPARAHAN)</td>
+                <td class="bg-cornsilk">DEFINISI</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold text-center align-middle">5</td>
+                <td class="fw-semibold text-center align-middle">Catastropic</td>
+                <td>
+                  <ul>
+                    <li>Kehilangan total pada Pabrik/Plant atau perkiraan biaya perbaikan &gt; US $ 5.000.000</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">4</td>
+                <td class="fw-semibold text-center align-middle">Significant</td>
+                <td>
+                  <ul>
+                    <li>Kehilangan sebagian Pabrik</li>
+                    <li>Pabrik ditutup atau diperkirakan biaya perbaikan US $ 1.000.000 - US $ 5.000.000</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">3</td>
+                <td class="fw-semibold text-center align-middle">Moderate</td>
+                <td>
+                  <ul>
+                    <li>
+                      Sebagian instalasi mengalami kerusakan atau biaya perbaikan diperkirakan $ 100.000 - $ 1.000.000
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">2</td>
+                <td class="fw-semibold text-center align-middle">Minor</td>
+                <td>
+                  <ul>
+                    <li>
+                      Gangguan singkat yang mungkin terjadi pada proses atau perkiraan biaya perbaikan adalah $ 10.000 -
+                      $ 100.000
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">1</td>
+                <td class="fw-semibold text-center align-middle">Insignificant</td>
+                <td>
+                  <ul>
+                    <li>Tidak ada gangguan terhadap proses atau perkiraan biaya perbaikan &lt; $ 10.000</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="mb-5">
+          <header class="mb-3">
+            <h1 class="h5 text-center fw-semibold text-uppercase">
+              DEFINISI KEPARAHAN RISIKO- DAMPAK NOTIFIKASI PUBLIK (SEVERITY)
+            </h1>
+          </header>
+          <table class="table table-bordered border-black">
+            <thead>
+              <tr class="text-center align-middle fw-semibold">
+                <td class="bg-cornsilk" colspan="2">SEVERITY (KEPARAHAN)</td>
+                <td class="bg-cornsilk">DEFENISI</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold text-center align-middle">5</td>
+                <td class="fw-semibold text-center align-middle">Catastropic</td>
+                <td>
+                  <ul>
+                    <li>Evakuasi area lengkap</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">4</td>
+                <td class="fw-semibold text-center align-middle">Significant</td>
+                <td>
+                  <ul>
+                    <li>Pemberitahuan evakuasi terhadap area yang dipilih</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">3</td>
+                <td class="fw-semibold text-center align-middle">Moderate</td>
+                <td>
+                  <ul>
+                    <li>Pemberitahuan terhadap Shelter di lokasi</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">2</td>
+                <td class="fw-semibold text-center align-middle">Minor</td>
+                <td>
+                  <ul>
+                    <li>Lokal (Pemberitahuan telepon/selebaran)</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-center align-middle">1</td>
+                <td class="fw-semibold text-center align-middle">Insignificant</td>
+                <td>
+                  <ul>
+                    <li>Tidak ada komunikasi ke Publik</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <div class="page">
+        <section>
+          <header>
+            <h1 class="h5 text-center fw-semibold text-uppercase">
+              DEFINISI PROBABILITY/ LIKELIHOOD (KEMUNGKINAN KEJADIAN)
+            </h1>
+          </header>
+
+          <table class="table table-bordered border-black">
+            <thead>
+              <tr class="text-center align-middle fw-semibold">
+                <td class="bg-tea-green" colspan="3">PROBABITLITY (KEMUNGKINAN)</td>
+                <td class="bg-tea-green">DEFINISI</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-center fw-semibold">5</td>
+                <td class="text-center">Hampir Pasti Terjadi (Almost)</td>
+                <td class="text-center">&gt; 1 per year</td>
+                <td>
+                  Terjadi beberapa kali di wilayah operasi PDC ATAU terjadi beberapa kali di lokasi terkait dalam 1
+                  tahun ATAU adanya kondisi yang memungkinkan kejadian dapat terjadi di wilayah operasi PDC lebih dari
+                  sekali setiap tahunnya
+                </td>
+              </tr>
+              <tr>
+                <td class="text-center fw-semibold">4</td>
+                <td class="text-center">Sangat Mungkin terjadi (Likely)</td>
+                <td class="text-center">10<sup>-2</sup> to 1 per year</td>
+                <td>
+                  Pernah terjadi lebih dari sekali selama masa hidup operasi (operational lifetime) PDC ATAU pernah
+                  terjadi sekali di lokasi terkait ATAU adanya kondisi yang memungkinkan kejadian dapat terjadi lebih
+                  dari sekali di wilayah operasi PDC selama masa hidup operasinya
+                </td>
+              </tr>
+              <tr>
+                <td class="text-center fw-semibold">3</td>
+                <td class="text-center">Bisa Terjadi (Moderate)</td>
+                <td class="text-center">10<sup>-4</sup> to 10<sup>-2</sup> per year</td>
+                <td>
+                  Pernah terjadi lebih dari sekali di Industri Migas/Panas Bumi/Gedung Perkantoran ATAU pernah terjadi
+                  sekali di wilayah operasi PDC
+                </td>
+              </tr>
+              <tr>
+                <td class="text-center fw-semibold">2</td>
+                <td class="text-center">Jarang Terjadi (Unlikely)</td>
+                <td class="text-center">10<sup>-6</sup> to 10<sup>-4</sup> per year</td>
+                <td>Pernah terjadi sekali di Industri Migas/Panas Bumi/Gedung Perkantoran</td>
+              </tr>
+              <tr>
+                <td class="text-center fw-semibold">1</td>
+                <td class="text-center">Hampir Tidak Mungkin Terjadi (Rare)</td>
+                <td class="text-center">&lt; 10<sup>-6</sup> per year</td>
+                <td>Tidak pernah terdengar di Industri Migas/Panas Bumi/Gedung Perkantoran</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="border border-black p-2">
+            <p class="mb-0">
+              Jika nilai tingkat keparahan <em>(severity)</em> terhadap manusia, asset/peralatan, lingkungan, citra
+              benda dan notifikasi publik bervariasi maka diambil tingkat yang tertinggi. <br />
+              Misal, suatua pekerjaan tingkat keparahannya terhadap manusia = 1, terhadap alat = 2, terhadap lingkungan
+              = 4, terhadap citra = 3, terhadap notifikasi public = 3 maka tingkat <em>severity</em> yang digunakan
+              terhadap pekerjaan tersebut adalah 4
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
