@@ -9,16 +9,19 @@ namespace ProcurementHTE.Core.Services
         private readonly IProfitLossRepository _pnlRepository;
         private readonly IVendorOfferRepository _voRepository;
         private readonly IVendorRepository _vendorRepository;
+        private readonly IVendorRoundLetterRepository _roundLetterRepository;
 
         public ProfitLossService(
             IProfitLossRepository pnlRepository,
             IVendorOfferRepository voRepository,
-            IVendorRepository vendorRepository
+            IVendorRepository vendorRepository,
+            IVendorRoundLetterRepository roundLetterRepository
         )
         {
             _pnlRepository = pnlRepository;
             _voRepository = voRepository;
             _vendorRepository = vendorRepository;
+            _roundLetterRepository = roundLetterRepository;
         }
 
         public Task<ProfitLoss?> GetByProcurementAsync(string woId)
@@ -155,6 +158,7 @@ namespace ProcurementHTE.Core.Services
                 ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
 
             var offers = await _voRepository.GetByProcurementAsync(pnl.ProcurementId);
+            var roundLetters = await _roundLetterRepository.ListByProcurementAsync(pnl.ProcurementId);
 
             // Vendor → Items (per ProcOfferId) → Prices
             var vendors = offers
@@ -162,6 +166,17 @@ namespace ProcurementHTE.Core.Services
                 .Select(group => new VendorItemOffersDto
                 {
                     VendorId = group.Key,
+                    Letters = group
+                        .Where(x => !string.IsNullOrWhiteSpace(x.NoLetter))
+                        .GroupBy(x => x.Round)
+                        .OrderBy(g => g.Key)
+                        .Select(g => g.Last().NoLetter ?? string.Empty)
+                        .ToList(),
+                    LetterDocIds = roundLetters
+                        .Where(r => r.VendorId == group.Key)
+                        .OrderBy(r => r.Round)
+                        .Select(r => (string?)r.ProcDocumentId)
+                        .ToList(),
                     Items = group
                         .GroupBy(offer => offer.ProcOfferId)
                         .Select(gg =>
@@ -174,7 +189,6 @@ namespace ProcurementHTE.Core.Services
                                 VendorId = group.Key,
                                 ProcOfferId = gg.Key,
                                 Prices = ordered.Select(x => x.Price).ToList(),
-                                Letters = ordered.Select(x => x.NoLetter ?? string.Empty).ToList(),
                                 Quantity = last.Quantity,
                                 Trip = last.Trip,
                             };
@@ -293,6 +307,7 @@ namespace ProcurementHTE.Core.Services
 
             StampOffersWithProfitLossId(offers, pnl.ProfitLossId);
             await _pnlRepository.StoreProfitLossAggregateAsync(pnl, dto.SelectedVendorIds, offers);
+            await UpdateRoundLettersAsync(dto.ProcurementId, pnl.ProfitLossId, dto.Vendors);
             return pnl;
         }
 
@@ -398,6 +413,7 @@ namespace ProcurementHTE.Core.Services
                 dto.SelectedVendorIds,
                 newOffers
             );
+            await UpdateRoundLettersAsync(dto.ProcurementId, pnl.ProfitLossId, dto.Vendors);
             return pnl;
         }
 
@@ -424,12 +440,13 @@ namespace ProcurementHTE.Core.Services
                 if (string.IsNullOrWhiteSpace(vendor.VendorId))
                     continue;
 
+                var letters = vendor.Letters ?? [];
+
                 foreach (var item in vendor.Items)
                 {
                     if (string.IsNullOrWhiteSpace(item.ProcOfferId))
                         continue;
 
-                    var letters = item.Letters ?? [];
                     var quantity = item.Quantity;
                     var trip = item.Trip;
 
@@ -708,6 +725,38 @@ namespace ProcurementHTE.Core.Services
                 .LastOrDefault();
 
             return best?.NoLetter;
+        }
+
+        private async Task UpdateRoundLettersAsync(
+            string procurementId,
+            string profitLossId,
+            List<VendorItemOffersDto> vendors
+        )
+        {
+            if (vendors == null || vendors.Count == 0)
+                return;
+
+            foreach (var vendor in vendors)
+            {
+                if (vendor == null || string.IsNullOrWhiteSpace(vendor.VendorId))
+                    continue;
+
+                var letters = vendor.Letters ?? [];
+                for (int i = 0; i < letters.Count; i++)
+                {
+                    var letter = letters[i];
+                    var round = i + 1;
+                    await _roundLetterRepository.UpdateProfitLossLinkAsync(
+                        procurementId,
+                        vendor.VendorId,
+                        round,
+                        profitLossId,
+                        letter
+                    );
+                }
+            }
+
+            await _roundLetterRepository.SaveChangesAsync();
         }
 
         // Coverage check dihapus agar penawaran parsial tetap diproses; PickBestVendor sudah meng-handle fallback.

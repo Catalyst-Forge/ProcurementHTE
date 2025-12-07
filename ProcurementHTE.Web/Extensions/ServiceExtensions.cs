@@ -339,6 +339,7 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
             services.AddScoped<IProfitLossRepository, ProfitLossRepository>();
             services.AddScoped<IVendorOfferRepository, VendorOfferRepository>();
+            services.AddScoped<IVendorRoundLetterRepository, VendorRoundLetterRepository>();
             services.AddScoped<IProcDocumentRepository, ProcDocumentRepository>();
             services.AddScoped<IJobTypeDocumentRepository, JobTypeDocumentRepository>();
             services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();

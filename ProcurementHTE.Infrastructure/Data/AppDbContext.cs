@@ -24,6 +24,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
         public DbSet<DocumentType> DocumentTypes { get; set; }
         public DbSet<Tender> Tenders { get; set; }
+        public DbSet<VendorRoundLetter> VendorRoundLetters { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<UserSecurityLog> UserSecurityLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -55,6 +56,7 @@ namespace ProcurementHTE.Infrastructure.Data
             ConfigureProfitLossItem(builder);
             ConfigureJobTypeDocuments(builder);
             ConfigureDocumentApprovals(builder);
+            ConfigureVendorRoundLetters(builder);
         }
 
         #region Identity & User
@@ -483,6 +485,31 @@ namespace ProcurementHTE.Infrastructure.Data
             });
         }
 
+        #endregion
+
+        #region VendorRoundLetters
+        private static void ConfigureVendorRoundLetters(ModelBuilder builder)
+        {
+            builder.Entity<VendorRoundLetter>(entity =>
+            {
+                entity.Property(x => x.VendorRoundLetterId).ValueGeneratedNever();
+
+                entity
+                    .HasOne(x => x.ProcDocument)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProcDocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity
+                    .HasOne(x => x.Vendor)
+                    .WithMany()
+                    .HasForeignKey(x => x.VendorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(x => new { x.ProcurementId, x.VendorId, x.Round })
+                    .IsUnique();
+            });
+        }
         #endregion
 
         #region JobTypeDocuments

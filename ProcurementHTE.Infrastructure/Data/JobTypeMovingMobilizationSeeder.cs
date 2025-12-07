@@ -187,15 +187,24 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Surat Penawaran Harga",
-                    8,
-                    true,
+                    8, // disediakan sebagai DocumentType tetapi tidak dimasukkan ke JobTypeDocuments
                     false,
-                    true,
                     false,
-                    "Upload dari HTE",
+                    false,
+                    false,
+                    "Selalu ada, dikelola via menu Documents (bukan JobType config)",
                     null
                 ),
-                ("Surat Negosiasi Harga", 9, true, false, true, false, "Upload dari HTE", null),
+                (
+                    "Surat Negosiasi Harga",
+                    9,
+                    false,
+                    false,
+                    false,
+                    false,
+                    "Selalu ada, dikelola via menu Documents (bukan JobType config)",
+                    null
+                ),
                 (
                     "Rencana Kerja dan Syarat-Syarat (RKS)",
                     10,
@@ -251,8 +260,17 @@ namespace ProcurementHTE.Infrastructure.Data
             // DbSet bisa bernama JobTypesDocuments (lihat log EF). Untuk aman gunakan Set<JobTypeDocuments>()
             var wtdSet = context.Set<JobTypeDocuments>();
 
+            var skipAlwaysDocs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Surat Penawaran Harga",
+                "Surat Negosiasi Harga",
+            };
+
             foreach (var c in cfg)
             {
+                if (skipAlwaysDocs.Contains(c.Name))
+                    continue; // SPH/SNH tidak dikonfigurasi via JobTypeDocuments
+
                 var dt = DT(c.Name);
                 bool exists = await wtdSet.AnyAsync(x =>
                     x.JobTypeId == jobType.JobTypeId && x.DocumentTypeId == dt.DocumentTypeId

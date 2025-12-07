@@ -17,12 +17,13 @@
 }
 
 <form asp-action="@(isEdit ? "EditProfitLoss" : "CreateProfitLossPost")"
-      asp-controller="Procurements"
-      method="post"
-      id="pl-form"
-      class="js-loading-form"
-      data-loading-overlay="true"
-      hx-boost="false">
+    asp-controller="Procurements"
+    method="post"
+    enctype="multipart/form-data"
+    id="pl-form"
+    class="js-loading-form"
+    data-loading-overlay="true"
+    hx-boost="false">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="ProcurementId" />
     @if (isEdit && editModel != null)
@@ -177,6 +178,7 @@
                                                 <span class="input-group-text">Rp</span>
                                                 <input class="form-control text-end"
                                                        asp-for="Items[@i].TarifAwal"
+                                                          asp-format="{0:0}"
                                                        data-tarif-awal
                                                        data-format-currency 
                                                        autocomplete="off"
@@ -190,6 +192,7 @@
                                                 <span class="input-group-text">Rp</span>
                                                 <input class="form-control text-end"
                                                        asp-for="Items[@i].TarifAdd"
+                                                          asp-format="{0:0}"
                                                        data-tarif-add
                                                        data-format-currency
                                                        autocomplete="off"
@@ -303,6 +306,20 @@
     </div>
 </form>
 
+<div class="modal fade" id="letterPreviewModal" tabindex="-1" aria-labelledby="letterPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="letterPreviewModalLabel">Preview Dokumen SPH / SNH</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="letterPreviewFrame" class="w-100 border-0" style="min-height:75vh" title="Preview dokumen SPH/SNH"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     @{
@@ -322,14 +339,15 @@
                 .Select(v => new
                 {
                     vendorId = v.VendorId,
+                    letters = v.Letters ?? new List<string>(),
+                    letterDocIds = v.LetterDocIds ?? new List<string>(),
                     items = (v.Items ?? new List<ProcurementHTE.Web.Models.ViewModels.VendorOfferPerItemInputVm>())
                         .Select(item => new
                         {
                             procOfferId = item.ProcOfferId,
                             quantity = item.Quantity,
                             trip = item.Trip,
-                            prices = item.Prices ?? new List<decimal>(),
-                            letters = item.Letters ?? new List<string>()
+                            prices = item.Prices ?? new List<decimal>()
                         })
                         .ToList()
                 })
@@ -354,13 +372,36 @@
 
             const vendorCheckboxSelector = 'input[name="SelectedVendorIds"]';
             const currencySelector = '[data-format-currency]';
-            const thousandGroupRegex = /\B(?=(\d{3})+(?!\d))/g;
             const vendorNameMap = new Map((vendorsAll || []).map(v => [v.id, v.name]));
             const vendorsHost = document.getElementById('vendors');
             const addVendorBtn = document.getElementById('btnAddVendor');
             const plForm = document.getElementById('pl-form');
             const distanceInput = document.getElementById('Distance');
+            const letterPreviewModal = document.getElementById('letterPreviewModal');
+            const letterPreviewFrame = document.getElementById('letterPreviewFrame');
+            const isEditMode = @(isEdit.ToString().ToLowerInvariant());
             let forcedSubmitInProgress = false;
+            const bootstrapModal = window.bootstrap?.Modal;
+
+            const showLetterPreview = (url) => {
+                if (!url)
+                    return;
+                if (!letterPreviewModal || !letterPreviewFrame || !bootstrapModal) {
+                    const win = window.open(url, '_blank', 'noopener');
+                    if (win) {
+                        win.opener = null;
+                    }
+                    return;
+                }
+                letterPreviewFrame.src = url;
+                bootstrapModal.getOrCreateInstance(letterPreviewModal).show();
+            };
+
+            letterPreviewModal?.addEventListener('hidden.bs.modal', () => {
+                if (letterPreviewFrame) {
+                    letterPreviewFrame.src = 'about:blank';
+                }
+            });
 
             const debugLog = (...args) => {
                 if (window?.console?.info) {
@@ -463,7 +504,70 @@
                 }
             });
 
-            const digitsOnly = (value) => (value ?? '').toString().replace(/\D/g, '');
+            const splitLast = (text, separator) => {
+                if (!text) return ['', ''];
+                const idx = text.lastIndexOf(separator);
+                return idx === -1 ? [text, ''] : [text.slice(0, idx), text.slice(idx + 1)];
+            };
+            const trimLeadingZeros = (digits) => {
+                const normalized = (digits ?? '').replace(/^0+(?=\d)/, '');
+                return normalized || '0';
+            };
+            const normalizeCurrencyValue = (value) => {
+                if (value === null || value === undefined)
+                    return '';
+                if (typeof value === 'number') {
+                    if (!Number.isFinite(value))
+                        return '';
+                    return value.toString();
+                }
+                let text = value.toString().trim();
+                if (!text)
+                    return '';
+                text = text.replace(/[^\d,\.\-]/g, '');
+                if (!text)
+                    return '';
+                let integerPart = text;
+                let fractionPart = '';
+                let decimalSep = '';
+                if (text.includes(',')) {
+                    decimalSep = ',';
+                } else {
+                    const lastDot = text.lastIndexOf('.');
+                    if (lastDot >= 0) {
+                        const decimals = text.length - lastDot - 1;
+                        if (decimals > 0 && decimals <= 2) {
+                            decimalSep = '.';
+                        }
+                    }
+                }
+                if (decimalSep) {
+                    [integerPart, fractionPart] = splitLast(text, decimalSep);
+                }
+                integerPart = integerPart.replace(/[^\d]/g, '');
+                fractionPart = fractionPart.replace(/\D/g, '').slice(0, 2);
+                if (!integerPart && !fractionPart)
+                    return '';
+                let normalized = integerPart ? trimLeadingZeros(integerPart) : '0';
+                if (fractionPart) {
+                    const padded = fractionPart.padEnd(2, '0');
+                    normalized += '.' + padded;
+                    normalized = normalized.replace(/\.00$/, '');
+                }
+                return normalized;
+            };
+            const formatCurrencyDisplay = (normalized) => {
+                if (!normalized)
+                    return '';
+                const [integerPartRaw, fractionRaw = ''] = normalized.split('.');
+                const integerPart = trimLeadingZeros(integerPartRaw);
+                const withGrouping = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                if (!fractionRaw)
+                    return withGrouping;
+                if (/^0+$/.test(fractionRaw))
+                    return withGrouping;
+                return `${withGrouping},${fractionRaw}`;
+            };
             const formatInteger = (value) => {
                 const num = Number(value ?? 0);
                 if (!Number.isFinite(num)) {
@@ -474,14 +578,14 @@
             const numberValue = (input) => {
                 if (!input) return 0;
                 if (input.dataset?.rawValue) {
-                    const parsed = parseFloat(input.dataset.rawValue.replace(',', '.'));
+                    const parsed = parseFloat(input.dataset.rawValue);
                     if (Number.isFinite(parsed)) {
                         return parsed;
                     }
                 }
-                const digits = digitsOnly(input.value);
-                if (digits.length) {
-                    const parsed = parseFloat(digits);
+                const normalized = normalizeCurrencyValue(input.value);
+                if (normalized.length) {
+                    const parsed = parseFloat(normalized);
                     return Number.isFinite(parsed) ? parsed : 0;
                 }
                 const fallback = parseFloat((input.value ?? '0').toString().replace(',', '.'));
@@ -497,9 +601,11 @@
             };
             const setCurrencyDisplay = (input, rawValue) => {
                 if (!input) return;
-                const normalized = digitsOnly(rawValue ?? input.value);
+                const normalized = normalizeCurrencyValue(
+                    rawValue === undefined ? input.value : rawValue
+                );
                 input.dataset.rawValue = normalized;
-                input.value = normalized ? normalized.replace(thousandGroupRegex, '.') : '';
+                input.value = formatCurrencyDisplay(normalized);
             };
             const updateCurrencyInput = (input, notify) => {
                 if (!input) return;
@@ -638,17 +744,300 @@
                 });
             };
 
+            const docPreviewUrlTemplate = '@Url.Action("PreviewUrl", "ProcurementDocuments", new { id = "__DOC_ID__", procurementId = Model.ProcurementId })';
+            const buildDocPreviewUrl = (docId) => (
+                docId
+                    ? docPreviewUrlTemplate.replace('__DOC_ID__', encodeURIComponent(docId))
+                    : '#'
+            );
+
+            const updateLetterRowLabel = (row, letterIdx) => {
+                if (!row) return;
+                const roundNumber = letterIdx + 1;
+                const letterType = roundNumber === 1 ? 'SPH' : 'SNH';
+                const label = row.querySelector('[data-letter-round-label]');
+                const fileLabel = row.querySelector('[data-letter-file-label]');
+                const input = row.querySelector('[data-letter-number]');
+                if (label) {
+                    label.textContent = `Round ${roundNumber} - No. ${letterType}`;
+                }
+                if (fileLabel) {
+                    fileLabel.textContent = `File ${letterType} (PDF)`;
+                }
+                if (input) {
+                    input.placeholder = `Contoh: ${letterType}-001`;
+                }
+            };
+
+            const setLetterStatus = (row, message, tone = 'muted') => {
+                if (!row) return;
+                const status = row.querySelector('[data-letter-status]');
+                if (!status) return;
+                status.textContent = message || '';
+                status.classList.toggle('text-muted', tone === 'muted');
+                status.classList.toggle('text-success', tone === 'success');
+                status.classList.toggle('text-danger', tone === 'danger');
+            };
+
+            const setLetterPreviewSource = (row, docId) => {
+                if (!row) return;
+                const previewBtn = row.querySelector('[data-letter-preview]');
+                if (!previewBtn) return;
+                previewBtn.dataset.docId = docId ?? '';
+                if (docId) {
+                    previewBtn.classList.remove('d-none');
+                    previewBtn.disabled = false;
+                    previewBtn.classList.remove('disabled');
+                } else {
+                    previewBtn.classList.add('d-none');
+                    previewBtn.disabled = true;
+                    previewBtn.classList.add('disabled');
+                }
+            };
+
+            const toggleLetterRowDeleteState = (row, deleted) => {
+                if (!row) return;
+                row.dataset.letterDeleted = deleted ? 'true' : 'false';
+                const deleteInput = row.querySelector('[data-letter-delete]');
+                if (deleteInput) {
+                    deleteInput.value = deleted ? 'true' : 'false';
+                }
+                const fileInput = row.querySelector('[data-letter-file]');
+                if (fileInput) {
+                    fileInput.toggleAttribute('disabled', deleted);
+                    if (deleted) {
+                        fileInput.value = '';
+                    }
+                }
+                row.classList.toggle('border-danger-subtle', deleted);
+                row.classList.toggle('bg-danger-subtle', deleted);
+                const previewBtn = row.querySelector('[data-letter-preview]');
+                if (previewBtn) {
+                    previewBtn.disabled = deleted;
+                    previewBtn.classList.toggle('disabled', deleted);
+                }
+                if (deleted) {
+                    setLetterStatus(row, 'Dokumen akan dihapus saat disimpan.', 'danger');
+                } else {
+                    const docIdValue = row.querySelector('[data-letter-doc-id]')?.value;
+                    if (docIdValue) {
+                        setLetterStatus(row, 'Dokumen tersimpan.', 'success');
+                    } else {
+                        setLetterStatus(row, '', 'muted');
+                    }
+                }
+            };
+
+            const updateLetterEmptyState = (card) => {
+                if (!card) return;
+                const section = card.querySelector('[data-letter-section]');
+                const host = section?.querySelector('[data-letter-host]');
+                const alert = section?.querySelector('[data-letter-empty-state]');
+                if (!section || !host || !alert) return;
+                const hasRows = host.querySelector('[data-letter-row]');
+                alert.classList.toggle('d-none', !!hasRows);
+            };
+
+            const buildLetterRow = (card, preset = {}) => {
+                const row = document.createElement('div');
+                row.className = 'border rounded-3 p-2 bg-body';
+                row.dataset.letterRow = '1';
+                row.innerHTML = `
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-3 col-md-4">
+                            <label class="form-label" data-letter-round-label>Round 1 - No. SPH</label>
+                            <input class="form-control form-control-sm" data-letter-number value="${preset?.letter ?? ''}" maxlength="150" />
+                            <span class="text-danger small field-validation-valid" data-valmsg-letter data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="col-lg-5 col-md-5">
+                            <label class="form-label" data-letter-file-label>File SPH (PDF)</label>
+                            <input type="file" class="form-control form-control-sm" accept="application/pdf" data-letter-file />
+                            <span class="text-danger small field-validation-valid" data-valmsg-letter-file data-valmsg-replace="true"></span>
+                            <div class="form-text small text-muted">Unggah PDF maksimal 25 MB.</div>
+                        </div>
+                        <div class="col-lg-4 col-md-3 d-flex flex-column gap-2 align-items-start">
+                            <input type="hidden" data-letter-doc-id value="${preset?.docId ?? ''}" />
+                            <input type="hidden" data-letter-delete value="false" />
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm d-none" data-letter-preview>
+                                    <i class="bi bi-eye"></i>
+                                    <span>Preview</span>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" data-letter-remove>
+                                    <i class="bi bi-trash"></i>
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
+                            <div class="small text-muted" data-letter-status></div>
+                        </div>
+                    </div>`;
+
+                const docId = preset?.docId;
+                setLetterPreviewSource(row, docId);
+                const previewBtn = row.querySelector('[data-letter-preview]');
+                if (previewBtn) {
+                    previewBtn.addEventListener('click', async () => {
+                        if (previewBtn.disabled || previewBtn.classList.contains('disabled')) {
+                            return;
+                        }
+                        const docId = previewBtn.dataset.docId;
+                        if (!docId) {
+                            return;
+                        }
+                        previewBtn.disabled = true;
+                        previewBtn.classList.add('disabled');
+                        previewBtn.setAttribute('aria-busy', 'true');
+                        try {
+                            const response = await fetch(buildDocPreviewUrl(docId), {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                method: 'GET'
+                            });
+                            if (!response.ok) {
+                                throw new Error('Gagal membuka preview dokumen.');
+                            }
+                            const payload = await response.json();
+                            if (!payload?.ok || !payload?.url) {
+                                throw new Error(payload?.error || 'Preview belum tersedia.');
+                            }
+                            showLetterPreview(payload.url);
+                        } catch (err) {
+                            debugError('Preview SPH/SNH gagal', err);
+                            const message = err?.message || 'Tidak dapat menampilkan dokumen.';
+                            if (window.Swal?.fire) {
+                                window.Swal.fire({ icon: 'error', title: 'Preview gagal', text: message });
+                            } else {
+                                alert(message);
+                            }
+                        } finally {
+                            previewBtn.disabled = false;
+                            previewBtn.classList.remove('disabled');
+                            previewBtn.removeAttribute('aria-busy');
+                        }
+                    });
+                }
+                if (docId) {
+                    setLetterStatus(row, 'Dokumen tersimpan.', 'success');
+                }
+
+                const fileInput = row.querySelector('[data-letter-file]');
+                fileInput?.addEventListener('change', () => {
+                    const file = fileInput.files?.[0];
+                    if (file) {
+                        setLetterStatus(row, `File terpilih: ${file.name}`, 'success');
+                        if (row.dataset.letterDeleted === 'true') {
+                            toggleLetterRowDeleteState(row, false);
+                        }
+                    } else if (!docId) {
+                        setLetterStatus(row, '', 'muted');
+                    }
+                });
+
+                const removeBtn = row.querySelector('[data-letter-remove]');
+                removeBtn?.addEventListener('click', () => {
+                    const existingDocId = row.querySelector('[data-letter-doc-id]')?.value;
+                    if (existingDocId) {
+                        const currentlyDeleted = row.dataset.letterDeleted === 'true';
+                        toggleLetterRowDeleteState(row, !currentlyDeleted);
+                        return;
+                    }
+                    row.remove();
+                    const host = card?.querySelector('[data-letter-host]');
+                    if (host && host.querySelectorAll('[data-letter-row]').length === 0) {
+                        host.appendChild(buildLetterRow(card));
+                    }
+                    updateLetterEmptyState(card);
+                    reindexVendorCards();
+                });
+
+                updateLetterRowLabel(row, 0);
+                return row;
+            };
+
+            const assignLetterFieldNames = (card, vendorIdx) => {
+                if (!card) return;
+                const host = card.querySelector('[data-letter-host]');
+                if (!host) return;
+                host.querySelectorAll('[data-letter-row]').forEach((row, letterIdx) => {
+                    const letterInput = row.querySelector('[data-letter-number]');
+                    const fileInput = row.querySelector('[data-letter-file]');
+                    const docInput = row.querySelector('[data-letter-doc-id]');
+                    const deleteInput = row.querySelector('[data-letter-delete]');
+                    const letterMsg = row.querySelector('[data-valmsg-letter]');
+                    const fileMsg = row.querySelector('[data-valmsg-letter-file]');
+                    if (letterInput) letterInput.name = `Vendors[${vendorIdx}].Letters[${letterIdx}]`;
+                    if (fileInput) fileInput.name = `Vendors[${vendorIdx}].LetterFiles[${letterIdx}]`;
+                    if (docInput) docInput.name = `Vendors[${vendorIdx}].LetterDocIds[${letterIdx}]`;
+                    if (deleteInput) deleteInput.name = `Vendors[${vendorIdx}].LetterDeletes[${letterIdx}]`;
+                    if (letterMsg) {
+                        letterMsg.setAttribute('data-valmsg-for', letterInput?.name ?? '');
+                        letterMsg.dataset.valmsgFor = letterInput?.name ?? '';
+                    }
+                    if (fileMsg) {
+                        fileMsg.setAttribute('data-valmsg-for', fileInput?.name ?? '');
+                        fileMsg.dataset.valmsgFor = fileInput?.name ?? '';
+                    }
+                    updateLetterRowLabel(row, letterIdx);
+                });
+                updateLetterEmptyState(card);
+            };
+
+            const toggleLetterSection = (card, show) => {
+                const section = card?.querySelector('[data-letter-section]');
+                const host = section?.querySelector('[data-letter-host]');
+                if (!section || !host) return;
+                if (!show) {
+                    host.innerHTML = '';
+                    section.classList.add('d-none');
+                    updateLetterEmptyState(card);
+                    return;
+                }
+                section.classList.remove('d-none');
+                updateLetterEmptyState(card);
+            };
+
+            const populateVendorLetters = (card, preset) => {
+                if (!card) return;
+                const section = card.querySelector('[data-letter-section]');
+                const host = section?.querySelector('[data-letter-host]');
+                if (!section || !host) return;
+                host.innerHTML = '';
+                const letters = Array.isArray(preset?.letters) ? preset.letters : [];
+                const docIds = Array.isArray(preset?.letterDocIds) ? preset.letterDocIds : [];
+                const rowCount = Math.max(letters.length, docIds.length, 1);
+                for (let idx = 0; idx < rowCount; idx++) {
+                    host.appendChild(
+                        buildLetterRow(card, {
+                            letter: letters[idx] ?? '',
+                            docId: docIds[idx] ?? '',
+                        })
+                    );
+                }
+                toggleLetterSection(card, true);
+            };
+
+            const syncLetterRowsToItemRounds = (card) => {
+                if (!card) return;
+                const host = card.querySelector('[data-letter-host]');
+                if (!host) return;
+                const roundCounts = Array.from(card.querySelectorAll('[data-vendor-item]')).map(block => block.querySelectorAll('[data-round-row]').length);
+                const maxRounds = Math.max(1, ...(roundCounts.length ? roundCounts : [0]));
+                let current = host.querySelectorAll('[data-letter-row]').length;
+                while (current < maxRounds) {
+                    host.appendChild(buildLetterRow(card));
+                    current++;
+                }
+                updateLetterEmptyState(card);
+            };
+
             const buildRoundRow = (block, preset) => {
                 const row = document.createElement('div');
                 row.className = 'row g-2 align-items-end border rounded-3 p-2';
                 row.dataset.roundRow = '1';
                 row.innerHTML = `
-                    <div class="col-md-5">
-                        <label class="form-label">No Letter</label>
-                        <input class="form-control form-control-sm" data-letter-input value="${preset?.letter ?? ''}" />
-                        <span class="text-danger small field-validation-valid" data-valmsg-letter data-valmsg-replace="true"></span>
-                    </div>
-                    <div class="col-md-5">
+                    <div class="col-md-9">
                         <label class="form-label">Harga Penawaran</label>
                         <div class="input-group input-group-sm">
                             <span class="input-group-text">Rp</span>
@@ -656,7 +1045,7 @@
                         </div>
                         <span class="text-danger small field-validation-valid" data-valmsg-price data-valmsg-replace="true"></span>
                     </div>
-                    <div class="col-md-2 text-end">
+                    <div class="col-md-3 text-end">
                         <button type="button" class="btn btn-outline-danger btn-sm" data-remove-round>
                             <i class="bi bi-trash"></i>
                         </button>
@@ -669,6 +1058,8 @@
                     if (host && host.querySelectorAll('[data-round-row]').length === 0) {
                         host.appendChild(buildRoundRow(block));
                     }
+                    const card = block.closest('[data-vendor-card]');
+                    syncLetterRowsToItemRounds(card);
                     reindexVendorCards();
                     recalcSummary();
                 });
@@ -678,7 +1069,7 @@
                     setCurrencyDisplay(priceInput, preset.price.toString());
                 }
                 bindCurrencyWithin(row);
-                row.querySelectorAll('[data-letter-input],[data-price-input]').forEach(input => {
+                row.querySelectorAll('[data-price-input]').forEach(input => {
                     input.addEventListener('input', () => {
                         reindexVendorCards();
                         recalcSummary();
@@ -693,13 +1084,17 @@
                 block.dataset.vendorItem = '1';
                 block.dataset.procOfferId = meta.procOfferId;
                 block.dataset.itemName = meta.itemPenawaran;
+                const qtyNumeric = Number(meta.quantity);
+                const woQtyDisplay = Number.isFinite(qtyNumeric)
+                    ? formatInteger(qtyNumeric)
+                    : '-';
                 block.innerHTML = `
                     <input type="hidden" value="${meta.procOfferId}" data-proc-offer-input />
                     <input type="hidden" data-item-index />
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
                             <div class="fw-semibold">${meta.itemPenawaran}</div>
-                            <div class="small text-muted">WO Qty: ${formatInteger(meta.quantity ?? 0)}</div>
+                            <div class="small text-muted">WO Qty: ${woQtyDisplay}</div>
                         </div>
                         <div class="hstack gap-1">
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle-item>
@@ -728,12 +1123,14 @@
 
                 const roundsHost = block.querySelector('[data-rounds]');
                 const presetRounds = Array.isArray(preset?.prices) && preset.prices.length
-                    ? preset.prices.map((price, idx) => ({ price, letter: preset.letters?.[idx] ?? '' }))
-                    : [{ price: '', letter: '' }];
+                    ? preset.prices.map(price => ({ price }))
+                    : [{ price: '' }];
                 presetRounds.forEach(round => roundsHost.appendChild(buildRoundRow(block, round)));
 
                 block.querySelector('[data-add-round]')?.addEventListener('click', () => {
                     roundsHost.appendChild(buildRoundRow(block));
+                    const card = block.closest('[data-vendor-card]');
+                    syncLetterRowsToItemRounds(card);
                     reindexVendorCards();
                 });
 
@@ -809,22 +1206,17 @@
                         }
 
                         block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
-                            const letterInput = row.querySelector('[data-letter-input]');
                             const priceInput = row.querySelector('[data-price-input]');
-                            const letterMsg = row.querySelector('[data-valmsg-letter]');
                             const priceMsg = row.querySelector('[data-valmsg-price]');
-                            if (letterInput) letterInput.name = `${base}.Letters[${roundIdx}]`;
                             if (priceInput) priceInput.name = `${base}.Prices[${roundIdx}]`;
-                            if (letterMsg) {
-                                letterMsg.setAttribute('data-valmsg-for', letterInput?.name ?? '');
-                                letterMsg.dataset.valmsgFor = letterInput?.name ?? '';
-                            }
                             if (priceMsg) {
                                 priceMsg.setAttribute('data-valmsg-for', priceInput?.name ?? '');
                                 priceMsg.dataset.valmsgFor = priceInput?.name ?? '';
                             }
                         });
                     });
+
+                    assignLetterFieldNames(card, vendorIdx);
                 });
                 applyModelErrors();
             };
@@ -843,6 +1235,7 @@
                 }
                 card.querySelector('[data-empty-state]')?.classList.remove('d-none');
                 card.querySelector('[data-total-row]')?.classList.add('d-none');
+                toggleLetterSection(card, false);
                 setDisplayNumber(card.querySelector('[data-vendor-total]'), 0);
             };
 
@@ -908,7 +1301,10 @@
                 if (hidden) {
                     hidden.value = vendorId;
                 }
-                populateVendorCardItems(card, preset ?? presetVendorMap.get(vendorId));
+                const vendorPreset = preset ?? presetVendorMap.get(vendorId);
+                populateVendorCardItems(card, vendorPreset);
+                populateVendorLetters(card, vendorPreset);
+                syncLetterRowsToItemRounds(card);
                 refreshVendorSelectOptions();
                 syncAddVendorButtonState();
                 reindexVendorCards();
@@ -956,6 +1352,21 @@
                         <input type="hidden" data-vendor-index />
                         <input type="hidden" data-vendor-id-input />
                         <div class="alert alert-info small mb-0" data-empty-state>Pilih vendor untuk menampilkan detail penawaran.</div>
+                        <div class="border rounded-3 p-3 bg-body-tertiary d-none" data-letter-section>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <div class="fw-semibold">Dokumen SPH / SNH</div>
+                                    <div class="small text-muted">Round 1 gunakan SPH (PDF), round berikutnya SNH.</div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-add-letter-round>
+                                    <i class="bi bi-plus-circle"></i> Tambah Round
+                                </button>
+                            </div>
+                            <div class="mt-3 vstack gap-2" data-letter-host></div>
+                            <div class="alert alert-warning small mb-0 d-none" data-letter-empty-state>
+                                Tambahkan minimal satu nomor dan file SPH/SNH.
+                            </div>
+                        </div>
                         <div class="vstack gap-3 d-none" data-items-host></div>
                         <div class="d-flex justify-content-end gap-3 align-items-center border-top pt-2 d-none" data-total-row>
                             <div class="fw-semibold">Final Offer</div>
@@ -974,6 +1385,14 @@
                 });
 
                 card.querySelector('[data-remove-vendor]')?.addEventListener('click', () => removeVendorCard(card, { uncheckVendor: false }));
+
+                card.querySelector('[data-add-letter-round]')?.addEventListener('click', () => {
+                    const host = card.querySelector('[data-letter-host]');
+                    if (!host) return;
+                    host.appendChild(buildLetterRow(card));
+                    updateLetterEmptyState(card);
+                    reindexVendorCards();
+                });
 
                 refreshVendorSelectOptions();
                 syncAddVendorButtonState();
@@ -1010,7 +1429,7 @@
                 const revenueField = document.getElementById('revenue');
                 const revenue = revenueField?.dataset?.rawValue
                     ? parseFloat(revenueField.dataset.rawValue)
-                    : parseFloat(digitsOnly(revenueField?.value)) || 0;
+                    : parseFloat(normalizeCurrencyValue(revenueField?.value)) || 0;
                 const tbody = document.querySelector('#summary tbody');
                 if (tbody) {
                     tbody.innerHTML = '';
@@ -1063,7 +1482,8 @@
                 }
             };
 
-            const recalcHeader = () => {
+            const recalcHeader = (options = {}) => {
+                const forceDistanceKm = options.forceDistanceKm ?? !isEditMode;
                 const distance = parseFloat(distanceInput?.value?.toString().replace(',', '.') ?? '0') || 0;
                 let revenueSum = 0;
                 const itemSnapshots = [];
@@ -1073,7 +1493,7 @@
                     const tarifAdd = numberValue(row.querySelector('[data-tarif-add]'));
                     const kmInput = row.querySelector('[data-km]');
                     let km = 0;
-                    if (distance > 400) {
+                    if (forceDistanceKm && distance > 400) {
                         km = Math.max(0, (distance - 400) / 25);
                         setKmDisplay(kmInput, km);
                     } else if (kmInput) {
@@ -1116,7 +1536,7 @@
                 const distance = parseFloat(distanceInput.value.toString().replace(',', '.') || '0') || 0;
                 const kmValue = distance > 400 ? Math.max(0, (distance - 400) / 25) : 0;
                 document.querySelectorAll('[data-km]').forEach(input => setKmDisplay(input, kmValue));
-                recalcHeader();
+                recalcHeader({ forceDistanceKm: true });
             };
 
             const validateVendorCoverage = () => {
@@ -1245,7 +1665,9 @@
                     return;
                 }
                 document.querySelectorAll(currencySelector).forEach(input => {
-                    input.value = input.dataset?.rawValue ?? digitsOnly(input.value);
+                    const normalized = input.dataset?.rawValue ?? normalizeCurrencyValue(input.value);
+                    input.dataset.rawValue = normalized;
+                    input.value = normalized ? normalized.replace('.', ',') : '';
                 });
                 debugLog('Currency fields normalized before submit');
                 enqueueMicrotask(() => {
@@ -1339,15 +1761,19 @@
 
             bindCurrencyWithin(document);
             if (distanceInput) {
-                bind(distanceInput, 'input', recalcKmPer25FromDistance);
-                bind(distanceInput, 'change', recalcKmPer25FromDistance);
+                bind(distanceInput, 'input', () => recalcKmPer25FromDistance());
+                bind(distanceInput, 'change', () => recalcKmPer25FromDistance());
             }
 
             initPresetVendors();
             refreshVendorSelectOptions();
             syncToggleButtonLabel();
             syncAddVendorButtonState();
-            recalcKmPer25FromDistance();
+            if (isEditMode) {
+                recalcHeader({ forceDistanceKm: false });
+            } else {
+                recalcKmPer25FromDistance();
+            }
             reindexVendorCards();
         })();
     </script>

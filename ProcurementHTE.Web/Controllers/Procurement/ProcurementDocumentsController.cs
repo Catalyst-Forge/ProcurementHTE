@@ -1,9 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
+using ProcurementHTE.Core.Models;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
@@ -11,9 +14,17 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 [Authorize]
 public class ProcurementDocumentsController : Controller
 {
+    private static readonly HashSet<string> _roundLetterDocNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Surat Penawaran Harga",
+        "Surat Negosiasi Harga",
+    };
+
     private readonly IProcurementDocumentQuery _query;
     private readonly IProcDocumentService _docSvc;
     private readonly IProcurementService _procurementService;
+    private readonly IVendorService _vendorService;
+    private readonly IVendorRoundLetterRepository _roundLetterRepo;
     private readonly IHttpClientFactory _http;
     private readonly IDocumentGenerator _docGenerator;
     private readonly IDocumentTypeRepository _docTypeRepo;
@@ -23,6 +34,8 @@ public class ProcurementDocumentsController : Controller
         IProcurementDocumentQuery query,
         IProcurementService procurementService,
         IProcDocumentService docSvc,
+        IVendorService vendorService,
+        IVendorRoundLetterRepository roundLetterRepo,
         IHttpClientFactory http,
         IDocumentGenerator docGenerator,
         IDocumentTypeRepository docTypeRepo,
@@ -32,6 +45,8 @@ public class ProcurementDocumentsController : Controller
         _query = query;
         _docSvc = docSvc;
         _procurementService = procurementService;
+        _vendorService = vendorService;
+        _roundLetterRepo = roundLetterRepo;
         _http = http;
         _docGenerator = docGenerator;
         _docTypeRepo = docTypeRepo;
@@ -57,13 +72,22 @@ public class ProcurementDocumentsController : Controller
 
             var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
             ViewBag.ProcNum = procurement?.ProcNum ?? "-";
+            ViewBag.Vendors = await _vendorService.GetAllVendorsAsync();
+            ViewBag.RoundLetters = await _roundLetterRepo.ListByProcurementAsync(procurementId);
+
+            var filteredDocItems = (dto.Items ?? Enumerable.Empty<RequiredDocItemDto>()).Where(item =>
+            {
+                var docName = item.DocumentTypeName?.Trim();
+                return string.IsNullOrWhiteSpace(docName) || !_roundLetterDocNames.Contains(docName);
+            });
+
             var vm = new ProcurementRequiredDocsVm
             {
                 ProcurementId = dto.ProcurementId,
                 JobTypeId = dto.JobTypeId,
                 Items =
                 [
-                    .. dto.Items.Select(x => new RequiredDocItemDto
+                    .. filteredDocItems.Select(x => new RequiredDocItemDto
                     {
                         JobTypeDocumentId = x.JobTypeDocumentId,
                         Sequence = x.Sequence,
@@ -191,6 +215,7 @@ public class ProcurementDocumentsController : Controller
 
         return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
     }
+
 
     private bool IsAjaxRequest()
     {
