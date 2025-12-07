@@ -1,6 +1,9 @@
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -21,6 +24,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         #region Construct
 
         private const string ActivePageName = "Index Procurements";
+        private static readonly Regex LetterFileFieldRegex = new(
+            "^Vendors\\[(\\d+)\\]\\.LetterFiles\\[(\\d+)\\]$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
+        );
         private readonly IProcurementService _procurementService;
         private readonly IVendorService _vendorService;
         private readonly IProfitLossService _pnlService;
@@ -28,6 +35,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private readonly IDocumentGenerator _documentGenerator;
         private readonly IDocumentTypeService _docTypeService;
         private readonly IProcDocumentService _procDocService;
+        private readonly IVendorRoundLetterRepository _roundLetterRepository;
         private readonly UserManager<User> _userManager;
         private readonly ILogger<ProcurementsController> _logger;
 
@@ -39,6 +47,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             IDocumentGenerator documentGenerator,
             IDocumentTypeService docTypeService,
             IProcDocumentService procDocService,
+            IVendorRoundLetterRepository roundLetterRepository,
             UserManager<User> userManager,
             ILogger<ProcurementsController> logger
         )
@@ -50,6 +59,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             _documentGenerator = documentGenerator;
             _docTypeService = docTypeService;
             _procDocService = procDocService;
+            _roundLetterRepository = roundLetterRepository;
             _userManager = userManager;
             _logger = logger;
         }
@@ -500,10 +510,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     {
                         ProcOfferId = o.ProcOfferId,
                         Quantity = (int)Math.Round(o.Quantity),
-                        TarifAwal = 0,
-                        TarifAdd = 0,
-                        KmPer25 = 0,
-                        OperatorCost = 0m,
+                        TarifAwal = null,
+                        TarifAdd = null,
+                        KmPer25 = null,
+                        OperatorCost = null,
                     })
                     .ToList();
 
@@ -584,6 +594,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     "CreateProfitLossPost calculation succeeded. ProfitLossId={ProfitLossId}",
                     pnl?.ProfitLossId
                 );
+                await UploadRoundLettersAsync(viewModel, pnl?.ProfitLossId);
 
                 var wo =
                     await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
@@ -697,16 +708,20 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                                 {
                                     ProcOfferId = representative.ProcOfferId,
                                     Prices = representative.Prices?.ToList() ?? [],
-                                    Letters = representative.Letters?.ToList() ?? [],
                                     Quantity = representative.Quantity,
                                     Trip = representative.Trip,
                                 };
                             })
                             .ToList();
 
+                        var letters = vendorEntries.First().Letters?.ToList() ?? [];
+                        var letterDocs = (vendorEntries.First().LetterDocIds ?? []).Select(x => x ?? string.Empty).ToList();
+
                         return new VendorItemOfferInputVm
                         {
                             VendorId = vendorEntries.First().VendorId,
+                            Letters = letters,
+                            LetterDocIds = letterDocs,
                             Items = aggregatedItems,
                         };
                     })
@@ -796,10 +811,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     {
                         ProcOfferId = x.ProcOfferId,
                         Quantity = x.Quantity,
-                        TarifAwal = x.TarifAwal,
-                        TarifAdd = x.TarifAdd,
-                        KmPer25 = x.KmPer25,
-                        OperatorCost = x.OperatorCost,
+                        TarifAwal = x.TarifAwal ?? 0m,
+                        TarifAdd = x.TarifAdd ?? 0m,
+                        KmPer25 = x.KmPer25 ?? 0m,
+                        OperatorCost = x.OperatorCost ?? 0m,
                     })
                     .ToList(),
                 SelectedVendorIds = distinctSelectedVendors,
@@ -811,7 +826,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             );
             update.Vendors = BuildVendorOfferDtos(viewModel.Vendors, allowedVendorSet);
 
-            await _pnlService.EditProfitLossAsync(update);
+            var pnlUpdated = await _pnlService.EditProfitLossAsync(update);
+            await UploadRoundLettersAsync(viewModel, pnlUpdated.ProfitLossId);
             TempData["SuccessMessage"] = "Profit & Loss updated successfully";
             return RedirectToAction(nameof(Details), new { id = viewModel.ProcurementId });
         }
@@ -840,6 +856,19 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 or "spot dan angkutan" => "_CreateSpotAngkutan",
                 _ => "_CreateOther",
             };
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return "file";
+            var invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder();
+            foreach (var ch in fileName.Trim())
+            {
+                sb.Append(invalid.Contains(ch) ? '_' : ch);
+            }
+            return sb.ToString();
         }
 
         // ProcurementsController.cs
@@ -885,10 +914,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 {
                     ProcOfferId = x.ProcOfferId,
                     Quantity = x.Quantity,
-                    TarifAwal = x.TarifAwal,
-                    TarifAdd = x.TarifAdd,
-                    KmPer25 = x.KmPer25,
-                    OperatorCost = x.OperatorCost,
+                    TarifAwal = x.TarifAwal ?? 0m,
+                    TarifAdd = x.TarifAdd ?? 0m,
+                    KmPer25 = x.KmPer25 ?? 0m,
+                    OperatorCost = x.OperatorCost ?? 0m,
                 })
                 .ToList();
 
@@ -942,13 +971,11 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         ProcOfferId = item.ProcOfferId!,
                         Round = item.Round,
                         Prices = [],
-                        Letters = [],
                         Quantity = item.Quantity,
                         Trip = item.Trip,
                     };
 
                     var prices = item.Prices ?? [];
-                    var letters = item.Letters ?? [];
 
                     for (int idx = 0; idx < prices.Count; idx++)
                     {
@@ -956,11 +983,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         if (price <= 0m)
                             continue;
                         dto.Prices.Add(price);
-                        dto.Letters.Add(
-                            idx < letters.Count
-                                ? letters[idx]?.Trim() ?? string.Empty
-                                : string.Empty
-                        );
                     }
 
                     if (dto.Prices.Count > 0)
@@ -969,11 +991,224 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
                 if (dtoItems.Count > 0)
                 {
-                    result.Add(new VendorItemOffersDto { VendorId = vendorId, Items = dtoItems });
+                    result.Add(
+                        new VendorItemOffersDto
+                        {
+                            VendorId = vendorId,
+                            Items = dtoItems,
+                            Letters = (vendor.Letters ?? []).Select(l => l?.Trim() ?? string.Empty).ToList(),
+                            LetterDocIds = (vendor.LetterDocIds ?? []).Where(x => x != null).ToList()!,
+                        }
+                    );
                 }
             }
 
             return result;
+        }
+
+        private async Task UploadRoundLettersAsync(
+            ProfitLossInputViewModel vm,
+            string? profitLossId
+        )
+        {
+            if (vm?.Vendors == null || vm.Vendors.Count == 0)
+                return;
+
+            var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
+                page: 1,
+                pageSize: 200,
+                search: null,
+                fields: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name" },
+                ct: default
+            );
+
+            var sphDocTypeId =
+                docTypes
+                    .Items.FirstOrDefault(d =>
+                        d.Name.Equals("Surat Penawaran Harga", StringComparison.OrdinalIgnoreCase)
+                    )
+                    ?.DocumentTypeId
+                ?? throw new InvalidOperationException("DocumentType 'Surat Penawaran Harga' tidak ditemukan.");
+
+            var snhDocTypeId =
+                docTypes
+                    .Items.FirstOrDefault(d =>
+                        d.Name.Equals("Surat Negosiasi Harga", StringComparison.OrdinalIgnoreCase)
+                    )
+                    ?.DocumentTypeId
+                ?? throw new InvalidOperationException("DocumentType 'Surat Negosiasi Harga' tidak ditemukan.");
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var vendorFileLookup = BuildLetterFileLookup();
+
+            for (var vendorIndex = 0; vendorIndex < vm.Vendors.Count; vendorIndex++)
+            {
+                var vendor = vm.Vendors[vendorIndex];
+                if (vendor == null || string.IsNullOrWhiteSpace(vendor.VendorId))
+                    continue;
+
+                var letters = vendor.Letters ?? [];
+                var docIds = vendor.LetterDocIds ?? [];
+                var deletes = vendor.LetterDeletes ?? [];
+                var files = MergeLetterFiles(vendor.LetterFiles, vendorFileLookup, vendorIndex);
+
+                var maxLength = Math.Max(
+                    Math.Max(letters.Count, files.Count),
+                    Math.Max(docIds.Count, deletes.Count)
+                );
+
+                for (int i = 0; i < maxLength; i++)
+                {
+                    var letter = i < letters.Count ? letters[i] : null;
+                    var file = i < files.Count ? files[i] : null;
+                    var docId = i < docIds.Count ? docIds[i] : null;
+                    var deleteFlag = i < deletes.Count && deletes[i];
+
+                    var round = i + 1;
+                    var docTypeId = round == 1 ? sphDocTypeId : snhDocTypeId;
+                    var docLabel = round == 1 ? "Surat Penawaran Harga" : "Surat Negosiasi Harga";
+                    var prefix = round == 1 ? "SPH" : "SNH";
+
+                    var hasExistingDoc = !string.IsNullOrWhiteSpace(docId);
+                    var hasNewFile = file != null && file.Length > 0;
+
+                    if (hasExistingDoc && (deleteFlag || hasNewFile))
+                    {
+                        try
+                        {
+                            await _procDocService.DeleteAsync(docId!);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Gagal menghapus SPH/SNH doc {DocId}", docId);
+                        }
+                        await _roundLetterRepository.DeleteByProcDocumentIdAsync(
+                            docId!,
+                            HttpContext.RequestAborted
+                        );
+                        if (deleteFlag && !hasNewFile)
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (!hasNewFile)
+                        continue; // skip jika tidak ada file baru
+
+                    var baseName = SanitizeFileName($"{prefix}_R{round}_{vendor.VendorId}");
+
+                    await using var stream = file!.OpenReadStream();
+                    var uploadResult = await _procDocService.UploadAsync(
+                        new UploadProcDocumentRequest
+                        {
+                            ProcurementId = vm.ProcurementId,
+                            DocumentTypeId = docTypeId,
+                            Content = stream,
+                            Size = file.Length,
+                            FileName = $"{baseName}.pdf",
+                            ContentType = "application/pdf",
+                            Description = $"{docLabel} Ronde {round} - Vendor {vendor.VendorId}",
+                            UploadedByUserId = userId,
+                            NowUtc = DateTime.UtcNow,
+                        },
+                        HttpContext.RequestAborted
+                    );
+
+                    var entity = new VendorRoundLetter
+                    {
+                        ProcurementId = vm.ProcurementId,
+                        VendorId = vendor.VendorId,
+                        Round = round,
+                        LetterNumber = string.IsNullOrWhiteSpace(letter) ? null : letter.Trim(),
+                        ProcDocumentId = uploadResult.ProcDocumentId,
+                        ProfitLossId = profitLossId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedByUserId = userId,
+                    };
+                    await _roundLetterRepository.AddOrUpdateAsync(entity);
+                }
+            }
+
+            await _roundLetterRepository.SaveChangesAsync(HttpContext.RequestAborted);
+        }
+
+        private Dictionary<int, Dictionary<int, IFormFile>> BuildLetterFileLookup()
+        {
+            var lookup = new Dictionary<int, Dictionary<int, IFormFile>>();
+            var files = Request?.Form?.Files;
+            if (files == null || files.Count == 0)
+                return lookup;
+
+            foreach (var formFile in files)
+            {
+                if (formFile == null || string.IsNullOrWhiteSpace(formFile.Name))
+                    continue;
+
+                var match = LetterFileFieldRegex.Match(formFile.Name);
+                if (!match.Success)
+                    continue;
+
+                if (!int.TryParse(match.Groups[1].Value, out var vendorIndex))
+                    continue;
+
+                if (!int.TryParse(match.Groups[2].Value, out var roundIndex))
+                    continue;
+
+                if (!lookup.TryGetValue(vendorIndex, out var roundMap))
+                {
+                    roundMap = new Dictionary<int, IFormFile>();
+                    lookup[vendorIndex] = roundMap;
+                }
+
+                roundMap[roundIndex] = formFile;
+            }
+
+            return lookup;
+        }
+
+        private static List<IFormFile?> MergeLetterFiles(
+            List<IFormFile?>? boundFiles,
+            Dictionary<int, Dictionary<int, IFormFile>> lookup,
+            int vendorIndex
+        )
+        {
+            var files = boundFiles is { Count: > 0 }
+                ? new List<IFormFile?>(boundFiles)
+                : new List<IFormFile?>();
+
+            if (!lookup.TryGetValue(vendorIndex, out var roundFiles) || roundFiles.Count == 0)
+            {
+                return files;
+            }
+
+            var requiredLength = roundFiles.Keys.Count > 0
+                ? Math.Max(files.Count, roundFiles.Keys.Max() + 1)
+                : files.Count;
+
+            while (files.Count < requiredLength)
+            {
+                files.Add(null);
+            }
+
+            foreach (var kvp in roundFiles)
+            {
+                var roundIndex = kvp.Key;
+                if (roundIndex < 0)
+                    continue;
+
+                if (roundIndex >= files.Count)
+                {
+                    while (files.Count <= roundIndex)
+                    {
+                        files.Add(null);
+                    }
+                }
+
+                files[roundIndex] = kvp.Value;
+            }
+
+            return files;
         }
 
         private async Task RepopulateVendorChoices(ProfitLossInputViewModel viewModel)

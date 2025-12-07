@@ -1,5 +1,6 @@
 @model ProcurementHTE.Web.Models.ViewModels.ProcurementRequiredDocsVm
 @using ProcurementHTE.Web.Models.ViewModels
+@using ProcurementHTE.Core.Models
 @{
     ViewData["Title"] = "Procurement Documents";
 
@@ -21,6 +22,9 @@
         ApprovalDocs = isRequiredApprovals,
         TotalDocs = totalDocs
     };
+
+    var vendors = ViewBag.Vendors as IEnumerable<Vendor> ?? Enumerable.Empty<Vendor>();
+    var roundLetters = ViewBag.RoundLetters as IReadOnlyList<VendorRoundLetter> ?? Array.Empty<VendorRoundLetter>();
 }
 
 <div class="container-fluid py-4">
@@ -45,6 +49,103 @@
     </div>
 
     @await Html.PartialAsync("Partials/_ProcurementDocumentsSummaryCard", summaryStats)
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h5 class="card-title mb-0">Surat Penawaran Harga (SPH)</h5>
+                            <small class="text-muted">Ronde 1 Dst</small>
+                        </div>
+                    </div>
+                    @if (roundLetters.Any(r => r.Round == 1))
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Vendor</th>
+                                        <th>No Surat</th>
+                                        <th>Dokumen</th>
+                                        <th class="text-end">Diunggah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var rl in roundLetters.Where(r => r.Round == 1).OrderBy(r => r.Vendor?.VendorName ?? r.VendorId))
+                                    {
+                                        <tr>
+                                            <td>@(rl.Vendor?.VendorName ?? rl.VendorId)</td>
+                                            <td>@(string.IsNullOrWhiteSpace(rl.LetterNumber) ? "-" : rl.LetterNumber)</td>
+                                            <td>
+                                                <a asp-controller="ProcurementDocuments" asp-action="Download" asp-route-id="@rl.ProcDocumentId" asp-route-procurementId="@Model.ProcurementId" class="btn btn-sm btn-outline-primary" hx-boost="false">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </td>
+                                            <td class="text-end">@rl.CreatedAt.ToLocalTime()</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-0">Belum ada SPH yang diunggah. Unggah SPH melalui form Profit &amp; Loss.</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h5 class="card-title mb-0">Surat Negosiasi Harga (SNH)</h5>
+                            <small class="text-muted">Ronde 2 dan seterusnya</small>
+                        </div>
+                    </div>
+                    @if (roundLetters.Any(r => r.Round > 1))
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Vendor</th>
+                                        <th class="text-center">Ronde</th>
+                                        <th>No Surat</th>
+                                        <th>Dokumen</th>
+                                        <th class="text-end">Diunggah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var rl in roundLetters.Where(r => r.Round > 1).OrderBy(r => r.Vendor?.VendorName ?? r.VendorId).ThenBy(r => r.Round))
+                                    {
+                                        <tr>
+                                            <td>@(rl.Vendor?.VendorName ?? rl.VendorId)</td>
+                                            <td class="text-center">R@rl.Round</td>
+                                            <td>@(string.IsNullOrWhiteSpace(rl.LetterNumber) ? "-" : rl.LetterNumber)</td>
+                                            <td>
+                                                <a asp-controller="ProcurementDocuments" asp-action="Download" asp-route-id="@rl.ProcDocumentId" asp-route-procurementId="@Model.ProcurementId" class="btn btn-sm btn-outline-primary" hx-boost="false">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </td>
+                                            <td class="text-end">@rl.CreatedAt.ToLocalTime()</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-0">Belum ada SNH yang diunggah. Gunakan form Profit &amp; Loss untuk mengunggah SNH per ronde negosiasi.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 
     @await Html.PartialAsync("Partials/_ProcurementDocumentsTable", Model)
 </div>

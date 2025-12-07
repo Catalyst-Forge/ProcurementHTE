@@ -289,6 +289,39 @@ public sealed class ProcDocumentService : IProcDocumentService
         if (string.Equals(doc.Status, DocStatuses.Deleted, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Dokumen sudah dihapus.");
 
+        // SPH / SNH tidak memerlukan approval: short-circuit di sini
+        try
+        {
+            var docType = await _documentTypeRepository.GetByIdAsync(doc.DocumentTypeId);
+            var name = docType?.Name ?? doc.DocumentType?.Name ?? string.Empty;
+            var fileName = doc.FileName ?? string.Empty;
+            if (
+                name.Equals("Surat Penawaran Harga", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("Surat Negosiasi Harga", StringComparison.OrdinalIgnoreCase)
+                // fallback: jika docType belum ada, cek pola nama file
+                || fileName.StartsWith("SPH_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("SNH_", StringComparison.OrdinalIgnoreCase)
+                || (fileName.Contains("Penawaran", StringComparison.OrdinalIgnoreCase)
+                    && fileName.Contains("Harga", StringComparison.OrdinalIgnoreCase))
+            )
+            {
+                if (!DocStatuses.IsFinal(doc.Status ?? string.Empty))
+                {
+                    doc.Status = DocStatuses.Uploaded;
+                    doc.IsApproved = null;
+                    doc.ApprovedAt = null;
+                    doc.ApprovedByUserId = null;
+                    await _procDocumentRepository.UpdateAsync(doc);
+                    await _procDocumentRepository.SaveAsync();
+                }
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            // fallback ke flow biasa jika lookup docType gagal
+        }
+
         var procurement = await GetProcurementOrThrowAsync(doc.ProcurementId);
         var jobTypeDocs = string.IsNullOrWhiteSpace(procurement.JobTypeId)
             ? Array.Empty<JobTypeDocuments>()

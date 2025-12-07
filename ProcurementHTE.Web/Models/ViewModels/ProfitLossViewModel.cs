@@ -67,25 +67,33 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         [DisplayName("400 KM Tariff")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal TarifAwal { get; set; }
+        public decimal? TarifAwal { get; set; }
 
         [DisplayName("Additional Tariff")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal TarifAdd { get; set; }
+        public decimal? TarifAdd { get; set; }
 
         [DisplayName("KM per 25 km")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal KmPer25 { get; set; }
+        public decimal? KmPer25 { get; set; }
 
         [DisplayName("Biaya Operator (Item)")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal OperatorCost { get; set; }
+        public decimal? OperatorCost { get; set; }
     }
 
     public class VendorItemOfferInputVm
     {
         [Required, StringLength(450)]
         public string VendorId { get; set; } = null!;
+
+        public List<string> Letters { get; set; } = [];
+
+        public List<string> LetterDocIds { get; set; } = [];
+
+        public List<bool> LetterDeletes { get; set; } = [];
+
+        public List<IFormFile?> LetterFiles { get; set; } = [];
 
         [MinLength(1)]
         public List<VendorOfferPerItemInputVm> Items { get; set; } = [];
@@ -100,9 +108,6 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         [MinLength(0)]
         public List<decimal> Prices { get; set; } = [];
-
-        [MinLength(0)]
-        public List<string> Letters { get; set; } = [];
 
         public int Quantity { get; set; }
 
