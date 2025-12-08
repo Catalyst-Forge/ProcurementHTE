@@ -243,24 +243,22 @@
       <table class="signature-table table table-bordered border-black">
         <tbody class="text-center">
           <tr>
-            <td style="width: 33.33%">Dibuat oleh :</td>
-            <td style="width: 33.33%">Disetujui oleh :</td>
-            <td style="width: 33.33%">Disetujui oleh :</td>
+            <td style="width: 25%">Dibuat oleh</td>
+            <td style="width: 25%">Diajukan oleh</td>
+            <td style="width: 25%">Disetujui oleh</td>
+            {{ ConditionalApproveHeaderCell }}
           </tr>
           <tr>
             <td class="signature-content"></td>
             <td class="signature-content"></td>
             <td class="signature-content"></td>
+            {{ ConditionalApproveBlankCell }}
           </tr>
           <tr>
-            <td>Dirayanto</td>
-            <td>Edo Pradipta</td>
-            <td>Arfinal Diputra</td>
-          </tr>
-          <tr>
-            <td>Analyst HTE & LTS</td>
+            <td>Analyst HTE &amp; LTS</td>
             <td>Assistant Manager HTE</td>
-            <td>Manager Transport & Logistic</td>
+            <td>Manager Transport &amp; Logistic</td>
+            {{ ConditionalApproveRoleCell }}
           </tr>
         </tbody>
       </table>

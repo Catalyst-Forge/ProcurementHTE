@@ -18,6 +18,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return _context
                 .ProcDocuments.Include(doc => doc.Procurement)
+                .Include(doc => doc.DocumentType)
                 .FirstOrDefaultAsync(doc => doc.ProcDocumentId == procDocumentId, ct);
         }
 
@@ -36,6 +37,41 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         && jobTypeDoc.DocumentTypeId == documentTypeId,
                     ct
                 );
+        }
+
+        public async Task<List<DocumentApprovalRule>> GetConditionalRulesAsync(
+            string documentTypeId,
+            string? jobTypeId,
+            ProcurementHTE.Core.Enums.ProcurementCategory? category,
+            CancellationToken ct = default
+        )
+        {
+            try
+            {
+                var query = _context
+                    .DocumentApprovalRules.AsNoTracking()
+                    .Where(r => r.DocumentTypeId == documentTypeId && r.IsActive);
+
+                if (!string.IsNullOrWhiteSpace(jobTypeId))
+                    query = query.Where(r => r.JobTypeId == null || r.JobTypeId == jobTypeId);
+
+                if (category.HasValue)
+                    query = query.Where(
+                        r =>
+                            r.ProcurementCategory == null
+                            || r.ProcurementCategory == category.Value
+                    );
+
+                return await query
+                    .OrderBy(r => r.MinAmount)
+                    .ThenBy(r => r.Sequence)
+                    .ToListAsync(ct);
+            }
+            catch
+            {
+                // Jika tabel belum tersedia, fallback ke kosong (akan pakai config statis).
+                return [];
+            }
         }
 
         public async Task AddApprovalsAsync(

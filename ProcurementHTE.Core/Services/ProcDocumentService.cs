@@ -347,41 +347,10 @@ public sealed class ProcDocumentService : IProcDocumentService
                 )
             )
             {
-                // Special handling: if this document is Profit & Loss and selected final offer > 300,000,000
-                // then append Vice President to approval flow
-                var extraRoles = new List<string>();
-                try
-                {
-                    var docType = await _documentTypeRepository.GetByIdAsync(doc.DocumentTypeId);
-                    if (
-                        docType != null
-                        && !string.IsNullOrWhiteSpace(docType.Name)
-                        && docType.Name.IndexOf(
-                            "Profit & Loss.pdf",
-                            StringComparison.OrdinalIgnoreCase
-                        ) >= 0
-                    )
-                    {
-                        var pnl = await _pnlService.GetLatestByProcurementAsync(doc.ProcurementId);
-                        if (pnl != null && pnl.SelectedVendorFinalOffer > 300_000_000m)
-                        {
-                            extraRoles.Add("Vice President");
-                        }
-                    }
-                }
-                catch (Exception) { }
-
-                if (extraRoles.Count > 0)
-                    await _approvalFlowService.GenerateFlowAsync(
-                        doc.ProcurementId,
-                        doc.ProcDocumentId,
-                        extraRoles
-                    );
-                else
-                    await _approvalFlowService.GenerateFlowAsync(
-                        doc.ProcurementId,
-                        doc.ProcDocumentId
-                    );
+                await _approvalFlowService.GenerateFlowAsync(
+                    doc.ProcurementId,
+                    doc.ProcDocumentId
+                );
 
                 doc.Status = DocStatuses.PendingApproval;
                 await _procDocumentRepository.UpdateAsync(doc);

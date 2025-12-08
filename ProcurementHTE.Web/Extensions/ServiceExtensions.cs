@@ -345,6 +345,7 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();
             services.AddScoped<IProcDocApprovalFlowRepository, ProcDocApprovalFlowRepository>();
             services.AddScoped<IApprovalRepository, ApprovalRepository>();
+            services.AddScoped<IDocumentApprovalRuleRepository, DocumentApprovalRuleRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
@@ -363,6 +364,7 @@ namespace ProcurementHTE.Web.Extensions
             services.AddScoped<IJobTypeDocumentService, JobTypeDocumentService>();
             services.AddScoped<IProcDocumentApprovalService, ProcDocumentApprovalService>();
             services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
+            services.AddScoped<IDocumentApprovalRuleService, DocumentApprovalRuleService>();
             services.AddScoped<IPdfGenerator, PdfGeneratorService>();
             services.AddScoped<IApprovalService, ApprovalService>();
             services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();

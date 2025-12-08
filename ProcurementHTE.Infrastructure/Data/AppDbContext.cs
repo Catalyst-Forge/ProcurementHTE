@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models.Enums;
 
 namespace ProcurementHTE.Infrastructure.Data
@@ -25,6 +26,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<DocumentType> DocumentTypes { get; set; }
         public DbSet<Tender> Tenders { get; set; }
         public DbSet<VendorRoundLetter> VendorRoundLetters { get; set; }
+        public DbSet<DocumentApprovalRule> DocumentApprovalRules { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<UserSecurityLog> UserSecurityLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -57,6 +59,7 @@ namespace ProcurementHTE.Infrastructure.Data
             ConfigureJobTypeDocuments(builder);
             ConfigureDocumentApprovals(builder);
             ConfigureVendorRoundLetters(builder);
+            ConfigureDocumentApprovalRules(builder);
         }
 
         #region Identity & User
@@ -568,6 +571,43 @@ namespace ProcurementHTE.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(documentApproval => documentApproval.RoleId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+
+        #endregion
+
+        #region DocumentApprovalRules
+
+        private static void ConfigureDocumentApprovalRules(ModelBuilder builder)
+        {
+            builder.Entity<DocumentApprovalRule>(entity =>
+            {
+                entity.HasKey(r => r.DocumentApprovalRuleId);
+                entity.Property(r => r.MinAmount).HasPrecision(18, 2);
+                entity.Property(r => r.MaxAmount).HasPrecision(18, 2);
+                entity.Property(r => r.Sequence).HasDefaultValue(1);
+                entity.Property(r => r.IsActive).HasDefaultValue(true);
+                entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasOne(r => r.DocumentType)
+                    .WithMany()
+                    .HasForeignKey(r => r.DocumentTypeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.JobType)
+                    .WithMany()
+                    .HasForeignKey(r => r.JobTypeId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(r => new
+                {
+                    r.DocumentTypeId,
+                    r.JobTypeId,
+                    r.ProcurementCategory,
+                    r.MinAmount,
+                    r.MaxAmount,
+                    r.IsActive,
+                });
             });
         }
 

@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
@@ -7,7 +6,7 @@ namespace ProcurementHTE.Core.Services
     public class ProcDocApprovalFlowService : IProcDocApprovalFlowService
     {
         private readonly IProcDocApprovalFlowRepository _flowRepository;
-        private readonly Microsoft.AspNetCore.Identity.RoleManager<Role> _roleManager;
+        private readonly IProfitLossService _pnlService;
         private static readonly IReadOnlyDictionary<
             string,
             Func<Procurement, string?>
@@ -25,11 +24,12 @@ namespace ProcurementHTE.Core.Services
 
         public ProcDocApprovalFlowService(
             IProcDocApprovalFlowRepository flowRepository,
+            IProfitLossService pnlService,
             Microsoft.AspNetCore.Identity.RoleManager<Role> roleManager
         )
         {
             _flowRepository = flowRepository;
-            _roleManager = roleManager;
+            _pnlService = pnlService;
         }
 
         public async Task GenerateFlowAsync(
@@ -41,6 +41,9 @@ namespace ProcurementHTE.Core.Services
             var doc = await _flowRepository.GetDocumentWithProcurementAsync(procDocumentId);
             if (doc == null || doc.Procurement == null)
                 throw new InvalidOperationException("Document atau Work Order tidak ditemukan");
+
+            var docTypeName = doc.DocumentType?.Name ?? string.Empty;
+            var isPnl = IsDoc(docTypeName, "Profit & Loss");
 
             var jobTypeDoc = await _flowRepository.GetJobTypeDocumentWithApprovalsAsync(
                 doc.Procurement.JobTypeId!,
@@ -61,45 +64,94 @@ namespace ProcurementHTE.Core.Services
                 return;
             }
 
-            var firstLevel = approvalsMaster.Min(a => a.Level);
-            var flows = new List<ProcDocumentApprovals>(
-                approvalsMaster.Count + (extraRoleNames?.Count() ?? 0)
+            var ct = await GetGrandTotalAsync(doc.ProcurementId);
+            var conditionalRules = await _flowRepository.GetConditionalRulesAsync(
+                doc.DocumentTypeId,
+                doc.Procurement.JobTypeId,
+                doc.Procurement.ProcurementCategory
             );
-            foreach (var approval in approvalsMaster)
-            {
-                var assignedApproverId = ResolveAssignedApproverId(approval, doc.Procurement);
-                flows.Add(
-                    new ProcDocumentApprovals
-                    {
-                        ProcDocumentId = procDocumentId,
-                        ProcurementId = woId,
-                        RoleId = approval.RoleId,
-                        AssignedApproverId = assignedApproverId,
-                        Level = approval.Level,
-                        Status = approval.Level == firstLevel ? "Pending" : "Blocked",
-                    }
-                );
-            }
+            var matchedRule = GetMatchedRule(ct, conditionalRules);
 
-            // Append extra role names as a new level (maxLevel + 1)
-            if (extraRoleNames != null && extraRoleNames.Any())
+            var flows = new List<ProcDocumentApprovals>();
+            var firstLevel = approvalsMaster.Min(a => a.Level);
+
+            var isConditionalTarget =
+                IsDoc(docTypeName, "Owner Estimate")
+                || IsDoc(docTypeName, "RKS")
+                || IsDoc(docTypeName, "Justifikasi")
+                || isPnl;
+
+            // 1) Conditional override for OE / RKS / Justifikasi
+            if (matchedRule != null && !isPnl && isConditionalTarget)
             {
-                var maxLevel = approvalsMaster.Max(a => a.Level);
-                foreach (var roleName in extraRoleNames)
+                var level = 1;
+                if (!string.IsNullOrWhiteSpace(matchedRule.SubmitterRoleId))
                 {
-                    if (string.IsNullOrWhiteSpace(roleName))
-                        continue;
-                    var role = await _roleManager.FindByNameAsync(roleName);
-                    if (role == null)
-                    {
-                        continue;
-                    }
                     flows.Add(
                         new ProcDocumentApprovals
                         {
                             ProcDocumentId = procDocumentId,
                             ProcurementId = woId,
-                            RoleId = role.Id,
+                            RoleId = matchedRule.SubmitterRoleId,
+                            Level = level,
+                            Status = "Pending",
+                        }
+                    );
+                    level++;
+                }
+
+                if (!string.IsNullOrWhiteSpace(matchedRule.ApproverRoleId))
+                {
+                    flows.Add(
+                        new ProcDocumentApprovals
+                        {
+                            ProcDocumentId = procDocumentId,
+                            ProcurementId = woId,
+                            RoleId = matchedRule.ApproverRoleId,
+                            Level = level,
+                            Status = level == 1 ? "Pending" : "Blocked",
+                        }
+                    );
+                }
+            }
+
+            // 2) Base flow (statis) jika belum terisi
+            if (flows.Count == 0)
+            {
+                foreach (var approval in approvalsMaster)
+                {
+                    var assignedApproverId = ResolveAssignedApproverId(approval, doc.Procurement);
+                    flows.Add(
+                        new ProcDocumentApprovals
+                        {
+                            ProcDocumentId = procDocumentId,
+                            ProcurementId = woId,
+                            RoleId = approval.RoleId,
+                            AssignedApproverId = assignedApproverId,
+                            Level = approval.Level,
+                            Status = approval.Level == firstLevel ? "Pending" : "Blocked",
+                        }
+                    );
+                }
+            }
+
+            // 3) PNL: tambah approver ekstra di atas chain statis (disetujui ++)
+            if (
+                isPnl
+                && matchedRule != null
+                && !string.IsNullOrWhiteSpace(matchedRule.ApproverRoleId)
+            )
+            {
+                var existingRoleIds = flows.Select(f => f.RoleId).ToHashSet(StringComparer.Ordinal);
+                if (!existingRoleIds.Contains(matchedRule.ApproverRoleId))
+                {
+                    var maxLevel = flows.Max(f => f.Level);
+                    flows.Add(
+                        new ProcDocumentApprovals
+                        {
+                            ProcDocumentId = procDocumentId,
+                            ProcurementId = woId,
+                            RoleId = matchedRule.ApproverRoleId,
                             Level = maxLevel + 1,
                             Status = "Blocked",
                         }
@@ -111,6 +163,21 @@ namespace ProcurementHTE.Core.Services
             await _flowRepository.UpdateProcDocumentStatusAsync(procDocumentId, "Pending Approval");
             await _flowRepository.SaveChangesAsync();
         }
+
+        private async Task<decimal> GetGrandTotalAsync(string procurementId)
+        {
+            var pnl = await _pnlService.GetLatestByProcurementAsync(procurementId);
+            return pnl?.SelectedVendorFinalOffer ?? 0m;
+        }
+
+        private static bool IsDoc(string docTypeName, string keyword) =>
+            docTypeName?.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private static DocumentApprovalRule? GetMatchedRule(
+            decimal ct,
+            IReadOnlyList<DocumentApprovalRule> rules
+        ) =>
+            rules.FirstOrDefault(r => ct >= r.MinAmount && ct <= r.MaxAmount && r.IsActive);
 
         private string? ResolveAssignedApproverId(
             DocumentApprovals approval,

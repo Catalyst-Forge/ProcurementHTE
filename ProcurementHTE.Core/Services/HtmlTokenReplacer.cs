@@ -18,18 +18,24 @@ namespace ProcurementHTE.Core.Services
         private readonly IProfitLossRepository _pnlRepo;
         private readonly IVendorRepository _vendorRepo;
         private readonly UserManager<User> _userManager;
+        private readonly IDocumentApprovalRuleRepository _ruleRepo;
+        private readonly RoleManager<Role> _roleManager;
 
         public HtmlTokenReplacer(
             IProcurementRepository procurementRepository,
             IProfitLossRepository pnlRepo,
             IVendorRepository vendorRepo,
-            UserManager<User> userManager
+            UserManager<User> userManager,
+            IDocumentApprovalRuleRepository ruleRepo,
+            RoleManager<Role> roleManager
         )
         {
             _procRepo = procurementRepository;
             _pnlRepo = pnlRepo;
             _vendorRepo = vendorRepo;
             _userManager = userManager;
+            _ruleRepo = ruleRepo;
+            _roleManager = roleManager;
         }
 
         #endregion
@@ -117,6 +123,22 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "JobTypeName", jobTypeName);
             html = ReplaceToken(html, "StatusName", proc.Status?.StatusName);
             html = ReplaceToken(html, "UserName", proc.User?.UserName);
+
+            // Conditional approval roles based on CT (Grand Total PNL) and template/doc
+            var docName = MapTemplateKeyToDocName(templateKey);
+            var (conditionalSubmit, conditionalApprove) = await ResolveConditionalRolesAsync(proc, docName);
+            html = ReplaceToken(html, "ConditionalSubmitRole", conditionalSubmit);
+            html = ReplaceToken(html, "ConditionalApproveRole", conditionalApprove);
+            var needExtraApprove =
+                !string.IsNullOrWhiteSpace(conditionalApprove) && conditionalApprove != "-";
+            var extraHeader = needExtraApprove ? "<td style=\"width: 25%\">Disetujui Oleh</td>" : string.Empty;
+            var extraBlank = needExtraApprove ? "<td class=\"signature-content\"></td>" : string.Empty;
+            var extraRoleCell = needExtraApprove
+                ? $"<td>{conditionalApprove}</td>"
+                : string.Empty;
+            html = ReplaceToken(html, "ConditionalApproveHeaderCell", extraHeader);
+            html = ReplaceToken(html, "ConditionalApproveBlankCell", extraBlank);
+            html = ReplaceToken(html, "ConditionalApproveRoleCell", extraRoleCell);
 
             // ProcDetails - Generate table rows
             if (proc.ProcDetails != null && proc.ProcDetails.Count != 0)
@@ -308,6 +330,64 @@ namespace ProcurementHTE.Core.Services
         }
 
         #region Helper Method
+        private async Task<(string Submit, string Approve)> ResolveConditionalRolesAsync(
+            Procurement procurement,
+            string? docName
+        )
+        {
+            if (string.IsNullOrWhiteSpace(docName))
+                return ("-", "-");
+
+            var ct = await GetCtAsync(procurement.ProcurementId);
+            if (ct <= 0m)
+                return ("-", "-");
+
+            var rules = await _ruleRepo.GetActiveByDocNameAsync(docName, procurement.JobTypeId, procurement.ProcurementCategory);
+
+            var hit = rules.FirstOrDefault(r => ct > r.MinAmount && ct <= r.MaxAmount);
+            if (hit == null)
+                return ("-", "-");
+
+            var submitName = await ResolveRoleNameAsync(hit.SubmitterRoleId);
+            var approveName = await ResolveRoleNameAsync(hit.ApproverRoleId);
+            return (submitName, approveName);
+        }
+
+        private async Task<decimal> GetCtAsync(string procurementId)
+        {
+            var pnl = await _pnlRepo.GetLatestByProcurementIdAsync(procurementId);
+            if (pnl != null && pnl.SelectedVendorFinalOffer > 0m)
+                return pnl.SelectedVendorFinalOffer;
+
+            return 0m;
+        }
+
+        private async Task<string> ResolveRoleNameAsync(string? roleId)
+        {
+            if (string.IsNullOrWhiteSpace(roleId))
+                return "-";
+
+            var role = await _roleManager.FindByIdAsync(roleId);
+            if (role == null)
+                return roleId;
+
+            return !string.IsNullOrWhiteSpace(role.Name) ? role.Name! : roleId;
+        }
+
+        private static string? MapTemplateKeyToDocName(string? templateKey)
+        {
+            if (string.IsNullOrWhiteSpace(templateKey))
+                return null;
+
+            return templateKey switch
+            {
+                "ProfitLoss" => "Profit & Loss",
+                "OwnerEstimate" => "Owner Estimate (OE)",
+                "RKS" => "Rencana Kerja dan Syarat-Syarat (RKS)",
+                "Justifikasi" => "Justifikasi",
+                _ => null,
+            };
+        }
 
         private static string ReplaceToken(string html, string tokenName, string? value)
         {

@@ -1,0 +1,121 @@
+@using ProcurementHTE.Core.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model IEnumerable<DocumentApprovalRule>
+@{
+    ViewData["Title"] = "Document Approval Rules";
+    var docTypes = ViewBag.DocumentTypes as List<DocumentType> ?? new();
+    var roleMap = ViewBag.RoleMap as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var selectedDocType = Context.Request.Query["documentTypeId"].ToString();
+    var docSelect = new SelectList(docTypes, "DocumentTypeId", "Name", selectedDocType);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Document Approval Rules</h1>
+        <p class="text-muted mb-0">Atur role diajukan/disetujui berdasarkan nilai PNL per dokumen.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Rule
+        </a>
+    </div>
+</div>
+
+<form method="get" class="border rounded-3 p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <div class="w-auto">
+        <label class="form-label small text-muted mb-1">Filter Document</label>
+        <select class="form-select" name="documentTypeId" onchange="this.form.submit()"
+                asp-items="docSelect">
+            <option value="">All Documents</option>
+        </select>
+    </div>
+    <div class="ms-auto">
+        <button type="submit" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</form>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover mobile-table">
+        <thead class="table-light">
+            <tr>
+                <th>Document</th>
+                <th>Job Type</th>
+                <th>Category</th>
+                <th class="text-end">Min Amount</th>
+                <th class="text-end">Max Amount</th>
+                <th>Submitter</th>
+                <th>Approver</th>
+                <th class="text-center">Seq</th>
+                <th class="text-center">Active</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="10" class="text-center text-muted py-4">No approval rules.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    var jobTypeLabel = string.IsNullOrWhiteSpace(item.JobType?.TypeName)
+                        ? "All"
+                        : item.JobType!.TypeName;
+                    var categoryLabel = item.ProcurementCategory.HasValue
+                        ? item.ProcurementCategory.ToString()
+                        : "All";
+                    var submitterLabel = roleMap.TryGetValue(item.SubmitterRoleId, out var sName)
+                        ? sName
+                        : item.SubmitterRoleId;
+                    <tr>
+                        <td>@item.DocumentType?.Name</td>
+                        <td>@jobTypeLabel</td>
+                        <td>@categoryLabel</td>
+                        <td class="text-end">@(item.MinAmount.ToString("N0"))</td>
+                        <td class="text-end">@(item.MaxAmount == decimal.MaxValue ? "Unlimited" : item.MaxAmount.ToString("N0"))</td>
+                        <td>@submitterLabel</td>
+                        <td>
+                            @{
+                                string approverLabel = "-";
+                                if (!string.IsNullOrWhiteSpace(item.ApproverRoleId))
+                                {
+                                    approverLabel = roleMap.TryGetValue(item.ApproverRoleId, out var aName)
+                                        ? aName
+                                        : item.ApproverRoleId;
+                                }
+                            }
+                            @approverLabel
+                        </td>
+                        <td class="text-center">@item.Sequence</td>
+                        <td class="text-center">
+                            <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                @(item.IsActive ? "Yes" : "No")
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-action="Edit" asp-route-id="@item.DocumentApprovalRuleId" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Delete" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.DocumentApprovalRuleId" />
+                                    <button type="submit" class="btn btn-outline-danger"
+                                            onclick="return confirm('Delete this rule?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+

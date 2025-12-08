@@ -33,6 +33,10 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Operation",
                 "Assistant Manager HTE",
                 "Vice President",
+                "Operation Director",
+                "President Director",
+                "Dewan Direksi",
+                "Dewan Komisaris",
                 "HSE",
                 "Supply Chain Management",
                 "AP-PO",
@@ -82,6 +86,38 @@ namespace ProcurementHTE.Infrastructure.Data
 
             await AddPermissions(
                 "Vice President",
+                Permissions.Procurement.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "Operation Director",
+                Permissions.Procurement.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "President Director",
+                Permissions.Procurement.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "Dewan Direksi",
+                Permissions.Procurement.Read,
+                Permissions.Vendor.Read,
+                Permissions.Doc.Read,
+                Permissions.Doc.Approve
+            );
+
+            await AddPermissions(
+                "Dewan Komisaris",
                 Permissions.Procurement.Read,
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
@@ -179,6 +215,10 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Assistant Manager HTE"
                 ),
                 ("vicepresident", "vp@example.com", "VicePresident123!", "Vice President"),
+                ("opdir", "opdir@example.com", "OpDir123!", "Operation Director"),
+                ("presdir", "presdir@example.com", "PresDir123!", "President Director"),
+                ("board", "board@example.com", "Board123!", "Dewan Direksi"),
+                ("komisaris", "komisaris@example.com", "Komisaris123!", "Dewan Komisaris"),
                 ("hse", "hse@example.com", "Hse1234!", "HSE"),
                 ("scm", "scm@example.com", "Scm1234!", "Supply Chain Management"),
             };

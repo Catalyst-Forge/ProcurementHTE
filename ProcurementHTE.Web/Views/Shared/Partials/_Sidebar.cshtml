@@ -7,13 +7,13 @@
         var procurementMenuExpanded = procurementMenuOpen ? "true" : "false";
         var procurementMenuChevronClass = procurementMenuOpen ? "rotate" : string.Empty;
 
-        var procurementSettingsControllers = new[] { "JobType", "DocumentType", "DocumentApprovals", "JobTypeDocument" };
+        var procurementSettingsControllers = new[] { "JobType", "DocumentType", "DocumentApprovals", "JobTypeDocument", "DocumentApprovalRules" };
         var procurementSettingsShowClass = Html.CollapseState(controllers: procurementSettingsControllers);
         var procurementSettingsOpen = !string.IsNullOrEmpty(procurementSettingsShowClass);
         var procurementSettingsExpanded = procurementSettingsOpen ? "true" : "false";
         var procurementSettingsChevronClass = procurementSettingsOpen ? "rotate" : string.Empty;
 
-        var masterDataControllers = new[] { "JobType", "DocumentType", "JobTypeDocument", "DocumentApprovals" };
+        var masterDataControllers = new[] { "JobType", "DocumentType", "JobTypeDocument", "DocumentApprovals", "DocumentApprovalRules" };
         var masterDataShowClass = Html.CollapseState(controllers: masterDataControllers);
         var masterDataOpen = !string.IsNullOrEmpty(masterDataShowClass);
         var masterDataExpanded = masterDataOpen ? "true" : "false";
@@ -115,7 +115,7 @@
                             <i class="bi bi-chevron-down small ms-auto @masterDataChevronClass"></i>
                         </a>
 
-                        <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="JobType,DocumentType,JobTypeDocument,DocumentApprovals">
+                        <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="JobType,DocumentType,JobTypeDocument,DocumentApprovals,DocumentApprovalRules">
                             <ul class="list-unstyled fw-normal pb-1 ps-4 small">
                                 <li>
                                     <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobType" }))"
@@ -155,6 +155,16 @@
                                        asp-action="Index"
                                        data-page="Index Document Approvals">
                                         Document Approvals
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentApprovalRules" }))"
+                                       
+                                       data-nav-controller="DocumentApprovalRules"
+                                       asp-controller="DocumentApprovalRules"
+                                       asp-action="Index"
+                                       data-page="Index Document Approval Rules">
+                                        Document Approval Rules
                                     </a>
                                 </li>
                             </ul>

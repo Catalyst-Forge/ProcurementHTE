@@ -13,6 +13,12 @@ namespace ProcurementHTE.Core.Interfaces
             string documentTypeId,
             CancellationToken ct = default
         );
+        Task<List<DocumentApprovalRule>> GetConditionalRulesAsync(
+            string documentTypeId,
+            string? jobTypeId,
+            Core.Enums.ProcurementCategory? category,
+            CancellationToken ct = default
+        );
         Task AddApprovalsAsync(
             IEnumerable<ProcDocumentApprovals> approvals,
             CancellationToken ct = default

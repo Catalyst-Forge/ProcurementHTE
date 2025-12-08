@@ -186,14 +186,14 @@
       </div>
 
       <div class="border border-black border-bottom-0 row g-0 px-2">
-        <div class="col-2 border-end border-black text-center">Asst Manager:</div>
+        <div class="col-2 border-end border-black text-center">{{ ConditionalSubmitRole }}:</div>
         <div class="col-4 border-end border-black text-center">Edo Pradipta</div>
         <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
         <div class="col-3 text-center">&ThinSpace;</div>
       </div>
 
       <div class="border border-black row g-0 px-2 mb-5">
-        <div class="col-2 border-end border-black text-center">Manager:</div>
+        <div class="col-2 border-end border-black text-center">{{ ConditionalApproveRole }} :</div>
         <div class="col-4 border-end border-black text-center">Arfinal Diputra</div>
         <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
         <div class="col-3 text-center">&ThinSpace;</div>
@@ -339,10 +339,10 @@
       <div class="border border-top-0 border-black">
         <div class="row g-0">
           <div class="col-6 px-2 border-end border-black">
-            <p class="mb-0">Jabatan: Pjs. Transport & Logistic Manager</p>
+            <p class="mb-0">Jabatan: {{ ConditionalApproveRole }}</p>
           </div>
           <div class="col-6 px-2">
-            <p class="mb-0">Jabatan: Pjs. VP Operation & Support</p>
+            <p class="mb-0">Jabatan: {{ ConditionalApproveRole }}</p>
           </div>
         </div>
       </div>
@@ -394,3 +394,4 @@
     </div>
   </body>
 </html>
+

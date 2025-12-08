@@ -124,7 +124,7 @@
                                     {
                                         <tr>
                                             <td>@(rl.Vendor?.VendorName ?? rl.VendorId)</td>
-                                            <td class="text-center">R@rl.Round</td>
+                                        <td class="text-center">@($"R{rl.Round}")</td>
                                             <td>@(string.IsNullOrWhiteSpace(rl.LetterNumber) ? "-" : rl.LetterNumber)</td>
                                             <td>
                                                 <a asp-controller="ProcurementDocuments" asp-action="Download" asp-route-id="@rl.ProcDocumentId" asp-route-procurementId="@Model.ProcurementId" class="btn btn-sm btn-outline-primary" hx-boost="false">

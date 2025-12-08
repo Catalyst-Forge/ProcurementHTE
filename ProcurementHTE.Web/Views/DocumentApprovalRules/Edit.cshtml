@@ -1,0 +1,98 @@
+@using ProcurementHTE.Core.Models
+@model DocumentApprovalRule
+@{
+    ViewData["Title"] = "Edit Approval Rule";
+    var docSelect = ViewBag.DocumentTypeSelect as SelectList;
+    var jobSelect = ViewBag.JobTypeSelect as SelectList;
+    var roleSelect = ViewBag.RoleSelect as SelectList;
+    var categories = ViewBag.Categories as List<SelectListItem> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Edit Approval Rule</h1>
+        <p class="text-muted mb-0">Ubah rule kondisional (CT PNL) per dokumen.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Edit" method="post" class="row g-3" hx-boost="false">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DocumentApprovalRuleId" />
+
+            <div class="col-md-6">
+                <label class="form-label">Document Type <span class="text-danger">*</span></label>
+                <select asp-for="DocumentTypeId" class="form-select" asp-items="docSelect">
+                    <option value="">-- select document --</option>
+                </select>
+                <span asp-validation-for="DocumentTypeId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Job Type (optional)</label>
+                <select asp-for="JobTypeId" class="form-select" asp-items="jobSelect">
+                    <option value="">All Job Types</option>
+                </select>
+                <span asp-validation-for="JobTypeId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Procurement Category (optional)</label>
+                <select asp-for="ProcurementCategory" class="form-select" asp-items="categories">
+                    <option value="">All Categories</option>
+                </select>
+                <span asp-validation-for="ProcurementCategory" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Min Amount (CT) <span class="text-danger">*</span></label>
+                <input asp-for="MinAmount" class="form-control text-end" inputmode="numeric" />
+                <span asp-validation-for="MinAmount" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Max Amount (CT) <span class="text-danger">*</span></label>
+                <input asp-for="MaxAmount" class="form-control text-end" inputmode="numeric" />
+                <span asp-validation-for="MaxAmount" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Submitted By (Role) <span class="text-danger">*</span></label>
+                <select asp-for="SubmitterRoleId" class="form-select" asp-items="roleSelect">
+                    <option value="">-- select role --</option>
+                </select>
+                <span asp-validation-for="SubmitterRoleId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Approved By (Role)</label>
+                <select asp-for="ApproverRoleId" class="form-select" asp-items="roleSelect">
+                    <option value="">-- optional --</option>
+                </select>
+                <span asp-validation-for="ApproverRoleId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Sequence</label>
+                <input asp-for="Sequence" class="form-control" />
+                <span asp-validation-for="Sequence" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                    <input asp-for="IsActive" class="form-check-input" />
+                    <label class="form-check-label" asp-for="IsActive">Active</label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Update
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
