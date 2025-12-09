@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Enums;
-using ProcurementHTE.Core.Models.Enums;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
