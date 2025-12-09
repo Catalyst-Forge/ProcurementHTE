@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Options;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Web.Extensions;
 using ProcurementHTE.Web.Middleware;
-using ProcurementHTE.Web.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
