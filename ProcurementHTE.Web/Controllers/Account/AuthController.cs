@@ -4,15 +4,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Core.Models.Enums;
 using ProcurementHTE.Core.Models.ViewModels;
 using ProcurementHTE.Core.Options;
+using ProcurementHTE.Core.Utils;
 using ProcurementHTE.Web.Constants;
-using ProcurementHTE.Web.Helpers;
 using ProcurementHTE.Web.Models.Auth;
-using ProcurementHTE.Web.Options;
+using ProcurementHTE.Web.Utils;
 using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace ProcurementHTE.Web.Controllers.Account

@@ -1,4 +1,4 @@
-using ProcurementHTE.Core.Models.Enums;
+using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Web.Models.Account
 {
