@@ -2,9 +2,10 @@
 {
     public enum ContractType
     {
-        RO = 0,
-        Spot = 1,
-        LTC = 2,
-        STB = 3,
+        None = 0,
+        RO = 1,
+        Spot = 2,
+        LTC = 3,
+        STB = 4,
     }
 }

@@ -138,6 +138,10 @@ namespace ProcurementHTE.Infrastructure.Data
                     .Property(procurement => procurement.ProjectRegion)
                     .HasConversion<string>()
                     .HasMaxLength(50);
+                entity
+                    .Property(procurement => procurement.ProcurementCategory)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
 
                 // Indexes
                 entity
