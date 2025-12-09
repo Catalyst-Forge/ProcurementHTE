@@ -954,6 +954,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     return View("CreateProfitLoss", viewModel);
                 }
 
+                await UploadRoundLettersAsync(viewModel, pnl?.ProfitLossId);
+
                 var wo =
                     await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
                     ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
@@ -1301,10 +1303,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         {
                             ProcOfferId = x.ProcOfferId,
                             Quantity = x.Quantity,
-                            TarifAwal = x.TarifAwal,
-                            TarifAdd = x.TarifAdd,
-                            KmPer25 = x.KmPer25,
-                            OperatorCost = x.OperatorCost,
+                            TarifAwal = x.TarifAwal ?? 0m,
+                            TarifAdd = x.TarifAdd ?? 0m,
+                            KmPer25 = x.KmPer25 ?? 0m,
+                            OperatorCost = x.OperatorCost ?? 0m,
                         })
                         .ToList(),
                     SelectedVendorIds = distinctSelectedVendors,
@@ -1316,7 +1318,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 );
                 update.Vendors = BuildVendorOfferDtos(viewModel.Vendors, allowedVendorSet);
 
-                await _pnlService.EditProfitLossAsync(update);
+                var pnlUpdated = await _pnlService.EditProfitLossAsync(update);
+                await UploadRoundLettersAsync(viewModel, pnlUpdated.ProfitLossId);
                 TempData["SuccessMessage"] = "Profit & Loss updated successfully";
                 return RedirectToAction(nameof(Details), new { id = viewModel.ProcurementId });
             }
@@ -1367,6 +1370,17 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         #endregion
 
         #region Helper Methods
+
+        private static string SanitizeFileName(string fileName) {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return "file";
+            var invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder();
+            foreach (var ch in fileName.Trim()) {
+                sb.Append(invalid.Contains(ch) ? '_' : ch);
+            }
+            return sb.ToString();
+        }
 
         private static ProfitLossSummaryViewModel MapToViewModel(ProfitLossSummaryDto dto)
         {
@@ -1577,7 +1591,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Gagal menghapus SPH/SNH doc {DocId}", docId);
+                            ModelState.AddModelError(
+                                "",
+                                $"Gagal menghapus dokumen SPH/SNH {docId ?? "-"}: {ex.Message}"
+                            );
                         }
                         await _roundLetterRepository.DeleteByProcDocumentIdAsync(
                             docId!,
