@@ -11,6 +11,8 @@ public class ProcurementCreateViewModel
     public Procurement Procurement { get; set; } = new();
     public List<ProcDetail> Details { get; set; } = [];
     public List<ProcOffer> Offers { get; set; } = [];
+    public IEnumerable<JobTypes> JobTypes { get; set; } = [];
+    public string? SelectedJobTypeName { get; set; }
 
     public IEnumerable<SelectListItem> PicOpsUsers { get; set; } = [];
     public IEnumerable<SelectListItem> AnalystUsers { get; set; } = [];

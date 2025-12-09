@@ -15,7 +15,7 @@ public class Procurement
     public string ProcNum { get; set; } = null!;
 
     [MaxLength(100)]
-    [DisplayName("SPK No.")]
+    [DisplayName("SPK Number")]
     public string? SpkNumber { get; set; }
 
     [MaxLength(100)]
@@ -102,7 +102,7 @@ public class Procurement
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     [DisplayName("Created At")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     [DisplayName("Update At")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
@@ -113,7 +113,8 @@ public class Procurement
     public DateTime? CompletedAt { get; set; }
 
     // Foreign Key
-    public string? JobTypeId { get; set; }
+    [Required]
+    public string JobTypeId { get; set; } = null!;
     public int StatusId { get; set; }
     public string? UserId { get; set; }
 

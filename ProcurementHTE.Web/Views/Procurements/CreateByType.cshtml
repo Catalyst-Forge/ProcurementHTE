@@ -1,10 +1,10 @@
 @model ProcurementHTE.Web.Models.ViewModels.ProcurementCreateViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using ProcurementHTE.Core.Models
 @using System.Linq
 @{
     ViewData["Title"] = "Create Procurement";
-    var partialName = ViewBag.CreatePartial as string ?? "_CreateOther";
-    var jobTypeName = ViewBag.SelectedJobTypeName as string ?? "Other";
+    var jobTypes = (Model.JobTypes ?? Enumerable.Empty<JobTypes>()).ToList();
     var procurement = Model.Procurement ??= new Procurement();
     Model.Details ??= new List<ProcDetail>();
     Model.Offers ??= new List<ProcOffer>();
@@ -18,46 +18,57 @@
     var assistantManagerOptions = (Model.AssistantManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
     var managerOptions = (Model.ManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
 
+    var jobTypeOptions = new SelectList(jobTypes, "JobTypeId", "TypeName", procurement.JobTypeId);
+
     var emptyOfferKey = Guid.NewGuid().ToString("N");
+    var emptyDetailKey = Guid.NewGuid().ToString("N");
 }
 
 <header class="hstack justify-content-between mb-3">
     <div>
         <h2 class="mb-1">@ViewData["Title"]</h2>
-        <p class="text-muted mb-0">Type: <span class="fw-semibold">@jobTypeName</span></p>
     </div>
-    <a class="btn btn-outline-secondary" asp-action="SelectType" role="button">
+    <a class="btn btn-outline-secondary" asp-action="Index" role="button">
         <i class="bi bi-arrow-left"></i> Back
     </a>
 </header>
 
-<form asp-action="Create" method="post" enctype="multipart/form-data" class="js-loading-form">
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="js-loading-form" id="procurementForm">
     @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Procurement.JobTypeId" />
 
     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+    <!-- OVERVIEW -->
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <legend class="card-title fw-semibold">Procurement Overview</legend>
             <hr />
+
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Job Type</label>
-                    <input class="form-control-plaintext fw-semibold" value="@jobTypeName" readonly />
+                    <label class="form-label" asp-for="Procurement.JobTypeId">Job Type</label>
+                    <select class="form-select" asp-for="Procurement.JobTypeId" asp-items="jobTypeOptions"></select>
+                    <span class="text-danger" asp-validation-for="Procurement.JobTypeId"></span>
                 </div>
+
                 <div class="col-md-4">
                     <label asp-for="Procurement.ContractType" class="form-label"></label>
-                    <select asp-for="Procurement.ContractType" class="form-select" asp-items="contractTypeOptions">
-                        <option value="">Select contract type</option>
-                    </select>
+                    <select asp-for="Procurement.ContractType" class="form-select" asp-items="contractTypeOptions"></select>
                     <span class="text-danger" asp-validation-for="Procurement.ContractType"></span>
                 </div>
+
                 <div class="col-md-4">
                     <label asp-for="Procurement.ProcurementCategory" class="form-label">Jenis Pengadaan</label>
-                    <select asp-for="Procurement.ProcurementCategory" class="form-select" asp-items="categoryOptions">
-                        <option value="">Goods atau Services</option>
-                    </select>
+
+                    <select asp-for="Procurement.ProcurementCategory"
+                            class="form-select"
+                            asp-items="categoryOptions"
+                            hx-get="@Url.Action("RenderRaNumberField", "Procurements")"
+                            hx-trigger="change"
+                            hx-target="#raNumberWrapper"
+                            hx-swap="innerHTML"
+                            hx-vals="js:{category: event.target.value, raNumber: document.getElementById('Procurement_RaNumber')?.value || ''}"></select>
+
                     <span class="text-danger" asp-validation-for="Procurement.ProcurementCategory"></span>
                 </div>
             </div>
@@ -73,16 +84,16 @@
             <div class="row g-3 mt-0">
                 <div class="col-md-4">
                     <label asp-for="Procurement.ProjectRegion" class="form-label"></label>
-                    <select asp-for="Procurement.ProjectRegion" class="form-select" asp-items="projectRegionOptions">
-                        <option value="">Select project region</option>
-                    </select>
+                    <select asp-for="Procurement.ProjectRegion" class="form-select" asp-items="projectRegionOptions"></select>
                     <span class="text-danger" asp-validation-for="Procurement.ProjectRegion"></span>
                 </div>
+
                 <div class="col-md-4">
                     <label asp-for="Procurement.ProjectCode" class="form-label"></label>
                     <input asp-for="Procurement.ProjectCode" class="form-control" maxlength="64" />
                     <span class="text-danger" asp-validation-for="Procurement.ProjectCode"></span>
                 </div>
+
                 <div class="col-md-4">
                     <label asp-for="Procurement.Wonum" class="form-label"></label>
                     <input asp-for="Procurement.Wonum" class="form-control" maxlength="100" />
@@ -131,21 +142,25 @@
         </fieldset>
     </section>
 
+    <!-- REFERENCE NUMBERS -->
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <legend class="card-title fw-semibold">Reference Numbers</legend>
             <hr />
+
             <div class="row g-3">
                 <div class="col-md-4">
                     <label asp-for="Procurement.SpkNumber" class="form-label"></label>
                     <input asp-for="Procurement.SpkNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.SpkNumber"></span>
                 </div>
+
                 <div class="col-md-4">
                     <label asp-for="Procurement.SpmpNumber" class="form-label"></label>
                     <input asp-for="Procurement.SpmpNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.SpmpNumber"></span>
                 </div>
+
                 <div class="col-md-4">
                     <label asp-for="Procurement.MemoNumber" class="form-label"></label>
                     <input asp-for="Procurement.MemoNumber" class="form-control" maxlength="100" />
@@ -159,15 +174,18 @@
                     <input asp-for="Procurement.OeNumber" class="form-control" maxlength="100" />
                     <span class="text-danger" asp-validation-for="Procurement.OeNumber"></span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="Procurement.RaNumber" class="form-label"></label>
-                    <input asp-for="Procurement.RaNumber" class="form-control" maxlength="100" />
-                    <span class="text-danger" asp-validation-for="Procurement.RaNumber"></span>
+
+                <div class="col-md-6" id="raNumberWrapper">
+                    @if (Model.Procurement?.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Services)
+                    {
+                        @await Html.PartialAsync("_RaNumberField", new ViewDataDictionary(ViewData) { { "RaNumberValue", Model.Procurement.RaNumber } })
+                    }
                 </div>
             </div>
         </fieldset>
     </section>
 
+    <!-- ITEM PENAWARAN -->
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -185,6 +203,7 @@
                     {
                         <div class="col-12 offer-row position-relative">
                             <input type="hidden" name="Offers.Index" value="@i" />
+
                             <div class="row g-3 align-items-end">
                                 <div class="col-lg-10">
                                     <div class="row g-3">
@@ -193,11 +212,15 @@
                                             <input asp-for="Offers[i].ItemPenawaran" class="form-control" />
                                             <span class="text-danger" asp-validation-for="Offers[i].ItemPenawaran"></span>
                                         </div>
+
                                         <div class="col-md-3">
                                             <label class="form-label">Qty</label>
-                                            <input asp-for="Offers[i].Qty" type="number" min="1" step="1" class="form-control text-end" />
+                                            <input asp-for="Offers[i].Qty" type="number"
+                                                   min="1" step="1"
+                                                   class="form-control text-end" />
                                             <span class="text-danger" asp-validation-for="Offers[i].Qty"></span>
                                         </div>
+
                                         <div class="col-md-3">
                                             <label class="form-label">Unit</label>
                                             <input asp-for="Offers[i].Unit" class="form-control" />
@@ -205,8 +228,10 @@
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="col-lg-2 d-flex justify-content-end">
-                                    <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                    <button type="button"
+                                            class="btn btn-outline-danger js-remove-offer w-100">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -218,6 +243,7 @@
                 {
                     <div class="col-12 offer-row position-relative">
                         <input type="hidden" name="Offers.Index" value="@emptyOfferKey" />
+
                         <div class="row g-3 align-items-end">
                             <div class="col-lg-10">
                                 <div class="row g-3">
@@ -225,18 +251,24 @@
                                         <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
                                         <input class="form-control" name="Offers[@emptyOfferKey].ItemPenawaran" />
                                     </div>
+
                                     <div class="col-md-3">
                                         <label class="form-label">Qty</label>
-                                        <input class="form-control text-end" type="number" min="1" step="1" name="Offers[@emptyOfferKey].Qty" />
+                                        <input class="form-control text-end"
+                                               type="number" min="1" step="1"
+                                               name="Offers[@emptyOfferKey].Qty" />
                                     </div>
+
                                     <div class="col-md-3">
                                         <label class="form-label">Unit</label>
                                         <input class="form-control" name="Offers[@emptyOfferKey].Unit" />
                                     </div>
                                 </div>
                             </div>
+
                             <div class="col-lg-2 d-flex justify-content-end">
-                                <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                <button type="button"
+                                        class="btn btn-outline-danger js-remove-offer w-100">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -247,10 +279,12 @@
         </fieldset>
     </section>
 
+    <!-- APPROVALS -->
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <legend class="card-title fw-semibold">Approvals &amp; PIC</legend>
             <hr />
+
             <div class="row g-3">
                 <div class="col-md-6">
                     <label asp-for="Procurement.PicOpsUserId" class="form-label">PIC Operations</label>
@@ -259,6 +293,7 @@
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.PicOpsUserId"></span>
                 </div>
+
                 <div class="col-md-6">
                     <label asp-for="Procurement.AnalystHteUserId" class="form-label">Analyst HTE &amp; LTS</label>
                     <select asp-for="Procurement.AnalystHteUserId" class="form-select" asp-items="analystOptions">
@@ -266,6 +301,7 @@
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.AnalystHteUserId"></span>
                 </div>
+
                 <div class="col-md-6">
                     <label asp-for="Procurement.AssistantManagerUserId" class="form-label">Assistant Manager HTE</label>
                     <select asp-for="Procurement.AssistantManagerUserId" class="form-select" asp-items="assistantManagerOptions">
@@ -273,6 +309,7 @@
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.AssistantManagerUserId"></span>
                 </div>
+
                 <div class="col-md-6">
                     <label asp-for="Procurement.ManagerUserId" class="form-label">Manager Transport &amp; Logistic</label>
                     <select asp-for="Procurement.ManagerUserId" class="form-select" asp-items="managerOptions">
@@ -284,23 +321,64 @@
         </fieldset>
     </section>
 
-    @await Html.PartialAsync(partialName, Model)
+    <div class="d-flex justify-content-end gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+
+        <button type="submit" class="btn btn-primary" name="submitAction" value="Draft">
+            <i class="bi bi-save"></i> Save as Draft
+        </button>
+
+        <button type="submit" class="btn btn-success" name="submitAction" value="Created">
+            <i class="bi bi-check2-circle"></i> Create
+        </button>
+    </div>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const detailsContainer = document.getElementById('details-container');
-            const btnAddDetail = document.getElementById('btn-add-detail');
-            const offersContainer = document.getElementById('offers-container');
-            const btnAddOffer = document.getElementById('btn-add-offer');
 
-            const newKey = () => Math.random().toString(36).slice(2, 10);
+            /* ---------------------------
+               JOB TYPE DROPDOWN
+            ----------------------------*/
+            const jobTypeSelectTop = document.getElementById('jobTypeSelect');
+            const jobTypeSelectMain = document.getElementById('jobTypeDisplaySelect');
+            const jobTypeNameDisplay = document.getElementById('selectedJobTypeName');
 
-            const detailRowMarkup = (key) => `
+            const syncJobType = (value) => {
+                if (jobTypeSelectTop) jobTypeSelectTop.value = value ?? "";
+                if (jobTypeSelectMain) jobTypeSelectMain.value = value ?? "";
+
+                const option =
+                    jobTypeSelectMain?.selectedOptions?.[0] ??
+                    jobTypeSelectTop?.selectedOptions?.[0];
+
+                const name = option?.textContent?.trim() ?? "Select job type";
+                const desc = jobTypeDescriptions[value] ?? "No description available.";
+
+                if (jobTypeNameDisplay) jobTypeNameDisplay.textContent = name;
+            };
+
+            if (jobTypeSelectTop) {
+                jobTypeSelectTop.addEventListener('change', () => syncJobType(jobTypeSelectTop.value));
+            }
+            if (jobTypeSelectMain) {
+                jobTypeSelectMain.addEventListener('change', () => syncJobType(jobTypeSelectMain.value));
+            }
+            syncJobType(jobTypeSelectMain?.value || jobTypeSelectTop?.value);
+
+            /* ---------------------------
+               DYNAMIC ROW ADD/REMOVE
+            ----------------------------*/
+
+            const newKey = () => Math.random().toString(36).substring(2, 10);
+
+            // Detail Row Template
+            const detailTemplate = (key) => `
                 <div class="col-12 detail-row position-relative">
                     <input type="hidden" name="Details.Index" value="${key}" />
+
                     <div class="row g-3 align-items-end">
                         <div class="col-lg-10">
                             <div class="row g-3">
@@ -310,7 +388,9 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Qty</label>
-                                    <input class="form-control text-end" type="number" min="1" step="1" name="Details[${key}].Quantity" />
+                                    <input type="number" min="1" step="1"
+                                           class="form-control text-end"
+                                           name="Details[${key}].Quantity" />
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Unit</label>
@@ -318,8 +398,10 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-lg-2 d-flex justify-content-end">
-                            <button type="button" class="btn btn-outline-danger js-remove-detail w-100">
+                            <button type="button"
+                                    class="btn btn-outline-danger js-remove-detail w-100">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -327,9 +409,11 @@
                 </div>
             `;
 
-            const offerRowMarkup = (key) => `
+            // Offer Row Template
+            const offerTemplate = (key) => `
                 <div class="col-12 offer-row position-relative">
                     <input type="hidden" name="Offers.Index" value="${key}" />
+
                     <div class="row g-3 align-items-end">
                         <div class="col-lg-10">
                             <div class="row g-3">
@@ -339,7 +423,9 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Qty</label>
-                                    <input class="form-control text-end" type="number" min="1" step="1" name="Offers[${key}].Qty" />
+                                    <input type="number" min="1" step="1"
+                                           class="form-control text-end"
+                                           name="Offers[${key}].Qty" />
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Unit</label>
@@ -347,8 +433,10 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-lg-2 d-flex justify-content-end">
-                            <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                            <button type="button"
+                                    class="btn btn-outline-danger js-remove-offer w-100">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -356,41 +444,35 @@
                 </div>
             `;
 
-            const parseValidation = (target) => {
-                if (window.jQuery && $.validator && $.validator.unobtrusive) {
-                    $.validator.unobtrusive.parse(target);
+            const detailsContainer = document.getElementById('details-container');
+            const offersContainer = document.getElementById('offers-container');
+            const btnAddDetail = document.getElementById('btn-add-detail');
+            const btnAddOffer = document.getElementById('btn-add-offer');
+
+            // Add Detail
+            btnAddDetail.addEventListener('click', () => {
+                detailsContainer.insertAdjacentHTML('beforeend', detailTemplate(newKey()));
+            });
+
+            // Remove Detail
+            detailsContainer.addEventListener('click', (e) => {
+                if (e.target.closest('.js-remove-detail')) {
+                    e.target.closest('.detail-row').remove();
                 }
-            };
+            });
 
-            if (btnAddDetail && detailsContainer) {
-                btnAddDetail.addEventListener('click', () => {
-                    const key = newKey();
-                    detailsContainer.insertAdjacentHTML('beforeend', detailRowMarkup(key));
-                    parseValidation(detailsContainer);
-                });
+            // Add Offer
+            btnAddOffer.addEventListener('click', () => {
+                offersContainer.insertAdjacentHTML('beforeend', offerTemplate(newKey()));
+            });
 
-                detailsContainer.addEventListener('click', (event) => {
-                    const btn = event.target.closest('.js-remove-detail');
-                    if (!btn) return;
-                    const row = btn.closest('.detail-row');
-                    if (row) row.remove();
-                });
-            }
+            // Remove Offer
+            offersContainer.addEventListener('click', (e) => {
+                if (e.target.closest('.js-remove-offer')) {
+                    e.target.closest('.offer-row').remove();
+                }
+            });
 
-            if (btnAddOffer && offersContainer) {
-                btnAddOffer.addEventListener('click', () => {
-                    const key = newKey();
-                    offersContainer.insertAdjacentHTML('beforeend', offerRowMarkup(key));
-                    parseValidation(offersContainer);
-                });
-
-                offersContainer.addEventListener('click', (event) => {
-                    const btn = event.target.closest('.js-remove-offer');
-                    if (!btn) return;
-                    const row = btn.closest('.offer-row');
-                    if (row) row.remove();
-                });
-            }
         });
     </script>
 }
