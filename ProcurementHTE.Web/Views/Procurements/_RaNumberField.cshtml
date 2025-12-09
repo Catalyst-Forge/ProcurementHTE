@@ -1,0 +1,11 @@
+@{
+    var raNumber = ViewBag.RaNumberValue as string ?? string.Empty;
+}
+<label class="form-label" for="Procurement_RaNumber">RA Number</label>
+<input class="form-control" 
+       id="Procurement_RaNumber" 
+       name="Procurement.RaNumber" 
+       value="@raNumber" 
+       maxlength="100" 
+       type="text" />
+<span class="text-danger" data-valmsg-for="Procurement.RaNumber" data-valmsg-replace="true"></span>
