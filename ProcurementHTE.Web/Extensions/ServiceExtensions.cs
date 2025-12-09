@@ -64,6 +64,10 @@ public static class ServiceExtensions
         services.AddScoped<IUserSessionRepository, UserSessionRepository>();
         services.AddScoped<IUserSecurityLogRepository, UserSecurityLogRepository>();
         services.AddScoped<IDashboardRepository, DashboardRepository>();
+        services.AddScoped<IDocumentApprovalsService, DocumentApprovalsService>();
+        services.AddScoped<IDocumentApprovalsRepository, DocumentApprovalsRepository>();
+        services.AddScoped<IJobTypeDocumentAdminRepository, JobTypeDocumentAdminRepository>();
+        services.AddScoped<IJobTypeDocumentAdminService, JobTypeDocumentAdminService>();
 
         // ------------- Query Services -------------
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
@@ -103,6 +107,7 @@ public static class ServiceExtensions
         services.AddScoped<IProcDocumentApprovalService, ProcDocumentApprovalService>();
         services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
         services.AddScoped<IDocumentApprovalRuleService, DocumentApprovalRuleService>();
+        services.AddScoped<IDocumentApprovalsService, DocumentApprovalsService>();
         services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IApprovalService, ApprovalService>();
         services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();

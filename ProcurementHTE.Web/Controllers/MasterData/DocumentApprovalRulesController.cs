@@ -34,13 +34,16 @@ public class DocumentApprovalRulesController : Controller
     }
 
     // GET: DocumentApprovalRules
-    public async Task<IActionResult> Index(string? documentTypeId = null, CancellationToken ct = default)
+    public async Task<IActionResult> Index(
+        string? documentTypeId = null,
+        CancellationToken ct = default
+    )
     {
         var items = await _service.GetAllAsync(documentTypeId, ct);
 
         ViewBag.DocumentTypes = await _service.GetDocumentTypesAsync(ct);
-        ViewBag.RoleMap = await _roleManager.Roles
-            .Select(r => new { r.Id, r.Name })
+        ViewBag.RoleMap = await _roleManager
+            .Roles.Select(r => new { r.Id, r.Name })
             .ToDictionaryAsync(r => r.Id, r => r.Name ?? r.Id, ct);
         return View(items);
     }
