@@ -179,7 +179,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [ValidateAntiForgeryToken]
         [Authorize(Policy = Permissions.Procurement.Create)]
         public async Task<IActionResult> Create(
-            [FromForm] ProcurementCreateViewModel woViewModel,
+            [FromForm] ProcurementCreateViewModel procurementViewModel,
             string submitAction
         )
         {
@@ -187,84 +187,87 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             RemoveDetailsValidation();
             RemoveOffersValidation();
 
-            woViewModel.Procurement ??= new Procurement();
-            woViewModel.Details ??= new List<ProcDetail>();
-            woViewModel.Offers ??= new List<ProcOffer>();
-            woViewModel.Procurement.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            procurementViewModel.Procurement ??= new Procurement();
+            procurementViewModel.Details ??= new List<ProcDetail>();
+            procurementViewModel.Offers ??= new List<ProcOffer>();
+            procurementViewModel.Procurement.UserId = User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
 
             // Validasi JobTypeId
-            if (string.IsNullOrWhiteSpace(woViewModel.Procurement.JobTypeId))
+            if (string.IsNullOrWhiteSpace(procurementViewModel.Procurement.JobTypeId))
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.JobTypeId)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.JobTypeId)}",
                     "Pilih job type terlebih dahulu"
                 );
             }
 
             // Validasi ContractType
-            if (woViewModel.Procurement.ContractType == 0)
+            if (procurementViewModel.Procurement.ContractType == 0)
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.ContractType)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.ContractType)}",
                     "Contract type wajib dipilih"
                 );
             }
 
             // Validasi ProcurementCategory
-            if (woViewModel.Procurement.ProcurementCategory == 0)
+            if (procurementViewModel.Procurement.ProcurementCategory == 0)
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.ProcurementCategory)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.ProcurementCategory)}",
                     "Jenis pengadaan wajib dipilih"
                 );
             }
 
             // Validasi JobName
-            if (string.IsNullOrWhiteSpace(woViewModel.Procurement.JobName))
+            if (string.IsNullOrWhiteSpace(procurementViewModel.Procurement.JobName))
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.JobName)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.JobName)}",
                     "Nama pekerjaan wajib diisi"
                 );
             }
 
             // Validasi StartDate dan EndDate
-            if (woViewModel.Procurement.StartDate == default)
+            if (procurementViewModel.Procurement.StartDate == default)
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.StartDate)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.StartDate)}",
                     "Tanggal mulai wajib diisi"
                 );
             }
 
-            if (woViewModel.Procurement.EndDate == default)
+            if (procurementViewModel.Procurement.EndDate == default)
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.EndDate)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.EndDate)}",
                     "Tanggal selesai wajib diisi"
                 );
             }
 
             if (
-                woViewModel.Procurement.StartDate != default
-                && woViewModel.Procurement.EndDate != default
-                && woViewModel.Procurement.EndDate < woViewModel.Procurement.StartDate
+                procurementViewModel.Procurement.StartDate != default
+                && procurementViewModel.Procurement.EndDate != default
+                && procurementViewModel.Procurement.EndDate
+                    < procurementViewModel.Procurement.StartDate
             )
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.EndDate)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.EndDate)}",
                     "Tanggal selesai harus setelah tanggal mulai"
                 );
             }
 
             // Validasi RaNumber untuk Services
             if (
-                woViewModel.Procurement.ProcurementCategory == ProcurementCategory.Services
-                && string.IsNullOrWhiteSpace(woViewModel.Procurement.RaNumber)
+                procurementViewModel.Procurement.ProcurementCategory == ProcurementCategory.Services
+                && string.IsNullOrWhiteSpace(procurementViewModel.Procurement.RaNumber)
             )
             {
                 ModelState.AddModelError(
-                    $"{nameof(woViewModel.Procurement)}.{nameof(Procurement.RaNumber)}",
+                    $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.RaNumber)}",
                     "RA Number wajib diisi untuk jenis pengadaan Services"
                 );
             }
@@ -282,7 +285,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 }
                 else
                 {
-                    woViewModel.Procurement.StatusId = status.StatusId;
+                    procurementViewModel.Procurement.StatusId = status.StatusId;
                 }
             }
             else
@@ -293,27 +296,27 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             // Validasi Offers (minimal 1 item jika bukan draft)
             if (
                 submitAction?.Equals("Created", StringComparison.OrdinalIgnoreCase) == true
-                && (woViewModel.Offers == null || woViewModel.Offers.Count == 0)
+                && (procurementViewModel.Offers == null || procurementViewModel.Offers.Count == 0)
             )
             {
                 ModelState.AddModelError(
-                    nameof(woViewModel.Offers),
+                    nameof(procurementViewModel.Offers),
                     "Minimal harus ada 1 item penawaran untuk membuat procurement"
                 );
             }
 
             if (!ModelState.IsValid)
             {
-                await RepopulateCreateViewModel(woViewModel);
-                return View("CreateByType", woViewModel);
+                await RepopulateCreateViewModel(procurementViewModel);
+                return View("CreateByType", procurementViewModel);
             }
 
             try
             {
                 await _procurementService.AddProcurementWithDetailsAsync(
-                    woViewModel.Procurement,
-                    woViewModel.Details!,
-                    woViewModel.Offers!
+                    procurementViewModel.Procurement,
+                    procurementViewModel.Details!,
+                    procurementViewModel.Offers!
                 );
                 TempData["SuccessMessage"] = submitAction!.Equals(
                     "Draft",
@@ -347,8 +350,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 );
             }
 
-            await RepopulateCreateViewModel(woViewModel);
-            return View("CreateByType", woViewModel);
+            await RepopulateCreateViewModel(procurementViewModel);
+            return View("CreateByType", procurementViewModel);
         }
 
         // GET: Procurements/Edit/5
@@ -956,11 +959,11 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
                 await UploadRoundLettersAsync(viewModel, pnl?.ProfitLossId);
 
-                var wo =
+                var procurement =
                     await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
                     ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
-                var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(wo);
+                var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(procurement);
 
                 var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
                     page: 1,
@@ -984,7 +987,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 {
                     ProcurementId = dto.ProcurementId,
                     DocumentTypeId = pnlDocTypeId,
-                    FileName = $"Profit_Loss_{wo.ProcNum}.pdf",
+                    FileName = $"Profit_Loss_{procurement.ProcNum}.pdf",
                     ContentType = "application/pdf",
                     Bytes = pdfBytes,
                     Description = "Profit & Loss auto-generated",
@@ -1087,7 +1090,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                             .ToList();
 
                         var letters = vendorEntries.First().Letters?.ToList() ?? [];
-                        var letterDocs = (vendorEntries.First().LetterDocIds ?? []).Select(x => x ?? string.Empty).ToList();
+                        var letterDocs = (vendorEntries.First().LetterDocIds ?? [])
+                            .Select(x => x ?? string.Empty)
+                            .ToList();
 
                         return new VendorItemOfferInputVm
                         {
@@ -1371,12 +1376,14 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
         #region Helper Methods
 
-        private static string SanitizeFileName(string fileName) {
+        private static string SanitizeFileName(string fileName)
+        {
             if (string.IsNullOrWhiteSpace(fileName))
                 return "file";
             var invalid = Path.GetInvalidFileNameChars();
             var sb = new StringBuilder();
-            foreach (var ch in fileName.Trim()) {
+            foreach (var ch in fileName.Trim())
+            {
                 sb.Append(invalid.Contains(ch) ? '_' : ch);
             }
             return sb.ToString();
@@ -1506,8 +1513,12 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         {
                             VendorId = vendorId,
                             Items = dtoItems,
-                            Letters = (vendor.Letters ?? []).Select(l => l?.Trim() ?? string.Empty).ToList(),
-                            LetterDocIds = (vendor.LetterDocIds ?? []).Where(x => x != null).ToList()!,
+                            Letters = (vendor.Letters ?? [])
+                                .Select(l => l?.Trim() ?? string.Empty)
+                                .ToList(),
+                            LetterDocIds = (vendor.LetterDocIds ?? [])
+                                .Where(x => x != null)
+                                .ToList()!,
                         }
                     );
                 }
@@ -1538,7 +1549,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         d.Name.Equals("Surat Penawaran Harga", StringComparison.OrdinalIgnoreCase)
                     )
                     ?.DocumentTypeId
-                ?? throw new InvalidOperationException("DocumentType 'Surat Penawaran Harga' tidak ditemukan.");
+                ?? throw new InvalidOperationException(
+                    "DocumentType 'Surat Penawaran Harga' tidak ditemukan."
+                );
 
             var snhDocTypeId =
                 docTypes
@@ -1546,7 +1559,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         d.Name.Equals("Surat Negosiasi Harga", StringComparison.OrdinalIgnoreCase)
                     )
                     ?.DocumentTypeId
-                ?? throw new InvalidOperationException("DocumentType 'Surat Negosiasi Harga' tidak ditemukan.");
+                ?? throw new InvalidOperationException(
+                    "DocumentType 'Surat Negosiasi Harga' tidak ditemukan."
+                );
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -1695,9 +1710,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 return files;
             }
 
-            var requiredLength = roundFiles.Keys.Count > 0
-                ? Math.Max(files.Count, roundFiles.Keys.Max() + 1)
-                : files.Count;
+            var requiredLength =
+                roundFiles.Keys.Count > 0
+                    ? Math.Max(files.Count, roundFiles.Keys.Max() + 1)
+                    : files.Count;
 
             while (files.Count < requiredLength)
             {
@@ -1731,8 +1747,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 .Select(v => new VendorChoiceViewModel { Id = v.VendorId, Name = v.VendorName })
                 .ToList();
 
-            var wo = await _procurementService.GetProcurementByIdAsync(viewModel.ProcurementId);
-            viewModel.OfferItems = (wo?.ProcOffers ?? [])
+            var procurement = await _procurementService.GetProcurementByIdAsync(
+                viewModel.ProcurementId
+            );
+            viewModel.OfferItems = (procurement?.ProcOffers ?? [])
                 .Select(o => new ProcOfferLiteVm
                 {
                     ProcOfferId = o.ProcOfferId,

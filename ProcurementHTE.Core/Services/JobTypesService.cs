@@ -44,7 +44,7 @@ namespace ProcurementHTE.Core.Services
             var existingJobTypes = await _jobTypeRepository.GetByIdAsync(jobTypeId);
             if (existingJobTypes == null)
             {
-                throw new KeyNotFoundException($"Wo Type With ID {jobTypeId}");
+                throw new KeyNotFoundException($"Job Type With ID {jobTypeId}");
             }
 
             existingJobTypes.TypeName = jobTypes.TypeName;

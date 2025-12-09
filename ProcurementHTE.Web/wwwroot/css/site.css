@@ -224,7 +224,7 @@ a {
   --bs-pagination-color: rgb(var(--bs-secondary-color-rgb));
 }
 
-.wo-content {
+.procurement-content {
   grid-template-columns: 1fr;
 }
 
@@ -336,7 +336,7 @@ a {
     width: 40%;
   }
 
-  .wo-content {
+  .procurement-content {
     grid-template-columns: 2fr 1fr;
   }
 }

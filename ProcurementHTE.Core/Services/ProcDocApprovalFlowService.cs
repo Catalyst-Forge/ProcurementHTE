@@ -24,8 +24,7 @@ namespace ProcurementHTE.Core.Services
 
         public ProcDocApprovalFlowService(
             IProcDocApprovalFlowRepository flowRepository,
-            IProfitLossService pnlService,
-            Microsoft.AspNetCore.Identity.RoleManager<Role> roleManager
+            IProfitLossService pnlService
         )
         {
             _flowRepository = flowRepository;
@@ -33,14 +32,14 @@ namespace ProcurementHTE.Core.Services
         }
 
         public async Task GenerateFlowAsync(
-            string woId,
+            string procurementId,
             string procDocumentId,
             IEnumerable<string>? extraRoleNames = null
         )
         {
             var doc = await _flowRepository.GetDocumentWithProcurementAsync(procDocumentId);
             if (doc == null || doc.Procurement == null)
-                throw new InvalidOperationException("Document atau Work Order tidak ditemukan");
+                throw new InvalidOperationException("Document atau Procurement tidak ditemukan");
 
             var docTypeName = doc.DocumentType?.Name ?? string.Empty;
             var isPnl = IsDoc(docTypeName, "Profit & Loss");
@@ -91,7 +90,7 @@ namespace ProcurementHTE.Core.Services
                         new ProcDocumentApprovals
                         {
                             ProcDocumentId = procDocumentId,
-                            ProcurementId = woId,
+                            ProcurementId = procurementId,
                             RoleId = matchedRule.SubmitterRoleId,
                             Level = level,
                             Status = "Pending",
@@ -106,7 +105,7 @@ namespace ProcurementHTE.Core.Services
                         new ProcDocumentApprovals
                         {
                             ProcDocumentId = procDocumentId,
-                            ProcurementId = woId,
+                            ProcurementId = procurementId,
                             RoleId = matchedRule.ApproverRoleId,
                             Level = level,
                             Status = level == 1 ? "Pending" : "Blocked",
@@ -125,7 +124,7 @@ namespace ProcurementHTE.Core.Services
                         new ProcDocumentApprovals
                         {
                             ProcDocumentId = procDocumentId,
-                            ProcurementId = woId,
+                            ProcurementId = procurementId,
                             RoleId = approval.RoleId,
                             AssignedApproverId = assignedApproverId,
                             Level = approval.Level,
@@ -150,7 +149,7 @@ namespace ProcurementHTE.Core.Services
                         new ProcDocumentApprovals
                         {
                             ProcDocumentId = procDocumentId,
-                            ProcurementId = woId,
+                            ProcurementId = procurementId,
                             RoleId = matchedRule.ApproverRoleId,
                             Level = maxLevel + 1,
                             Status = "Blocked",
@@ -176,8 +175,7 @@ namespace ProcurementHTE.Core.Services
         private static DocumentApprovalRule? GetMatchedRule(
             decimal ct,
             IReadOnlyList<DocumentApprovalRule> rules
-        ) =>
-            rules.FirstOrDefault(r => ct >= r.MinAmount && ct <= r.MaxAmount && r.IsActive);
+        ) => rules.FirstOrDefault(r => ct >= r.MinAmount && ct <= r.MaxAmount && r.IsActive);
 
         private string? ResolveAssignedApproverId(
             DocumentApprovals approval,

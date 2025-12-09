@@ -9,15 +9,15 @@ namespace ProcurementHTE.Core.Services
     public class ApprovalService : IApprovalService
     {
         private readonly IApprovalRepository _approvalRepository;
-        private readonly IProcurementService _woService;
+        private readonly IProcurementService _procurementService;
 
         public ApprovalService(
             IApprovalRepository approvalRepository,
-            IProcurementService woService
+            IProcurementService procurementService
         )
         {
             _approvalRepository = approvalRepository;
-            _woService = woService;
+            _procurementService = procurementService;
         }
 
         // ===== existing =====
@@ -29,7 +29,7 @@ namespace ProcurementHTE.Core.Services
         {
             var result = await _approvalRepository.ApproveAsync(approvalId, approverUserId);
             if (result.AllDocsApproved)
-                await _woService.MarkAsCompletedAsync(result.ProcurementId);
+                await _procurementService.MarkAsCompletedAsync(result.ProcurementId);
         }
 
         public Task RejectAsync(string approvalId, string approverUserId, string? note) =>

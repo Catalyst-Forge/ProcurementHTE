@@ -24,25 +24,25 @@ namespace ProcurementHTE.Core.Services
             _roundLetterRepository = roundLetterRepository;
         }
 
-        public Task<ProfitLoss?> GetByProcurementAsync(string woId)
+        public Task<ProfitLoss?> GetByProcurementAsync(string procurementId)
         {
-            return _pnlRepository.GetByProcurementAsync(woId);
+            return _pnlRepository.GetByProcurementAsync(procurementId);
         }
 
-        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId)
+        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string procurementId)
         {
-            return _pnlRepository.GetSelectedVendorsAsync(woId);
+            return _pnlRepository.GetSelectedVendorsAsync(procurementId);
         }
 
-        public async Task<ProfitLossSummaryDto> GetSummaryByProcurementAsync(string woId)
+        public async Task<ProfitLossSummaryDto> GetSummaryByProcurementAsync(string procurementId)
         {
-            var pnl = await _pnlRepository.GetByProcurementAsync(woId);
+            var pnl = await _pnlRepository.GetByProcurementAsync(procurementId);
             if (pnl == null)
                 return null!;
 
             var allVendors = await _vendorRepository.GetAllAsync();
-            var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(woId);
-            var offers = await _voRepository.GetByProcurementAsync(woId);
+            var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(procurementId);
+            var offers = await _voRepository.GetByProcurementAsync(procurementId);
 
             var totalRevenue = SafeSum(pnl.Items.Select(item => item.Revenue));
             var totalOperatorCost = SafeSum(pnl.Items.Select(item => item.OperatorCost));
@@ -78,13 +78,15 @@ namespace ProcurementHTE.Core.Services
                         );
 
                     var requiredTotal = ComputeRequiredTotal(perItemCosts, requiredItemIds);
-                    var finalOffer = requiredTotal != decimal.MaxValue
-                        ? requiredTotal
-                        : SafeSum(perItemCosts.Values);
+                    var finalOffer =
+                        requiredTotal != decimal.MaxValue
+                            ? requiredTotal
+                            : SafeSum(perItemCosts.Values);
 
                     var vendorName =
-                        allVendors.FirstOrDefault(vendor => vendor.VendorId == group.Key)?.VendorName
-                        ?? group.Key;
+                        allVendors
+                            .FirstOrDefault(vendor => vendor.VendorId == group.Key)
+                            ?.VendorName ?? group.Key;
 
                     var profit = totalRevenue - finalOffer;
                     var profitPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100m : 0m;
@@ -134,9 +136,8 @@ namespace ProcurementHTE.Core.Services
                 RealizationAmount = pnl.RealizationAmount ?? totalOperatorCost,
                 Distance = pnl.Distance,
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
-                SelectedVendorName = vendorComparisons
-                    .FirstOrDefault(vendor => vendor.IsSelected)
-                    ?.VendorName
+                SelectedVendorName =
+                    vendorComparisons.FirstOrDefault(vendor => vendor.IsSelected)?.VendorName
                     ?? allVendors
                         .FirstOrDefault(vendor => vendor.VendorId == pnl.SelectedVendorId)
                         ?.VendorName
@@ -158,7 +159,9 @@ namespace ProcurementHTE.Core.Services
                 ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
 
             var offers = await _voRepository.GetByProcurementAsync(pnl.ProcurementId);
-            var roundLetters = await _roundLetterRepository.ListByProcurementAsync(pnl.ProcurementId);
+            var roundLetters = await _roundLetterRepository.ListByProcurementAsync(
+                pnl.ProcurementId
+            );
 
             // Vendor → Items (per ProcOfferId) → Prices
             var vendors = offers
@@ -609,7 +612,11 @@ namespace ProcurementHTE.Core.Services
                                     var ordered = gg.OrderBy(x => x.Round).ToList();
                                     var last = ordered.Last();
                                     var minPrice = ordered.Min(x => x.Price);
-                                    return ComputeVendorItemCost(minPrice, last.Quantity, last.Trip);
+                                    return ComputeVendorItemCost(
+                                        minPrice,
+                                        last.Quantity,
+                                        last.Trip
+                                    );
                                 }
                             ),
                     })

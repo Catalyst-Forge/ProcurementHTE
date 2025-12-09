@@ -5,24 +5,24 @@ namespace ProcurementHTE.Core.Services
 {
     public class DashboardService : IDashboardService
     {
-        private readonly IProcurementRepository _woRepository;
+        private readonly IProcurementRepository _procurementRepository;
         private readonly IProfitLossRepository _pnlRepository;
         private readonly IDashboardRepository _dashboardRepository;
 
         public DashboardService(
-            IProcurementRepository woRepository,
+            IProcurementRepository procurementRepository,
             IProfitLossRepository pnlRepository,
             IDashboardRepository dashboardRepository
         )
         {
-            _woRepository = woRepository;
+            _procurementRepository = procurementRepository;
             _pnlRepository = pnlRepository;
             _dashboardRepository = dashboardRepository;
         }
 
         public async Task<
             IReadOnlyList<ProcurementStatusCountDto>
-        > GetProcurementStatusCountsAsync() => await _woRepository.GetCountByStatusAsync();
+        > GetProcurementStatusCountsAsync() => await _procurementRepository.GetCountByStatusAsync();
 
         public async Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year) =>
             await _pnlRepository.GetRevenuePerMonthAsync(year);

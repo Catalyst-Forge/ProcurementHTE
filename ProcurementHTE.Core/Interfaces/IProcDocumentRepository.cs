@@ -25,7 +25,7 @@ public interface IProcDocumentRepository
     Task<ProcDocuments?> GetByIdAsync(string id);
     Task<IReadOnlyList<ProcDocuments>> GetByProcurementAsync(string procurementId);
     Task<ProcDocuments?> GetLatestActiveByProcurementAndDocTypeAsync(
-        string woId,
+        string procurementId,
         string documentTypeId
     );
     Task AddAsync(ProcDocuments doc);

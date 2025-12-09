@@ -89,7 +89,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<IReadOnlyList<ProcurementStatusCountDto>> GetCountByStatusAsync()
         {
             return await _context
-                .Procurements.GroupBy(wo => wo.Status!.StatusName)
+                .Procurements.GroupBy(procurement => procurement.Status!.StatusName)
                 .Select(group => new ProcurementStatusCountDto
                 {
                     Status = group.Key,
