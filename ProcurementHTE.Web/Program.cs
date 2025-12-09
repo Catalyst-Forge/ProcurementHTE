@@ -17,9 +17,11 @@ builder
 
 // MVC + app services
 builder.Services.AddControllersWithViews();
-builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationLayer();
+builder.Services.AddIdentityAndAuth(builder.Configuration);
+builder.Services.AddPresentationLayer();
 builder.Services.AddHttpClient("MinioProxy");
-builder.Services.AddHttpClient("SmsProvider");
 builder.Services.Configure<SecurityBypassOptions>(
     builder.Configuration.GetSection("SecurityBypass")
 );
