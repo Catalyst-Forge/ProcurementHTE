@@ -1,5 +1,4 @@
-namespace ProcurementHTE.Core.Models.Enums
-{
+namespace ProcurementHTE.Core.Enums {
     public enum TwoFactorMethod
     {
         None = 0,
