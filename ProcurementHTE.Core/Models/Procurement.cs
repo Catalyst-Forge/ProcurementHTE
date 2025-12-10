@@ -32,6 +32,11 @@ public class Procurement
     public string JobName { get; set; } = null!;
 
     [Required]
+    [DisplayName("Document Date")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    public DateTime DocumentDate { get; set; }
+
+    [Required]
     [DisplayName("Start Date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime StartDate { get; set; }

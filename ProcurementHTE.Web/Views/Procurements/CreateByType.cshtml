@@ -109,17 +109,22 @@
             <hr />
 
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label asp-for="Procurement.DocumentDate" class="form-label"></label>
+                    <input asp-for="Procurement.DocumentDate" type="date" class="form-control" />
+                    <span class="text-danger" asp-validation-for="Procurement.DocumentDate"></span>
+                </div>
+                <div class="col-md-3">
                     <label asp-for="Procurement.StartDate" class="form-label"></label>
                     <input asp-for="Procurement.StartDate" type="date" class="form-control" />
                     <span class="text-danger" asp-validation-for="Procurement.StartDate"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="Procurement.EndDate" class="form-label"></label>
                     <input asp-for="Procurement.EndDate" type="date" class="form-control" />
                     <span class="text-danger" asp-validation-for="Procurement.EndDate"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="Procurement.PotentialAccrualDate" class="form-label"></label>
                     <input asp-for="Procurement.PotentialAccrualDate" type="date" class="form-control" />
                     <span class="text-danger" asp-validation-for="Procurement.PotentialAccrualDate"></span>

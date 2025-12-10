@@ -50,6 +50,11 @@ public class ProcurementEditViewModel
     [MaxLength(100)]
     public string? Wonum { get; set; }
 
+    [DisplayName("Document Date")]
+    [DataType(DataType.Date)]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    public DateTime DocumentDate { get; set; }
+
     [DisplayName("Start Date")]
     [DataType(DataType.Date)]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
