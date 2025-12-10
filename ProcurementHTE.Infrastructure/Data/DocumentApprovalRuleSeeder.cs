@@ -68,7 +68,7 @@ namespace ProcurementHTE.Infrastructure.Data
                         // Khusus RKS: batasi ke kategori Services
                         var category =
                             docType.Name.IndexOf("RKS", StringComparison.OrdinalIgnoreCase) >= 0
-                                ? ProcurementCategory.Services
+                                ? ProcurementCategory.Jasa
                                 : (ProcurementCategory?)null;
 
                         context.DocumentApprovalRules.Add(

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Enums;
+using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
@@ -29,11 +29,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             if (jobType == null)
             {
-                jobType = new JobTypes
-                {
-                    TypeName = typeName,
-                    Description = description,
-                };
+                jobType = new JobTypes { TypeName = typeName, Description = description };
                 context.JobTypes.Add(jobType);
                 await context.SaveChangesAsync();
             }
@@ -143,7 +139,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     true,
                     true,
                     "PR Service upload dengan approval Manager",
-                    null // berlaku Goods & Services
+                    null // berlaku Barang & Jasa
                 ),
                 (
                     "Service Order",
@@ -213,7 +209,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     false,
                     true,
                     "Digenerate sistem; approval AM HTE -> Manager",
-                    ProcurementCategory.Services
+                    ProcurementCategory.Jasa
                 ),
                 (
                     "Risk Assessment (RA)",
@@ -223,7 +219,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     false,
                     true,
                     "Upload (khusus pengadaan jasa); approval HSE -> AM HTE -> Manager",
-                    ProcurementCategory.Services
+                    ProcurementCategory.Jasa
                 ),
                 (
                     "Owner Estimate (OE)",
@@ -352,11 +348,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Rencana Kerja dan Syarat-Syarat (RKS)",
-                    new[]
-                    {
-                        ("Assistant Manager HTE", 1),
-                        ("Manager Transport & Logistic", 2),
-                    }
+                    new[] { ("Assistant Manager HTE", 1), ("Manager Transport & Logistic", 2) }
                 ),
                 (
                     "Risk Assessment (RA)",
@@ -369,11 +361,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Owner Estimate (OE)",
-                    new[]
-                    {
-                        ("Assistant Manager HTE", 1),
-                        ("Manager Transport & Logistic", 2),
-                    }
+                    new[] { ("Assistant Manager HTE", 1), ("Manager Transport & Logistic", 2) }
                 ),
             };
 

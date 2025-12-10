@@ -189,9 +189,9 @@ public class JobTypeDocumentController : Controller
         ViewBag.DocumentTypes = await _service.GetDocumentTypesAsync(ct);
         ViewBag.Categories = new List<SelectListItem>
         {
-            new("All (Goods & Services)", ""),
-            new("Goods", ((int)ProcurementCategory.Goods).ToString()),
-            new("Services", ((int)ProcurementCategory.Services).ToString()),
+            new("All (Barang & Jasa)", ""),
+            new("Barang", ((int)ProcurementCategory.Barang).ToString()),
+            new("Jasa", ((int)ProcurementCategory.Jasa).ToString()),
         };
     }
 

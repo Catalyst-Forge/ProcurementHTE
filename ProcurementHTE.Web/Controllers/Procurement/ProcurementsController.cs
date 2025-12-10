@@ -154,7 +154,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [Authorize(Policy = Permissions.Procurement.Create)]
         public IActionResult RenderRaNumberField(ProcurementCategory category, string? raNumber)
         {
-            if (category != ProcurementCategory.Services)
+            if (category != ProcurementCategory.Jasa)
                 return Content(string.Empty);
 
             ViewBag.RaNumberValue = raNumber;
@@ -260,15 +260,15 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 );
             }
 
-            // Validasi RaNumber untuk Services
+            // Validasi RaNumber untuk Jasa
             if (
-                procurementViewModel.Procurement.ProcurementCategory == ProcurementCategory.Services
+                procurementViewModel.Procurement.ProcurementCategory == ProcurementCategory.Jasa
                 && string.IsNullOrWhiteSpace(procurementViewModel.Procurement.RaNumber)
             )
             {
                 ModelState.AddModelError(
                     $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.RaNumber)}",
-                    "RA Number wajib diisi untuk jenis pengadaan Services"
+                    "RA Number wajib diisi untuk jenis pengadaan jasa"
                 );
             }
 
@@ -492,15 +492,15 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 );
             }
 
-            // Validasi RaNumber untuk Services
+            // Validasi RaNumber untuk Jasa
             if (
-                editViewModel.ProcurementCategory == ProcurementCategory.Services
+                editViewModel.ProcurementCategory == ProcurementCategory.Jasa
                 && string.IsNullOrWhiteSpace(editViewModel.RaNumber)
             )
             {
                 ModelState.AddModelError(
                     nameof(editViewModel.RaNumber),
-                    "RA Number wajib diisi untuk jenis pengadaan Services"
+                    "RA Number wajib diisi untuk jenis pengadaan jasa"
                 );
             }
 
@@ -1821,7 +1821,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 Procurement = new Procurement
                 {
                     JobTypeId = selectedJobType?.JobTypeId!,
-                    ProcurementCategory = category ?? ProcurementCategory.Goods,
+                    ProcurementCategory = category ?? ProcurementCategory.Barang,
                 },
                 Details = [],
                 Offers = [],

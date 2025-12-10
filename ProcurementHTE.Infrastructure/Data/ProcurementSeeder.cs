@@ -69,7 +69,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     StatusName = "Draft",
                     ContractType = ContractType.LTC,
-                    ProcurementCategory = ProcurementCategory.Services,
+                    ProcurementCategory = ProcurementCategory.Jasa,
                     JobName =
                         "Penyediaan jasa angkutan menggunakan trailer highbed untuk pengangkutan coring tools.",
                     SpkNumber = "1063/PROC-DS/DSI1310/2025",
@@ -105,7 +105,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 {
                     StatusName = "Created",
                     ContractType = ContractType.Spot,
-                    ProcurementCategory = ProcurementCategory.Goods,
+                    ProcurementCategory = ProcurementCategory.Barang,
                     JobName = "Pengadaan chemical injection skid untuk sumur WKP Kamojang.",
                     SpkNumber = "221/PROC-CHM/CHEM45/2025",
                     Wonum = "112 / DSI1131/2025",
@@ -309,7 +309,8 @@ namespace ProcurementHTE.Infrastructure.Data
             public string StatusName { get; init; } = null!;
             public ContractType ContractType { get; init; }
             public string JobName { get; init; } = null!;
-            public ProcurementCategory ProcurementCategory { get; init; } = ProcurementCategory.Goods;
+            public ProcurementCategory ProcurementCategory { get; init; } =
+                ProcurementCategory.Barang;
             public string SpkNumber { get; init; } = null!;
             public string Wonum { get; init; } = null!;
             public DateTime StartDate { get; init; }

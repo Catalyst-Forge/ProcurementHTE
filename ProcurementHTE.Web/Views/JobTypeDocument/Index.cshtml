@@ -108,13 +108,13 @@
                         <td>@item.JobType?.TypeName</td>
                         <td>@item.DocumentType?.Name</td>
                         <td class="text-center">
-                            @if (item.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Goods)
+                            @if (item.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Barang)
                             {
-                                <span class="badge bg-light text-dark border">Goods</span>
+                                <span class="badge bg-light text-dark border">Barang</span>
                             }
-                            else if (item.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Services)
+                            else if (item.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Jasa)
                             {
-                                <span class="badge bg-light text-dark border">Services</span>
+                                <span class="badge bg-light text-dark border">Jasa</span>
                             }
                             else
                             {
