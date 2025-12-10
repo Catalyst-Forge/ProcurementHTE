@@ -72,7 +72,7 @@
 
         <div class="col-6 px-2">
           <p class="mb-0"><strong>Periode Pelaksanaan Pekerjaan yang diharapkan</strong></p>
-          <p class="mb-0">Periode pekerjaan: 19 Hari Pekerjaan</p>
+          <p class="mb-0">Periode pekerjaan: {{ TerbilangHari}} Pekerjaan</p>
           <p class="mb-0">Tanggal mulai pekerjaan: {{ StartDate }}</p>
           <p class="mb-0">Tanggal berakhirnya pekerjaan: {{ EndDate }}</p>
         </div>
@@ -80,24 +80,23 @@
 
       <div class="border border-black border-bottom-0 px-2">
         <p class="mb-0">Vendor yang diusulkan: {{ SelectedVendorName }}</p>
-        <p class="mb-0">Nomor Vendor: "Harusnya nomor vendor"</p>
+        <p class="mb-0">Nomor Vendor: {{ NoLetter }}</p>
         <p class="mb-0">CSMS <em>(jika diperlukan)</em></p>
         <div>
           <input type="checkbox" class="form-check-input" />
           <label class="form-label">Rendah</label>
           <input type="checkbox" class="form-check-input" />
           <label class="form-label">Menengah</label>
-          <input type="checkbox" class="form-check-input" />
+          <input type="checkbox" class="form-check-input" checked />
           <label class="form-label">Tinggi</label>
         </div>
       </div>
 
       <div class="border border-black border-bottom-0 px-2 pb-2">
         <p>
-          Surat Penawaran Harga dari Rp {{ TotalRevenue }} No. {{ NoLetter }} Tanggal "Harusnya tanggal penawaran" Surat
-          Negosiasi Penawaran Harga / Berita Acara Negosiasi No. "Harusnya nomor negosiasi atau berita acara" Tanggal
-          "Harusnya tanggal negosiasi" Untuk pengadaan telah didapatkan peanwaran dan dilakukan negosiasi terhadap calon
-          mitra dengan hasil sebagai berikut:
+          Surat Penawaran Harga dari Rp {{ TotalRevenue }} No. {{ NoLetter }} Tanggal {{ PnlCreatedAt }} Surat Negosiasi
+          Penawaran Harga / Berita Acara Negosiasi No. {{ NoLetter }} Tanggal {{ PnlCreatedAt }} Untuk pengadaan telah
+          didapatkan peanwaran dan dilakukan negosiasi terhadap calon mitra dengan hasil sebagai berikut:
         </p>
 
         <table class="table table-bordered border-black mb-0">
@@ -110,9 +109,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>"isi data"</td>
-            </tr>
+            {{ VendorNegotiationTable }}
           </tbody>
         </table>
       </div>
@@ -130,24 +127,24 @@
         <ol class="mb-0">
           <li>
             Berdasarkan permintaan dari PT PDSI terkait pekerjaan {{ JobName }}, direncanakan bahwa pekerjaan tersebut
-            akan segera dilaksanakan, dengan mengacu pada Work Order (WO) Nomor: {{ WoNum }} tanggal "WO Dibuat".
+            akan segera dilaksanakan, dengan mengacu pada Work Order (WO) Nomor: {{ WoNum }} tanggal {{ CreatedAt }}.
           </li>
           <li>
-            User telah melakukan proses inquiry pada tanggal <strong>"tanggal" "19 september 2025"</strong> kepada 28
-            mitra kerja, sebagaimana tercantum dalam daftar terlampir.
+            User telah melakukan proses inquiry pada tanggal <strong>"tanggal inquiry"</strong> kepada {{
+            SelectedVendorCount }} mitra kerja, sebagaimana tercantum dalam daftar terlampir.
           </li>
           <li>
             Dari total mitra yang dikirimi inquiry; terdapat 1 mitra yang memberikan tanggapan, yaitu: {{
             SelectedVendorName }}.
           </li>
           <li>
-            {{ SelectedVendorName }} telah melakukan "jumlah penawaran harga" kali negosiasi, yaitu pada tanggal
-            "created at pnl".
+            {{ SelectedVendorName }} telah melakukan {{ SelectedVendorFinalOffer }} kali negosiasi, yaitu pada tanggal
+            {{ PnlCreatedAt }}.
           </li>
           <li>Rekapitulasi daftar negosiasi harga dapat dilihat pada tabel di atas.</li>
           <li>
             Penawaran dengan nilai terendah diperoleh nilai sebesar Rp {{ TotalRevenue }}, sebagaimana tercantum dalam
-            surat penawaran Nomor {{ NoLetter }} tanggal "created at pnl".
+            surat penawaran Nomor {{ NoLetter }} tanggal {{ PnlCreatedAt }}.
           </li>
           <li>
             Estimasi revenue dari pekerjaan ini adalah sebesar {{ ProfitPercent }}, dengan estimasi profit sebesar Rp {{
@@ -187,14 +184,14 @@
 
       <div class="border border-black border-bottom-0 row g-0 px-2">
         <div class="col-2 border-end border-black text-center">{{ ConditionalSubmitRole }}:</div>
-        <div class="col-4 border-end border-black text-center">Edo Pradipta</div>
+        <div class="col-4 border-end border-black text-center">{{ ConditionalSubmitName }}</div>
         <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
         <div class="col-3 text-center">&ThinSpace;</div>
       </div>
 
       <div class="border border-black row g-0 px-2 mb-5">
         <div class="col-2 border-end border-black text-center">{{ ConditionalApproveRole }} :</div>
-        <div class="col-4 border-end border-black text-center">Arfinal Diputra</div>
+        <div class="col-4 border-end border-black text-center">{{ ConditionalApproveName }}</div>
         <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
         <div class="col-3 text-center">&ThinSpace;</div>
       </div>
@@ -285,7 +282,7 @@
             <thead>
               <tr>
                 <th scope="col">No</th>
-                <th scope="col">Deskripsi</th>
+                <th scope="col" style="width: 45%">Deskripsi</th>
                 <th scope="col">QTY</th>
                 <th scope="col">Satuan</th>
                 <th scope="col">Harga</th>
@@ -296,7 +293,7 @@
               {{ OfferDetailTable }}
               <tr>
                 <td colspan="6">
-                  <p>
+                  <p class="mb-0">
                     Catatan: Reff Penawaran Harga {{ SelectedVendorName }} <br />
                     {{ NoLetter }}
                   </p>
@@ -304,15 +301,15 @@
               </tr>
               <tr>
                 <td colspan="6">
-                  <p>Periode Pekerjaan: {{ StartDate }} s.d {{ EndDate }}</p>
+                  <p class="mb-0">Periode Pekerjaan: {{ StartDate }} s.d {{ EndDate }}</p>
                 </td>
               </tr>
               <tr>
-                <td colspan="5"><strong>TOTAL</strong></td>
-                <td>Rp "Total"</td>
+                <td colspan="5" class="text-center p-0"><strong>TOTAL</strong></td>
+                <td>{{ SelectedVendorOfferTotal }}</td>
               </tr>
               <tr>
-                <td colspan="6">Terbilang "harga terbilang"</td>
+                <td colspan="6">Terbilang {{ SelectedVendorOfferTotalTerbilang }}</td>
               </tr>
             </tbody>
           </table>
@@ -320,8 +317,9 @@
 
         <p class="px-2">
           {{ SelectedVendorName }} ditetapkan sebagai penyedia jasa untuk pelaksanaan {{ JobName }} berdasarkan
-          Penawaran No. {{ NoLetter }} tanggal "tanggal", degnan nilai pekerjaan "total" ("terbilang"). Adapun pekerjaan
-          tersebut akan dilaksanakan dalam jangka waktu "terbilang hari" kalender.
+          Penawaran No. {{ NoLetter }} tanggal {{ PnlCreatedAt }}, degnan nilai pekerjaan Rp {{ SelectedVendorFinalOffer
+          }} ({{ SelectedVendorFinalOfferTerbilang }}). Adapun pekerjaan tersebut akan dilaksanakan dalam jangka waktu
+          {{ TerbilangHari }} kalender.
         </p>
       </div>
 
@@ -394,4 +392,3 @@
     </div>
   </body>
 </html>
-
