@@ -9,21 +9,18 @@ public class DocumentGenerator : IDocumentGenerator
 {
     private readonly ITemplateProvider _templateProvider;
     private readonly IHtmlTokenReplacer _tokenReplacer;
-    private readonly IProcurementRepository _ProcurementRepository;
     private readonly IProfitLossRepository _pnlRepository;
     private readonly IVendorRepository _vendorRepository;
 
     public DocumentGenerator(
         ITemplateProvider templateProvider,
         IHtmlTokenReplacer tokenReplacer,
-        IProcurementRepository ProcurementRepository,
         IProfitLossRepository pnlRepository,
         IVendorRepository vendorRepository
     )
     {
         _templateProvider = templateProvider;
         _tokenReplacer = tokenReplacer;
-        _ProcurementRepository = ProcurementRepository;
         _pnlRepository = pnlRepository;
         _vendorRepository = vendorRepository;
     }
@@ -162,6 +159,14 @@ public class DocumentGenerator : IDocumentGenerator
         return await GenerateByTemplateAsync("BOQ", "Bill of Quantity", procurement, ct);
     }
 
+    public async Task<byte[]> GenerateJustifikasiAsync(
+        Procurement procurement,
+        CancellationToken ct = default
+    )
+    {
+        return await GenerateByTemplateAsync("Justifikasi", "Justifikasi", procurement, ct);
+    }
+
     public async Task<byte[]> GenerateFromTemplateAsync(
         string templateName,
         object model,
@@ -229,7 +234,7 @@ public class DocumentGenerator : IDocumentGenerator
             {
                 Format = "A4",
                 PrintBackground = true,
-                DisplayHeaderFooter = true,
+                DisplayHeaderFooter = false,
                 Margin = new()
                 {
                     Top = "12mm",
