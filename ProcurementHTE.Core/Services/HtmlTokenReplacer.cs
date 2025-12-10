@@ -111,6 +111,11 @@ namespace ProcurementHTE.Core.Services
                 "PotentialAccrualDate",
                 FormatDate(proc.PotentialAccrualDate)
             );
+            html = ReplaceToken(
+                html,
+                "TerbilangHari",
+                proc.StartDate.ToTerbilangHari(proc.EndDate, includeUnitWord: true)
+            );
             html = ReplaceToken(html, "SpmpNumber", proc.SpmpNumber);
             html = ReplaceToken(html, "MemoNumber", proc.MemoNumber);
             html = ReplaceToken(html, "OeNumber", proc.OeNumber);
@@ -126,16 +131,25 @@ namespace ProcurementHTE.Core.Services
 
             // Conditional approval roles based on CT (Grand Total PNL) and template/doc
             var docName = MapTemplateKeyToDocName(templateKey);
-            var (conditionalSubmit, conditionalApprove) = await ResolveConditionalRolesAsync(proc, docName);
+            var (conditionalSubmit, conditionalApprove) = await ResolveConditionalRolesAsync(
+                proc,
+                docName
+            );
             html = ReplaceToken(html, "ConditionalSubmitRole", conditionalSubmit);
             html = ReplaceToken(html, "ConditionalApproveRole", conditionalApprove);
+            var conditionalSubmitName = await ResolveFirstUserNameByRoleAsync(conditionalSubmit);
+            var conditionalApproveName = await ResolveFirstUserNameByRoleAsync(conditionalApprove);
+            html = ReplaceToken(html, "ConditionalSubmitName", conditionalSubmitName);
+            html = ReplaceToken(html, "ConditionalApproveName", conditionalApproveName);
             var needExtraApprove =
                 !string.IsNullOrWhiteSpace(conditionalApprove) && conditionalApprove != "-";
-            var extraHeader = needExtraApprove ? "<td style=\"width: 25%\">Disetujui Oleh</td>" : string.Empty;
-            var extraBlank = needExtraApprove ? "<td class=\"signature-content\"></td>" : string.Empty;
-            var extraRoleCell = needExtraApprove
-                ? $"<td>{conditionalApprove}</td>"
+            var extraHeader = needExtraApprove
+                ? "<td style=\"width: 25%\">Disetujui Oleh</td>"
                 : string.Empty;
+            var extraBlank = needExtraApprove
+                ? "<td class=\"signature-content\"></td>"
+                : string.Empty;
+            var extraRoleCell = needExtraApprove ? $"<td>{conditionalApprove}</td>" : string.Empty;
             html = ReplaceToken(html, "ConditionalApproveHeaderCell", extraHeader);
             html = ReplaceToken(html, "ConditionalApproveBlankCell", extraBlank);
             html = ReplaceToken(html, "ConditionalApproveRoleCell", extraRoleCell);
@@ -200,6 +214,7 @@ namespace ProcurementHTE.Core.Services
                     "SelectedVendorFinalOffer",
                     FormatDecimal(pnl.SelectedVendorFinalOffer)
                 );
+                html = ReplaceToken(html, "SelectedVendorFinalOfferTerbilang", pnl.SelectedVendorFinalOffer.ToTerbilangRupiah());
                 html = ReplaceToken(html, "Profit", FormatDecimal(pnl.Profit));
                 html = ReplaceToken(html, "ProfitPercent", pnl.ProfitPercent.ToString("N2", Id));
                 html = ReplaceToken(html, "Distance", FormatDecimal(pnl.Distance));
@@ -214,9 +229,6 @@ namespace ProcurementHTE.Core.Services
                 {
                     var itemsHtml = GenerateItemsTable(pnl.Items, templateKey);
                     html = ReplaceToken(html, "PnlItemsTable", itemsHtml);
-
-                    var detailOfferTable = GenerateOfferDetailTable(pnl.Items);
-                    html = ReplaceToken(html, "OfferDetailTable", detailOfferTable);
                 }
 
                 // Tabel penawaran vendor
@@ -224,6 +236,9 @@ namespace ProcurementHTE.Core.Services
                 {
                     var vendorOfferHtml = GenerateOfferTable(pnl, proc);
                     html = ReplaceToken(html, "VendorOfferTable", vendorOfferHtml);
+
+                    var vendorNegotiationHtml = GenerateVendorNegotiationTable(pnl, proc, revenueTotal);
+                    html = ReplaceToken(html, "VendorNegotiationTable", vendorNegotiationHtml);
                 }
                 else
                 {
@@ -231,6 +246,11 @@ namespace ProcurementHTE.Core.Services
                         html,
                         "VendorOfferTable",
                         "<p class='text-center'>Tidak ada penawaran vendor</p>"
+                    );
+                    html = ReplaceToken(
+                        html,
+                        "VendorNegotiationTable",
+                        "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>"
                     );
                 }
 
@@ -309,6 +329,43 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "SelectedVendorCity", "-");
                 html = ReplaceToken(html, "SelectedVendorProvince", "-");
                 html = ReplaceToken(html, "SelectedVendorEmail", "-");
+                html = ReplaceToken(
+                    html,
+                    "VendorNegotiationTable",
+                    "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>"
+                );
+            }
+
+            // Detail tabel penawaran (harga & total per item) untuk vendor terpilih (round tertinggi)
+            if (pnl != null)
+            {
+                decimal selectedVendorOfferTotal;
+                var offerDetailTable = GenerateOfferDetailTable(pnl, proc, out selectedVendorOfferTotal);
+                html = ReplaceToken(html, "OfferDetailTable", offerDetailTable);
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorOfferTotal",
+                    selectedVendorOfferTotal > 0
+                        ? selectedVendorOfferTotal.ToString("C0", Id)
+                        : "-"
+                );
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorOfferTotalTerbilang",
+                    selectedVendorOfferTotal > 0
+                        ? selectedVendorOfferTotal.ToTerbilangRupiah()
+                        : "-"
+                );
+            }
+            else
+            {
+                html = ReplaceToken(
+                    html,
+                    "OfferDetailTable",
+                    "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>"
+                );
+                html = ReplaceToken(html, "SelectedVendorOfferTotal", "-");
+                html = ReplaceToken(html, "SelectedVendorOfferTotalTerbilang", "-");
             }
 
             //Accrual & realization amount (pakai fallback ke total Revenue / OperatorCost)
@@ -342,7 +399,11 @@ namespace ProcurementHTE.Core.Services
             if (ct <= 0m)
                 return ("-", "-");
 
-            var rules = await _ruleRepo.GetActiveByDocNameAsync(docName, procurement.JobTypeId, procurement.ProcurementCategory);
+            var rules = await _ruleRepo.GetActiveByDocNameAsync(
+                docName,
+                procurement.JobTypeId,
+                procurement.ProcurementCategory
+            );
 
             var hit = rules.FirstOrDefault(r => ct > r.MinAmount && ct <= r.MaxAmount);
             if (hit == null)
@@ -401,6 +462,26 @@ namespace ProcurementHTE.Core.Services
             );
         }
 
+        private async Task<string> ResolveFirstUserNameByRoleAsync(string? roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName) || roleName == "-")
+                return "-";
+
+            var users = await _userManager.GetUsersInRoleAsync(roleName);
+            var user = users?.FirstOrDefault();
+
+            if (user == null)
+                return "-";
+
+            if (!string.IsNullOrWhiteSpace(user.FullName))
+                return user.FullName;
+
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+                return user.UserName;
+
+            return user.Email ?? "-";
+        }
+
         #endregion
 
         #region Generate Table Items
@@ -445,26 +526,79 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GenerateOfferDetailTable(ICollection<ProfitLossItem> od) {
+        private static string GenerateOfferDetailTable(
+            ProfitLoss pnl,
+            Procurement proc,
+            out decimal selectedVendorTotal
+        )
+        {
+            selectedVendorTotal = 0m;
+
+            if (pnl.VendorOffers == null || pnl.VendorOffers.Count == 0)
+                return "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
+            var selectedVendorId = !string.IsNullOrWhiteSpace(pnl.SelectedVendorId)
+                ? pnl.SelectedVendorId
+                : pnl.VendorOffers.GroupBy(o => o.VendorId).OrderBy(g => g.Key).First().Key;
+
+            var offersForSelectedVendor = pnl.VendorOffers
+                .Where(o => o.VendorId == selectedVendorId)
+                .ToList();
+
+            if (offersForSelectedVendor.Count == 0)
+                return "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
             var sb = new StringBuilder();
             var no = 1;
 
-            foreach (var detail in od) {
-                var item = detail.ProcOffer.ItemPenawaran;
-                var qty = detail.Quantity;
-                var unit = detail.ProcOffer.Unit;
-                var pricePerItem = detail.TarifAwal + detail.OperatorCost;
-                var totalPrice = detail.Revenue;
+            // Peta ProcOffer buat ambil deskripsi/unit
+            var procOffers = proc.ProcOffers?.ToDictionary(o => o.ProcOfferId, o => o)
+                ?? new Dictionary<string, ProcOffer>();
+
+            // Peta PNL Items untuk quantity jika ada
+            var pnlItems = pnl.Items?.ToDictionary(i => i.ProcOfferId, i => i)
+                ?? new Dictionary<string, ProfitLossItem>();
+
+            // Kelompokkan per item
+            var itemGroups = offersForSelectedVendor
+                .GroupBy(o => o.ProcOfferId)
+                .OrderBy(g => g.First().ProcOffer.ItemPenawaran);
+
+            foreach (var group in itemGroups)
+            {
+                var highestRound = group.Max(o => o.Round);
+                var offer = group
+                    .Where(o => o.Round == highestRound && o.Price > 0)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .FirstOrDefault();
+
+                if (offer == null)
+                    continue;
+
+                procOffers.TryGetValue(group.Key, out var procOffer);
+                pnlItems.TryGetValue(group.Key, out var pnlItem);
+
+                var desc = procOffer?.ItemPenawaran ?? "-";
+                var unit = procOffer?.Unit ?? offer.ProcOffer?.Unit ?? "-";
+                var qty = pnlItem?.Quantity ?? offer.Quantity;
+                var trip = offer.Trip > 0 ? offer.Trip : 1;
+                var price = offer.Price;
+                var total = price * qty * trip;
+
+                selectedVendorTotal += total;
 
                 sb.AppendLine("<tr>");
                 sb.AppendLine($"  <td class='text-center'>{no++}</td>");
-                sb.AppendLine($"  <td>{item}</td>");
-                sb.AppendLine($"  <td>{qty}</td>");
-                sb.AppendLine($"  <td>{unit}</td>");
-                sb.AppendLine($"  <td>{pricePerItem}</td>");
-                sb.AppendLine($"  <td>{totalPrice}</td>");
+                sb.AppendLine($"  <td>{desc}</td>");
+                sb.AppendLine($"  <td class='text-center'>{qty}</td>");
+                sb.AppendLine($"  <td class='text-center'>{unit}</td>");
+                sb.AppendLine($"  <td class='text-end'>{price.ToString("C0", Id)}</td>");
+                sb.AppendLine($"  <td class='text-end'>{total.ToString("C0", Id)}</td>");
                 sb.AppendLine("</tr>");
             }
+
+            if (selectedVendorTotal == 0m && sb.Length == 0)
+                return "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>";
 
             return sb.ToString();
         }
@@ -985,6 +1119,90 @@ namespace ProcurementHTE.Core.Services
             sb.AppendLine("</table>");
 
             return sb.ToString();
+        }
+
+        private static string GenerateVendorNegotiationTable(
+            ProfitLoss pnl,
+            Procurement proc,
+            decimal revenueTotal
+        )
+        {
+            _ = proc; // currently tidak dipakai, disimpan untuk kemungkinan kebutuhan data lain
+
+            if (pnl.VendorOffers == null || pnl.VendorOffers.Count == 0)
+                return "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
+            var pnlItems = pnl.Items ?? new List<ProfitLossItem>();
+            var pnlItemsByOfferId = pnlItems.ToDictionary(i => i.ProcOfferId, i => i);
+
+            decimal CalcTotalForRound(IEnumerable<VendorOffer> offers, int round)
+            {
+                decimal total = 0m;
+                var hasRow = false;
+
+                foreach (var group in offers.GroupBy(o => o.ProcOfferId))
+                {
+                    var offer = group.FirstOrDefault(o => o.Round == round);
+                    if (offer == null || offer.Price <= 0)
+                        continue;
+
+                    pnlItemsByOfferId.TryGetValue(group.Key, out var pnlItem);
+                    var qty = pnlItem?.Quantity ?? offer.Quantity;
+                    if (qty <= 0)
+                        continue;
+
+                    var trip = offer.Trip > 0 ? offer.Trip : 1;
+                    total += offer.Price * qty * trip;
+                    hasRow = true;
+                }
+
+                return hasRow ? total : 0m;
+            }
+
+            var rows = new StringBuilder();
+
+            var vendorGroups = pnl
+                .VendorOffers.GroupBy(o => o.VendorId)
+                .OrderBy(g => g.First().Vendor.VendorName);
+
+            foreach (var vendorGroup in vendorGroups)
+            {
+                var minRound = vendorGroup.Min(o => o.Round);
+                var maxRound = vendorGroup.Max(o => o.Round);
+
+                var firstOfferTotal = CalcTotalForRound(vendorGroup, minRound);
+                var negoTotal = CalcTotalForRound(vendorGroup, maxRound);
+
+                if (firstOfferTotal == 0 && negoTotal == 0)
+                    continue;
+
+                var vendorName = vendorGroup.First().Vendor?.VendorName ?? "-";
+
+                string remark;
+                if (revenueTotal > 0 && negoTotal > 0)
+                {
+                    var profitPercent = Math.Round(
+                        ((revenueTotal - negoTotal) / revenueTotal) * 100m,
+                        2
+                    );
+                    remark = $"PROFIT {profitPercent.ToString("N2", Id)}%";
+                }
+                else
+                {
+                    remark = "-";
+                }
+
+                rows.AppendLine("<tr>");
+                rows.AppendLine($"  <td>{vendorName}</td>");
+                rows.AppendLine($"  <td class='text-end'>{firstOfferTotal.ToString("C0", Id)}</td>");
+                rows.AppendLine($"  <td class='text-end'>{negoTotal.ToString("C0", Id)}</td>");
+                rows.AppendLine($"  <td>{remark}</td>");
+                rows.AppendLine("</tr>");
+            }
+
+            return rows.Length > 0
+                ? rows.ToString()
+                : "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>";
         }
 
         #endregion
