@@ -37,6 +37,7 @@ public static class ServiceExtensions
         services.AddScoped<IVendorOfferService, VendorOfferService>();
         services.AddScoped<IProcDocumentService, ProcDocumentService>();
         services.AddScoped<IJobTypeDocumentService, JobTypeDocumentService>();
+        services.AddScoped<IJobTypeDocumentAdminService, JobTypeDocumentAdminService>();
         services.AddScoped<IProcDocumentApprovalService, ProcDocumentApprovalService>();
         services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
         services.AddScoped<IDocumentApprovalRuleService, DocumentApprovalRuleService>();
