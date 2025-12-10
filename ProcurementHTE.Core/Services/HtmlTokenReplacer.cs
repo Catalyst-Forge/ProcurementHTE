@@ -214,7 +214,11 @@ namespace ProcurementHTE.Core.Services
                     "SelectedVendorFinalOffer",
                     FormatDecimal(pnl.SelectedVendorFinalOffer)
                 );
-                html = ReplaceToken(html, "SelectedVendorFinalOfferTerbilang", pnl.SelectedVendorFinalOffer.ToTerbilangRupiah());
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorFinalOfferTerbilang",
+                    pnl.SelectedVendorFinalOffer.ToTerbilangRupiah()
+                );
                 html = ReplaceToken(html, "Profit", FormatDecimal(pnl.Profit));
                 html = ReplaceToken(html, "ProfitPercent", pnl.ProfitPercent.ToString("N2", Id));
                 html = ReplaceToken(html, "Distance", FormatDecimal(pnl.Distance));
@@ -237,8 +241,29 @@ namespace ProcurementHTE.Core.Services
                     var vendorOfferHtml = GenerateOfferTable(pnl, proc);
                     html = ReplaceToken(html, "VendorOfferTable", vendorOfferHtml);
 
-                    var vendorNegotiationHtml = GenerateVendorNegotiationTable(pnl, proc, revenueTotal);
+                    var vendorNegotiationHtml = GenerateVendorNegotiationTable(
+                        pnl,
+                        proc,
+                        revenueTotal
+                    );
                     html = ReplaceToken(html, "VendorNegotiationTable", vendorNegotiationHtml);
+
+                    var highestRound = pnl.VendorOffers.Max(vo => vo.Round);
+                    var highestRoundDate = pnl
+                        .VendorOffers.Where(vo => vo.Round == highestRound)
+                        .OrderByDescending(vo => vo.CreatedAt)
+                        .FirstOrDefault()
+                        ?.CreatedAt;
+                    html = ReplaceToken(
+                        html,
+                        "Round",
+                        highestRound > 0 ? highestRound.ToString("N0", Id) : "-"
+                    );
+                    html = ReplaceToken(
+                        html,
+                        "RoundCreatedAt",
+                        highestRoundDate.HasValue ? FormatDate(highestRoundDate) : "-"
+                    );
                 }
                 else
                 {
@@ -252,6 +277,8 @@ namespace ProcurementHTE.Core.Services
                         "VendorNegotiationTable",
                         "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>"
                     );
+                    html = ReplaceToken(html, "Round", "-");
+                    html = ReplaceToken(html, "RoundCreatedAt", "-");
                 }
 
                 // Data vendor terpilih (dari SelectedVendorId di ProfitLoss)
@@ -329,6 +356,8 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "SelectedVendorCity", "-");
                 html = ReplaceToken(html, "SelectedVendorProvince", "-");
                 html = ReplaceToken(html, "SelectedVendorEmail", "-");
+                html = ReplaceToken(html, "Round", "-");
+                html = ReplaceToken(html, "RoundCreatedAt", "-");
                 html = ReplaceToken(
                     html,
                     "VendorNegotiationTable",
@@ -340,14 +369,16 @@ namespace ProcurementHTE.Core.Services
             if (pnl != null)
             {
                 decimal selectedVendorOfferTotal;
-                var offerDetailTable = GenerateOfferDetailTable(pnl, proc, out selectedVendorOfferTotal);
+                var offerDetailTable = GenerateOfferDetailTable(
+                    pnl,
+                    proc,
+                    out selectedVendorOfferTotal
+                );
                 html = ReplaceToken(html, "OfferDetailTable", offerDetailTable);
                 html = ReplaceToken(
                     html,
                     "SelectedVendorOfferTotal",
-                    selectedVendorOfferTotal > 0
-                        ? selectedVendorOfferTotal.ToString("C0", Id)
-                        : "-"
+                    selectedVendorOfferTotal > 0 ? selectedVendorOfferTotal.ToString("C0", Id) : "-"
                 );
                 html = ReplaceToken(
                     html,
@@ -541,8 +572,8 @@ namespace ProcurementHTE.Core.Services
                 ? pnl.SelectedVendorId
                 : pnl.VendorOffers.GroupBy(o => o.VendorId).OrderBy(g => g.Key).First().Key;
 
-            var offersForSelectedVendor = pnl.VendorOffers
-                .Where(o => o.VendorId == selectedVendorId)
+            var offersForSelectedVendor = pnl
+                .VendorOffers.Where(o => o.VendorId == selectedVendorId)
                 .ToList();
 
             if (offersForSelectedVendor.Count == 0)
@@ -552,11 +583,13 @@ namespace ProcurementHTE.Core.Services
             var no = 1;
 
             // Peta ProcOffer buat ambil deskripsi/unit
-            var procOffers = proc.ProcOffers?.ToDictionary(o => o.ProcOfferId, o => o)
+            var procOffers =
+                proc.ProcOffers?.ToDictionary(o => o.ProcOfferId, o => o)
                 ?? new Dictionary<string, ProcOffer>();
 
             // Peta PNL Items untuk quantity jika ada
-            var pnlItems = pnl.Items?.ToDictionary(i => i.ProcOfferId, i => i)
+            var pnlItems =
+                pnl.Items?.ToDictionary(i => i.ProcOfferId, i => i)
                 ?? new Dictionary<string, ProfitLossItem>();
 
             // Kelompokkan per item
@@ -1003,7 +1036,7 @@ namespace ProcurementHTE.Core.Services
             // --- 3. Bangun HTML tabel (layout mirip contoh) ---
 
             sb.AppendLine(
-                "<table class='table table-bordered table-sm align-middle mb-5 border-black'>"
+                "<table class='table table-bordered table-sm align-middle mb-3 border-black'>"
             );
             sb.AppendLine("  <thead>");
             sb.AppendLine("    <tr>");
@@ -1194,7 +1227,9 @@ namespace ProcurementHTE.Core.Services
 
                 rows.AppendLine("<tr>");
                 rows.AppendLine($"  <td>{vendorName}</td>");
-                rows.AppendLine($"  <td class='text-end'>{firstOfferTotal.ToString("C0", Id)}</td>");
+                rows.AppendLine(
+                    $"  <td class='text-end'>{firstOfferTotal.ToString("C0", Id)}</td>"
+                );
                 rows.AppendLine($"  <td class='text-end'>{negoTotal.ToString("C0", Id)}</td>");
                 rows.AppendLine($"  <td>{remark}</td>");
                 rows.AppendLine("</tr>");
