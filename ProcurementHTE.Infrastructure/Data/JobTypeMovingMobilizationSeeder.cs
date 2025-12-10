@@ -60,7 +60,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Memorandum",
                 "Permintaan Pekerjaan",
                 "PR Service",
-                "Service Order",
                 "Market Survey",
                 "Profit & Loss",
                 "Surat Perintah Mulai Pekerjaan (SPMP)",
@@ -142,18 +141,8 @@ namespace ProcurementHTE.Infrastructure.Data
                     null // berlaku Barang & Jasa
                 ),
                 (
-                    "Service Order",
-                    4,
-                    true,
-                    true,
-                    false,
-                    true,
-                    "Digenerate sistem; approval Manager Transport & Logistic",
-                    null
-                ),
-                (
                     "Market Survey",
-                    5,
+                    4,
                     true,
                     false,
                     true,
@@ -163,7 +152,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Profit & Loss",
-                    6,
+                    5,
                     true,
                     true,
                     false,
@@ -173,7 +162,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Surat Perintah Mulai Pekerjaan (SPMP)",
-                    7,
+                    6,
                     true,
                     true,
                     false,
@@ -183,7 +172,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Surat Penawaran Harga",
-                    8, // disediakan sebagai DocumentType tetapi tidak dimasukkan ke JobTypeDocuments
+                    7, // disediakan sebagai DocumentType tetapi tidak dimasukkan ke JobTypeDocuments
                     false,
                     false,
                     false,
@@ -193,7 +182,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Surat Negosiasi Harga",
-                    9,
+                    8,
                     false,
                     false,
                     false,
@@ -203,7 +192,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Rencana Kerja dan Syarat-Syarat (RKS)",
-                    10,
+                    9,
                     true,
                     true,
                     false,
@@ -213,7 +202,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Risk Assessment (RA)",
-                    11,
+                    10,
                     true,
                     true,
                     false,
@@ -223,7 +212,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Owner Estimate (OE)",
-                    12,
+                    11,
                     true,
                     true,
                     false,
@@ -233,7 +222,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Bill of Quantity (BOQ)",
-                    13,
+                    12,
                     true,
                     true,
                     false,
@@ -243,7 +232,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Justifikasi",
-                    14,
+                    13,
                     true,
                     true,
                     false,
@@ -332,7 +321,6 @@ namespace ProcurementHTE.Infrastructure.Data
             var approvalMatrix = new (string Doc, (string Role, int Level)[] Steps)[]
             {
                 ("Memorandum", new[] { ("Manager Transport & Logistic", 1) }),
-                ("Service Order", new[] { ("Manager Transport & Logistic", 1) }),
                 (
                     "Surat Perintah Mulai Pekerjaan (SPMP)",
                     new[] { ("Manager Transport & Logistic", 1) }
