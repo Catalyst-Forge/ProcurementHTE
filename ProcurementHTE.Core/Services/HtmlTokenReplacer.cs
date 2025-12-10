@@ -427,8 +427,6 @@ namespace ProcurementHTE.Core.Services
                 return ("-", "-");
 
             var ct = await GetCtAsync(procurement.ProcurementId);
-            if (ct <= 0m)
-                return ("-", "-");
 
             var rules = await _ruleRepo.GetActiveByDocNameAsync(
                 docName,
@@ -436,7 +434,7 @@ namespace ProcurementHTE.Core.Services
                 procurement.ProcurementCategory
             );
 
-            var hit = rules.FirstOrDefault(r => ct > r.MinAmount && ct <= r.MaxAmount);
+            var hit = rules.FirstOrDefault(r => ct >= r.MinAmount && ct <= r.MaxAmount);
             if (hit == null)
                 return ("-", "-");
 
@@ -448,8 +446,18 @@ namespace ProcurementHTE.Core.Services
         private async Task<decimal> GetCtAsync(string procurementId)
         {
             var pnl = await _pnlRepo.GetLatestByProcurementIdAsync(procurementId);
-            if (pnl != null && pnl.SelectedVendorFinalOffer > 0m)
+            if (pnl == null)
+                return 0m;
+
+            if (pnl.SelectedVendorFinalOffer > 0m)
                 return pnl.SelectedVendorFinalOffer;
+
+            if (pnl.AccrualAmount.HasValue && pnl.AccrualAmount.Value > 0m)
+                return pnl.AccrualAmount.Value;
+
+            var revenueTotal = pnl.Items?.Sum(i => i.Revenue) ?? 0m;
+            if (revenueTotal > 0m)
+                return revenueTotal;
 
             return 0m;
         }
@@ -477,7 +485,7 @@ namespace ProcurementHTE.Core.Services
                 "OwnerEstimate" => "Owner Estimate (OE)",
                 "RKS" => "Rencana Kerja dan Syarat-Syarat (RKS)",
                 "Justifikasi" => "Justifikasi",
-                _ => null,
+                _ => templateKey, // fallback: gunakan templateKey apa adanya
             };
         }
 
