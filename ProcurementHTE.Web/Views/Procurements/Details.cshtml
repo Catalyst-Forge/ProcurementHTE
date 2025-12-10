@@ -697,6 +697,12 @@
     <script>
         var currentDownloadDocId = null;
         var currentPreviewUrl = null;
+        const docPreviewUrlTemplate = '@Url.Action("PreviewUrl", "ProcurementDocuments", new { id = "__DOC_ID__", procurementId = Model?.ProcurementId })';
+        const buildDocPreviewUrl = (docId) => (
+            docId
+                ? docPreviewUrlTemplate.replace('__DOC_ID__', encodeURIComponent(docId))
+                : '#'
+        );
 
         function initPreviewHandlers() {
             document.querySelectorAll(".btn-preview").forEach(btn => {
@@ -705,7 +711,13 @@
                     const docName = this.dataset.docName;
                     const fileName = this.dataset.fileName;
 
+                    if (!docId) {
+                        console.warn('DocId tidak tersedia untuk preview.');
+                        return;
+                    }
+
                     currentDownloadDocId = docId;
+                    currentPreviewUrl = null;
 
                     const titleElement = document.getElementById("previewModalTitle");
                     const fileNameElement = document.getElementById("previewFileName");
@@ -717,21 +729,29 @@
                     if (fileNameElement) fileNameElement.textContent = fileName || "";
 
                     const modalElement = document.getElementById("pdfPreviewModal");
-                    const modal = new bootstrap.Modal(modalElement);
-                    modal.show();
+                    if (!modalElement || !previewFrame || !loadingContainer || !errorContainer) {
+                        console.error('Preview modal elements tidak lengkap.');
+                        return;
+                    }
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
 
+                    modal.show();
                     previewFrame.style.display = "none";
                     previewFrame.src = "";
                     loadingContainer.classList.remove("d-none");
                     errorContainer.classList.add("d-none");
 
                     try {
-                        const response = await fetch(`/ProcurementDocuments/PreviewUrl/${docId}?workOrderId=@Model!.ProcurementId`);
+                        const response = await fetch(buildDocPreviewUrl(docId), {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
                         const data = await response.json();
 
                         if (data.ok && data.url) {
                             currentPreviewUrl = data.url;
-                            previewFrame.src = data.url;
 
                             previewFrame.onload = () => {
                                 loadingContainer.classList.add("d-none");
@@ -742,8 +762,10 @@
                                 loadingContainer.classList.add("d-none");
                                 errorContainer.classList.remove("d-none");
                             };
+
+                            previewFrame.src = data.url;
                         } else {
-                            throw new Error("Failed to get preview URL" ||data.error);
+                            throw new Error(data.error || "Failed to get preview URL");
                         }
                     } catch (error) {
                         console.error("Error fetching preview URL:", error);
@@ -753,11 +775,11 @@
                 })
             })
 
-            document.getElementById("downloadFromPreview").addEventListener('click', () => {
+            document.getElementById("downloadFromPreview")?.addEventListener('click', () => {
                 if (!currentDownloadDocId) return;
 
                 const btn = document.querySelector(`.btn-download[data-doc-id='${currentDownloadDocId}']`);
-                btn.click();
+                btn?.click();
             });
         }
 
