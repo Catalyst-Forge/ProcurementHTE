@@ -35,9 +35,6 @@
 
         <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
             <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
-            <span title="@(pnl != null ? "data pnl sudah ada" : "")">
-                <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model?.ProcurementId" class="btn btn-outline-@(pnl != null ? "secondary disabled" : "primary")" role="button" aria-disabled="true"><i class="bi bi-file-earmark-text-fill"></i> Create Profit & Loss</a>
-            </span>
             <a asp-action="Edit" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
             <a asp-action="Delete" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
             <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
