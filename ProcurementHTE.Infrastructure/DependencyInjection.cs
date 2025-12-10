@@ -57,6 +57,8 @@ public static class DependencyInjection
         services.AddScoped<IDashboardRepository, DashboardRepository>();
         services.AddScoped<IDocumentApprovalsRepository, DocumentApprovalsRepository>();
         services.AddScoped<IJobTypeDocumentAdminRepository, JobTypeDocumentAdminRepository>();
+        services.AddScoped<IPdfGenerator, PdfGeneratorService>();
+        services.AddScoped<IDocumentGenerator, DocumentGenerator>();
 
         // ------------- Query Services -------------
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();

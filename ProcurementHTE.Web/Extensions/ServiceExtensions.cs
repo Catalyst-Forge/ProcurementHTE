@@ -41,7 +41,6 @@ public static class ServiceExtensions
         services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
         services.AddScoped<IDocumentApprovalRuleService, DocumentApprovalRuleService>();
         services.AddScoped<IDocumentApprovalsService, DocumentApprovalsService>();
-        services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IApprovalService, ApprovalService>();
         services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -50,7 +49,6 @@ public static class ServiceExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITemplateProvider, FileSystemTemplateProvider>();
         services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
-        services.AddScoped<IDocumentGenerator, DocumentGenerator>();
 
         return services;
     }
