@@ -227,6 +227,11 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "TotalRevenue", FormatCurrency(revenueTotal));
                 html = ReplaceToken(html, "RevenueTerbilang", revenueTotal.ToTerbilangRupiah());
                 html = ReplaceToken(html, "NoLetter", pnl.NoLetterSelectedVendor);
+                var justifikasiItem =
+                    pnl.SelectedVendorFinalOffer > 300_000_000m
+                        ? "<li>Justifikasi</li>"
+                        : string.Empty;
+                html = ReplaceToken(html, "JustifikasiListItem", justifikasiItem);
 
                 // Aggregat berdasarkan ProfitLossItem
                 if (pnl.Items != null && pnl.Items.Count != 0)
@@ -356,6 +361,7 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "SelectedVendorCity", "-");
                 html = ReplaceToken(html, "SelectedVendorProvince", "-");
                 html = ReplaceToken(html, "SelectedVendorEmail", "-");
+                html = ReplaceToken(html, "JustifikasiListItem", string.Empty);
                 html = ReplaceToken(html, "Round", "-");
                 html = ReplaceToken(html, "RoundCreatedAt", "-");
                 html = ReplaceToken(
