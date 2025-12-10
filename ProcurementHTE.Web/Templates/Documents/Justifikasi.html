@@ -127,7 +127,7 @@
         <ol class="mb-0">
           <li>
             Berdasarkan permintaan dari PT PDSI terkait pekerjaan {{ JobName }}, direncanakan bahwa pekerjaan tersebut
-            akan segera dilaksanakan, dengan mengacu pada Work Order (WO) Nomor: {{ WoNum }} tanggal {{ CreatedAt }}.
+            akan segera dilaksanakan, dengan mengacu pada Work Order (WO) Nomor: {{ Wonum }} tanggal {{ CreatedAt }}.
           </li>
           <li>
             User telah melakukan proses inquiry pada tanggal <strong>"tanggal inquiry"</strong> kepada {{
@@ -138,13 +138,12 @@
             SelectedVendorName }}.
           </li>
           <li>
-            {{ SelectedVendorName }} telah melakukan {{ SelectedVendorFinalOffer }} kali negosiasi, yaitu pada tanggal
-            {{ PnlCreatedAt }}.
+            {{ SelectedVendorName }} telah melakukan {{ Round }} kali negosiasi, yaitu pada tanggal {{ PnlCreatedAt }}.
           </li>
           <li>Rekapitulasi daftar negosiasi harga dapat dilihat pada tabel di atas.</li>
           <li>
-            Penawaran dengan nilai terendah diperoleh nilai sebesar Rp {{ TotalRevenue }}, sebagaimana tercantum dalam
-            surat penawaran Nomor {{ NoLetter }} tanggal {{ PnlCreatedAt }}.
+            Penawaran dengan nilai terendah diperoleh nilai sebesar Rp {{ SelectedVendorFinalOffer }}, sebagaimana
+            tercantum dalam surat penawaran Nomor {{ NoLetter }} tanggal {{ PnlCreatedAt }}.
           </li>
           <li>
             Estimasi revenue dari pekerjaan ini adalah sebesar {{ ProfitPercent }}, dengan estimasi profit sebesar Rp {{
@@ -217,26 +216,96 @@
         </p>
 
         <ol>
-          <li>Penunjukkan BUMN/Anak Perusahaan BUMN (selain Pertamina).</li>
           <li>
-            Pemegang hak paten atau hak atas kekayaan intelektual (HAKI) atau yang memiliki jaminan (warranty) dari
-            Original Equipment Manufacture (OEM).
+            <div class="d-flex justify-content-between">
+              <label>Penunjukkan BUMN/Anak Perusahaan BUMN (selain Pertamina).</label>
+              <input type="checkbox" />
+            </div>
           </li>
-          <li>Do Not Substitute (DNS) berdasarkan Approved Manufacture List (AML).</li>
-          <li>Barang/Jasa yang bersifat knowledge intensive.</li>
-          <li>Penanganan Keadaan Mendesak.</li>
-          <li>Penanganan Keadaan Darurat (Emergency).</li>
-          <li>Pengadaan Jasa Konsultasi Perorangan.</li>
-          <li>Pengadaan Barang/Jasa dalam rangka uji coba (penelitian dan pengembangan).</li>
-          <li>Pengadaan Barang/Jasa terkait pekerjaan lanjutan/tambahan.</li>
           <li>
-            Penyewaan ulang rumah, apartemen, kantor, gudang, lapangan penumpukan (termasuk shorebase) atau pelabuhan,
-            fasilitas produksi serta fasilitas yang sejenis fungsinya.
+            <div class="d-flex justify-content-between">
+              <label>
+                Pemegang hak paten atau hak atas kekayaan intelektual (HAKI) atau yang memiliki jaminan (warranty) dari
+                Original Equipment Manufacture (OEM).
+              </label>
+              <input type="checkbox" />
+            </div>
           </li>
-          <li>Pembelian berulang (repeat order).</li>
-          <li>Kontrak payung antara Pertamina, Subholding Upstream atau Induk Perusahaan.</li>
-          <li>Pemanfaatan Kontrak yang sedang berjalan.</li>
-          <li>Pengadaan Konsultan Konstruksi dan Pekerjaan Konstruksi.</li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Do Not Substitute (DNS) berdasarkan Approved Manufacture List (AML). </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Barang/Jasa yang bersifat knowledge intensive. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Penanganan Keadaan Mendesak. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Penanganan Keadaan Darurat (Emergency). </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Pengadaan Jasa Konsultasi Perorangan. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Pengadaan Barang/Jasa dalam rangka uji coba (penelitian dan pengembangan). </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Pengadaan Barang/Jasa terkait pekerjaan lanjutan/tambahan. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label>
+                fasilitas produksi serta fasilitas yang sejenis fungsinya. Penyewaan ulang rumah, apartemen, kantor,
+                gudang, lapangan penumpukan (termasuk shorebase) atau pelabuhan,
+              </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Pembelian berulang (repeat order). </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Kontrak payung antara Pertamina, Subholding Upstream atau Induk Perusahaan. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Pemanfaatan Kontrak yang sedang berjalan. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
+          <li>
+            <div class="d-flex justify-content-between">
+              <label> Pengadaan Konsultan Konstruksi dan Pekerjaan Konstruksi. </label>
+              <input type="checkbox" />
+            </div>
+          </li>
         </ol>
 
         <p>*Silakan pilih salah satu alasan untuk penunjukan langsung vendor.</p>
@@ -247,25 +316,25 @@
         </p>
       </div>
 
-      <div class="border border-black border-bottom-0 row g-0 px-2">
-        <div class="col-2 border-end border-black text-center fw-semibold">Review</div>
-        <div class="col-4 border-end border-black text-center">Name</div>
-        <div class="col-3 border-end border-black text-center">Tanggal</div>
-        <div class="col-3 text-center">Tanda tangan</div>
+      <div class="border border-black border-bottom-0 row g-0">
+        <div class="col-2 border-end border-black text-center fw-semibold px-2">Review</div>
+        <div class="col-4 border-end border-black text-center fw-semibold px-2">Name</div>
+        <div class="col-3 border-end border-black text-center fw-semibold px-2">Tanggal</div>
+        <div class="col-3 text-center fw-semibold px-2">Tanda tangan</div>
       </div>
 
-      <div class="border border-black border-bottom-0 row g-0 px-2">
-        <div class="col-2 border-end border-black text-center">Ast. Man SCM:</div>
-        <div class="col-4 border-end border-black text-center">Sri Sumarni</div>
-        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
-        <div class="col-3 text-center">&ThinSpace;</div>
+      <div class="border border-black border-bottom-0 row g-0">
+        <div class="col-2 border-end border-black px-2">Ast. Man SCM:</div>
+        <div class="col-4 border-end border-black px-2">Sri Sumarni</div>
+        <div class="col-3 border-end border-black">&ThinSpace;</div>
+        <div class="col-3">&ThinSpace;</div>
       </div>
 
-      <div class="border border-black border-bottom-0 row g-0 px-2">
-        <div class="col-2 border-end border-black text-center">Manager SCM:</div>
-        <div class="col-4 border-end border-black text-center">Syahrul Ahyar</div>
-        <div class="col-3 border-end border-black text-center">&ThinSpace;</div>
-        <div class="col-3 text-center">&ThinSpace;</div>
+      <div class="border border-black border-bottom-0 row g-0">
+        <div class="col-2 border-end border-black px-2">Manager SCM:</div>
+        <div class="col-4 border-end border-black px-2">Syahrul Ahyar</div>
+        <div class="col-3 border-end border-black">&ThinSpace;</div>
+        <div class="col-3">&ThinSpace;</div>
       </div>
 
       <div class="border border-black px-2">
@@ -309,7 +378,7 @@
                 <td>{{ SelectedVendorOfferTotal }}</td>
               </tr>
               <tr>
-                <td colspan="6">Terbilang {{ SelectedVendorOfferTotalTerbilang }}</td>
+                <td colspan="6" class="p-0">Terbilang <strong>{{ SelectedVendorOfferTotalTerbilang }}</strong></td>
               </tr>
             </tbody>
           </table>

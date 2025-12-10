@@ -36,6 +36,12 @@
     <div class="page">
       <header class="mt-5">
         <p>Jakarta, {{ StartDate }}</p>
+
+        <img
+          src="{{LogoUrl}}"
+          alt="Pertamina PDC Logo"
+          style="width: 200px; position: absolute; top: 1rem; right: 1rem"
+        />
       </header>
 
       <table class="mb-4">
@@ -52,14 +58,13 @@
         <tr>
           <td>Perihal</td>
           <td>:</td>
-          <td class="fw-semibold">Surat Perintah Mulai Pekerjaan (SPMP) {{ JobName }}</td>
+          <td class="fw-semibold" style="text-align: justify">Surat Perintah Mulai Pekerjaan (SPMP) {{ JobName }}</td>
         </tr>
       </table>
 
       <div>
         <p class="mb-4">
-          Kepada Yth. <br />
-          <br />
+          Kepada Yth.
           <strong>
             {{ SelectedVendorName }} <br />di <br />
             <span class="invisible">ace</span>Tempat
@@ -67,33 +72,43 @@
           <br />
         </p>
 
-        <p>
+        <p style="text-align: justify">
           Dengan hormat, <br />
           Sehubungan dengan adanya {{ JobName }}, mohon agar dapat dilaksanakan pekerjaan tersebut sesuai dengan surat
           penawaran harga negosiasi No {{ NoLetter }} tanggal {{ CreatedAt }} terlampir dengan jangka waktu pelaksanaan
           terhitung mulai pada tanggal {{ StartDate }}.
         </p>
 
-        <p>Adapun <em>Contact Person</em> yang dapat dihubungi yaitu:</p>
+        <p style="text-align: justify">Adapun <em>Contact Person</em> yang dapat dihubungi yaitu:</p>
 
         <ol>
           <li>Dopiyanto: +62 818-1879-1784</li>
           <li>LB. Johanis Ciputra: +62 813-1710-4341</li>
         </ol>
 
-        <p>Demikian kami sampaikan, atas perhatian serta kerjasamanya kami ucapkan terima kasih.</p>
+        <p style="text-align: justify">
+          Demikian kami sampaikan, atas perhatian serta kerjasamanya kami ucapkan terima kasih.
+        </p>
       </div>
 
       <div class="sign text-right">
-        <div class="text-uppercase">PT PATRA DRILLING CONTRACTOR</div>
+        <div class="text-uppercase fw-bold">PT PATRA DRILLING CONTRACTOR</div>
         <p>Pjs. Manager Transpor & Logistic,</p>
         <br />
         <br />
         <br />
         <br />
         <br />
-        <hr class="border-black border" style="width: 9rem" />
+        <p class="border-bottom border-black fw-bold" style="width: max-content">{{ ManagerUserId }}</p>
       </div>
+
+      <footer>
+        <img
+          src="{{FooterUrl}}"
+          alt="Footer Document Image"
+          style="width: 100%; position: absolute; left: 0; bottom: 0"
+        />
+      </footer>
     </div>
   </body>
 </html>

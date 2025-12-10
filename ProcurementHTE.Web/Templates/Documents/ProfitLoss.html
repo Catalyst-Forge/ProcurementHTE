@@ -239,6 +239,8 @@
       <!-- Profit & Los Estimate -->
       {{ PnlEstimateTable }}
 
+      <p class="ms-5 ps-5 fw-bold fs-5">{{ PnlCreatedAt }}</p>
+
       <!-- Signature Table -->
       <table class="signature-table table table-bordered border-black">
         <tbody class="text-center">
@@ -253,6 +255,11 @@
             <td class="signature-content"></td>
             <td class="signature-content"></td>
             {{ ConditionalApproveBlankCell }}
+          </tr>
+          <tr>
+            <td>{{ User }}</td>
+            <td>{{ AsstManagerUserId }}</td>
+            <td>{{ ManagerUserId }}</td>
           </tr>
           <tr>
             <td>Analyst HTE &amp; LTS</td>
