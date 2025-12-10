@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using ProcurementHTE.Core.Interfaces;
@@ -11,6 +12,8 @@ public class DocumentGenerator : IDocumentGenerator
     private readonly IHtmlTokenReplacer _tokenReplacer;
     private readonly IProfitLossRepository _pnlRepository;
     private readonly IVendorRepository _vendorRepository;
+    private readonly string _logoUrl;
+    private readonly string _footerUrl;
 
     public DocumentGenerator(
         ITemplateProvider templateProvider,
@@ -23,6 +26,32 @@ public class DocumentGenerator : IDocumentGenerator
         _tokenReplacer = tokenReplacer;
         _pnlRepository = pnlRepository;
         _vendorRepository = vendorRepository;
+
+        // ====== LOGO BASE64 DATA URI ======
+        //var contentRoot = Directory.GetCurrentDirectory();
+        //var logoPath = Path.Combine(contentRoot, "wwwroot", "images", "logo.png");
+
+        //logoPath = Path.GetFullPath(logoPath);
+
+        //if (File.Exists(logoPath)) {
+        //    var bytes = File.ReadAllBytes(logoPath);
+        //    var base64 = Convert.ToBase64String(bytes);
+
+        //    // Tentukan mime type dari extensi (kalau mau lebih fleksibel)
+        //    var ext = Path.GetExtension(logoPath).ToLowerInvariant();
+        //    var mime = ext switch {
+        //        ".jpg" or ".jpeg" => "image/jpeg",
+        //        ".gif" => "image/gif",
+        //        _ => "image/png"
+        //    };
+
+        //    _logoUrl = $"data:{mime};base64,{base64}";
+        //} else {
+        //    _logoUrl = string.Empty;
+        //}
+
+        _logoUrl = BuildImageDataUri(Path.Combine("wwwroot", "images", "logo.png"));
+        _footerUrl = BuildImageDataUri(Path.Combine("wwwroot", "images", "footer_document.png"));
     }
 
     public async Task<byte[]> GenerateProfitLossAsync(
@@ -79,6 +108,8 @@ public class DocumentGenerator : IDocumentGenerator
                 pnl.SelectedVendorFinalOffer.ToString("N0")
             );
         }
+
+        html = ApplyCommonTokens(html);
 
         return await HtmlToPdfAsync(html, "Market Survey", ct);
     }
@@ -197,6 +228,8 @@ public class DocumentGenerator : IDocumentGenerator
             }
         }
 
+        html = ApplyCommonTokens(html);
+
         return await HtmlToPdfAsync(html, templateName, ct);
     }
 
@@ -211,6 +244,8 @@ public class DocumentGenerator : IDocumentGenerator
     {
         var template = await _templateProvider.GetTemplateAsync(templateKey, ct);
         var html = await _tokenReplacer.ReplaceTokensAsync(template, procurement, ct, templateKey);
+
+        html = ApplyCommonTokens(html);
 
         return await HtmlToPdfAsync(html, title, ct);
     }
@@ -250,6 +285,38 @@ public class DocumentGenerator : IDocumentGenerator
         );
 
         return pdf;
+    }
+
+    private string ApplyCommonTokens(string html)
+    {
+        return html.Replace("{{LogoUrl}}", _logoUrl).Replace("{{FooterUrl}}", _footerUrl);
+    }
+
+    private static string BuildImageDataUri(string relativePath)
+    {
+        var contentRoot = Directory.GetCurrentDirectory();
+        var fullPath = Path.Combine(contentRoot, relativePath);
+
+        fullPath = Path.GetFullPath(fullPath);
+
+        if (!File.Exists(fullPath))
+        {
+            return string.Empty;
+        }
+
+        var bytes = File.ReadAllBytes(fullPath);
+        var base64 = Convert.ToBase64String(bytes);
+
+        var ext = Path.GetExtension(fullPath).ToLowerInvariant();
+        var mime = ext switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".svg" => "image/svg+xml",
+            _ => "image/png",
+        };
+
+        return $"data:{mime};base64,{base64}";
     }
 
     #endregion
