@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Core.Models;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
@@ -14,7 +11,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 [Authorize]
 public class ProcurementDocumentsController : Controller
 {
-    private static readonly HashSet<string> _roundLetterDocNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _roundLetterDocNames = new(
+        StringComparer.OrdinalIgnoreCase
+    )
     {
         "Surat Penawaran Harga",
         "Surat Negosiasi Harga",
@@ -75,11 +74,14 @@ public class ProcurementDocumentsController : Controller
             ViewBag.Vendors = await _vendorService.GetAllVendorsAsync();
             ViewBag.RoundLetters = await _roundLetterRepo.ListByProcurementAsync(procurementId);
 
-            var filteredDocItems = (dto.Items ?? Enumerable.Empty<RequiredDocItemDto>()).Where(item =>
-            {
-                var docName = item.DocumentTypeName?.Trim();
-                return string.IsNullOrWhiteSpace(docName) || !_roundLetterDocNames.Contains(docName);
-            });
+            var filteredDocItems = (dto.Items ?? Enumerable.Empty<RequiredDocItemDto>()).Where(
+                item =>
+                {
+                    var docName = item.DocumentTypeName?.Trim();
+                    return string.IsNullOrWhiteSpace(docName)
+                        || !_roundLetterDocNames.Contains(docName);
+                }
+            );
 
             var vm = new ProcurementRequiredDocsVm
             {
@@ -215,7 +217,6 @@ public class ProcurementDocumentsController : Controller
 
         return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
     }
-
 
     private bool IsAjaxRequest()
     {
@@ -467,6 +468,7 @@ public class ProcurementDocumentsController : Controller
                 ),
                 "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurementEntity),
                 "Profit & Loss" => await _docGenerator.GenerateProfitLossAsync(procurementEntity),
+                "Justifikasi" => await _docGenerator.GenerateJustifikasiAsync(procurementEntity),
                 _ => throw new NotImplementedException(
                     $"Template untuk '{docType.Name}' belum tersedia"
                 ),
