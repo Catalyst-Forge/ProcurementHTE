@@ -162,7 +162,11 @@
 
                 <div class="col-md-4">
                     <label asp-for="Procurement.SpmpNumber" class="form-label"></label>
-                    <input asp-for="Procurement.SpmpNumber" class="form-control" maxlength="100" />
+                    <div class="input-group">
+                        <input asp-for="Procurement.SpmpNumber" class="form-control" maxlength="50" placeholder="e.g., 4514" />
+                        <span class="input-group-text">/PDC-1110/2025-S0</span>
+                    </div>
+                    <small class="form-text text-muted">Masukkan angka/kode saja (contoh: 4514)</small>
                     <span class="text-danger" asp-validation-for="Procurement.SpmpNumber"></span>
                 </div>
 
@@ -176,7 +180,11 @@
             <div class="row g-3 mt-0">
                 <div class="col-md-6">
                     <label asp-for="Procurement.OeNumber" class="form-label"></label>
-                    <input asp-for="Procurement.OeNumber" class="form-control" maxlength="100" />
+                    <div class="input-group">
+                        <input asp-for="Procurement.OeNumber" class="form-control" maxlength="50" placeholder="e.g., OE-TRS" />
+                        <span class="input-group-text">/PDC-1110/2025-S0</span>
+                    </div>
+                    <small class="form-text text-muted">Masukkan prefix saja (contoh: OE-TRS)</small>
                     <span class="text-danger" asp-validation-for="Procurement.OeNumber"></span>
                 </div>
 
@@ -455,28 +463,36 @@
             const btnAddOffer = document.getElementById('btn-add-offer');
 
             // Add Detail
-            btnAddDetail.addEventListener('click', () => {
-                detailsContainer.insertAdjacentHTML('beforeend', detailTemplate(newKey()));
-            });
+            if (btnAddDetail && detailsContainer) {
+                btnAddDetail.addEventListener('click', () => {
+                    detailsContainer.insertAdjacentHTML('beforeend', detailTemplate(newKey()));
+                });
+            }
 
             // Remove Detail
-            detailsContainer.addEventListener('click', (e) => {
-                if (e.target.closest('.js-remove-detail')) {
-                    e.target.closest('.detail-row').remove();
-                }
-            });
+            if (detailsContainer) {
+                detailsContainer.addEventListener('click', (e) => {
+                    if (e.target.closest('.js-remove-detail')) {
+                        e.target.closest('.detail-row').remove();
+                    }
+                });
+            }
 
             // Add Offer
-            btnAddOffer.addEventListener('click', () => {
-                offersContainer.insertAdjacentHTML('beforeend', offerTemplate(newKey()));
-            });
+            if (btnAddOffer && offersContainer) {
+                btnAddOffer.addEventListener('click', () => {
+                    offersContainer.insertAdjacentHTML('beforeend', offerTemplate(newKey()));
+                });
+            }
 
             // Remove Offer
-            offersContainer.addEventListener('click', (e) => {
-                if (e.target.closest('.js-remove-offer')) {
-                    e.target.closest('.offer-row').remove();
-                }
-            });
+            if (offersContainer) {
+                offersContainer.addEventListener('click', (e) => {
+                    if (e.target.closest('.js-remove-offer')) {
+                        e.target.closest('.offer-row').remove();
+                    }
+                });
+            }
 
         });
     </script>

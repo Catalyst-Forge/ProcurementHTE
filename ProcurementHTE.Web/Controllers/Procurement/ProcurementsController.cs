@@ -313,6 +313,14 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             try
             {
+                // Tambahkan suffix otomatis pada SpmpNumber dan OeNumber sebelum disimpan
+                procurementViewModel.Procurement.SpmpNumber = AppendSuffixIfNeeded(
+                    procurementViewModel.Procurement.SpmpNumber
+                );
+                procurementViewModel.Procurement.OeNumber = AppendSuffixIfNeeded(
+                    procurementViewModel.Procurement.OeNumber
+                );
+
                 await _procurementService.AddProcurementWithDetailsAsync(
                     procurementViewModel.Procurement,
                     procurementViewModel.Details!,
@@ -384,9 +392,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     EndDate = procurement.EndDate,
                     ProjectRegion = procurement.ProjectRegion,
                     PotentialAccrualDate = procurement.PotentialAccrualDate,
-                    SpmpNumber = procurement.SpmpNumber,
+                    SpmpNumber = RemoveSuffixIfNeeded(procurement.SpmpNumber), // Hapus suffix untuk edit
                     MemoNumber = procurement.MemoNumber,
-                    OeNumber = procurement.OeNumber,
+                    OeNumber = RemoveSuffixIfNeeded(procurement.OeNumber), // Hapus suffix untuk edit
                     RaNumber = procurement.RaNumber,
                     ProjectCode = procurement.ProjectCode,
                     Wonum = procurement.Wonum,
@@ -559,9 +567,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     ProjectRegion = editViewModel.ProjectRegion,
                     PotentialAccrualDate = editViewModel.PotentialAccrualDate,
                     SpkNumber = editViewModel.SpkNumber,
-                    SpmpNumber = editViewModel.SpmpNumber,
+                    SpmpNumber = AppendSuffixIfNeeded(editViewModel.SpmpNumber), // Tambahkan suffix
                     MemoNumber = editViewModel.MemoNumber,
-                    OeNumber = editViewModel.OeNumber,
+                    OeNumber = AppendSuffixIfNeeded(editViewModel.OeNumber), // Tambahkan suffix
                     RaNumber = editViewModel.RaNumber,
                     ProjectCode = editViewModel.ProjectCode,
                     Wonum = editViewModel.Wonum,
@@ -991,7 +999,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     DocumentTypeId = pnlDocTypeId,
                     FileName = $"Profit_Loss_{procurement.ProcNum}.pdf",
                     ContentType = "application/pdf",
-                    Bytes = pdfBytes,
                     Description = "Profit & Loss auto-generated",
                     GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
                     CreatedAt = DateTime.Now,
@@ -1377,6 +1384,42 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         #endregion
 
         #region Helper Methods
+
+        private const string REFERENCE_NUMBER_SUFFIX = "/PDC-1110/2025-S0";
+
+        /// <summary>
+        /// Menambahkan suffix standar pada reference number jika belum ada
+        /// </summary>
+        private static string? AppendSuffixIfNeeded(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var trimmed = value.Trim();
+            
+            // Jika sudah ada suffix, return as is
+            if (trimmed.EndsWith(REFERENCE_NUMBER_SUFFIX, StringComparison.OrdinalIgnoreCase))
+                return trimmed;
+
+            // Tambahkan suffix
+            return trimmed + REFERENCE_NUMBER_SUFFIX;
+        }
+
+        /// <summary>
+        /// Menghapus suffix untuk ditampilkan ke user (untuk Edit form)
+        /// </summary>
+        private static string? RemoveSuffixIfNeeded(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var trimmed = value.Trim();
+            
+            if (trimmed.EndsWith(REFERENCE_NUMBER_SUFFIX, StringComparison.OrdinalIgnoreCase))
+                return trimmed.Substring(0, trimmed.Length - REFERENCE_NUMBER_SUFFIX.Length);
+
+            return trimmed;
+        }
 
         private static string SanitizeFileName(string fileName)
         {
