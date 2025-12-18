@@ -997,6 +997,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 {
                     ProcurementId = dto.ProcurementId,
                     DocumentTypeId = pnlDocTypeId,
+                    Bytes = pdfBytes, // FIX: Tambahkan bytes yang sudah digenerate
                     FileName = $"Profit_Loss_{procurement.ProcNum}.pdf",
                     ContentType = "application/pdf",
                     Description = "Profit & Loss auto-generated",
@@ -1387,16 +1388,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
         private const string REFERENCE_NUMBER_SUFFIX = "/PDC-1110/2025-S0";
 
-        /// <summary>
-        /// Menambahkan suffix standar pada reference number jika belum ada
-        /// </summary>
         private static string? AppendSuffixIfNeeded(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return value;
 
             var trimmed = value.Trim();
-            
+
             // Jika sudah ada suffix, return as is
             if (trimmed.EndsWith(REFERENCE_NUMBER_SUFFIX, StringComparison.OrdinalIgnoreCase))
                 return trimmed;
@@ -1405,16 +1403,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             return trimmed + REFERENCE_NUMBER_SUFFIX;
         }
 
-        /// <summary>
-        /// Menghapus suffix untuk ditampilkan ke user (untuk Edit form)
-        /// </summary>
         private static string? RemoveSuffixIfNeeded(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return value;
 
             var trimmed = value.Trim();
-            
+
             if (trimmed.EndsWith(REFERENCE_NUMBER_SUFFIX, StringComparison.OrdinalIgnoreCase))
                 return trimmed.Substring(0, trimmed.Length - REFERENCE_NUMBER_SUFFIX.Length);
 
