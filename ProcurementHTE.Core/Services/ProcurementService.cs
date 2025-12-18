@@ -206,7 +206,9 @@ public class ProcurementService : IProcurementService
     private static void UpdateProcurementProperties(Procurement existing, Procurement updated)
     {
         existing.ContractType = updated.ContractType;
+        existing.ProcurementCategory = updated.ProcurementCategory;
         existing.JobName = updated.JobName;
+        existing.DocumentDate = updated.DocumentDate;
         existing.StartDate = updated.StartDate;
         existing.EndDate = updated.EndDate;
         existing.ProjectRegion = updated.ProjectRegion;
