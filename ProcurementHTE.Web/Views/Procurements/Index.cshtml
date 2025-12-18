@@ -95,16 +95,16 @@
                 <th class="border-end">WO Number</th>
                 <th class="border-end">Start Date</th>
                 <th class="border-end">Job Type</th>
-                <th class="border-end text-end">Revenue</th>
-                <th class="border-end text-end">Cost</th>
-                <th class="border-end text-end">Profit %</th>
+                <th class="border-end">Revenue</th>
+                <th class="border-end">Cost</th>
+                <th class="border-end">Profit %</th>
                 <th class="border-end">Vendor</th>
                 <th class="border-end">Project Region</th>
                 <th class="border-end text-center">PIC Ops</th>
                 <th class="border-end text-center">Analyst</th>
                 <th class="border-end text-center">Asst. Manager</th>
                 <th class="border-end text-center">Manager</th>
-                <th class="text-center">Action</th>
+                <th class="text-center w-100">Action</th>
 
             </tr>
         </thead>
@@ -175,13 +175,13 @@
                             @manager
                         </td>
                         <td class="text-md-center d-flex d-sm-table-cell" data-label="Action">
-                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
-                                <span class="visually-hidden">Edit</span>
+                            <a class="btn btn-outline-warning mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
                                 <i class="bi bi-pencil-fill"></i>
+                                <span class="ms-1">Edit</span>
                             </a>
-                            <a class="link-info link-opacity-50-hover text-decoration-none me-2" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
-                                <span class="visually-hidden">Detail</span>
+                            <a class="btn btn-outline-info mb-sm-2 w-100" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
                                 <i class="bi bi-eye-fill"></i>
+                                <span class="ms-1">Detail</span>
                             </a>
                             @if (canDelete.Succeeded)
                             {
@@ -202,9 +202,9 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.ProcurementId" />
                                     <button type="submit"
-                                            class="btn btn-link p-0 border-0 link-danger link-opacity-50-hover text-decoration-none me-2">
-                                        <span class="visually-hidden">Delete</span>
+                                            class="btn btn-outline-danger mb-sm-2 w-100">
                                         <i class="bi bi-trash-fill"></i>
+                                        <span class="ms-1">Delete</span>
                                     </button>
                                 </form>
                             }
