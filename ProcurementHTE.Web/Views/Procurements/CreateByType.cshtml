@@ -19,9 +19,6 @@
     var managerOptions = (Model.ManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
 
     var jobTypeOptions = new SelectList(jobTypes, "JobTypeId", "TypeName", procurement.JobTypeId);
-
-    var emptyOfferKey = Guid.NewGuid().ToString("N");
-    var emptyDetailKey = Guid.NewGuid().ToString("N");
 }
 
 <header class="hstack justify-content-between mb-3">
@@ -191,7 +188,10 @@
                 <div class="col-md-6" id="raNumberWrapper">
                     @if (Model.Procurement?.ProcurementCategory == ProcurementHTE.Core.Enums.ProcurementCategory.Jasa)
                     {
-                        @await Html.PartialAsync("_RaNumberField", new ViewDataDictionary(ViewData) { { "RaNumberValue", Model.Procurement.RaNumber } })
+                        @* @await Html.PartialAsync("_RaNumberField", new ViewDataDictionary(ViewData) { { "RaNumberValue", Model.Procurement.RaNumber } }) *@
+                        <label class="form-label" asp-for="Procurement.RaNumber"></label>
+                        <input class="form-control" asp-for="Procurement.RaNumber" />
+                        <span class="text-danger" asp-validation-for="Procurement.RaNumber"></span>
                     }
                 </div>
             </div>
@@ -202,92 +202,46 @@
     <section class="card shadow-sm mb-3 p-2 rounded-4">
         <fieldset class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <legend class="card-title fw-semibold mb-0">Item Penawaran</legend>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
+                <legend class="card-title fw-semibold mb-0">Offer Item</legend>
+                <div class="w-100 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
+                        <i class="bi bi-plus-lg"></i> <span class="ms-1">Add Item</span>
+                    </button>
+                </div>
             </div>
             <hr />
 
             <div class="row g-3" id="offers-container">
-                @if (Model.Offers.Any())
-                {
-                    for (var i = 0; i < Model.Offers.Count; i++)
-                    {
-                        <div class="col-12 offer-row position-relative">
-                            <input type="hidden" name="Offers.Index" value="@i" />
+                <div class="col-12 offer-row position-relative">
+                    <input type="hidden" name="Offers.Index" value="0" />
 
-                            <div class="row g-3 align-items-end">
-                                <div class="col-lg-10">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
-                                            <input asp-for="Offers[i].ItemPenawaran" class="form-control" />
-                                            <span class="text-danger" asp-validation-for="Offers[i].ItemPenawaran"></span>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">Qty</label>
-                                            <input asp-for="Offers[i].Qty" type="number"
-                                                   min="1" step="1"
-                                                   class="form-control text-end" />
-                                            <span class="text-danger" asp-validation-for="Offers[i].Qty"></span>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">Unit</label>
-                                            <input asp-for="Offers[i].Unit" class="form-control" />
-                                            <span class="text-danger" asp-validation-for="Offers[i].Unit"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-2 d-flex justify-content-end">
-                                    <button type="button"
-                                            class="btn btn-outline-danger js-remove-offer w-100">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
+                    <div class="row g-1 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label" for="Offers_ItemPenawaran">Item <span class="text-danger">*</span></label>
+                            <input class="form-control" id="Offers_ItemPenawaran" name="Offers[0].ItemPenawaran" data-val="true" data-val-required="The ItemPenawaran field is required." aria-describedby="Offers_ItemPenawaran-error" aria-invalid="false" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Offers[0].ItemPenawaran" data-valmsg-replace="true"></span>
                         </div>
-                    }
-                }
-                else
-                {
-                    <div class="col-12 offer-row position-relative">
-                        <input type="hidden" name="Offers.Index" value="@emptyOfferKey" />
+                        <div class="col-md-2">
+                            <label class="form-label" for="Offers_Qty">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" min="1" step="1"
+                                   class="form-control text-end" id="Offers_Qty"
+                                   name="Offers[0].Qty" data-val="true" data-val-required="The Quantity field is required." aria-describedby="Offers_Qty-error" aria-invalid="false" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Offers[0].Qty" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" for="Offers_Unit">Unit <span class="text-danger">*</span></label>
+                            <input class="form-control" id="Offers_Unit" name="Offers[0].Unit" data-val="true" data-val-required="The Unit field is required." aria-describedby="Offers_Unit-error" aria-invalid="false" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Offers[0].Unit" data-valmsg-replace="true"></span>
+                        </div>
 
-                        <div class="row g-3 align-items-end">
-                            <div class="col-lg-10">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
-                                        <input class="form-control" name="Offers[@emptyOfferKey].ItemPenawaran" />
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label">Qty</label>
-                                        <input class="form-control text-end"
-                                               type="number" min="1" step="1"
-                                               name="Offers[@emptyOfferKey].Qty" />
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label">Unit</label>
-                                        <input class="form-control" name="Offers[@emptyOfferKey].Unit" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-2 d-flex justify-content-end">
-                                <button type="button"
-                                        class="btn btn-outline-danger js-remove-offer w-100">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button"
+                                    class="btn btn-outline-danger js-remove-offer ">
+                                <i class="bi bi-trash"></i> <span class="ms-1">Delete Item</span>
+                            </button>
                         </div>
                     </div>
-                }
+                </div>
             </div>
         </fieldset>
     </section>
@@ -350,150 +304,65 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        (function () {
+            if (window.procurementOfferInit) return;
+            window.procurementOfferInit = true;
 
-            /* ---------------------------
-               JOB TYPE DROPDOWN
-            ----------------------------*/
-            const jobTypeSelectTop = document.getElementById('jobTypeSelect');
-            const jobTypeSelectMain = document.getElementById('jobTypeDisplaySelect');
-            const jobTypeNameDisplay = document.getElementById('selectedJobTypeName');
-
-            const syncJobType = (value) => {
-                if (jobTypeSelectTop) jobTypeSelectTop.value = value ?? "";
-                if (jobTypeSelectMain) jobTypeSelectMain.value = value ?? "";
-
-                const option =
-                    jobTypeSelectMain?.selectedOptions?.[0] ??
-                    jobTypeSelectTop?.selectedOptions?.[0];
-
-                const name = option?.textContent?.trim() ?? "Select job type";
-                const desc = jobTypeDescriptions[value] ?? "No description available.";
-
-                if (jobTypeNameDisplay) jobTypeNameDisplay.textContent = name;
-            };
-
-            if (jobTypeSelectTop) {
-                jobTypeSelectTop.addEventListener('change', () => syncJobType(jobTypeSelectTop.value));
+            function getNextIndex() {
+                return document.querySelectorAll('input[name="Offers.Index"]').length;
             }
-            if (jobTypeSelectMain) {
-                jobTypeSelectMain.addEventListener('change', () => syncJobType(jobTypeSelectMain.value));
-            }
-            syncJobType(jobTypeSelectMain?.value || jobTypeSelectTop?.value);
-
-            /* ---------------------------
-               DYNAMIC ROW ADD/REMOVE
-            ----------------------------*/
-
-            const newKey = () => Math.random().toString(36).substring(2, 10);
-
-            // Detail Row Template
-            const detailTemplate = (key) => `
-                <div class="col-12 detail-row position-relative">
-                    <input type="hidden" name="Details.Index" value="${key}" />
-
-                    <div class="row g-3 align-items-end">
-                        <div class="col-lg-10">
-                            <div class="row g-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">Item Name</label>
-                                    <input class="form-control" name="Details[${key}].ItemName" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Qty</label>
-                                    <input type="number" min="1" step="1"
-                                           class="form-control text-end"
-                                           name="Details[${key}].Quantity" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Unit</label>
-                                    <input class="form-control" name="Details[${key}].Unit" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-2 d-flex justify-content-end">
-                            <button type="button"
-                                    class="btn btn-outline-danger js-remove-detail w-100">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
 
             // Offer Row Template
-            const offerTemplate = (key) => `
-                <div class="col-12 offer-row position-relative">
-                    <input type="hidden" name="Offers.Index" value="${key}" />
+            function offerTemplate(index) {
+                return `
+                    <div class="col-12 offer-row position-relative">
+                        <input type="hidden" name="Offers.Index" value="${index}" />
 
-                    <div class="row g-3 align-items-end">
-                        <div class="col-lg-10">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
-                                    <input class="form-control" name="Offers[${key}].ItemPenawaran" />
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Qty</label>
-                                    <input type="number" min="1" step="1"
-                                           class="form-control text-end"
-                                           name="Offers[${key}].Qty" />
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Unit</label>
-                                    <input class="form-control" name="Offers[${key}].Unit" />
-                                </div>
+                        <div class="row g-1 align-items-end">
+                            <div class="col-md-6">
+                                <label class="form-label" for="Offers_ItemPenawaran">Item <span class="text-danger">*</span></label>
+                                <input class="form-control" id="Offers_ItemPenawaran" name="Offers[${index}].ItemPenawaran" data-val="true" data-val-required="The ItemPenawaran field is required." aria-describedby="Offers_ItemPenawaran-error" aria-invalid="false" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Offers[${index}].ItemPenawaran" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" for="Offers_Qty">Quantity <span class="text-danger">*</span></label>
+                                <input type="number" min="1" step="1"
+                                        class="form-control text-end" id="Offers_Qty"
+                                        name="Offers[${index}].Qty" data-val="true" data-val-required="The Quantity field is required." aria-describedby="Offers_Qty-error" aria-invalid="false" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Offers[${index}].Qty" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" for="Offers_Unit">Unit <span class="text-danger">*</span></label>
+                                <input class="form-control" id="Offers_Unit" name="Offers[${index}].Unit" data-val="true" data-val-required="The Unit field is required." aria-describedby="Offers_Unit-error" aria-invalid="false" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Offers[${index}].Unit" data-valmsg-replace="true"></span>
+                            </div>
+
+                            <div class="col-md-2 text-end">
+                                <button type="button"
+                                        class="btn btn-outline-danger js-remove-offer">
+                                    <i class="bi bi-trash"></i> Delete Item
+                                </button>
                             </div>
                         </div>
-
-                        <div class="col-lg-2 d-flex justify-content-end">
-                            <button type="button"
-                                    class="btn btn-outline-danger js-remove-offer w-100">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
                     </div>
-                </div>
-            `;
-
-            const detailsContainer = document.getElementById('details-container');
-            const offersContainer = document.getElementById('offers-container');
-            const btnAddDetail = document.getElementById('btn-add-detail');
-            const btnAddOffer = document.getElementById('btn-add-offer');
-
-            // Add Detail
-            if (btnAddDetail && detailsContainer) {
-                btnAddDetail.addEventListener('click', () => {
-                    detailsContainer.insertAdjacentHTML('beforeend', detailTemplate(newKey()));
-                });
+                `;
             }
 
-            // Remove Detail
-            if (detailsContainer) {
-                detailsContainer.addEventListener('click', (e) => {
-                    if (e.target.closest('.js-remove-detail')) {
-                        e.target.closest('.detail-row').remove();
-                    }
-                });
-            }
+            document.addEventListener('click', function (e) {
+                const addBtn = e.target.closest('#btn-add-offer');
+                if (addBtn) {
+                    const container = document.getElementById('offers-container');
+                    const index = getNextIndex();
+                    container.insertAdjacentHTML('beforeend', offerTemplate(index));
+                    return;
+                }
 
-            // Add Offer
-            if (btnAddOffer && offersContainer) {
-                btnAddOffer.addEventListener('click', () => {
-                    offersContainer.insertAdjacentHTML('beforeend', offerTemplate(newKey()));
-                });
-            }
+                const removeBtn = e.target.closest('.js-remove-offer');
+                if (removeBtn) {
+                    removeBtn.closest('.offer-row').remove();
+                }
 
-            // Remove Offer
-            if (offersContainer) {
-                offersContainer.addEventListener('click', (e) => {
-                    if (e.target.closest('.js-remove-offer')) {
-                        e.target.closest('.offer-row').remove();
-                    }
-                });
-            }
-
-        });
+            });
+        })();
     </script>
 }
