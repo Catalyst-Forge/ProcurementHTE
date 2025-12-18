@@ -239,7 +239,7 @@
                             </tfoot>
                         </table>
                     </div>
-                    <small class="text-muted">KM/25 = (Distance - 400) +� 25 <br /> Operator cost per item = <em>Additional Rate +� KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
+                    <small class="text-muted">KM/25 = (Distance - 400) &times; 25 <br /> Operator cost per item = <em>Additional Rate &times; KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
                 </fieldset>
             </div>
         </section>
@@ -284,7 +284,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Vendor</th>
-                                    <th class="text-end">Final Offer (+� min / item)</th>
+                                    <th class="text-end">Final Offer (&sum; min / item)</th>
                                     <th class="text-end">Profit</th>
                                     <th class="text-end">Profit %</th>
                                 </tr>
@@ -516,57 +516,39 @@
             const normalizeCurrencyValue = (value) => {
                 if (value === null || value === undefined)
                     return '';
+                
+                // Konversi number langsung ke string
                 if (typeof value === 'number') {
                     if (!Number.isFinite(value))
                         return '';
-                    return value.toString();
+                    return Math.floor(value).toString();
                 }
+                
+                // Konversi ke string dan trim
                 let text = value.toString().trim();
                 if (!text)
                     return '';
-                text = text.replace(/[^\d,\.\-]/g, '');
+                
+                // PERBAIKAN: Hapus SEMUA karakter non-digit untuk menghindari bug desimal
+                // Hanya terima angka bulat, tidak ada koma atau titik desimal
+                text = text.replace(/\D/g, '');
+                
                 if (!text)
                     return '';
-                let integerPart = text;
-                let fractionPart = '';
-                let decimalSep = '';
-                if (text.includes(',')) {
-                    decimalSep = ',';
-                } else {
-                    const lastDot = text.lastIndexOf('.');
-                    if (lastDot >= 0) {
-                        const decimals = text.length - lastDot - 1;
-                        if (decimals > 0 && decimals <= 2) {
-                            decimalSep = '.';
-                        }
-                    }
-                }
-                if (decimalSep) {
-                    [integerPart, fractionPart] = splitLast(text, decimalSep);
-                }
-                integerPart = integerPart.replace(/[^\d]/g, '');
-                fractionPart = fractionPart.replace(/\D/g, '').slice(0, 2);
-                if (!integerPart && !fractionPart)
-                    return '';
-                let normalized = integerPart ? trimLeadingZeros(integerPart) : '0';
-                if (fractionPart) {
-                    const padded = fractionPart.padEnd(2, '0');
-                    normalized += '.' + padded;
-                    normalized = normalized.replace(/\.00$/, '');
-                }
-                return normalized;
+                
+                // Hapus leading zeros
+                text = text.replace(/^0+(?=\d)/, '') || '0';
+                
+                return text;
             };
+
             const formatCurrencyDisplay = (normalized) => {
-                if (!normalized)
+                if (!normalized || normalized === '0')
                     return '';
-                const [integerPartRaw, fractionRaw = ''] = normalized.split('.');
-                const integerPart = trimLeadingZeros(integerPartRaw);
-                const withGrouping = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                if (!fractionRaw)
-                    return withGrouping;
-                if (/^0+$/.test(fractionRaw))
-                    return withGrouping;
-                return `${withGrouping},${fractionRaw}`;
+                
+                // normalized adalah string angka bulat tanpa pemisah
+                // Tambahkan pemisah ribuan dengan titik (format Indonesia)
+                return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             };
             const formatInteger = (value) => {
                 const num = Number(value ?? 0);
@@ -843,7 +825,7 @@
                 row.className = 'border rounded-3 p-2 bg-body';
                 row.dataset.letterRow = '1';
                 row.innerHTML = `
-                    <div class="row g-2 align-items-end">
+                    <div class="row g-2 align-items-baseline">
                         <div class="col-lg-3 col-md-4">
                             <label class="form-label" data-letter-round-label>Round 1 - No. SPH</label>
                             <input class="form-control form-control-sm" data-letter-number value="${preset?.letter ?? ''}" maxlength="150" />
@@ -853,9 +835,10 @@
                             <label class="form-label" data-letter-file-label>File SPH (PDF)</label>
                             <input type="file" class="form-control form-control-sm" accept="application/pdf" data-letter-file />
                             <span class="text-danger small field-validation-valid" data-valmsg-letter-file data-valmsg-replace="true"></span>
-                            <div class="form-text small text-muted">Unggah PDF maksimal 25 MB.</div>
+                            <span class="form-text small text-muted">Unggah PDF maksimal 25 MB.</span>
+                            <span class="small text-muted" data-letter-status></span>
                         </div>
-                        <div class="col-lg-4 col-md-3 d-flex flex-column gap-2 align-items-start">
+                        <div class="col-lg-4 col-md-3 d-flex flex-column gap-2 align-items-end">
                             <input type="hidden" data-letter-doc-id value="${preset?.docId ?? ''}" />
                             <input type="hidden" data-letter-delete value="false" />
                             <div class="d-flex flex-wrap gap-2">
@@ -865,10 +848,9 @@
                                 </button>
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-letter-remove>
                                     <i class="bi bi-trash"></i>
-                                    <span>Hapus</span>
+                                    <span>Hapus file</span>
                                 </button>
                             </div>
-                            <div class="small text-muted" data-letter-status></div>
                         </div>
                     </div>`;
 
@@ -1034,7 +1016,7 @@
 
             const buildRoundRow = (block, preset) => {
                 const row = document.createElement('div');
-                row.className = 'row g-2 align-items-end border rounded-3 p-2';
+                row.className = 'row g-2 align-items-end';
                 row.dataset.roundRow = '1';
                 row.innerHTML = `
                     <div class="col-md-9">
@@ -1047,7 +1029,7 @@
                     </div>
                     <div class="col-md-3 text-end">
                         <button type="button" class="btn btn-outline-danger btn-sm" data-remove-round>
-                            <i class="bi bi-trash"></i>
+                            <i class="bi bi-trash"></i> Hapus round
                         </button>
                     </div>`;
 
@@ -1105,7 +1087,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="mt-3" data-item-body>
+                    <div class="mt-3 border rounded-3 p-2 bg-body" data-item-body>
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <label class="form-label">Quantity</label>
