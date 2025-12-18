@@ -91,6 +91,7 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "JobName", proc.JobName);
             html = ReplaceToken(html, "Note", proc.Note);
             html = ReplaceToken(html, "Wonum", proc.Wonum);
+            html = ReplaceToken(html, "DocumentDate", FormatDate(proc.DocumentDate));
             html = ReplaceToken(html, "StartDate", FormatDate(proc.StartDate));
             html = ReplaceToken(html, "EndDate", FormatDate(proc.EndDate));
             html = ReplaceToken(html, "PicOpsUserId", picOpsName);
@@ -104,6 +105,24 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "UpdatedAt", FormatDate(proc.UpdatedAt));
             html = ReplaceToken(html, "CompletedAt", FormatDate(proc.CompletedAt));
 
+            var rksListHtml = GenerateRKSJangkaWaktuList(proc);
+            html = ReplaceToken(html, "RKSList", rksListHtml);
+
+            var rksSyaratHtml = GenerateRKSSyaratList(proc);
+            html = ReplaceToken(html, "RKSSyaratList", rksSyaratHtml);
+
+            html = ReplaceToken(html, "ProcurementCategory", proc.ProcurementCategory.ToString());
+
+            if (jobTypeName == "Moving" || jobTypeName == "Angkutan")
+            {
+                html = ReplaceToken(html, "ProcurementType", "PEKERJAAN");
+            }
+
+            if (jobTypeName == "StandBy")
+            {
+                html = ReplaceToken(html, "ProcurementType", "SEWA");
+            }
+
             // Additional new fields dari Procurement
             html = ReplaceToken(html, "ProjectRegion", proc.ProjectRegion.ToString());
             html = ReplaceToken(
@@ -116,8 +135,26 @@ namespace ProcurementHTE.Core.Services
                 "TerbilangHari",
                 proc.StartDate.ToTerbilangHari(proc.EndDate, includeUnitWord: true)
             );
+            html = ReplaceToken(
+                html,
+                "TerbilangHariKata",
+                proc.StartDate.ToTerbilangHari(proc.EndDate, includeUnitWord: false)
+            );
+
+            // Hitung jumlah hari (angka) antara StartDate dan EndDate
+            var jumlahHari = (int)(proc.EndDate.Date - proc.StartDate.Date).TotalDays;
+            html = ReplaceToken(html, "JumlahHari", jumlahHari.ToString());
+
             html = ReplaceToken(html, "SpmpNumber", proc.SpmpNumber);
             html = ReplaceToken(html, "MemoNumber", proc.MemoNumber);
+            if (int.TryParse(proc.MemoNumber, out var memoNumberInt))
+            {
+                html = ReplaceToken(html, "MemoNumberPage2", (memoNumberInt + 1).ToString());
+            }
+            else
+            {
+                html = ReplaceToken(html, "MemoNumberPage2", "-");
+            }
             html = ReplaceToken(html, "OeNumber", proc.OeNumber);
             html = ReplaceToken(html, "RaNumber", proc.RaNumber);
             html = ReplaceToken(html, "LtcName", proc.LtcName);
@@ -1252,6 +1289,79 @@ namespace ProcurementHTE.Core.Services
             return rows.Length > 0
                 ? rows.ToString()
                 : "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+        }
+
+        private static string GenerateRKSJangkaWaktuList(Procurement proc)
+        {
+            var sb = new StringBuilder();
+            var jumlahHari = (int)(proc.EndDate.Date - proc.StartDate.Date).TotalDays;
+            var terbilangHari = jumlahHari.ToTerbilang();
+
+            var jobTypeName = proc.JobType!.TypeName;
+            if (jobTypeName == "Moving")
+            {
+                sb.AppendLine(
+                    $"<li>Jangka Waktu Pelaksanaan Pekerjaan adalah selama {jumlahHari} ({terbilangHari}) Hari Kalender, mulai tanggal {proc.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))} sampai dengan tanggal {proc.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))}, terhitung sejak Surat Perintah Melaksanakan Pekerjaan (SPMP) sampai dengan diterbitkannya Berita Acara Penyelesaian Pekerjaan dan/atau Berita Acara Serah Terima Pekerjaan dan telah ditandatangani oleh <strong>PERUSAHAAN</strong> dan <strong>MITRA KERJA</strong>.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Apabila dianggap perlu, <strong>PERUSAHAAN</strong> berhak memperpanjang Jangka Waktu Pelaksanaan Pekerjaan menurut Kontrak untuk jangka waktu tertentu terhitung dari tanggal berakhirnya Jangka Waktu Pelaksanaan Pekerjaan.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Permohonan perpanjangan Jangka Waktu Pelaksanaan Pekerjaan dan Jangka Waktu Kontrak harus diajukan tertulis oleh salah satu <strong>PIHAK</strong> kepada <strong>PIHAK</strong> lainnya yang dilengkapi dengan justifikasi dan data pendukungnya yang selanjutnya akan dituangkan ke dalam Addendum <strong>KONTRAK</strong> dan disetujui oleh <strong>PARA PIHAK</strong>.</li>"
+                );
+            }
+
+            if (jobTypeName == "Angkutan")
+            {
+                sb.AppendLine(
+                    $"<li>Jangka Waktu Pelaksanaan Pekerjaan adalah selama {jumlahHari} ({terbilangHari}) Hari Kalender, mulai tanggal {proc.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))} sampai dengan tanggal {proc.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))}, terhitung sejak Surat Perintah Melaksanakan Pekerjaan (SPMP) sampai dengan diterbitkannya Berita Acara Penyelesaian Pekerjaan dan/atau Berita Acara Serah Terima Pekerjaan dan telah ditandatangani oleh <strong>PERUSAHAAN</strong> dan <strong>MITRA KERJA</strong>.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Apabila dianggap perlu, <strong>PERUSAHAAN</strong> berhak memperpanjang Jangka Waktu Pelaksanaan Pekerjaan menurut Kontrak untuk jangka waktu tertentu terhitung dari tanggal berakhirnya Jangka Waktu Pelaksanaan Pekerjaan.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Permohonan perpanjangan Jangka Waktu Pelaksanaan Pekerjaan dan Jangka Waktu Kontrak harus diajukan tertulis oleh salah satu PIHAK kepada </strong>PIHAK</strong> lainnya yang dilengkapi dengan justifikasi dan data pendukungnya yang selanjutnya akan dituangkan ke dalam Addendum <strong>KONTRAK</strong> dan disetujui oleh <strong>PARA PIHAK</strong></li>"
+                );
+            }
+
+            if (jobTypeName == "StandBy")
+            {
+                sb.AppendLine(
+                    $"<li>Masa sewa adalah selama {jumlahHari} ({terbilangHari}) Hari Kalender, terhitung sejak tanggal {proc.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))} sampai dengan tanggal {proc.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))}.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Apabila dianggap perlu, <strong>PERUSAHAAN</strong> berhak memperpanjang Masa Sewa menurut Kontrak Kerja untuk jangka waktu tertentu terhitung dari tanggal berakhirnya Masa Sewa.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Permohonan perpanjangan Masa Sewa harus diajukan tertulis oleh salah satu <strong>PIHAK</strong> kepada <strong>PIHAK</strong> lainnya yang dilengkapi dengan justifikasi dan data pendukungnya yang selanjutnya akan dituangkan ke dalam Addendum <strong>KONTRAK</strong> dan disetujui oleh <strong>PERUSAHAAN</strong> dan <strong>MITRA KERJA</strong>.</li>"
+                );
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GenerateRKSSyaratList(Procurement proc)
+        {
+            var sb = new StringBuilder();
+
+            var jobTypeName = proc.JobType!.TypeName;
+            if (jobTypeName == "Moving")
+            {
+                sb.AppendLine("<li>");
+                sb.AppendLine("  Kelengkapan Alat Berat");
+                sb.AppendLine(
+                    "  <p class='mb-0'>MITRA KERJA harus menyediakan alat berat yang terdiri sebagai berikut:</p>"
+                );
+                sb.AppendLine("  <ol class='sub-list'>");
+                sb.AppendLine("    <li>Operator dan Helper wajib memiliki CSMS</li>");
+                sb.AppendLine(
+                    "    <li>Peralatan penunjang termasuk di dalamnya tetapi tidak terbatas pada rantai-rantai pengikat/<em>chain binder</em></li>"
+                );
+                sb.AppendLine("  </ol>");
+                sb.AppendLine("</li>");
+            }
+
+            return sb.ToString();
         }
 
         #endregion
