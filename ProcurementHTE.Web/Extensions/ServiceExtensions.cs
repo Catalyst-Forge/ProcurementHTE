@@ -29,6 +29,7 @@ public static class ServiceExtensions
     {
         // ------------- Services (Core/Application) -------------
         services.AddScoped<IProcurementService, ProcurementService>();
+        services.AddScoped<IPurchaseRequisitionService, PurchaseRequisitionService>();
         services.AddScoped<IVendorService, VendorService>();
         services.AddScoped<ITenderService, TenderService>();
         services.AddScoped<IJobTypeService, JobTypesService>();
