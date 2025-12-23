@@ -1,0 +1,1321 @@
+@model ProcurementHTE.Web.Models.ViewModels.PurchaseRequisitionDetailsViewModel
+@{
+    ViewData["Title"] = $"PR Details - {Model.PrNumber}";
+    var rowIndex = 0;
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">Purchase Requisition Details</h1>
+        <p class="text-muted mb-0 small">View PR information and manage procurement documents</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.PrId" class="btn btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+</header>
+
+<!-- PR Information Section -->
+<section class="card shadow-sm mb-4 rounded-4">
+    <div class="card-header bg-primary-subtle text-primary-emphasis rounded-top-4">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-file-earmark-text"></i> PR Information
+        </h5>
+    </div>
+
+    <div class="card-body">
+        <div class="row g-3">
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">PR Number</dt>
+                <dd class="fw-semibold mb-0">@Model.PrNumber</dd>
+            </dl>
+
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Request Date</dt>
+                <dd class="mb-0">@Model.RequestDate.ToString("d MMM yyyy")</dd>
+            </dl>
+
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Created By</dt>
+                <dd class="mb-0">@(Model.CreatedByUserName ?? "-")</dd>
+            </dl>
+
+            <dl class="col-md-12 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Description</dt>
+                <dd class="mb-0">@(Model.Description ?? "-")</dd>
+            </dl>
+
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Document</dt>
+
+                @if (!string.IsNullOrEmpty(Model.DocumentFileName)) {
+                    <dd class="d-flex align-items-center gap-2">
+                        <span><i class="bi bi-file-earmark-pdf"></i> @Model.DocumentFileName</span>
+                        <a asp-action="DownloadDocument"
+                           asp-route-id="@Model.PrId"
+                           class="btn btn-sm btn-outline-primary"
+                           hx-boost="false">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </dd>
+                } else {
+                    <dd class="text-muted mb-0">No document</dd>
+                }
+            </dl>
+
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Created At</dt>
+                <dd class="mb-0">@Model.CreatedAt.ToString("d MMM yyyy")</dd>
+            </dl>
+
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Last Updated</dt>
+                <dd class="mb-0">@(Model.UpdatedAt?.ToString("d MMM yyyy") ?? "-")</dd>
+            </dl>
+        </div>
+    </div>
+</section>
+
+<!-- Linked Procurements Section -->
+<section class="card shadow-sm mb-4 rounded-4">
+    <div class="card-header bg-success-subtle text-success-emphasis rounded-top-4">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-link-45deg"></i> Linked Procurements (@Model.Procurements.Count)
+        </h5>
+    </div>
+
+    <div class="card-body p-0">
+        @if (!Model.Procurements.Any()) {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                <p class="mb-0">No procurements linked</p>
+            </div>
+        } else {
+            <div class="accordion" id="procAccordion">
+                @for (int i = 0; i < Model.Procurements.Count; i++) {
+                    var p = Model.Procurements[i];
+                    var cid = $"c{i}";
+                    var first = i == 0;
+                    var sph = p.RoundLetters.Where(r => r.Round == 1).ToList();
+                    var snh = p.RoundLetters.Where(r => r.Round > 1).ToList();
+                    var badge = (p.StatusName ?? "").ToLower() switch {
+                        "approved" or "completed" => "bg-success",
+                        "pending" or "pending approval" => "bg-warning text-dark",
+                        "uploaded" => "bg-info",
+                        _ => "bg-secondary"
+                    };
+
+                    <div class="accordion-item border-0 border-top rounded-bottom-4 overflow-hidden">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button @(first ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@cid">
+                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                    <div>
+                                        <strong>@p.ProcNum</strong>
+                                        <span class="text-muted ms-1">- @p.JobName</span>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge @badge">@p.StatusName</span>
+                                        <span class="badge bg-light text-dark border">@p.CompletedDocs/@p.TotalDocs</span>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+
+                        <div id="@cid" class="accordion-collapse collapse @(first ? "show" : "")" data-bs-parent="#procAccordion">
+                            <div class="accordion-body">
+                                <article class="card shadow-sm mb-3 rounded-4">
+                                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                                        <h2 class="card-title mb-0 h6"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Procurement Information</h2>
+                                    </header>
+
+                                    <hr class="mx-3 my-2" />
+
+                                    <div class="card-body pt-0">
+                                        <div class="row mb-0">
+                                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                                <dt class="fw-semibold text-uppercase text-secondary small">WO Number</dt>
+                                                <dd class="fw-medium">@(p.Wonum ?? "-")</dd>
+                                            </dl>
+
+                                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                                <dt class="fw-semibold text-uppercase text-secondary small">Job Type</dt>
+                                                <dd><span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">@(p.JobTypeName ?? "-")</span></dd>
+                                            </dl>
+
+                                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                                <dt class="fw-semibold text-uppercase text-secondary small">Category</dt>
+                                                <dd class="fw-medium">@(p.Category ?? "-")</dd>
+                                            </dl>
+
+                                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                                <dt class="fw-semibold text-uppercase text-secondary small">Vendor</dt>
+                                                <dd class="fw-bold text-primary">@(p.VendorName ?? "-")</dd>
+                                            </dl>
+
+                                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                                <dt class="fw-semibold text-uppercase text-secondary small">Start Date</dt>
+                                                <dd class="fw-medium">@p.StartDate.ToString("d MMM yyyy")</dd>
+                                            </dl>
+
+                                            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                                                <dt class="fw-semibold text-uppercase text-secondary small">End Date</dt>
+                                                <dd class="fw-medium">@p.EndDate.ToString("d MMM yyyy")</dd>
+                                            </dl>
+                                        </div>
+
+                                        <div class="mt-2">
+                                            <a asp-controller="Procurements"
+                                               asp-action="Details"
+                                               asp-route-id="@p.ProcurementId"
+                                               class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="bi bi-eye"></i> View Details
+                                            </a>
+
+                                            <a asp-controller="ProcurementDocuments"
+                                               asp-action="Index"
+                                               asp-route-procurementId="@p.ProcurementId"
+                                               class="btn btn-sm btn-outline-info">
+                                                <i class="bi bi-folder2-open"></i> Document Manager
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-xl-6">
+                                        <div class="card shadow-sm h-100 rounded-4">
+                                            <div class="card-body py-3">
+                                                <h6 class="mb-2 fw-semibold">
+                                                    <i class="bi bi-file-text text-primary me-1"></i> Surat Penawaran Harga (SPH)
+                                                </h6>
+
+                                                @if (sph.Any()) {
+                                                    <table class="table table-sm table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Vendor</th>
+                                                                <th>No Surat</th>
+                                                                <th class="text-center">Action</th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            @foreach (var r in sph) {
+                                                                <tr>
+                                                                    <td>@(r.Vendor?.VendorName ?? r.VendorId)</td>
+                                                                    <td>@(r.LetterNumber ?? "-")</td>
+                                                                    <td class="text-center">
+                                                                        <a asp-controller="ProcurementDocuments"
+                                                                           asp-action="Download"
+                                                                           asp-route-id="@r.ProcDocumentId"
+                                                                           asp-route-procurementId="@p.ProcurementId"
+                                                                           class="btn btn-sm btn-outline-primary"
+                                                                           hx-boost="false">
+                                                                            <i class="bi bi-download"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                } else {
+                                                    <div class="alert alert-info py-2 mb-0 small">
+                                                        <i class="bi bi-info-circle me-1"></i> Belum ada SPH
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xl-6">
+                                        <div class="card shadow-sm h-100 rounded-4">
+                                            <div class="card-body py-3">
+                                                <h6 class="mb-2 fw-semibold">
+                                                    <i class="bi bi-file-richtext text-warning me-1"></i> Surat Negosiasi Harga (SNH)
+                                                </h6>
+
+                                                @if (snh.Any()) {
+                                                    <table class="table table-sm table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Vendor</th>
+                                                                <th class="text-center">Ronde</th>
+                                                                <th>No Surat</th>
+                                                                <th class="text-center">Action</th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            @foreach (var r in snh) {
+                                                                <tr>
+                                                                    <td>@(r.Vendor?.VendorName ?? r.VendorId)</td>
+                                                                    <td class="text-center">
+                                                                        <span class="badge bg-secondary">@r.Round</span>
+                                                                    </td>
+                                                                    <td>@(r.LetterNumber ?? "-")</td>
+                                                                    <td class="text-center">
+                                                                        <a asp-controller="ProcurementDocuments"
+                                                                           asp-action="Download"
+                                                                           asp-route-id="@r.ProcDocumentId"
+                                                                           asp-route-procurementId="@p.ProcurementId"
+                                                                           class="btn btn-sm btn-outline-primary"
+                                                                           hx-boost="false">
+                                                                            <i class="bi bi-download"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            }
+
+                                                        </tbody>
+                                                    </table>
+                                                } else {
+                                                    <div class="alert alert-info py-2 mb-0 small">
+                                                        <i class="bi bi-info-circle me-1"></i>Belum ada SNH
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <article class="card shadow-sm rounded-4">
+                                    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                                        <h2 class="card-title mb-0 h6">
+                                            <i class="bi bi-folder-fill text-primary me-1"></i> Procurement Documents
+                                        </h2>
+                                    </header>
+
+                                    <hr class="mx-3 my-2" />
+
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive rounded-bottom-4">
+                                            <table class="table table-hover align-middle mb-0">
+                                                <thead class="table-info">
+                                                    <tr>
+                                                        <th class="ps-3">No</th>
+                                                        <th>Document Name</th>
+                                                        <th class="text-center">Type</th>
+                                                        <th class="text-center">Status</th>
+                                                        <th class="text-center">File</th>
+                                                        <th class="text-end pe-4">Action</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+
+                                                    @if (!p.RequiredDocuments.Any()) {
+                                                        <tr>
+                                                            <td colspan="6" class="text-center text-muted py-4">No documents configured.</td>
+                                                        </tr>
+                                                    }
+
+                                                    @foreach (var doc in p.RequiredDocuments.OrderBy(x => x.Sequence)) {
+                                                        rowIndex++;
+                                                        var status = doc.Uploaded ? (doc.Status ?? "Uploaded") : (doc.IsMandatory ? "Required" : "Optional");
+                                                        var isPending = status.Equals("Pending Approval", StringComparison.OrdinalIgnoreCase);
+                                                        var isApproved = status.Equals("Approved", StringComparison.OrdinalIgnoreCase);
+                                                        var isUploaded = doc.Uploaded && !isPending;
+                                                        var disableGen = doc.RequiresApproval && (isPending || isApproved);
+
+                                                        <tr class="@(isApproved ? "table-success" : isPending ? "table-warning" : "")"
+                                                            data-doc-id="@doc.ProcDocumentId"
+                                                            data-row-index="@rowIndex"
+                                                            data-procurement-id="@p.ProcurementId">
+                                                            <td class="ps-3">@rowIndex</td>
+
+                                                            <td>
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="pt-1">
+                                                                        @if (isPending) {
+                                                                            <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                                                                        } else if (doc.Uploaded) {
+                                                                            <i class="bi bi-file-earmark-check-fill text-success fs-4"></i>
+                                                                        } else if (doc.IsUploadRequired) {
+                                                                            <i class="bi bi-file-earmark-medical-fill text-warning fs-4"></i>
+                                                                        } else {
+                                                                            <i class="bi bi-file-earmark text-secondary fs-4"></i>
+                                                                        }
+
+                                                                    </div>
+
+                                                                    <div class="flex-grow-1">
+                                                                        <div class="fw-semibold mb-1">@doc.DocumentTypeName</div>
+                                                                        @if (!string.IsNullOrWhiteSpace(doc.Note)) {
+                                                                            <div class="small text-muted"><i class="bi bi-info-circle me-1"></i>@doc.Note</div>
+                                                                        }
+
+                                                                        @if (isPending && !string.IsNullOrEmpty(doc.ProcDocumentId)) {
+                                                                            <div class="small mt-2" id="next-@doc.ProcDocumentId">
+                                                                                <span class="badge bg-light text-dark border">
+                                                                                    <i class="bi bi-person-check me-1"></i>Next approver: <em class="text-muted">�</em>
+                                                                                </span>
+                                                                            </div>
+                                                                        }
+
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                                                    @if (doc.IsMandatory) {
+                                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                                            <i class="bi bi-exclamation-triangle me-1"></i>Required
+                                                                        </span>
+                                                                    }
+                                                                    @if (doc.IsGenerated) {
+                                                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                                            <i class="bi bi-gear me-1"></i>Generated
+                                                                        </span>
+                                                                    }
+                                                                    @if (doc.IsUploadRequired && !doc.IsGenerated) {
+                                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                                            <i class="bi bi-upload me-1"></i>Upload
+                                                                        </span>
+                                                                    }
+                                                                    @if (doc.RequiresApproval) {
+                                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                                                            <i class="bi bi-person-check me-1"></i>Approval
+                                                                        </span>
+                                                                    }
+
+                                                                </div>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if (isPending) {
+                                                                    <span class="badge rounded-pill bg-warning text-dark py-2 px-3"><i class="bi bi-hourglass-split"></i> Pending</span>
+                                                                } else if (doc.Uploaded) {
+                                                                    <span class="badge rounded-pill bg-success bg-opacity-25 text-success py-2 px-3"><i class="bi bi-check-lg"></i> Uploaded</span>
+                                                                } else if (doc.IsMandatory) {
+                                                                    <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis py-2 px-3"><i class="bi bi-exclamation-lg"></i> Required</span>
+                                                                } else {
+                                                                    <span class="badge rounded-pill bg-light text-dark border py-2 px-3">Optional</span>
+                                                                }
+
+                                                            </td>
+
+                                                            <td>
+                                                                @if (doc.Uploaded && !string.IsNullOrEmpty(doc.FileName)) {
+                                                                    <small class="text-muted">
+                                                                        <i class="bi bi-file-pdf text-danger"></i> @doc.FileName
+                                                                    </small>
+
+                                                                    @if (doc.Size.HasValue) {
+                                                                        var sizeKB = doc.Size.Value / 1024.0;
+                                                                        var sizeMB = sizeKB / 1024.0;
+                                                                        var sizeStr = sizeMB >= 1 ? $"{sizeMB:F2} MB" : $"{sizeKB:F2} KB";
+                                                                        <span class="text-muted small">&bull; @sizeStr</span>
+                                                                    }
+                                                                } else {
+                                                                    <span class="text-muted">-</span>
+                                                                }
+
+                                                            </td>
+
+                                                            <td class="pe-4" data-actions-row="@rowIndex">
+                                                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                                                    @if (!doc.Uploaded && doc.IsUploadRequired && !doc.IsGenerated) {
+                                                                        <form class="d-inline-flex gap-2 align-items-center flex-wrap upload-form"
+                                                                              asp-controller="ProcurementDocuments"
+                                                                              asp-action="Upload"
+                                                                              method="post"
+                                                                              enctype="multipart/form-data"
+                                                                              hx-boost="false"
+                                                                              data-row="@rowIndex"
+                                                                              data-upload-form="true">
+                                                                            @Html.AntiForgeryToken()
+                                                                            <input type="hidden" name="ProcurementId" value="@p.ProcurementId" />
+                                                                            <input type="hidden" name="DocumentTypeId" value="@doc.DocumentTypeId" />
+
+                                                                            <div class="upload-input-stack" data-row="@rowIndex">
+                                                                                <label class="upload-dropzone mb-1" data-row="@rowIndex" tabindex="0">
+                                                                                    <div class="d-flex flex-column">
+                                                                                        <span class="fw-semibold">
+                                                                                            <i class="bi bi-cloud-arrow-up me-1"></i>Drop/Select (PDF)
+                                                                                        </span>
+                                                                                        <small class="text-muted">Max 10MB</small>
+                                                                                    </div>
+
+                                                                                    <input class="d-none file-input" type="file" name="File" accept="application/pdf,.pdf" required data-row="@rowIndex" />
+                                                                                </label>
+
+                                                                                <div class="selected-file small text-muted" data-row="@rowIndex">
+                                                                                    <i class="bi bi-info-circle me-1"></i>No file
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="d-flex flex-column">
+                                                                                <button class="btn btn-sm btn-primary upload-btn" type="submit" disabled data-row="@rowIndex">
+                                                                                    <i class="bi bi-upload"></i> Upload
+                                                                                </button>
+
+                                                                                <div class="upload-feedback small text-muted mt-1" data-row="@rowIndex"></div>
+                                                                            </div>
+                                                                        </form>
+                                                                    }
+
+                                                                    @if (doc.IsGenerated) {
+                                                                        <div>
+                                                                            <form asp-controller="PurchaseRequisitions"
+                                                                                  asp-action="GenerateDocument"
+                                                                                  method="post"
+                                                                                  class="d-inline js-generate-form"
+                                                                                  hx-boost="false"
+                                                                                  data-generate-form="true">
+                                                                                @Html.AntiForgeryToken()
+                                                                                <input type="hidden" name="prId" value="@Model.PrId" />
+                                                                                <input type="hidden" name="procurementId" value="@p.ProcurementId" />
+                                                                                <input type="hidden" name="documentTypeId" value="@doc.DocumentTypeId" />
+
+                                                                                @if (!string.IsNullOrEmpty(doc.ProcDocumentId)) {
+                                                                                    <input type="hidden" name="procDocumentId" value="@doc.ProcDocumentId" />
+                                                                                }
+
+                                                                                <button type="submit"
+                                                                                        class="btn btn-sm btn-success js-generate-btn"
+                                                                                        @(disableGen ? "disabled" : "")
+                                                                                        title="@(disableGen ? "Disabled while approval in progress" : "")">
+                                                                                    <i class="bi bi-file-earmark-arrow-down me-1"></i> @(doc.Uploaded ? "Regenerate" : "Generate")
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    }
+
+                                                                    @if (isUploaded && !string.IsNullOrEmpty(doc.ProcDocumentId)) {
+                                                                        <div>
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-doc-name="@doc.DocumentTypeName"
+                                                                                    data-file-name="@doc.FileName">
+                                                                                <i class="bi bi-eye"></i> Preview
+                                                                            </button>
+
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-primary btn-download"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-file-name="@doc.FileName">
+                                                                                <i class="bi bi-download"></i> Download
+                                                                            </button>
+
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-danger btn-delete"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-doc-name="@doc.DocumentTypeName"
+                                                                                    data-file-name="@doc.FileName"
+                                                                                    data-procurement-id="@p.ProcurementId">
+                                                                                <i class="bi bi-trash"></i> Delete
+                                                                            </button>
+                                                                        </div>
+                                                                    }
+
+                                                                    @if (isPending && !string.IsNullOrEmpty(doc.ProcDocumentId)) {
+                                                                        <div>
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-doc-name="@doc.DocumentTypeName"
+                                                                                    data-file-name="@doc.FileName">
+                                                                                <i class="bi bi-eye"></i> Preview
+                                                                            </button>
+
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-primary btn-download"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-file-name="@doc.FileName">
+                                                                                <i class="bi bi-download"></i> Download
+                                                                            </button>
+                                                                        </div>
+
+                                                                        <div>
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-success btn-show-qr"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    title="QR Code">
+                                                                                <i class="bi bi-qr-code"></i>
+                                                                            </button>
+
+                                                                            @* <a class="btn btn-sm btn-outline-success"
+                                                                               asp-controller="ProcurementDocuments"
+                                                                               asp-action="DownloadQr"
+                                                                               asp-route-id="@doc.ProcDocumentId"
+                                                                               title="Download QR">
+                                                                                <i class="bi bi-download"></i>
+                                                                            </a> *@
+
+                                                                            <button type="button"
+                                                                                    class="btn btn-sm btn-outline-success btn-print-qr"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    title="Print QR">
+                                                                                <i class="bi bi-printer"></i>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        <button type="button"
+                                                                                class="btn btn-sm btn-dark btn-timeline"
+                                                                                data-doc-id="@doc.ProcDocumentId"
+                                                                                data-doc-name="@doc.DocumentTypeName">
+                                                                            <i class="bi bi-diagram-3"></i> Timeline
+                                                                        </button>
+                                                                    }
+
+                                                                    @if (doc.RequiresApproval && doc.Uploaded && !isPending && !isApproved) {
+                                                                        <form asp-controller="PurchaseRequisitions"
+                                                                              asp-action="SendApproval"
+                                                                              method="post"
+                                                                              class="d-inline"
+                                                                              hx-boost="false">
+                                                                            @Html.AntiForgeryToken()
+                                                                            <input type="hidden" name="prId" value="@Model.PrId" />
+                                                                            <input type="hidden" name="procDocumentId" value="@doc.ProcDocumentId" />
+                                                                            <input type="hidden" name="procurementId" value="@p.ProcurementId" />
+                                                                            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-send-check me-1"></i> Send</button>
+                                                                        </form>
+                                                                    }
+
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<!-- PDF Preview Modal -->
+<div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title" id="previewModalTitle">Preview Dokumen</h5>
+          <small class="text-muted" id="previewFileName"></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="pdfLoadingContainer" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-3 text-muted">Memuat dokumen...</p>
+        </div>
+        <div id="pdfErrorContainer" class="text-center py-5 d-none">
+          <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+          <p class="text-muted">Failed to load.</p>
+        </div>
+        <iframe
+          id="pdfPreviewFrame"
+          style="width: 100%; height: 75vh; border: none; display: none"
+          title="PDF Preview"
+        ></iframe>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button
+        ><button type="button" class="btn btn-primary" id="downloadFromPreview">
+          <i class="bi bi-download"></i> Download
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">QR Code</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="qrImg" src="" class="img-fluid border rounded mb-3" alt="QR Code" />
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <a id="btnDownloadQr" class="btn btn-outline-primary" download><i class="bi bi-download"></i></a
+        ><button type="button" class="btn btn-outline-secondary" id="btnPrintQr"><i class="bi bi-printer"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Approval Timeline Modal -->
+<div class="modal fade" id="approvalTimelineModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <div>
+          <h5 class="modal-title"><i class="bi bi-diagram-3 me-2"></i>Approval Timeline</h5>
+          <small class="text-muted" id="approvalDocName"></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="approvalLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Memuat...</p>
+      </div>
+      <div id="approvalError" class="text-center py-5 d-none">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+        <p class="text-muted">Failed to load.</p>
+      </div>
+      <div class="modal-body pt-0 d-none" id="approvalTimelineBody">
+        <div class="mb-3">
+          <span id="docStatusBadge" class="badge rounded-pill bg-secondary">Status: �</span
+          ><span id="currentGateBadge" class="badge rounded-pill bg-light text-dark border ms-1 d-none"></span>
+        </div>
+        <ul id="approvalStepper" class="timeline list-unstyled m-0"></ul>
+        <div class="mt-3" id="nextApproverWrap" style="display: none">
+          <span class="text-muted me-2">Next:</span><span id="nextApproverChips"></span>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Delete Form -->
+<form id="deleteForm" method="post" asp-controller="ProcurementDocuments" asp-action="Delete" style="display: none">
+  @Html.AntiForgeryToken()<input type="hidden" name="id" id="deleteDocId" /><input
+    type="hidden"
+    name="procurementId"
+    id="deleteProcurementId"
+  />
+</form>
+
+@section Scripts {
+    <script>
+      var currentPreviewUrl = null,
+        currentDownloadDocId = null,
+        currentQrImageSrc = null,
+        MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
+      function showToast(i, t, x = "", m = 4000) {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: i,
+          title: t,
+          text: x,
+          showConfirmButton: false,
+          timer: m,
+          timerProgressBar: true,
+          didOpen: (e) => {
+            e.addEventListener("mouseenter", Swal.stopTimer);
+            e.addEventListener("mouseleave", Swal.resumeTimer);
+          },
+        });
+      }
+      function bindOnce(s, f, b) {
+        document.querySelectorAll(s).forEach((e) => {
+          if (e.dataset[f]) return;
+          e.dataset[f] = "1";
+          b(e);
+        });
+      }
+      function bootPrDetailsDocuments() {
+        initPreviewHandlers();
+        initDownloadHandlers();
+        initDeleteHandlers();
+        initFileInputHandlers();
+        initUploadFormHandlers();
+        initGenerateFormHandlers();
+        initQrHandlers();
+        initTimelineHandlers();
+        const d = document.getElementById("downloadFromPreview");
+        if (d && !d.dataset.boundPreviewDownload) {
+          d.dataset.boundPreviewDownload = "1";
+          d.addEventListener("click", () => {
+            if (!currentDownloadDocId) {
+              showToast("info", "Download not available");
+              return;
+            }
+            const b = document.querySelector(`.btn-download[data-doc-id="${currentDownloadDocId}"]`);
+            if (b) b.click();
+          });
+        }
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootPrDetailsDocuments);
+      } else {
+        bootPrDetailsDocuments();
+      }
+      if (!window.prDetailsHtmxHooked) {
+        window.prDetailsHtmxHooked = true;
+        document.body?.addEventListener("htmx:afterSwap", bootPrDetailsDocuments);
+      }
+      function openPdfModal(t, f, u, h) {
+        const m = document.getElementById("pdfPreviewModal"),
+          mo = bootstrap.Modal.getOrCreateInstance(m),
+          fr = document.getElementById("pdfPreviewFrame"),
+          l = document.getElementById("pdfLoadingContainer"),
+          er = document.getElementById("pdfErrorContainer"),
+          db = document.getElementById("downloadFromPreview");
+        document.getElementById("previewModalTitle").textContent = t || "Preview";
+        document.getElementById("previewFileName").textContent = f || "";
+        if (h) db.classList.remove("d-none");
+        else db.classList.add("d-none");
+        fr.style.display = "none";
+        fr.src = "about:blank";
+        l.classList.remove("d-none");
+        er.classList.add("d-none");
+        mo.show();
+        try {
+          fr.src = u;
+          fr.onload = () => {
+            l.classList.add("d-none");
+            fr.style.display = "block";
+          };
+          fr.onerror = () => {
+            l.classList.add("d-none");
+            er.classList.remove("d-none");
+          };
+        } catch (e) {
+          l.classList.add("d-none");
+          er.classList.remove("d-none");
+          showToast("error", "Preview failed", e.message);
+        }
+      }
+      function initPreviewHandlers() {
+        bindOnce(".btn-preview", "boundPreview", (b) => {
+          b.addEventListener("click", async function () {
+            const docId = this.dataset.docId,
+              docName = this.dataset.docName || "Preview",
+              fileName = this.dataset.fileName || "",
+              procId = this.closest("tr")?.dataset.procurementId || "";
+            currentDownloadDocId = docId;
+            currentPreviewUrl = null;
+            try {
+              const r = await fetch(
+                  `/ProcurementDocuments/PreviewUrl/${encodeURIComponent(docId)}?procurementId=${encodeURIComponent(
+                    procId
+                  )}`
+                ),
+                d = await r.json();
+              if (!d?.ok || !d?.url) throw new Error(d?.error || "URL not available");
+              currentPreviewUrl = d.url;
+              openPdfModal(docName, fileName, d.url, true);
+            } catch (e) {
+              showToast("error", "Preview failed", e.message);
+            }
+          });
+        });
+      }
+      function initDownloadHandlers() {
+        bindOnce(".btn-download", "boundDownload", (b) => {
+          b.addEventListener("click", function () {
+            const docId = this.dataset.docId,
+              fileName = this.dataset.fileName,
+              procId = this.closest("tr")?.dataset.procurementId || "";
+            showToast("info", "Downloading...");
+            try {
+              const u = `/ProcurementDocuments/Download/${encodeURIComponent(docId)}?procurementId=${encodeURIComponent(
+                  procId
+                )}`,
+                a = document.createElement("a");
+              a.href = u;
+              if (fileName) a.download = fileName;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(() => showToast("success", "Download started", fileName || ""), 400);
+            } catch (e) {
+              showToast("error", "Download failed", e.message);
+            }
+          });
+        });
+      }
+      function initDeleteHandlers() {
+        bindOnce(".btn-delete", "boundDelete", (b) => {
+          b.addEventListener("click", function (e) {
+            e.preventDefault();
+            const docId = this.dataset.docId,
+              docName = this.dataset.docName,
+              fileName = this.dataset.fileName,
+              procId = this.dataset.procurementId;
+            Swal.fire({
+              title: "Delete Document?",
+              html: `<p>Are you sure you want to delete <strong>${docName || ""}</strong>?</p>`,
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#dc3545",
+              confirmButtonText: '<i class="bi bi-trash"></i> Delete',
+              cancelButtonText: "Cancel",
+              reverseButtons: true,
+              focusCancel: true,
+            }).then((r) => {
+              if (r.isConfirmed) {
+                document.getElementById("deleteDocId").value = docId;
+                document.getElementById("deleteProcurementId").value = procId;
+                document.getElementById("deleteForm").submit();
+              }
+            });
+          });
+        });
+      }
+      function initFileInputHandlers() {
+        bindOnce(".file-input", "boundFileInput", (i) => {
+          i.addEventListener("change", function () {
+            const row = this.dataset.row,
+              file = this.files?.[0];
+            if (file) handleFileSelection(row, file, this);
+            else resetFileSelection(row);
+          });
+        });
+        initDropzoneHandlers();
+      }
+      function initDropzoneHandlers() {
+        bindOnce(".upload-dropzone", "boundDropzone", (z) => {
+          const row = z.dataset.row,
+            inp = z.querySelector(".file-input");
+          if (!inp) return;
+          const prev = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          };
+          ["dragenter", "dragover"].forEach((ev) =>
+            z.addEventListener(ev, (e) => {
+              prev(e);
+              if (z.classList.contains("disabled")) return;
+              z.classList.add("drag-over");
+            })
+          );
+          ["dragleave", "dragend", "drop"].forEach((ev) =>
+            z.addEventListener(ev, (e) => {
+              prev(e);
+              z.classList.remove("drag-over");
+            })
+          );
+          z.addEventListener("drop", (e) => {
+            if (z.classList.contains("disabled")) return;
+            const fs = Array.from(e.dataTransfer?.files || []).filter(Boolean);
+            if (!fs.length) return;
+            assignFileToInput(inp, fs[0], e.dataTransfer?.files);
+            handleFileSelection(row, fs[0], inp);
+          });
+          z.addEventListener("keydown", (e) => {
+            if (z.classList.contains("disabled")) return;
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              inp.click();
+            }
+          });
+        });
+      }
+      function handleFileSelection(row, file, inp) {
+        if (!file) {
+          resetFileSelection(row);
+          return;
+        }
+        if (!isPdfFile(file)) {
+          showToast("warning", "Only PDF allowed");
+          inp.value = "";
+          resetFileSelection(row);
+          return;
+        }
+        if (file.size > MAX_UPLOAD_SIZE) {
+          showToast("warning", "Max 10MB");
+          inp.value = "";
+          resetFileSelection(row);
+          return;
+        }
+        const lb = document.querySelector(`.selected-file[data-row="${row}"]`);
+        if (lb) {
+          lb.classList.remove("text-muted", "text-success");
+          lb.innerHTML = `<i class="bi bi-file-earmark-pdf text-danger me-1"></i>${file.name}`;
+        }
+        const btn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+        if (btn) btn.disabled = false;
+      }
+      function assignFileToInput(inp, file, fb) {
+        if (!inp || !file) return;
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          inp.files = dt.files;
+        } catch {
+          if (fb)
+            try {
+              inp.files = fb;
+            } catch {}
+        }
+      }
+      function resetFileSelection(row) {
+        const lb = document.querySelector(`.selected-file[data-row="${row}"]`);
+        if (lb) {
+          lb.classList.remove("text-success");
+          lb.classList.add("text-muted");
+          lb.innerHTML = '<i class="bi bi-info-circle me-1"></i>No file';
+        }
+        const btn = document.querySelector(`.upload-btn[data-row="${row}"]`);
+        if (btn) btn.disabled = true;
+      }
+      function isPdfFile(f) {
+        if (!f) return false;
+        return (f.type || "").toLowerCase() === "application/pdf" || (f.name || "").toLowerCase().endsWith(".pdf");
+      }
+      function initUploadFormHandlers() {
+        bindOnce('form[data-upload-form="true"]', "boundUploadForm", (form) => {
+          form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const row = this.dataset.row,
+              fi = this.querySelector(".file-input"),
+              btn = this.querySelector(".upload-btn"),
+              fb = document.querySelector(`.upload-feedback[data-row="${row}"]`);
+            if (!fi?.files?.length) {
+              showToast("warning", "No file selected");
+              return;
+            }
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+            if (fb) {
+              fb.classList.remove("text-danger", "text-success");
+              fb.classList.add("text-muted");
+              fb.textContent = "Uploading...";
+            }
+            try {
+              const r = await fetch(this.action, {
+                method: this.method || "POST",
+                body: new FormData(this),
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+              });
+              let p = null;
+              const ct = r.headers.get("content-type") || "";
+              if (ct.includes("application/json")) p = await r.json();
+              if (!r.ok || (p && p.ok === false)) throw new Error(p?.error || "Upload failed");
+              showToast("success", "Upload successful");
+              btn.innerHTML = '<i class="bi bi-check2"></i> Uploaded';
+              if (fb) {
+                fb.classList.remove("text-muted", "text-danger");
+                fb.classList.add("text-success");
+                fb.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Done';
+              }
+              setTimeout(() => location.reload(), 1500);
+            } catch (err) {
+              btn.disabled = false;
+              btn.innerHTML = orig;
+              if (fb) {
+                fb.classList.remove("text-muted", "text-success");
+                fb.classList.add("text-danger");
+                fb.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + err.message;
+              }
+              showToast("error", "Upload failed", err.message);
+            }
+          });
+        });
+      }
+      function initGenerateFormHandlers() {
+        bindOnce('form[data-generate-form="true"]', "boundGenerateForm", (form) => {
+          const btn = form.querySelector(".js-generate-btn");
+          if (!btn) return;
+          form.addEventListener("submit", () => {
+            if (btn.dataset.loading === "true") return;
+            btn.dataset.loading = "true";
+            btn.dataset.originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+          });
+        });
+      }
+      function initQrHandlers() {
+        bindOnce(".btn-show-qr", "boundShowQr", (b) => {
+          b.addEventListener("click", async function () {
+            const docId = this.dataset.docId;
+            await showQrCode(docId);
+          });
+        });
+        bindOnce(".btn-print-qr", "boundPrintQr", (b) => {
+          b.addEventListener("click", printQrCode);
+        });
+        const pb = document.getElementById("btnPrintQr");
+        if (pb && !pb.dataset.boundPrintQr) {
+          pb.dataset.boundPrintQr = "1";
+          pb.addEventListener("click", printQrCode);
+        }
+      }
+      async function showQrCode(docId) {
+        try {
+          const r = await fetch(`/ProcurementDocuments/QrUrl/${encodeURIComponent(docId)}`),
+            d = await r.json();
+          if (!d.ok || !d.url) throw new Error(d.error || "QR URL failed");
+          currentQrImageSrc = d.url;
+          document.getElementById("qrImg").src = d.url;
+          document.getElementById("btnDownloadQr").href = `/ProcurementDocuments/DownloadQr/${encodeURIComponent(docId)}`;
+          new bootstrap.Modal(document.getElementById("qrModal")).show();
+        } catch (e) {
+          showToast("error", "QR failed", e.message);
+        }
+      }
+      function printQrCode() {
+        if (!currentQrImageSrc) return;
+        const w = window.open("", "_blank", "width=600,height=600"),
+          d = w.document;
+        d.title = "Print QR";
+        const s = d.createElement("style");
+        s.textContent =
+          "html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center}img{max-width:90%;max-height:90%}";
+        d.head.appendChild(s);
+        d.body.innerHTML = "";
+        const img = d.createElement("img");
+        img.src = currentQrImageSrc;
+        d.body.appendChild(img);
+        img.onload = () => {
+          w.focus();
+          w.print();
+        };
+      }
+      function initTimelineHandlers() {
+        bindOnce(".btn-timeline", "boundTimeline", (b) => {
+          b.addEventListener("click", function () {
+            const docId = this.dataset.docId,
+              docName = this.dataset.docName || "";
+            openTimelineModal(docId, docName);
+          });
+        });
+      }
+      function normalizeTimelinePayload(r) {
+        const d = r || {};
+        const n = {
+          procDocumentId: d.ProcDocumentId ?? d.procDocumentId ?? null,
+          docStatus: d.DocStatus ?? d.docStatus ?? null,
+          currentGateLevel: d.CurrentGateLevel ?? d.currentGateLevel ?? null,
+          requiredRoles: Array.isArray(d.RequiredRoles)
+            ? d.RequiredRoles
+            : Array.isArray(d.requiredRoles)
+            ? d.requiredRoles
+            : [],
+          steps: Array.isArray(d.Steps) ? d.Steps : Array.isArray(d.steps) ? d.steps : [],
+        };
+        n.steps = n.steps.map((s) => ({
+          level: s.Level ?? s.level ?? 0,
+          roleName: s.RoleName ?? s.roleName ?? null,
+          status: s.Status ?? s.status ?? null,
+          approverFullName: s.ApproverFullName ?? s.approverFullName ?? null,
+          approvedAt: s.ApprovedAt ?? s.approvedAt ?? null,
+          note: s.Note ?? s.note ?? null,
+        }));
+        n.requiredRoles = n.requiredRoles.map((r) => ({ roleName: r.RoleName ?? r.roleName ?? null }));
+        return n;
+      }
+      function openTimelineModal(docId, docName) {
+        document.getElementById("approvalDocName").textContent = docName || "";
+        document.getElementById("approvalLoading").classList.remove("d-none");
+        document.getElementById("approvalError").classList.add("d-none");
+        document.getElementById("approvalTimelineBody").classList.add("d-none");
+        new bootstrap.Modal(document.getElementById("approvalTimelineModal")).show();
+        fetch(`/ProcurementDocuments/ApprovalTimeline/${encodeURIComponent(docId)}`)
+          .then((r) => {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then((p) => {
+            if (!p?.ok || !p?.data) throw new Error(p?.message || "Bad payload");
+            const d = normalizeTimelinePayload(p.data);
+            renderTimeline(d, docId);
+          })
+          .catch((e) => {
+            document.getElementById("approvalLoading").classList.add("d-none");
+            document.getElementById("approvalError").classList.remove("d-none");
+          });
+      }
+      function renderTimeline(d, docId) {
+        const body = document.getElementById("approvalTimelineBody"),
+          st = document.getElementById("approvalStepper"),
+          ld = document.getElementById("approvalLoading"),
+          nw = document.getElementById("nextApproverWrap"),
+          nc = document.getElementById("nextApproverChips"),
+          dsb = document.getElementById("docStatusBadge"),
+          cgb = document.getElementById("currentGateBadge");
+        st.innerHTML = "";
+        nc.innerHTML = "";
+        nw.style.display = "none";
+        cgb.classList.add("d-none");
+        const txt = d?.docStatus || "�";
+        let cls = "bg-secondary";
+        const lw = (txt || "").toLowerCase();
+        if (lw.includes("pending")) cls = "bg-warning text-dark";
+        if (lw.includes("approved")) cls = "bg-success";
+        if (lw.includes("reject")) cls = "bg-danger";
+        dsb.className = "badge rounded-pill " + cls;
+        dsb.textContent = "Status: " + txt;
+        if (d?.currentGateLevel) {
+          cgb.classList.remove("d-none");
+          cgb.textContent = "Gate: L" + d.currentGateLevel;
+        }
+        const stp = Array.isArray(d?.steps) ? d.steps.slice() : [];
+        stp.sort((a, b) => a.level - b.level || (a.roleName || "").localeCompare(b.roleName || ""));
+        if (stp.length === 0) {
+          ld.classList.add("d-none");
+          body.classList.remove("d-none");
+          st.innerHTML =
+            '<li class="timeline-item"><div class="d-flex"><div class="timeline-icon text-secondary"><i class="bi bi-lock"></i></div><div class="flex-grow-1"><div class="fw-semibold">No approval data</div></div></div></li>';
+          return;
+        }
+        stp.forEach((s) => {
+          const sts = (s.status || "").toLowerCase();
+          let ic = "lock",
+            cl = "secondary",
+            btc = "";
+          if (sts === "approved") {
+            ic = "check2-circle";
+            cl = "success";
+          } else if (sts === "rejected") {
+            ic = "x-circle";
+            cl = "danger";
+          } else if (sts === "pending") {
+            ic = "hourglass-split";
+            cl = "warning";
+            btc = "text-dark";
+          }
+          const at = s.approvedAt ? " � " + new Date(s.approvedAt).toLocaleString() : "";
+          const ap = s.approverFullName ? '<i class="bi bi-person-badge"></i> ' + s.approverFullName : "";
+          const nt = s.note ? " � " + escapeHtml(s.note) : "";
+          const li = document.createElement("li");
+          li.className = "timeline-item";
+          li.innerHTML = `<div class="d-flex"><div class="timeline-icon text-${cl}"><i class="bi bi-${ic}"></i></div><div class="flex-grow-1"><div class="d-flex align-items-center flex-wrap gap-2 mb-1"><span class="badge bg-light text-dark border">L${
+            s.level
+          }</span><span class="fw-semibold">${
+            s.roleName || "�"
+          }</span><span class="badge rounded-pill bg-${cl} ${btc} text-capitalize">${
+            s.status || "�"
+          }</span></div><div class="small text-muted">${ap}${at}${nt}</div></div></div>`;
+          st.appendChild(li);
+        });
+        if (Array.isArray(d?.requiredRoles) && d.requiredRoles.length > 0) {
+          nw.style.display = "";
+          d.requiredRoles.forEach((r) => {
+            const sp = document.createElement("span");
+            sp.className = "badge rounded-pill bg-light text-dark border me-1";
+            sp.textContent = r.roleName || "�";
+            nc.appendChild(sp);
+          });
+          const inl = document.getElementById("next-" + (d.procDocumentId || docId));
+          if (inl) {
+            inl.innerHTML = '<span class="badge bg-light text-dark border"><i class="bi bi-person-check me-1"></i>Next: ';
+            d.requiredRoles.forEach((r, i) => {
+              if (i > 0) inl.innerHTML += ", ";
+              inl.innerHTML += r.roleName || "�";
+            });
+            inl.innerHTML += "</span>";
+          }
+        }
+        ld.classList.add("d-none");
+        body.classList.remove("d-none");
+      }
+      function escapeHtml(s) {
+        if (!s) return "";
+        return s.replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+      }
+    </script>
+}
+
+@section HeadScripts {
+    <style>
+        .modal-xl {
+            max-width: 95%;
+        }
+
+        .btn-sm {
+            font-size: 0.8125rem;
+            padding: 0.25rem 0.625rem;
+        }
+
+        .upload-input-stack {
+            min-width: 200px;
+        }
+
+        .upload-dropzone {
+            border: 1px dashed var(--bs-border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            background: #fff;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+            .upload-dropzone.drag-over {
+                border-color: var(--bs-primary);
+                background: rgba(var(--bs-primary-rgb), 0.05);
+            }
+
+            .upload-dropzone.disabled {
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+        .upload-feedback {
+            min-height: 1.2rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2.5rem;
+        }
+
+            .timeline::before {
+                content: "";
+                position: absolute;
+                left: 16px;
+                top: 8px;
+                bottom: 8px;
+                width: 2px;
+                background: var(--bs-border-color);
+            }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+            .timeline-item:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+        .timeline-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--bs-border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            z-index: 1;
+        }
+
+            .timeline-icon i {
+                font-size: 1.1rem;
+            }
+
+            .timeline-icon.text-success {
+                border-color: var(--bs-success);
+                background: rgba(25, 135, 84, 0.1);
+            }
+
+            .timeline-icon.text-danger {
+                border-color: var(--bs-danger);
+                background: rgba(220, 53, 69, 0.1);
+            }
+
+            .timeline-icon.text-warning {
+                border-color: var(--bs-warning);
+                background: rgba(255, 193, 7, 0.1);
+            }
+    </style>
+}

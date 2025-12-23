@@ -1,0 +1,106 @@
+@model ProcurementHTE.Core.Models.PurchaseRequisition
+
+@{
+    ViewData["Title"] = "Delete Purchase Requisition";
+}
+
+<section class="card shadow-sm">
+    <div class="card-body">
+        <header class="mb-3">
+            <h1 class="h4 text-danger mb-1">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">
+                Are you sure you want to delete Purchase Requisition <strong>@Model.PrNumber</strong>?
+            </p>
+        </header>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">PR Number</dt>
+                    <dd class="fw-semibold">@Model.PrNumber</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Request Date</dt>
+                    <dd class="fw-semibold">@Model.RequestDate.ToString("d MMM yyyy")</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Created At</dt>
+                    <dd class="fw-semibold">@Model.CreatedAt.ToString("d MMM yyyy HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Description</dt>
+                    <dd class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.Description) ? Model.Description : "-")</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="mb-0">
+                    <dt class="text-secondary">Document</dt>
+                    <dd class="fw-semibold">
+                        @if (!string.IsNullOrEmpty(Model.DocumentFileName))
+                        {
+                            <span class="badge bg-primary">
+                                <i class="bi bi-file-earmark"></i> @Model.DocumentFileName
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        @if (Model.Procurements != null && Model.Procurements.Any())
+        {
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <dl class="mb-0">
+                        <dt class="text-secondary">Linked Procurements (@Model.Procurements.Count)</dt>
+                        <dd>
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var proc in Model.Procurements)
+                                {
+                                    <li>
+                                        <i class="bi bi-link-45deg text-info"></i>
+                                        <strong>@proc.ProcNum</strong> - @proc.JobName
+                                    </li>
+                                }
+                            </ul>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <span>Linked procurements will be unlinked but <strong>not deleted</strong>.</span>
+            </div>
+        }
+
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>This action cannot be undone. The PR document file will also be deleted.</span>
+        </div>
+
+        <form asp-action="Delete" method="post" class="d-flex gap-2 js-loading-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.PrId" />
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash-fill me-1"></i> Delete
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Cancel
+            </a>
+        </form>
+    </div>
+</section>
