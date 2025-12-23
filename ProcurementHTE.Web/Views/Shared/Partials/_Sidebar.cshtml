@@ -1,11 +1,18 @@
 ﻿<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top" hx-boost="true" hx-target="#app-content" hx-push-url="true" hx-indicator="#content-loading">
     @{
-        // Map controllers → menu groups so Html.ActiveClass/CollapseState can highlight new entries consistently.
-        @* var procurementControllers = new[] { "Procurements", "ProcurementDocuments", "Vendors" };
-        var procurementMenuShowClass = Html.CollapseState(controllers: procurementControllers);
-        var procurementMenuOpen = !string.IsNullOrEmpty(procurementMenuShowClass);
-        var procurementMenuExpanded = procurementMenuOpen ? "true" : "false";
-        var procurementMenuChevronClass = procurementMenuOpen ? "rotate" : string.Empty; *@
+        // Dashboard controllers - include all role-specific dashboard controllers
+        var dashboardControllers = new[] { 
+            "Dashboard", 
+            "AdminDashboard", 
+            "OperationDashboard", 
+            "ManagerTransportDashboard", 
+            "AnalystHteDashboard", 
+            "HteDashboard", 
+            "AssistantManagerHteDashboard", 
+            "VicePresidentDashboard", 
+            "HseDashboard", 
+            "SupplyChainManagementDashboard" 
+        };
 
         var procurementSettingsControllers = new[] { "Vendors", "JobType", "DocumentType", "DocumentApprovals", "JobTypeDocument", "DocumentApprovalRules" };
         var procurementSettingsShowClass = Html.CollapseState(controllers: procurementSettingsControllers);
@@ -35,9 +42,8 @@
 
     <ul class="nav flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100">
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Dashboard" }, actions: new[] { "Index" }))"
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: dashboardControllers))"
                data-nav-controller="Dashboard"
-               data-nav-action="Index"
                asp-controller="Dashboard"
                asp-action="Index"
                data-page="Dashboard">
@@ -59,9 +65,9 @@
 
         @* PR Service *@
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "PrService" }))" 
-            data-nav-controller="PrService" 
-            asp-controller="PrService" 
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "PurchaseRequisitions" }))" 
+            data-nav-controller="PurchaseRequisitions" 
+            asp-controller="PurchaseRequisitions" 
             asp-action="Index" 
             data-page="Index PR Service">
                 <i class="bi bi-clipboard-check"></i> 
