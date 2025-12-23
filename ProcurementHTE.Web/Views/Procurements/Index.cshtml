@@ -34,8 +34,7 @@
     var pageSize = Model.PageSize;
     Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
     var userNames = ViewBag.UserNames as IDictionary<string, string> ?? new Dictionary<string, string>();
-    Func<string?, string> resolveUserName = id =>
-    {
+    Func<string?, string> resolveUserName = id => {
         if (string.IsNullOrWhiteSpace(id))
             return "-";
         return userNames.TryGetValue(id, out var name) ? name : id;
@@ -44,8 +43,7 @@
 
 <header class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Procurements</h1>
-    @if (canCreate.Succeeded)
-    {
+    @if (canCreate.Succeeded) {
         <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
     }
 </header>
@@ -73,7 +71,7 @@
                     <label for="col_@col.Key" class="form-check-label">@col.Label</label>
                 </div>
             }
-            
+
             <div class="d-grid mt-3">
                 <button type="button" class="btn btn-primary btn-sm" id="btnApplyFilter">Apply</button>
             </div>
@@ -104,29 +102,28 @@
                 <th class="border-end text-center">Analyst</th>
                 <th class="border-end text-center">Asst. Manager</th>
                 <th class="border-end text-center">Manager</th>
-                <th class="text-center w-100">Action</th>
-
+                <th class="text-center width-10-rem">Action</th>
             </tr>
         </thead>
 
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="13" class="text-center text-muted">No Procurement data found</td>
+                    <td colspan="14" class="text-center text-muted">No Procurement data found</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
                     var latestPnl = item.ProfitLosses?
-                        .OrderByDescending(p => p.CreatedAt)
-                        .FirstOrDefault();
+                    .OrderByDescending(p => p.CreatedAt)
+                    .FirstOrDefault();
                     var revenue = latestPnl?.AccrualAmount;
                     var cost = latestPnl?.RealizationAmount;
                     var profitPercent = latestPnl != null
-                        ? latestPnl.ProfitPercent.ToString("0.##")
-                        : "-";
+                    ? latestPnl.ProfitPercent.ToString("0.##")
+                    : "-";
                     var vendorName = latestPnl?.SelectedVendor?.VendorName
-                        ?? (!string.IsNullOrWhiteSpace(latestPnl?.SelectedVendorId) ? latestPnl!.SelectedVendorId : null)
-                        ?? "-";
+                    ?? (!string.IsNullOrWhiteSpace(latestPnl?.SelectedVendorId) ? latestPnl!.SelectedVendorId : null)
+                    ?? "-";
                     var region = item.ProjectRegion.ToString();
                     var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
                     var picOps = resolveUserName(item.PicOpsUserId);
@@ -183,14 +180,13 @@
                                 <i class="bi bi-eye-fill"></i>
                                 <span class="ms-1">Detail</span>
                             </a>
-                            @if (canDelete.Succeeded)
-                            {
+                            @if (canDelete.Succeeded) {
                                 var deleteTitle = string.IsNullOrWhiteSpace(item.Wonum)
-                                    ? "Delete procurement?"
-                                    : $"Delete {item.Wonum}?";
+                                ? "Delete procurement?"
+                                : $"Delete {item.Wonum}?";
                                 var deleteMessage = string.IsNullOrWhiteSpace(item.JobName)
-                                    ? "This action cannot be undone."
-                                    : $"You are about to delete \"{item.JobName}\". This action cannot be undone.";
+                                ? "This action cannot be undone."
+                                : $"You are about to delete \"{item.JobName}\". This action cannot be undone.";
                                 <form asp-action="Delete"
                                       method="post"
                                       class="d-inline delete-form"
@@ -254,4 +250,12 @@
 
         })();
     </script>
+}
+
+@section HeadScripts {
+    <style>
+        .width-10-rem {
+            width: 10rem;
+        }
+    </style>
 }
