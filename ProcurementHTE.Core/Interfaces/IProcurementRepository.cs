@@ -24,6 +24,11 @@ namespace ProcurementHTE.Core.Interfaces
         Task<int> CountAsync(CancellationToken ct);
         Task<IReadOnlyList<ProcurementStatusCountDto>> GetCountByStatusAsync();
 
+        /// <summary>
+        /// Get all procurements for selection in PR with related data (JobType, Status, ProfitLosses with SelectedVendor)
+        /// </summary>
+        Task<IReadOnlyList<Procurement>> GetAllForSelectionAsync();
+
         // Lookup Methods
         Task<Status?> GetStatusByNameAsync(string name);
         Task<List<Status>> GetStatusesAsync();

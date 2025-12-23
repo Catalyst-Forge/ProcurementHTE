@@ -98,6 +98,19 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<Procurement>> GetAllForSelectionAsync()
+        {
+            return await _context
+                .Procurements.Include(procurement => procurement.JobType)
+                .Include(procurement => procurement.Status)
+                .Include(procurement => procurement.ProfitLosses)
+                .ThenInclude(pl => pl.SelectedVendor)
+                .AsSplitQuery()
+                .AsNoTracking()
+                .OrderByDescending(procurement => procurement.CreatedAt)
+                .ToListAsync();
+        }
+
         #endregion
 
         #region Lookup Methods
