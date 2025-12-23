@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Enums;
+using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
@@ -10,6 +10,7 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
+        public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }
         public DbSet<JobTypes> JobTypes { get; set; }
         public DbSet<JobTypeDocuments> JobTypeDocuments { get; set; }
         public DbSet<ProcDetail> ProcDetails { get; set; }
@@ -45,6 +46,7 @@ namespace ProcurementHTE.Infrastructure.Data
             // ========================================
             // ENTITY CONFIGURATIONS
             // ========================================
+            ConfigurePurchaseRequisition(builder);
             ConfigureProcurement(builder);
             ConfigureJobType(builder);
             ConfigureProcDetail(builder);
@@ -121,7 +123,45 @@ namespace ProcurementHTE.Infrastructure.Data
 
         #endregion
 
+        #region PurchaseRequisition
+
+        private static void ConfigurePurchaseRequisition(ModelBuilder builder)
+        {
+            builder.Entity<PurchaseRequisition>(entity =>
+            {
+                // Primary key
+                entity.HasKey(pr => pr.PrId);
+
+                // Properties
+                entity.Property(pr => pr.PrId).ValueGeneratedNever();
+                entity.Property(pr => pr.PrNumber).IsRequired().HasMaxLength(100);
+                entity.Property(pr => pr.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Indexes
+                entity
+                    .HasIndex(pr => pr.PrNumber)
+                    .IsUnique()
+                    .HasDatabaseName("AK_PurchaseRequisitions_PrNumber");
+
+                // Relationships
+                entity
+                    .HasOne(pr => pr.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(pr => pr.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity
+                    .HasMany(pr => pr.Procurements)
+                    .WithOne(p => p.PurchaseRequisition)
+                    .HasForeignKey(p => p.PrId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+        }
+
+        #endregion
+
         #region Procurement
+
         private static void ConfigureProcurement(ModelBuilder builder)
         {
             builder.Entity<Procurement>(entity =>
@@ -215,7 +255,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
             builder
                 .Entity<ProcOffer>()
-                .Property(procOffere => procOffere.ProcOfferId)
+                .Property(procOffer => procOffer.ProcOfferId)
                 .ValueGeneratedNever();
         }
 
@@ -512,7 +552,13 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(x => x.VendorId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(x => new { x.ProcurementId, x.VendorId, x.Round })
+                entity
+                    .HasIndex(x => new
+                    {
+                        x.ProcurementId,
+                        x.VendorId,
+                        x.Round,
+                    })
                     .IsUnique();
             });
         }
@@ -592,12 +638,14 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(r => r.IsActive).HasDefaultValue(true);
                 entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
-                entity.HasOne(r => r.DocumentType)
+                entity
+                    .HasOne(r => r.DocumentType)
                     .WithMany()
                     .HasForeignKey(r => r.DocumentTypeId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(r => r.JobType)
+                entity
+                    .HasOne(r => r.JobType)
                     .WithMany()
                     .HasForeignKey(r => r.JobTypeId)
                     .OnDelete(DeleteBehavior.NoAction);

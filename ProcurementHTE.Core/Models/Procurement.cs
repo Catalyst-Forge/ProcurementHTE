@@ -122,6 +122,7 @@ public class Procurement
     public string JobTypeId { get; set; } = null!;
     public int StatusId { get; set; }
     public string? UserId { get; set; }
+    public string? PrId { get; set; }
 
     // Nav
     [ForeignKey(nameof(JobTypeId))]
@@ -132,6 +133,9 @@ public class Procurement
 
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
+
+    [ForeignKey(nameof(PrId))]
+    public PurchaseRequisition? PurchaseRequisition { get; set; }
 
     public ICollection<ProcOffer> ProcOffers { get; set; } = [];
     public ICollection<ProcDocuments>? ProcDocuments { get; set; } = [];
