@@ -7,7 +7,7 @@ namespace ProcurementHTE.Web.Authorization
         public const string ManagerTransportRole = "Manager Transport & Logistic";
         public const string AnalystHteRole = "Analyst HTE & LTS";
         public const string HteRole = "HTE";
-        public const string OperationRole = "Operation";
+        public const string OperationRole = "Operator";
         public const string AssistantManagerHteRole = "Assistant Manager HTE";
         public const string VicePresidentRole = "Vice President";
         public const string HseRole = "HSE";
