@@ -5,21 +5,17 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
-    public static class JobTypeMovingMobilizationSeeder
+    public class JobTypeStandBySeeder
     {
         public static async Task SeedAsync(AppDbContext context, RoleManager<Role> roleManager)
         {
-            // === 0) TRANSAKSI (opsional tapi aman)
             using var tx = await context.Database.BeginTransactionAsync();
 
-            // === 1) Pastikan JobType ada (lookup by TypeName)
-            var typeName = "Moving";
-            var legacyTypeName = "Moving & Mobilization";
-            var description = "Konfigurasi dokumen untuk pengadaan Moving & Mobilization";
-
+            var typeName = "StandBy";
+            var legacyTypeName = "Stand By";
+            var description = "Konfigurasi dokumen untuk pengadaan Stand By (Jasa)";
             var jobType = await context.JobTypes.FirstOrDefaultAsync(t => t.TypeName == typeName);
 
-            // Bila data lama memakai nama berbeda, upgrade ke nama yang diinginkan
             if (jobType == null)
             {
                 jobType = await context.JobTypes.FirstOrDefaultAsync(t =>
@@ -53,7 +49,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 }
             }
 
-            // === 2) Pastikan DocumentTypes yang diperlukan ada (lookup by Name)
             var docNames = new[]
             {
                 "Memorandum",
@@ -75,16 +70,15 @@ namespace ProcurementHTE.Infrastructure.Data
                 .DocumentTypes.Where(d => docNames.Contains(d.Name))
                 .ToListAsync();
 
-            // Tambah yang belum ada
             foreach (var name in docNames.Except(existingDocs.Select(d => d.Name)))
             {
                 var dt = new DocumentType { Name = name, Description = name };
                 context.DocumentTypes.Add(dt);
                 existingDocs.Add(dt);
             }
+
             await context.SaveChangesAsync();
 
-            // Helper: ambil DocumentType by Name
             DocumentType DT(string name)
             {
                 var dt = existingDocs.FirstOrDefault(d => d.Name == name);
@@ -94,10 +88,10 @@ namespace ProcurementHTE.Infrastructure.Data
                     context.DocumentTypes.Add(dt);
                     existingDocs.Add(dt);
                 }
+
                 return dt;
             }
 
-            // === 3) Konfigurasi JobTypeDocuments (idempotent, lookup by (JobTypeId, DocumentTypeId))
             var configDocuments = new (
                 string Name,
                 int Seq,
@@ -176,7 +170,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     true,
                     false,
                     true,
-                    "BOQ digenerate otomatis oleh sistem",
+                    "BOQ di-generate otomatis oleh sistem",
                     null
                 ),
                 (
@@ -236,26 +230,24 @@ namespace ProcurementHTE.Infrastructure.Data
                     true,
                     false,
                     true,
-                    "Justifikasi (>=300jt, approval kondisional saat generate flow)",
+                    "Justifikasi (>= 300 jt, approval kondisional saat generate flow)",
                     null
                 ),
             };
 
-            // DbSet bisa bernama JobTypesDocuments (lihat log EF). Untuk aman gunakan Set<JobTypeDocuments>()
             var wtdSet = context.Set<JobTypeDocuments>();
-
             var skipAlwaysDocs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "Surat Penawaran Harga",
                 "Surat Negosiasi Harga",
             };
 
-            foreach (var c in configDocuments)
+            foreach (var config in configDocuments)
             {
-                if (skipAlwaysDocs.Contains(c.Name))
-                    continue; // SPH/SNH tidak dikonfigurasi via JobTypeDocuments
+                if (skipAlwaysDocs.Contains(config.Name))
+                    continue;
 
-                var dt = DT(c.Name);
+                var dt = DT(config.Name);
                 bool exists = await wtdSet.AnyAsync(x =>
                     x.JobTypeId == jobType.JobTypeId && x.DocumentTypeId == dt.DocumentTypeId
                 );
@@ -267,24 +259,24 @@ namespace ProcurementHTE.Infrastructure.Data
                         {
                             JobTypeId = jobType.JobTypeId,
                             DocumentTypeId = dt.DocumentTypeId,
-                            Sequence = c.Seq,
-                            IsMandatory = c.Mandatory,
-                            IsGenerated = c.Generated,
-                            IsUploadRequired = c.UploadReq,
-                            RequiresApproval = c.RequiresApproval,
-                            Note = c.Note,
-                            ProcurementCategory = c.Category,
+                            Sequence = config.Seq,
+                            IsMandatory = config.Mandatory,
+                            IsGenerated = config.Generated,
+                            IsUploadRequired = config.UploadReq,
+                            RequiresApproval = config.RequiresApproval,
+                            Note = config.Note,
+                            ProcurementCategory = config.Category,
                         }
                     );
                 }
             }
+
             await context.SaveChangesAsync();
 
-            // === 4) Approvals (tambahkan hanya jika ada Role-nya & belum ada barisnya)
             async Task<string?> GetRoleIdOrNullAsync(string roleName)
             {
                 var role = await roleManager.FindByNameAsync(roleName);
-                return role?.Id; // jangan melempar; biarkan skip kalau role belum ada
+                return role?.Id;
             }
 
             async Task AddApprovalIfMissing(string docName, string roleName, int level)
@@ -296,14 +288,13 @@ namespace ProcurementHTE.Infrastructure.Data
 
                 var roleId = await GetRoleIdOrNullAsync(roleName);
                 if (roleId == null)
-                    return; // role belum ada, lewati saja
+                    return;
 
                 bool exists = await context.DocumentApprovals.AnyAsync(a =>
                     a.JobTypeDocumentId == wtd.JobTypeDocumentId
                     && a.RoleId == roleId
                     && a.Level == level
                 );
-
                 if (!exists)
                 {
                     context.DocumentApprovals.Add(
@@ -350,7 +341,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Owner Estimate (OE)",
                     new[] { ("Assistant Manager HTE", 1), ("Manager Transport & Logistic", 2) }
                 ),
-                ("Purchase Requisition", new[] { ("Manager Transport & Logistic", 1) }),
             };
 
             foreach (var (doc, steps) in approvalMatrix)

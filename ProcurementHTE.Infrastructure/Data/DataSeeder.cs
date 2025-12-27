@@ -13,9 +13,13 @@ namespace ProcurementHTE.Infrastructure.Data
             var roleManager = services.GetRequiredService<RoleManager<Role>>();
 
             // jalankan tiap seeder (urutan penting)
-            await RoleUserSeeder.SeedAsync(userManager, roleManager, db);
+            await StatusSeeder.SeedAsync(db);
+            await RoleSeeder.SeedAsync(roleManager);
+            await UserSeeder.SeedAsync(userManager);
             await JobTypeSeeder.SeedAsync(db, roleManager);
             await JobTypeMovingMobilizationSeeder.SeedAsync(db, roleManager);
+            await JobTypeAngkutanSeeder.SeedAsync(db, roleManager);
+            await JobTypeStandBySeeder.SeedAsync(db, roleManager);
             await DocumentApprovalRuleSeeder.SeedAsync(db, roleManager);
             await VendorSeeder.SeedAsync(db);
             await ProcurementSeeder.SeedAsync(db);

@@ -29,7 +29,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 },
                 new()
                 {
-                    TypeName = "SPOT Angkutan",
+                    TypeName = "Angkutan",
                     Description = "Order spot untuk kebutuhan pengangkutan cepat",
                 },
                 new() { TypeName = "Other", Description = "Tipe lain di luar kategori yang ada" },
