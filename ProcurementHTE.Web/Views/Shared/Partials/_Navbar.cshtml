@@ -1,4 +1,13 @@
-﻿<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white shadow-sm mb-3">
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var fullName = user?.FullName;
+    var email = user?.Email;
+}
+
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white shadow-sm mb-3">
   <div class="container-fluid">
     <button class="btn d-lg-none border" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
       <i class="bi bi-arrow-bar-right"></i>
@@ -11,10 +20,7 @@
 
     <div class="navbar-collapse collapse d-sm-flex justify-content-end">
       <ul class="navbar-nav gap-2">
-        @if (User.Identity?.IsAuthenticated == true) {
-          var fullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
-          var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-          
+        @if (User.Identity?.IsAuthenticated == true) {          
           <li class="nav-item dropdown">
             <button type="button" class="btn btn-sm fs-4 dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" area-expanded="false"><i class="bi bi-person-circle"></i></button>
 
