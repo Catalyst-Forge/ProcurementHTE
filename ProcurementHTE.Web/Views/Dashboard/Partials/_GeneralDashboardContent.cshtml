@@ -1,83 +1,424 @@
-@model ProcurementHTE.Web.Models.ViewModels.DashboardSummaryViewModel
+@using System.Text.Json
+@model ProcurementHTE.Web.Models.ViewModels.DashboardViewModel
 
-<div class="d-flex flex-wrap justify-content-between align-items-center mt-4 mb-4 gap-2">
-    <div>
-        <h1 class="h3 mb-1">Dashboard</h1>
-        <div class="text-muted small">
-            <i class="bi bi-clock"></i> @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard Procurement - @Model.RoleName
+        </h1>
+        <div class="text-muted">
+            <i class="bi bi-clock me-1"></i>
+            <span id="currentDateTime"></span>
         </div>
     </div>
-    <span class="badge text-bg-secondary">@Model.RoleName</span>
-</div>
 
-<div class="row g-3 mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
+    <!-- Statistics Cards Row -->
+    <div class="row g-3 mb-4">
+        <!-- Total Procurements -->
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Procurement</p>
+                            <h3 class="mb-0 fw-bold">@Model.TotalProcurements</h3>
+                            <small class="text-success">
+                                <i class="bi bi-activity"></i>
+                                @Model.ActiveProcurements Active
+                            </small>
+                        </div>
                         <div class="bg-primary bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-people-fill text-primary fs-4"></i>
+                            <i class="bi bi-cart-check fs-2 text-primary"></i>
                         </div>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Total Users</div>
-                        <div class="fs-4 fw-bold">@Model.TotalUsers</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <div class="bg-success bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-graph-up-arrow text-success fs-4"></i>
+        <!-- Pending Approvals -->
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Pending Approvals</p>
+                            <h3 class="mb-0 fw-bold">@Model.PendingApprovals</h3>
+                            <small class="text-warning">
+                                <i class="bi bi-hourglass-split"></i>
+                                Memerlukan Persetujuan
+                            </small>
                         </div>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Revenue</div>
-                        <div class="fs-4 fw-bold">Rp @Model.TotalRevenueThisMonth.ToString("N0")</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
                         <div class="bg-warning bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-cart-check-fill text-warning fs-4"></i>
+                            <i class="bi bi-clipboard-check fs-2 text-warning"></i>
                         </div>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Total Procurements</div>
-                        <div class="fs-4 fw-bold">@Model.TotalProcurements</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
+        <!-- Total Vendors -->
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Vendor</p>
+                            <h3 class="mb-0 fw-bold">@Model.TotalVendors</h3>
+                            <small class="text-info">
+                                <i class="bi bi-people"></i>
+                                Vendor Terdaftar
+                            </small>
+                        </div>
                         <div class="bg-info bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-check2-circle text-info fs-4"></i>
+                            <i class="bi bi-building fs-2 text-info"></i>
                         </div>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Approval Status</div>
-                        <div class="fs-4 fw-bold">@((Model.ApprovalStatus?.Sum(x => x.Count)) ?? 0)</div>
-                        <div class="text-muted small">Approved / Pending / Rejected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Revenue -->
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Revenue</p>
+                            <h3 class="mb-0 fw-bold">@Model.TotalRevenue.ToString("N0")</h3>
+                            <small class="text-success">
+                                <i class="bi bi-graph-up-arrow"></i>
+                                Profit: @Model.TotalProfit.ToString("N0")
+                            </small>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                            <i class="bi bi-currency-dollar fs-2 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Purchase Requisitions -->
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Purchase Requisitions</p>
+                            <h3 class="mb-0 fw-bold">@Model.TotalPurchaseRequisitions</h3>
+                            <small class="text-primary">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Total PR
+                            </small>
+                        </div>
+                        <div class="bg-purple bg-opacity-10 rounded-3 p-3" style="background-color: rgba(111, 66, 193, 0.1);">
+                            <i class="bi bi-file-earmark-ruled fs-2" style="color: #6f42c1;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Summary Card -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Ringkasan Keuangan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">Total Revenue</p>
+                            <h4 class="text-primary mb-0">Rp @Model.TotalRevenue.ToString("N0")</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">Total Cost</p>
+                            <h4 class="text-danger mb-0">Rp @Model.TotalCost.ToString("N0")</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">Net Profit</p>
+                            <h4 class="text-success mb-0">Rp @Model.TotalProfit.ToString("N0")</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">Profit Margin</p>
+                            <h4 class="text-info mb-0">@Model.ProfitMargin%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+        <!-- Procurement Status Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Procurement by Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="procurementStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Type Distribution Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Procurement by Job Type
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="jobTypeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend Chart -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Tren Procurement (12 Bulan Terakhir)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyTrendChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables Row -->
+    <div class="row g-3 mb-4">
+        <!-- Recent Procurements -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Procurement Terbaru
+                    </h5>
+                    <a asp-controller="Procurements" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                        Lihat Semua <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Proc Number</th>
+                                    <th>Job Type</th>
+                                    <th>Status</th>
+                                    <th>Created By</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var proc in Model.RecentProcurements)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@proc.ProcNum</strong>
+                                            <br>
+                                            <small class="text-muted">@proc.CreatedDate.ToString("dd MMM yyyy")</small>
+                                        </td>
+                                        <td>@proc.JobTypeName</td>
+                                        <td>
+                                            <span class="badge bg-@(GetStatusBadgeClass(proc.StatusName))">
+                                                @proc.StatusName
+                                            </span>
+                                        </td>
+                                        <td><small>@proc.CreatedBy</small></td>
+                                        <td class="text-end">
+                                            <strong>Rp @proc.TotalAmount.ToString("N0")</strong>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-circle me-2"></i>Pending Approvals
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Procurement</th>
+                                    <th>Document</th>
+                                    <th>Role</th>
+                                    <th class="text-center">Days</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var approval in Model.PendingApprovalsDetail)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@approval.ProcNum</strong>
+                                        </td>
+                                        <td>
+                                            <small>@approval.DocumentName</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">@approval.ApprovalRole</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-@(approval.DaysWaiting > 3 ? "danger" : "warning")">
+                                                @approval.DaysWaiting
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Vendors Table -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-trophy me-2"></i>Top 10 Vendor Performance
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vendor Code</th>
+                                    <th>Vendor Name</th>
+                                    <th class="text-center">Total Offers</th>
+                                    <th class="text-center">Selected</th>
+                                    <th class="text-center">Win Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.TopVendors.Count; i++)
+                                {
+                                    var vendor = Model.TopVendors[i];
+                                    <tr>
+                                        <td><strong>@(i + 1)</strong></td>
+                                        <td>@vendor.VendorCode</td>
+                                        <td>@vendor.VendorName</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">@vendor.OfferCount</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">@vendor.SelectedCount</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-@(GetWinRateClass(vendor.WinRate))"
+                                                     role="progressbar"
+                                                     style="width: @(vendor.WinRate)%"
+                                                     aria-valuenow="@vendor.WinRate"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    @vendor.WinRate%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Purchase Requisitions Table -->
+    <div class="row g-3">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-ruled me-2"></i>Purchase Requisitions Terbaru
+                    </h5>
+                    <a asp-controller="PurchaseRequisitions" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                        Lihat Semua <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>PR Number</th>
+                                    <th>Request Date</th>
+                                    <th>Description</th>
+                                    <th>Created By</th>
+                                    <th class="text-center">Procurements</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RecentPurchaseRequisitions.Any())
+                                {
+                                    @foreach (var pr in Model.RecentPurchaseRequisitions)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@pr.PrNumber</strong>
+                                            </td>
+                                            <td>@pr.RequestDate.ToString("dd MMM yyyy")</td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @(string.IsNullOrEmpty(pr.Description) ? "-" : (pr.Description.Length > 50 ? pr.Description.Substring(0, 50) + "..." : pr.Description))
+                                                </small>
+                                            </td>
+                                            <td><small>@pr.CreatedBy</small></td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary">@pr.ProcurementCount</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@pr.CreatedAt.ToString("dd MMM yyyy HH:mm")</small>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                            Belum ada Purchase Requisition
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -85,37 +426,99 @@
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-12">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Profit &amp; Loss Overview</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="revenueChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
+<script>
+    // Update current date time
+    function updateDateTime() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const element = document.getElementById('currentDateTime');
+        if (element) {
+            element.textContent = now.toLocaleDateString('id-ID', options);
+        }
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
 
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Approval Status</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="approvalStatusChart"></canvas>
-            </div>
-        </div>
-    </div>
+    // Chart.js default config
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    }
 
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-white border-0 py-3">
-                <h5 class="mb-0">Procurements by Status</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="procurementStatusChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
+    // Job Type Distribution Chart (Bar)
+    const jobTypeData = @Html.Raw(JsonSerializer.Serialize(Model.JobTypeDistribution, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    if (document.getElementById('jobTypeChart') && typeof Chart !== 'undefined') {
+        const jobTypeChart = new Chart(document.getElementById('jobTypeChart'), {
+            type: 'bar',
+            data: {
+                labels: jobTypeData.map(item => item.jobTypeName),
+                datasets: [{
+                    label: 'Count',
+                    data: jobTypeData.map(item => item.count),
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgb(13, 110, 253)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // Monthly Trend Chart (Line)
+    const monthlyData = @Html.Raw(JsonSerializer.Serialize(Model.MonthlyProcurementTrend, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    if (document.getElementById('monthlyTrendChart') && typeof Chart !== 'undefined') {
+        const monthlyChart = new Chart(document.getElementById('monthlyTrendChart'), {
+            type: 'line',
+            data: {
+                labels: monthlyData.map(item => item.monthYear),
+                datasets: [{
+                    label: 'Procurement Count',
+                    data: monthlyData.map(item => item.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+</script>
+
+@functions {
+    string GetStatusBadgeClass(string status) {
+        return status?.ToLower() switch {
+            "created" => "success",
+            "draft" => "secondary",
+            "in progress" => "primary",
+            "completed" => "info",
+            _ => "danger"
+        };
+    }
+
+    string GetWinRateClass(decimal winRate) {
+        return winRate switch {
+            >= 70 => "success",
+            >= 40 => "info",
+            >= 20 => "warning",
+            _ => "danger"
+        };
+    }
+}
