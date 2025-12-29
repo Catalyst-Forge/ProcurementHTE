@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Web.Authorization;
 
 namespace ProcurementHTE.Web.Controllers.Dashboard
@@ -15,9 +16,11 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             IProcurementService procurementService,
             UserManager<User> userManager,
             IProfitLossService profitLossService,
-            IDashboardService dashboardService
+            IDashboardService dashboardService,
+            AppDbContext context
         )
-            : base(procurementService, userManager, profitLossService, dashboardService) { }
+            : base(procurementService, userManager, profitLossService, dashboardService, context)
+        { }
 
         [HttpGet("")]
         public Task<IActionResult> Index(CancellationToken ct = default) =>
