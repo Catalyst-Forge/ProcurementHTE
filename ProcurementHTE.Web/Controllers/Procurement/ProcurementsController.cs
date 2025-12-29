@@ -1898,7 +1898,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private async Task PopulateCreateUserSelectListsAsync(ProcurementCreateViewModel viewModel)
         {
             viewModel.PicOpsUsers = await BuildUserSelectListAsync(
-                "Operation",
+                "Operator",
                 viewModel.Procurement.PicOpsUserId
             );
             viewModel.AnalystUsers = await BuildUserSelectListAsync(
