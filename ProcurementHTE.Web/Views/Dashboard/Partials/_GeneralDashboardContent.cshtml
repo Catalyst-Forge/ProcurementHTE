@@ -56,48 +56,6 @@
             </div>
         </div>
 
-        <!-- Total Vendors -->
-        <div class="col-xl col-md-4 col-sm-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small">Total Vendor</p>
-                            <h3 class="mb-0 fw-bold">@Model.TotalVendors</h3>
-                            <small class="text-info">
-                                <i class="bi bi-people"></i>
-                                Vendor Terdaftar
-                            </small>
-                        </div>
-                        <div class="bg-info bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-building fs-2 text-info"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Revenue -->
-        <div class="col-xl col-md-4 col-sm-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small">Total Revenue</p>
-                            <h3 class="mb-0 fw-bold">@Model.TotalRevenue.ToString("N0")</h3>
-                            <small class="text-success">
-                                <i class="bi bi-graph-up-arrow"></i>
-                                Profit: @Model.TotalProfit.ToString("N0")
-                            </small>
-                        </div>
-                        <div class="bg-success bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-currency-dollar fs-2 text-success"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Total Purchase Requisitions -->
         <div class="col-xl col-md-4 col-sm-6">
             <div class="card shadow-sm h-100">
@@ -153,53 +111,6 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="row g-3 mb-4">
-        <!-- Procurement Status Chart -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">
-                        <i class="bi bi-pie-chart me-2"></i>Procurement by Status
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="procurementStatusChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Job Type Distribution Chart -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">
-                        <i class="bi bi-bar-chart me-2"></i>Procurement by Job Type
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="jobTypeChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Monthly Trend Chart -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">
-                        <i class="bi bi-graph-up-arrow me-2"></i>Tren Procurement (12 Bulan Terakhir)
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="monthlyTrendChart" height="100"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Data Tables Row -->
     <div class="row g-3 mb-4">
         <!-- Recent Procurements -->
@@ -226,8 +137,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var proc in Model.RecentProcurements)
-                                {
+                                @foreach (var proc in Model.RecentProcurements) {
                                     <tr>
                                         <td>
                                             <strong>@proc.ProcNum</strong>
@@ -273,8 +183,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var approval in Model.PendingApprovalsDetail)
-                                {
+                                @foreach (var approval in Model.PendingApprovalsDetail) {
                                     <tr>
                                         <td>
                                             <strong>@approval.ProcNum</strong>
@@ -295,6 +204,69 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+        <!-- Procurement Status Chart -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Procurement by Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="procurementStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Type Distribution Chart -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Procurement by Job Type
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="jobTypeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Charts Row - Trends -->
+    <div class="row g-3 mb-4">
+        <!-- Monthly Procurement Trend Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Tren Procurement (12 Bulan Terakhir)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyTrendChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Purchase Requisition Trend Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i>Tren Purchase Requisition (12 Bulan Terakhir)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="purchaseRequisitionChart" height="200"></canvas>
                 </div>
             </div>
         </div>
@@ -426,6 +398,9 @@
     </div>
 </div>
 
+@* Include Dashboard Charts Scripts *@
+@await Html.PartialAsync("~/Views/Dashboard/Partials/_DashboardChartsScripts.cshtml", Model)
+
 <script>
     // Update current date time
     function updateDateTime() {
@@ -438,68 +413,6 @@
     }
     updateDateTime();
     setInterval(updateDateTime, 60000);
-
-    // Chart.js default config
-    if (typeof Chart !== 'undefined') {
-        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-    }
-
-    // Job Type Distribution Chart (Bar)
-    const jobTypeData = @Html.Raw(JsonSerializer.Serialize(Model.JobTypeDistribution, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
-    if (document.getElementById('jobTypeChart') && typeof Chart !== 'undefined') {
-        const jobTypeChart = new Chart(document.getElementById('jobTypeChart'), {
-            type: 'bar',
-            data: {
-                labels: jobTypeData.map(item => item.jobTypeName),
-                datasets: [{
-                    label: 'Count',
-                    data: jobTypeData.map(item => item.count),
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                    borderColor: 'rgb(13, 110, 253)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    }
-
-    // Monthly Trend Chart (Line)
-    const monthlyData = @Html.Raw(JsonSerializer.Serialize(Model.MonthlyProcurementTrend, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
-    if (document.getElementById('monthlyTrendChart') && typeof Chart !== 'undefined') {
-        const monthlyChart = new Chart(document.getElementById('monthlyTrendChart'), {
-            type: 'line',
-            data: {
-                labels: monthlyData.map(item => item.monthYear),
-                datasets: [{
-                    label: 'Procurement Count',
-                    data: monthlyData.map(item => item.count),
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    }
 </script>
 
 @functions {

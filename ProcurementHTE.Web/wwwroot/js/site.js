@@ -7,7 +7,7 @@
 
   const SELECTORS = {
     navLink: "[data-nav-controller]",
-    collapse: "[data-nav-collapse]"
+    collapse: "[data-nav-collapse]",
   };
 
   const parseList = (value) =>
@@ -56,9 +56,7 @@
   const updateHxBoost = (controller, action) => {
     const main = document.getElementById("app-content");
     if (!main) return;
-    const heavyPnL =
-      controller === "procurements" &&
-      (action === "createprofitloss" || action === "editprofitloss");
+    const heavyPnL = controller === "procurements" && (action === "createprofitloss" || action === "editprofitloss");
     main.setAttribute("hx-boost", heavyPnL ? "false" : "true");
   };
 
@@ -154,8 +152,7 @@
     if (!target) {
       return;
     }
-    const shouldSelfExecuteScripts =
-      window.htmx && window.htmx.config && window.htmx.config.allowScriptTags === false;
+    const shouldSelfExecuteScripts = window.htmx && window.htmx.config && window.htmx.config.allowScriptTags === false;
     if (shouldSelfExecuteScripts) {
       executeScripts(target);
     }
@@ -332,8 +329,8 @@
         target instanceof HTMLFormElement
           ? target
           : target && typeof target.closest === "function"
-            ? target.closest("form")
-            : null;
+          ? target.closest("form")
+          : null;
       if (!form || !shouldApplyLoadingOverlay(form)) {
         return;
       }
@@ -395,10 +392,7 @@
   const hxLoadingRequests = new WeakMap();
 
   const isHistoryRestoreRequest = (eventDetail) => {
-    const headers =
-      eventDetail?.headers ||
-      eventDetail?.requestConfig?.headers ||
-      eventDetail?.xhrConfig?.headers;
+    const headers = eventDetail?.headers || eventDetail?.requestConfig?.headers || eventDetail?.xhrConfig?.headers;
     if (!headers) {
       return false;
     }
@@ -469,10 +463,17 @@
     }
   };
 
-  ["htmx:afterSwap", "htmx:afterOnLoad", "htmx:responseError", "htmx:sendError", "htmx:timeout", "htmx:abort", "htmx:swapError"].forEach((evtName) => {
+  [
+    "htmx:afterSwap",
+    "htmx:afterOnLoad",
+    "htmx:responseError",
+    "htmx:sendError",
+    "htmx:timeout",
+    "htmx:abort",
+    "htmx:swapError",
+  ].forEach((evtName) => {
     document.body.addEventListener(evtName, releaseHxOverlay);
   });
-
 
   async function confirmAction(options = {}) {
     const config = { ...DEFAULT_CONFIRM, ...options };
@@ -497,56 +498,95 @@
     return window.confirm(config.text || config.title || DEFAULT_CONFIRM.text);
   }
 
-  document.addEventListener("submit", (event) => {
-    const target = event.target;
-    const form =
-      target instanceof HTMLFormElement
-        ? target
-        : target && typeof target.closest === "function"
+  document.addEventListener(
+    "submit",
+    (event) => {
+      const target = event.target;
+      const form =
+        target instanceof HTMLFormElement
+          ? target
+          : target && typeof target.closest === "function"
           ? target.closest("form")
           : null;
-    if (!form || !form.classList.contains("delete-form") || form.dataset.confirming === "true") {
-      return;
-    }
+      if (!form || !form.classList.contains("delete-form") || form.dataset.confirming === "true") {
+        return;
+      }
 
-    event.preventDefault();
-    event.stopPropagation();
-    if (typeof event.stopImmediatePropagation === "function") {
-      event.stopImmediatePropagation();
-    }
-    if (form.dataset.confirmPending === "true") {
-      return;
-    }
-    form.dataset.confirmPending = "true";
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation();
+      }
+      if (form.dataset.confirmPending === "true") {
+        return;
+      }
+      form.dataset.confirmPending = "true";
 
-    const title = decodeHtml(form.dataset.confirmTitle) || DEFAULT_CONFIRM.title;
-    const message = decodeHtml(form.dataset.confirmMessage) || DEFAULT_CONFIRM.text;
-    const html = decodeHtml(form.dataset.confirmHtml);
-    const confirmText = form.dataset.confirmConfirm || "Delete";
-    const cancelText = form.dataset.confirmCancel || DEFAULT_CONFIRM.cancelButtonText;
+      const title = decodeHtml(form.dataset.confirmTitle) || DEFAULT_CONFIRM.title;
+      const message = decodeHtml(form.dataset.confirmMessage) || DEFAULT_CONFIRM.text;
+      const html = decodeHtml(form.dataset.confirmHtml);
+      const confirmText = form.dataset.confirmConfirm || "Delete";
+      const cancelText = form.dataset.confirmCancel || DEFAULT_CONFIRM.cancelButtonText;
 
-    confirmAction({
-      title,
-      text: html ? undefined : message,
-      html,
-      confirmButtonText: confirmText,
-      cancelButtonText: cancelText,
-      confirmButtonColor: form.dataset.confirmConfirmColor,
-      cancelButtonColor: form.dataset.confirmCancelColor,
-    })
-      .then((confirmed) => {
-        form.dataset.confirmPending = "false";
-        if (confirmed) {
-          form.dataset.confirming = "true";
-          if (typeof form.requestSubmit === "function") {
-            form.requestSubmit();
-          } else {
-            form.submit();
-          }
-        }
+      confirmAction({
+        title,
+        text: html ? undefined : message,
+        html,
+        confirmButtonText: confirmText,
+        cancelButtonText: cancelText,
+        confirmButtonColor: form.dataset.confirmConfirmColor,
+        cancelButtonColor: form.dataset.confirmCancelColor,
       })
-      .catch(() => {
-        form.dataset.confirmPending = "false";
+        .then((confirmed) => {
+          form.dataset.confirmPending = "false";
+          if (confirmed) {
+            form.dataset.confirming = "true";
+            if (typeof form.requestSubmit === "function") {
+              form.requestSubmit();
+            } else {
+              form.submit();
+            }
+          }
+        })
+        .catch(() => {
+          form.dataset.confirmPending = "false";
+        });
+    },
+    true
+  );
+})();
+
+// Handle logout to notify SignalR before disconnecting
+(function () {
+  "use strict";
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const logoutForm = document.getElementById("logout-form");
+
+    if (logoutForm) {
+      logoutForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        console.log("Logout form submitted - notifying SignalR...");
+
+        // Try to notify SignalR of logout
+        if (window.dashboardConnection && window.dashboardConnection.state === 0) {
+          // 0 = Connected state
+          try {
+            await window.dashboardConnection.invoke("NotifyLogout");
+            console.log("✓ SignalR notified of logout");
+          } catch (err) {
+            console.error("Failed to notify SignalR:", err);
+          }
+
+          // Give it a moment to broadcast
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+
+        // Now submit the form
+        console.log("Proceeding with logout...");
+        logoutForm.submit();
       });
-  }, true);
+    }
+  });
 })();
