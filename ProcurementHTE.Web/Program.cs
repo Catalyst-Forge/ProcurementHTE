@@ -25,6 +25,13 @@ builder.Services.AddHttpClient("MinioProxy");
 builder.Services.Configure<SecurityBypassOptions>(
     builder.Configuration.GetSection("SecurityBypass")
 );
+
+// SignalR for real-time updates
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<
+    ProcurementHTE.Core.Interfaces.IUserActivityNotifier,
+    ProcurementHTE.Infrastructure.Services.UserActivityNotifier<ProcurementHTE.Web.Hubs.DashboardHub>
+>();
 var app = builder.Build();
 
 // ==================== ENSURE TEMPLATES DIRECTORY EXISTS ====================
@@ -63,6 +70,9 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapControllers();
 app.MapControllerRoute(name: "default", pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+
+// Map SignalR hub
+app.MapHub<ProcurementHTE.Web.Hubs.DashboardHub>("/hubs/dashboard");
 
 // ===== Migrate & Seed =====
 using (var scope = app.Services.CreateScope())

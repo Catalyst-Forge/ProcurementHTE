@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Infrastructure.Data;
+using ProcurementHTE.Web.Mappers;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.Dashboard
@@ -16,21 +15,18 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
         protected readonly UserManager<User> UserManager;
         protected readonly IProfitLossService ProfitLossService;
         protected readonly IDashboardService DashboardService;
-        protected readonly AppDbContext Context;
 
         protected DashboardBaseController(
             IProcurementService procurementService,
             UserManager<User> userManager,
             IProfitLossService profitLossService,
-            IDashboardService dashboardService,
-            AppDbContext context
+            IDashboardService dashboardService
         )
         {
             ProcurementService = procurementService;
             UserManager = userManager;
             ProfitLossService = profitLossService;
             DashboardService = dashboardService;
-            Context = context;
         }
 
         protected async Task<DashboardViewModel> BuildDashboardAsync(
@@ -55,6 +51,22 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             var revenuePerMonth = await DashboardService.GetRevenuePerMonthAsync(DateTime.Now.Year);
             var approvalStatus = await DashboardService.GetApprovalStatusCountsAsync();
 
+            // Fetch DTOs from service layer
+            var recentProcsDto = await DashboardService.GetRecentProcurementsAsync(10, ct);
+            var pendingApprovalsDto = await DashboardService.GetPendingApprovalsDetailAsync(10, ct);
+            var jobTypeDistDto = await DashboardService.GetJobTypeDistributionAsync(ct);
+            var topVendorsDto = await DashboardService.GetTopVendorsAsync(10, ct);
+            var monthlyTrendDto = await DashboardService.GetMonthlyProcurementTrendAsync(ct);
+            var monthlyPrTrendDto = await DashboardService.GetMonthlyPurchaseRequisitionTrendAsync(
+                ct
+            );
+            var procsByStatusDto = await DashboardService.GetProcurementsByStatusAsync(ct);
+            var docApprovalStatsDto = await DashboardService.GetDocumentApprovalStatsAsync(ct);
+            var recentPurchaseReqsDto = await DashboardService.GetRecentPurchaseRequisitionsAsync(
+                10,
+                ct
+            );
+
             var model = new DashboardViewModel
             {
                 RoleName = roleName,
@@ -75,150 +87,44 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                     })
                     .ToList(),
 
-                // Status Counts
+                // Status Counts - DTOs only for chart data
                 ProcurementStatusCounts = procurementsByStatus,
                 RevenuePerMonth = revenuePerMonth,
                 ApprovalStatus = approvalStatus,
 
                 // Core Metrics
-                ActiveProcurements = await Context
-                    .Procurements.Where(p => p.Status != null)
-                    .CountAsync(
-                        p =>
-                            p.Status!.StatusName == "Created"
-                            || p.Status!.StatusName == "In Progress",
-                        ct
-                    ),
-                PendingApprovals = await Context.ProcDocumentApprovals.CountAsync(
-                    a => a.Status == "Pending",
-                    ct
-                ),
-                TotalVendors = await Context.Vendors.CountAsync(ct),
+                ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
+                PendingApprovals = await DashboardService.GetPendingApprovalsCountAsync(ct),
+                TotalVendors = await DashboardService.GetTotalVendorsCountAsync(ct),
 
                 // Financial Data
-                TotalRevenue =
-                    await Context.ProfitLossItems.SumAsync(pnl => (decimal?)pnl.Revenue, ct) ?? 0m,
-                TotalCost =
-                    await Context.ProfitLosses.SumAsync(
-                        pnl => (decimal?)pnl.SelectedVendorFinalOffer,
-                        ct
-                    ) ?? 0m,
-                TotalProfit =
-                    await Context.ProfitLosses.SumAsync(pnl => (decimal?)pnl.Profit, ct) ?? 0m,
+                TotalRevenue = await DashboardService.GetTotalRevenueAsync(ct),
+                TotalCost = await DashboardService.GetTotalCostAsync(ct),
+                TotalProfit = await DashboardService.GetTotalProfitAsync(ct),
 
-                MonthlyProcurementTrend = await GetMonthlyProcurementTrendAsync(ct),
-
-                // Detailed Lists
-                RecentProcurements = await Context
-                    .Procurements.Include(proc => proc.Status)
-                    .Include(proc => proc.JobType)
-                    .Include(proc => proc.User)
-                    .Include(proc => proc.ProfitLosses)
-                    .ThenInclude(pl => pl.Items)
-                    .OrderByDescending(proc => proc.CreatedAt)
-                    .Take(10)
-                    .Select(proc => new ProcurementSummary
-                    {
-                        ProcNum = proc.ProcNum,
-                        JobTypeName = proc.JobType != null ? proc.JobType.TypeName : string.Empty,
-                        StatusName = proc.Status != null ? proc.Status.StatusName : string.Empty,
-                        CreatedBy = proc.User != null ? proc.User.FullName! : string.Empty,
-                        CreatedDate = proc.CreatedAt,
-                        TotalAmount =
-                            proc.ProfitLosses.SelectMany(pl => pl.Items)
-                                .Sum(item => (decimal?)item.Revenue)
-                            ?? 0m,
-                    })
-                    .ToListAsync(ct),
-
-                PendingApprovalsDetail = await Context
-                    .ProcDocumentApprovals.Include(a => a.ProcDocument)
-                    .ThenInclude(d => d.Procurement)
-                    .Include(a => a.Role)
-                    .Where(a => a.Status == "Pending")
-                    .OrderByDescending(a => a.ProcDocument.CreatedAt)
-                    .Take(10)
-                    .Select(a => new ApprovalSummary
-                    {
-                        ProcNum = a.ProcDocument.Procurement.ProcNum,
-                        DocumentName = a.ProcDocument.FileName,
-                        ApprovalRole = a.Role != null ? a.Role.Name! : string.Empty,
-                        CreatedDate = a.ProcDocument.CreatedAt,
-                    })
-                    .ToListAsync(ct),
-
-                JobTypeDistribution = await Context
-                    .Procurements.Include(proc => proc.ProfitLosses)
-                    .ThenInclude(pl => pl.Items)
-                    .Where(proc => proc.JobType != null)
-                    .GroupBy(proc => proc.JobType!.TypeName)
-                    .Select(g => new JobTypeCount
-                    {
-                        JobTypeName = g.Key,
-                        Count = g.Count(),
-                        TotalValue = g.Sum(proc =>
-                            proc.ProfitLosses.SelectMany(pl => pl.Items)
-                                .Sum(item => (decimal?)item.Revenue)
-                            ?? 0m
-                        ),
-                    })
-                    .OrderByDescending(j => j.Count)
-                    .ToListAsync(ct),
-
-                TopVendors = await Context
-                    .Vendors.Select(v => new VendorPerformance
-                    {
-                        VendorCode = v.VendorCode,
-                        VendorName = v.VendorName,
-                        OfferCount = Context.VendorOffers.Count(vo => vo.VendorId == v.VendorId),
-                        SelectedCount = Context.ProfitLosses.Count(pl =>
-                            pl.SelectedVendorId == v.VendorId
-                        ),
-                    })
-                    .Where(v => v.OfferCount > 0)
-                    .OrderByDescending(v => v.OfferCount)
-                    .Take(10)
-                    .ToListAsync(ct),
-
-                TotalPurchaseRequisitions = await Context.PurchaseRequisitions.CountAsync(ct),
-
-                RecentPurchaseRequisitions = await Context
-                    .PurchaseRequisitions.Include(pr => pr.CreatedByUser)
-                    .Include(pr => pr.Procurements)
-                    .OrderByDescending(pr => pr.CreatedAt)
-                    .Take(10)
-                    .Select(pr => new PurchaseRequisitionSummary
-                    {
-                        PrId = pr.PrId,
-                        PrNumber = pr.PrNumber,
-                        RequestDate = pr.RequestDate,
-                        Description = pr.Description,
-                        CreatedBy =
-                            pr.CreatedByUser != null
-                                ? pr.CreatedByUser.FullName ?? string.Empty
-                                : string.Empty,
-                        CreatedAt = pr.CreatedAt,
-                        ProcurementCount = pr.Procurements.Count,
-                    })
-                    .ToListAsync(ct),
-
-                ProcurementsByStatus = await Context
-                    .Procurements.Where(proc => proc.Status != null)
-                    .GroupBy(proc => proc.Status!.StatusName)
-                    .Select(g => new StatusCount { StatusName = g.Key, Count = g.Count() })
-                    .ToListAsync(ct),
-
-                DocumentApprovalStats = await Context
-                    .ProcDocumentApprovals.GroupBy(a => a.Status)
-                    .Select(g => new StatusCount { StatusName = g.Key, Count = g.Count() })
-                    .ToListAsync(ct),
+                // Trends and Lists - Convert DTOs to ViewModels using Mapper
+                MonthlyProcurementTrend = monthlyTrendDto.ToViewModelList(),
+                MonthlyPurchaseRequisitionTrend = monthlyPrTrendDto.ToViewModelList(),
+                RecentProcurements = recentProcsDto.ToViewModelList(),
+                PendingApprovalsDetail = pendingApprovalsDto.ToViewModelList(),
+                JobTypeDistribution = jobTypeDistDto.ToViewModelList(),
+                TopVendors = topVendorsDto.ToViewModelList(),
+                ProcurementsByStatus = procsByStatusDto.ToViewModelList(),
+                DocumentApprovalStats = docApprovalStatsDto.ToViewModelList(),
+                RecentPurchaseRequisitions = recentPurchaseReqsDto.ToViewModelList(),
+                TotalPurchaseRequisitions =
+                    await DashboardService.GetTotalPurchaseRequisitionsCountAsync(ct),
             };
 
-            // Admin-only: Add Recent Activities for monitoring
+            // Admin-only: Add Recent Activities and User Activity Status
             if (isAdmin)
             {
-                var activities = await DashboardService.GetRecentActivitiesAsync(10);
-                model.RecentActivities = activities;
+                var activitiesDto = await DashboardService.GetRecentActivitiesAsync(10);
+                model.RecentActivities = activitiesDto.ToViewModelList();
+
+                var userActivityDto = await DashboardService.GetUserActivityStatusAsync(30, ct);
+                model.UserActivities = userActivityDto.ToViewModelList();
+                model.OnlineUsersCount = userActivityDto.Count(u => u.IsOnline);
             }
 
             return model;
@@ -244,179 +150,46 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             CancellationToken ct = default
         )
         {
+            // Fetch DTOs from service layer
+            var procsByStatusDto = await DashboardService.GetProcurementsByStatusAsync(ct);
+            var monthlyTrendDto = await DashboardService.GetMonthlyProcurementTrendAsync(ct);
+            var monthlyPrTrendDto = await DashboardService.GetMonthlyPurchaseRequisitionTrendAsync(
+                ct
+            );
+            var recentProcsDto = await DashboardService.GetRecentProcurementsAsync(10, ct);
+            var pendingApprovalsDto = await DashboardService.GetPendingApprovalsDetailAsync(10, ct);
+            var jobTypeDistDto = await DashboardService.GetJobTypeDistributionAsync(ct);
+            var topVendorsDto = await DashboardService.GetTopVendorsAsync(10, ct);
+            var docApprovalStatsDto = await DashboardService.GetDocumentApprovalStatsAsync(ct);
+            var recentPurchaseReqsDto = await DashboardService.GetRecentPurchaseRequisitionsAsync(
+                10,
+                ct
+            );
+
             return new DashboardViewModel
             {
-                TotalProcurements = await Context.Procurements.CountAsync(ct),
-                ActiveProcurements = await Context
-                    .Procurements.Where(p => p.Status != null)
-                    .CountAsync(
-                        p =>
-                            p.Status!.StatusName == "Created"
-                            || p.Status!.StatusName == "In Progress",
-                        ct
-                    ),
-                PendingApprovals = await Context.ProcDocumentApprovals.CountAsync(
-                    a => a.Status == "Pending",
-                    ct
-                ),
-                TotalVendors = await Context.Vendors.CountAsync(ct),
+                TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
+                ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
+                PendingApprovals = await DashboardService.GetPendingApprovalsCountAsync(ct),
+                TotalVendors = await DashboardService.GetTotalVendorsCountAsync(ct),
 
-                TotalRevenue =
-                    await Context.ProfitLossItems.SumAsync(pnl => (decimal?)pnl.Revenue, ct) ?? 0m,
-                TotalCost =
-                    await Context.ProfitLosses.SumAsync(
-                        pnl => (decimal?)pnl.SelectedVendorFinalOffer,
-                        ct
-                    ) ?? 0m,
-                TotalProfit =
-                    await Context.ProfitLosses.SumAsync(pnl => (decimal?)pnl.Profit, ct) ?? 0m,
+                TotalRevenue = await DashboardService.GetTotalRevenueAsync(ct),
+                TotalCost = await DashboardService.GetTotalCostAsync(ct),
+                TotalProfit = await DashboardService.GetTotalProfitAsync(ct),
 
-                ProcurementsByStatus = await Context
-                    .Procurements.Where(proc => proc.Status != null)
-                    .GroupBy(proc => proc.Status!.StatusName)
-                    .Select(g => new StatusCount { StatusName = g.Key, Count = g.Count() })
-                    .ToListAsync(ct),
-
-                MonthlyProcurementTrend = await GetMonthlyProcurementTrendAsync(ct),
-
-                RecentProcurements = await Context
-                    .Procurements.Include(proc => proc.Status)
-                    .Include(proc => proc.JobType)
-                    .Include(proc => proc.User)
-                    .Include(proc => proc.ProfitLosses)
-                    .ThenInclude(pl => pl.Items)
-                    .OrderByDescending(proc => proc.CreatedAt)
-                    .Take(10)
-                    .Select(proc => new ProcurementSummary
-                    {
-                        ProcNum = proc.ProcNum,
-                        JobTypeName = proc.JobType != null ? proc.JobType.TypeName : string.Empty,
-                        StatusName = proc.Status != null ? proc.Status.StatusName : string.Empty,
-                        CreatedBy = proc.User != null ? proc.User.FullName! : string.Empty,
-                        CreatedDate = proc.CreatedAt,
-                        TotalAmount =
-                            proc.ProfitLosses.SelectMany(pl => pl.Items)
-                                .Sum(item => (decimal?)item.Revenue)
-                            ?? 0m,
-                    })
-                    .ToListAsync(ct),
-
-                PendingApprovalsDetail = await Context
-                    .ProcDocumentApprovals.Include(a => a.ProcDocument)
-                    .ThenInclude(d => d.Procurement)
-                    .Include(a => a.Role)
-                    .Where(a => a.Status == "Pending")
-                    .OrderByDescending(a => a.ProcDocument.CreatedAt)
-                    .Take(10)
-                    .Select(a => new ApprovalSummary
-                    {
-                        ProcNum = a.ProcDocument.Procurement.ProcNum,
-                        DocumentName = a.ProcDocument.FileName,
-                        ApprovalRole = a.Role != null ? a.Role.Name! : string.Empty,
-                        CreatedDate = a.ProcDocument.CreatedAt,
-                    })
-                    .ToListAsync(ct),
-
-                JobTypeDistribution = await Context
-                    .Procurements.Include(proc => proc.ProfitLosses)
-                    .ThenInclude(pl => pl.Items)
-                    .Where(proc => proc.JobType != null)
-                    .GroupBy(proc => proc.JobType!.TypeName)
-                    .Select(g => new JobTypeCount
-                    {
-                        JobTypeName = g.Key,
-                        Count = g.Count(),
-                        TotalValue = g.Sum(proc =>
-                            proc.ProfitLosses.SelectMany(pl => pl.Items)
-                                .Sum(item => (decimal?)item.Revenue)
-                            ?? 0m
-                        ),
-                    })
-                    .OrderByDescending(j => j.Count)
-                    .ToListAsync(ct),
-
-                TopVendors = await Context
-                    .Vendors.Select(v => new VendorPerformance
-                    {
-                        VendorCode = v.VendorCode,
-                        VendorName = v.VendorName,
-                        OfferCount = Context.VendorOffers.Count(vo => vo.VendorId == v.VendorId),
-                        SelectedCount = Context.ProfitLosses.Count(pl =>
-                            pl.SelectedVendorId == v.VendorId
-                        ),
-                    })
-                    .Where(v => v.OfferCount > 0)
-                    .OrderByDescending(v => v.OfferCount)
-                    .Take(10)
-                    .ToListAsync(ct),
-
-                DocumentApprovalStats = await Context
-                    .ProcDocumentApprovals.GroupBy(a => a.Status)
-                    .Select(g => new StatusCount { StatusName = g.Key, Count = g.Count() })
-                    .ToListAsync(ct),
-
-                TotalPurchaseRequisitions = await Context.PurchaseRequisitions.CountAsync(ct),
-
-                RecentPurchaseRequisitions = await Context
-                    .PurchaseRequisitions.Include(pr => pr.CreatedByUser)
-                    .Include(pr => pr.Procurements)
-                    .OrderByDescending(pr => pr.CreatedAt)
-                    .Take(10)
-                    .Select(pr => new PurchaseRequisitionSummary
-                    {
-                        PrId = pr.PrId,
-                        PrNumber = pr.PrNumber,
-                        RequestDate = pr.RequestDate,
-                        Description = pr.Description,
-                        CreatedBy =
-                            pr.CreatedByUser != null
-                                ? pr.CreatedByUser.FullName ?? string.Empty
-                                : string.Empty,
-                        CreatedAt = pr.CreatedAt,
-                        ProcurementCount = pr.Procurements.Count,
-                    })
-                    .ToListAsync(ct),
+                // Convert DTOs to ViewModels using Mapper
+                ProcurementsByStatus = procsByStatusDto.ToViewModelList(),
+                MonthlyProcurementTrend = monthlyTrendDto.ToViewModelList(),
+                MonthlyPurchaseRequisitionTrend = monthlyPrTrendDto.ToViewModelList(),
+                RecentProcurements = recentProcsDto.ToViewModelList(),
+                PendingApprovalsDetail = pendingApprovalsDto.ToViewModelList(),
+                JobTypeDistribution = jobTypeDistDto.ToViewModelList(),
+                TopVendors = topVendorsDto.ToViewModelList(),
+                DocumentApprovalStats = docApprovalStatsDto.ToViewModelList(),
+                RecentPurchaseRequisitions = recentPurchaseReqsDto.ToViewModelList(),
+                TotalPurchaseRequisitions =
+                    await DashboardService.GetTotalPurchaseRequisitionsCountAsync(ct),
             };
-        }
-
-        protected async Task<List<MonthlyTrend>> GetMonthlyProcurementTrendAsync(
-            CancellationToken ct = default
-        )
-        {
-            var twelveMonthsAgo = DateTime.Now.AddMonths(-12);
-
-            var monthlyData = await Context
-                .Procurements.Include(p => p.ProfitLosses)
-                .ThenInclude(pl => pl.Items)
-                .Where(p => p.CreatedAt >= twelveMonthsAgo)
-                .GroupBy(p => new { p.CreatedAt.Year, p.CreatedAt.Month })
-                .Select(g => new MonthlyTrend
-                {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    Count = g.Count(),
-                    TotalValue = g.Sum(p =>
-                        p.ProfitLosses.SelectMany(pl => pl.Items)
-                            .Sum(item => (decimal?)item.Revenue)
-                        ?? 0m
-                    ),
-                })
-                .OrderBy(m => m.Year)
-                .ThenBy(m => m.Month)
-                .ToListAsync(ct);
-
-            return monthlyData;
-        }
-
-        protected async Task<List<StatusCount>> GetProcurementStatusChartDataAsync(
-            CancellationToken ct = default
-        )
-        {
-            return await Context
-                .Procurements.Where(p => p.Status != null)
-                .GroupBy(p => p.Status!.StatusName)
-                .Select(g => new StatusCount { StatusName = g.Key, Count = g.Count() })
-                .ToListAsync(ct);
         }
     }
 }

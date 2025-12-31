@@ -11,6 +11,7 @@ using ProcurementHTE.Core.Models.ViewModels;
 using ProcurementHTE.Core.Options;
 using ProcurementHTE.Core.Utils;
 using ProcurementHTE.Web.Constants;
+using ProcurementHTE.Web.Hubs;
 using ProcurementHTE.Web.Models.Auth;
 using ProcurementHTE.Web.Utils;
 using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
@@ -23,7 +24,8 @@ namespace ProcurementHTE.Web.Controllers.Account
         IAccountService accountService,
         IOptions<EmailSenderOptions> emailOptions,
         IOptions<SmsSenderOptions> smsOptions,
-        IOptions<SecurityBypassOptions> bypassOptions
+        IOptions<SecurityBypassOptions> bypassOptions,
+        IUserActivityNotifier userActivityNotifier
     ) : Controller
     {
         private const string RecoveryResetSessionKey = "Auth.RequireRecoveryReset";
@@ -35,6 +37,7 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly SmsSenderOptions _smsOptions = smsOptions.Value;
         private readonly SecurityBypassOptions _securityBypassOptions =
             bypassOptions.Value ?? new SecurityBypassOptions();
+        private readonly IUserActivityNotifier _userActivityNotifier = userActivityNotifier;
 
         private const int CodeCooldownSeconds = 60;
         private const string ForgotEmailCooldownKey = "forgot.email";
@@ -1334,6 +1337,13 @@ namespace ProcurementHTE.Web.Controllers.Account
                     GetUserAgent(),
                     HttpContext.RequestAborted
                 );
+
+                // Notify dashboard about user logout (offline status)
+                await _userActivityNotifier.NotifyUserActivityAsync(
+                    userId,
+                    user.FullName ?? user.UserName ?? "Unknown",
+                    isOnline: false
+                );
             }
 
             ClearSessionCookie();
@@ -1535,6 +1545,13 @@ namespace ProcurementHTE.Web.Controllers.Account
             user.LastLoginAt = DateTime.Now;
             user.UpdatedAt = DateTime.Now;
             await _userManager.UpdateAsync(user);
+
+            // Notify dashboard about user login (online status)
+            await _userActivityNotifier.NotifyUserActivityAsync(
+                user.Id,
+                user.FullName ?? user.UserName ?? "Unknown",
+                isOnline: true
+            );
 
             var userAgent = GetUserAgent();
             var ip = GetRemoteIp();
