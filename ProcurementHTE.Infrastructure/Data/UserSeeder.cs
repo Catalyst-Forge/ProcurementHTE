@@ -95,10 +95,54 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 ("naura", "khinsa.naura@pertamina-pdc.com", "Khinsa", "Naura", "Ura12345", "Admin"),
                 ("diah", "dyahayusekaragung@gmail.com", "Diah", "Ayu", "DiahAyu123", "Operator"),
-                ("heri", "heri.wibisono@pertamina-pdc.com", "Heri", "Wibisono", "Heri1234", "Analyst HTE & LTS"),
-                ("yoddy", "yoddi.syafei@pertamina-pdc.com", "Yoddy", "Syafei", "Yoddy123", "Analyst HTE & LTS"),
-                ("dopiyanto", "dopiyanto@pertamina-pdc.com", "Dopiyanto", "", "Dopiyanto123", "Analyst HTE & LTS"),
-                ("johanis", "johanis@pertamina-pdc.com", "LB Johanis", "Hutabarat", "Johanis123", "Analyst HTE & LTS")
+                (
+                    "heri",
+                    "heriwibisono@gmail.con",
+                    "Heri",
+                    "Wibisono",
+                    "Heri1234",
+                    "Analyst HTE & LTS"
+                ),
+                (
+                    "yoddy",
+                    "yoddi.syafei@pertamina-pdc.com",
+                    "Yoddy",
+                    "Syafei",
+                    "Yoddy123",
+                    "Analyst HTE & LTS"
+                ),
+                (
+                    "dopiyanto",
+                    "dopiyanto@gmail.com",
+                    "Dopiyanto",
+                    "",
+                    "Dopiyanto123",
+                    "Analyst HTE & LTS"
+                ),
+                (
+                    "johanis",
+                    "johanis@pertamina-pdc.com",
+                    "LB Johanis",
+                    "Hutabarat",
+                    "Johanis123",
+                    "Analyst HTE & LTS"
+                ),
+                (
+                    "edo",
+                    "edopradipta@gmail.com",
+                    "Edo",
+                    "Pradipta",
+                    "EdoPradipta123",
+                    "Assistant Manager HTE"
+                ),
+                (
+                    "bagus",
+                    "baguswidihartono@gmail.com",
+                    "Bagus",
+                    "Widihartono",
+                    "BagusWidihartono123",
+                    "Manager Transport & Logistic"
+                ),
             };
 
             foreach (var u in users)
