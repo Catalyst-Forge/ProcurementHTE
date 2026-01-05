@@ -83,8 +83,35 @@ namespace ProcurementHTE.Core.Services
 
             var jobTypeName = proc.JobType?.TypeName;
             var picOpsName = await ResolveUserNameAsync(proc.PicOpsUserId);
+            var analystHteName = await ResolveUserNameAsync(proc.AnalystHteUserId);
             var asstMgrName = await ResolveUserNameAsync(proc.AssistantManagerUserId);
             var mgrName = await ResolveUserNameAsync(proc.ManagerUserId);
+
+            // Get Contract Total untuk approval logic
+            var contractTotal = await GetCtAsync(proc.ProcurementId);
+
+            // Approval logic based on amount
+            string submitterName;
+            string approver1Name;
+            string approver2Name;
+
+            if (contractTotal < 500_000_000m)
+            {
+                submitterName = analystHteName;
+                approver1Name = asstMgrName;
+                approver2Name = mgrName;
+            }
+            else
+            {
+                submitterName = asstMgrName;
+                approver1Name = mgrName;
+                approver2Name = await ResolveFirstUserNameByRoleAsync("Vice President");
+            }
+
+            // Replace tokens untuk approval workflow
+            html = ReplaceToken(html, "SubmitterName", submitterName);
+            html = ReplaceToken(html, "Approver1Name", approver1Name);
+            html = ReplaceToken(html, "Approver2Name", approver2Name);
 
             // Basic Procurement fields (reuse legacy token names for compatibility)
             html = ReplaceToken(html, "ProcNum", proc.ProcNum);
@@ -95,6 +122,7 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "StartDate", FormatDate(proc.StartDate));
             html = ReplaceToken(html, "EndDate", FormatDate(proc.EndDate));
             html = ReplaceToken(html, "PicOpsUserId", picOpsName);
+            html = ReplaceToken(html, "AnalystHteUser", analystHteName);
             html = ReplaceToken(html, "AsstManagerUserId", asstMgrName);
             html = ReplaceToken(html, "ManagerUserId", mgrName);
             html = ReplaceToken(html, "LtcName", proc.LtcName);
@@ -174,10 +202,22 @@ namespace ProcurementHTE.Core.Services
             );
             html = ReplaceToken(html, "ConditionalSubmitRole", conditionalSubmit);
             html = ReplaceToken(html, "ConditionalApproveRole", conditionalApprove);
-            var conditionalSubmitName = await ResolveFirstUserNameByRoleAsync(conditionalSubmit);
-            var conditionalApproveName = await ResolveFirstUserNameByRoleAsync(conditionalApprove);
+
+            var conditionalSubmitName = await ResolveUserNameByRoleWithProcDataAsync(
+                conditionalSubmit,
+                analystHteName,
+                asstMgrName,
+                mgrName
+            );
+            var conditionalApproveName = await ResolveUserNameByRoleWithProcDataAsync(
+                conditionalApprove,
+                analystHteName,
+                asstMgrName,
+                mgrName
+            );
             html = ReplaceToken(html, "ConditionalSubmitName", conditionalSubmitName);
             html = ReplaceToken(html, "ConditionalApproveName", conditionalApproveName);
+
             var needExtraApprove =
                 !string.IsNullOrWhiteSpace(conditionalApprove) && conditionalApprove != "-";
             var extraHeader = needExtraApprove
@@ -288,6 +328,12 @@ namespace ProcurementHTE.Core.Services
                 // Generate colspan for Total Tagihan row
                 var itemsTableColspan = GetItemsTableColspan(jobTypeName);
                 html = ReplaceToken(html, "PnlItemsTableColspan", itemsTableColspan.ToString());
+
+                var rincianSanksiRKS =
+                    pnl.SelectedVendorFinalOffer < 300_000_000m
+                        ? "Jumlah denda sebesar 1‰ (satu mil) dari total Nilai Kontrak untuk setiap hari keterlambatan dengan maksimum denda sebesar 5% (lima persen)"
+                        : "Jumlah denda sebesar 1% (satu persen) dari total Nilai Kontrak untuk setiap hari keterlambatan dengan maksimum denda sebesar 5% (lima persen)";
+                html = ReplaceToken(html, "RincianSanksiRKS", rincianSanksiRKS);
 
                 // Aggregat berdasarkan ProfitLossItem
                 if (pnl.Items != null && pnl.Items.Count != 0)
@@ -581,6 +627,43 @@ namespace ProcurementHTE.Core.Services
                 return user.UserName;
 
             return user.Email ?? "-";
+        }
+
+        private async Task<string> ResolveUserNameByRoleWithProcDataAsync(
+            string? roleName,
+            string? analystHteName,
+            string? asstMgrName,
+            string? mgrName
+        )
+        {
+            if (string.IsNullOrWhiteSpace(roleName) || roleName == "-")
+                return "-";
+
+            if (roleName.Equals("Analyst HTE & LTS", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(analystHteName))
+                    return analystHteName;
+
+                return await ResolveFirstUserNameByRoleAsync(roleName);
+            }
+
+            if (roleName.Equals("Assistant Manager HTE", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(asstMgrName))
+                    return asstMgrName;
+
+                return await ResolveFirstUserNameByRoleAsync(roleName);
+            }
+
+            if (roleName.Equals("Manager Transport & Logistic", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(mgrName))
+                    return mgrName;
+
+                return await ResolveFirstUserNameByRoleAsync(roleName);
+            }
+
+            return await ResolveFirstUserNameByRoleAsync(roleName);
         }
 
         #endregion
