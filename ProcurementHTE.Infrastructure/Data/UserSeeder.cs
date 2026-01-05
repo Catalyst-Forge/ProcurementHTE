@@ -34,7 +34,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     "AHte123!",
                     "Analyst HTE & LTS"
                 ),
-                ("hte", "hte@example.com", "HTE", "", "Hte1234!", "HTE"),
                 (
                     "operator",
                     "pro.operation@example.com",

@@ -29,7 +29,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             );
 
         [HttpGet("GetOnlineUsers")]
-        public async Task<IActionResult> GetOnlineUsers()
+        public IActionResult GetOnlineUsers()
         {
             // Get all users from database
             var allUsers = UserManager

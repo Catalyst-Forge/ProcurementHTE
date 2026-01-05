@@ -132,7 +132,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         CancellationToken ct = default
     )
     {
-        // Query the entity directly without navigation properties to avoid tracking conflicts
+        // Soft delete: mark as deleted instead of removing
         var entityToDelete = await _context.PurchaseRequisitions.FirstOrDefaultAsync(
             pr => pr.PrId == purchaseRequisition.PrId,
             ct
@@ -140,7 +140,9 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
 
         if (entityToDelete != null)
         {
-            _context.PurchaseRequisitions.Remove(entityToDelete);
+            entityToDelete.IsDeleted = true;
+            entityToDelete.DeletedAt = DateTime.UtcNow;
+            // Note: DeletedBy should be set by the service layer with current user ID
             await _context.SaveChangesAsync(ct);
         }
     }

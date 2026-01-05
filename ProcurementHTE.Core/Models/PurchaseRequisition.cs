@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ProcurementHTE.Core.Models;
 
 [Table("PurchaseRequisitions")]
-public class PurchaseRequisition
+public class PurchaseRequisition : BaseEntity
 {
     [Key]
     public string PrId { get; set; } = Guid.NewGuid().ToString();

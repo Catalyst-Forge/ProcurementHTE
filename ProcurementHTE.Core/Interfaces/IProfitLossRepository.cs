@@ -8,6 +8,7 @@ namespace ProcurementHTE.Core.Interfaces
         // Get Data
         Task<ProfitLoss?> GetByIdAsync(string profitLossId);
         Task<ProfitLoss?> GetByProcurementAsync(string procurementId);
+        Task<Procurement?> GetProcurementWithJobTypeAsync(string procurementId);
         Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string procurementId);
         Task<ProfitLoss?> GetLatestByProcurementIdAsync(string procurementId);
         Task<decimal> GetTotalRevenueThisMonthAsync();
@@ -24,5 +25,6 @@ namespace ProcurementHTE.Core.Interfaces
             IEnumerable<string> selectedVendorIds,
             IEnumerable<VendorOffer> vendorOffers
         );
+        Task UpdateProcOfferUnitRevenueAsync(string procOfferId, string unitRevenue);
     }
 }

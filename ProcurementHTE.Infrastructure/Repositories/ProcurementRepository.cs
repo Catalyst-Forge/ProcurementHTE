@@ -244,23 +244,47 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     .ProcOffers.Where(offer => offer.ProcurementId == procurement.ProcurementId)
                     .ToListAsync();
 
+                // Always delete and recreate details (no ProfitLoss dependency)
                 if (existingDetails.Count != 0)
                     _context.ProcDetails.RemoveRange(existingDetails);
 
-                if (existingOffers.Count != 0)
-                    _context.ProcOffers.RemoveRange(existingOffers);
-
                 var validDetails = FilterValidDetails(details);
-                var validOffers = FilterValidOffers(offers);
-
                 AssignProcurementIdToDetails(procurement.ProcurementId, validDetails);
-                AssignProcurementIdToOffers(procurement.ProcurementId, validOffers);
 
                 if (validDetails.Count != 0)
                     await _context.ProcDetails.AddRangeAsync(validDetails);
 
-                if (validOffers.Count != 0)
-                    await _context.ProcOffers.AddRangeAsync(validOffers);
+                // SMART UPDATE FOR OFFERS: Update existing, add new, delete removed
+                // This prevents cascade deletion of ProfitLossItems
+                var validOffers = FilterValidOffers(offers);
+                AssignProcurementIdToOffers(procurement.ProcurementId, validOffers);
+
+                // Match offers by position (order) - this is the simplest and most reliable approach
+                for (int i = 0; i < validOffers.Count; i++)
+                {
+                    if (i < existingOffers.Count)
+                    {
+                        // Update existing offer in place (preserves ProcOfferId)
+                        var existing = existingOffers[i];
+                        existing.ItemPenawaran = validOffers[i].ItemPenawaran;
+                        existing.Qty = validOffers[i].Qty;
+                        existing.Unit = validOffers[i].Unit;
+                        existing.UnitRevenue = validOffers[i].UnitRevenue;
+                        _context.Entry(existing).State = EntityState.Modified;
+                    }
+                    else
+                    {
+                        // Add new offer (new item added)
+                        await _context.ProcOffers.AddAsync(validOffers[i]);
+                    }
+                }
+
+                // Remove offers that were deleted (if new list is shorter)
+                if (existingOffers.Count > validOffers.Count)
+                {
+                    var offersToRemove = existingOffers.Skip(validOffers.Count).ToList();
+                    _context.ProcOffers.RemoveRange(offersToRemove);
+                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

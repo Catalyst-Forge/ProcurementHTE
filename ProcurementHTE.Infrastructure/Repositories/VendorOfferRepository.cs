@@ -30,11 +30,20 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task RemoveByProcurementAsync(string procurementId)
         {
+            // Soft delete: mark all vendor offers for this procurement as deleted
             var olds = await _context
                 .VendorOffers.Where(offer => offer.ProcurementId == procurementId)
                 .ToListAsync();
             if (olds.Count > 0)
-                _context.RemoveRange(olds);
+            {
+                foreach (var offer in olds)
+                {
+                    offer.IsDeleted = true;
+                    offer.DeletedAt = DateTime.UtcNow;
+                    // Note: DeletedBy should be set by the service layer with current user ID
+                }
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

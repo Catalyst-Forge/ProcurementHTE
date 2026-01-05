@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ProcurementHTE.Core.Models;
 
 [Table("ProcDocuments")]
-public class ProcDocuments
+public class ProcDocuments : BaseEntity
 {
     [Key]
     public string ProcDocumentId { get; set; } = Guid.NewGuid().ToString();

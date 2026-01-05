@@ -268,7 +268,7 @@ namespace ProcurementHTE.Web.Controllers.PR
                 // Save to database with linked procurements
                 await _purchaseRequisitionService.CreateAsync(
                     purchaseRequisition,
-                    model.ProcurementIds
+                    model.ProcurementIds ?? []
                 );
 
                 TempData["SuccessMessage"] =

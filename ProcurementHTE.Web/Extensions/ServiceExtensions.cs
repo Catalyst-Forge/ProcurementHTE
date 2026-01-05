@@ -51,6 +51,7 @@ public static class ServiceExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITemplateProvider, FileSystemTemplateProvider>();
         services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
+        services.AddScoped<IJobTypeCalculationService, JobTypeCalculationService>();
 
         return services;
     }

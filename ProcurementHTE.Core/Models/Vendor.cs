@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProcurementHTE.Core.Models
 {
-    public class Vendor
+    public class Vendor : BaseEntity
     {
         [Key]
         public string VendorId { get; set; } = Guid.NewGuid().ToString();

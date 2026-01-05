@@ -30,6 +30,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<UserSecurityLog> UserSecurityLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        public DbSet<UnitType> UnitTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -61,6 +62,28 @@ namespace ProcurementHTE.Infrastructure.Data
             ConfigureDocumentApprovals(builder);
             ConfigureVendorRoundLetters(builder);
             ConfigureDocumentApprovalRules(builder);
+            ConfigureUnitType(builder);
+
+            // ========================================
+            // SEED DATA
+            // ========================================
+            UnitTypeSeeder.SeedUnitTypes(builder);
+
+            // ========================================
+            // GLOBAL QUERY FILTERS (SOFT DELETE)
+            // ========================================
+            ConfigureGlobalQueryFilters(builder);
+        }
+
+        private static void ConfigureGlobalQueryFilters(ModelBuilder builder)
+        {
+            // Apply soft delete filter for all entities inheriting from BaseEntity
+            builder.Entity<Procurement>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<ProfitLoss>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<VendorOffer>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<ProcDocuments>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<PurchaseRequisition>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<Vendor>().HasQueryFilter(e => !e.IsDeleted);
         }
 
         #region Identity & User
@@ -620,6 +643,38 @@ namespace ProcurementHTE.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(documentApproval => documentApproval.RoleId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+
+        #endregion
+
+        #region UnitType
+
+        private static void ConfigureUnitType(ModelBuilder builder)
+        {
+            builder.Entity<UnitType>(entity =>
+            {
+                // Properties
+                entity.Property(unitType => unitType.UnitTypeId).ValueGeneratedNever();
+                entity.Property(unitType => unitType.Code).IsRequired().HasMaxLength(20);
+                entity.Property(unitType => unitType.Name).IsRequired().HasMaxLength(50);
+                entity.Property(unitType => unitType.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Indexes
+                entity.HasIndex(unitType => unitType.Code).IsUnique();
+
+                // Relationships
+                entity
+                    .HasMany(unitType => unitType.ProfitLossItems)
+                    .WithOne(item => item.UnitType)
+                    .HasForeignKey(item => item.UnitTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity
+                    .HasMany(unitType => unitType.VendorOffers)
+                    .WithOne(offer => offer.UnitType)
+                    .HasForeignKey(offer => offer.UnitTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
 

@@ -162,21 +162,12 @@
             <div class="fw-bold p-1 border border-black border-bottom-0 green-header">Tagihan ke PDC</div>
             <table class="table table-bordered border-black">
               <thead>
-                <tr class="text-center">
-                  <th scope="col" style="width: 1.5rem">No</th>
-                  <th class="text-start" scope="col" style="width: 20rem">Item</th>
-                  <th scope="col" style="width: 2rem">Quantity</th>
-                  <th scope="col" style="width: 7rem">Tarif 400 km</th>
-                  <th scope="col" style="width: 6rem">Tarif Add</th>
-                  <th scope="col" style="width: 9rem">KM per 25 Km</th>
-                  <th scope="col" style="width: 11rem">Nilai Penambahan</th>
-                  <th scope="col" style="width: 7rem">Jumlah</th>
-                </tr>
+                {{ PnlItemsTableHeader }}
               </thead>
               <tbody>
                 {{ PnlItemsTable }}
                 <tr>
-                  <td colspan="7">Total Tagihan</td>
+                  <td colspan="{{ PnlItemsTableColspan }}">Total Tagihan</td>
                   <td class="text-end"><strong>{{ TotalRevenue }}</strong></td>
                 </tr>
               </tbody>
@@ -197,12 +188,13 @@
                 </tr>
                 <tr>
                   <td>Tanggal WO</td>
-                  <td class="text-end">01/08/2025</td>
+                  <td class="text-end">{{ DocumentDate }}</td>
                 </tr>
                 <tr>
                   <td>Tanggal Terima WO</td>
-                  <td class="text-end">04/08/2025</td>
+                  <td class="text-end">{{ TglTerimaWO }}</td>
                 </tr>
+                {{ SidebarAdditionalRows }}
                 <tr>
                   <td>Vendor</td>
                   <td class="text-end">{{ SelectedVendorName }}</td>
@@ -214,10 +206,6 @@
                 <tr>
                   <td>Status Pekerjaan</td>
                   <td class="text-end">OPEN</td>
-                </tr>
-                <tr>
-                  <td>Jarak</td>
-                  <td class="text-end">{{ Distance }} KM</td>
                 </tr>
                 <tr>
                   <td>Tanggal PNL</td>

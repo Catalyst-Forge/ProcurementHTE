@@ -83,7 +83,7 @@ public sealed class ProcurementDocumentQuery : IProcurementDocumentQuery
                                 .Select(gg =>
                                 {
                                     var last = gg.OrderBy(x => x.Round).Last();
-                                    return last.Price * last.Quantity * last.Trip;
+                                    return last.Price * last.QuantityItem * last.QuantityOfUnit;
                                 });
 
                             return perItem.Sum();

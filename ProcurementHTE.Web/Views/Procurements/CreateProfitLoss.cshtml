@@ -14,6 +14,11 @@
         Model.SelectedVendorIds ?? new List<string>(),
         StringComparer.OrdinalIgnoreCase
     );
+
+    var jobTypeName = Model.JobTypeName ?? ViewBag.JobTypeName ?? "Angkutan";
+    var isPengangkutan = jobTypeName == "Angkutan";
+    var isSewaUnit = jobTypeName == "StandBy";
+    var isMoving = jobTypeName == "Moving";
 }
 
 <form asp-action="@(isEdit ? "EditProfitLoss" : "CreateProfitLossPost")"
@@ -26,6 +31,7 @@
     hx-boost="false">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="ProcurementId" />
+    <input type="hidden" asp-for="JobTypeName" />
     @if (isEdit && editModel != null)
     {
         <input type="hidden" name="ProfitLossId" value="@editModel.ProfitLossId" />
@@ -95,7 +101,7 @@
         <section class="col-12" aria-labelledby="financial-section-title">
             <div class="card shadow-sm p-2">
                 <fieldset class="card-body">
-                    <legend class="card-title fw-semibold" id="financial-section-title">Financial Figures</legend>
+                    <legend class="card-title fw-semibold" id="financial-section-title">Financial Figures - JobType: <span class="badge bg-primary">@jobTypeName</span></legend>
                     <hr />
                     <div class="row g-3">
                         <!-- Accrual -->
@@ -103,7 +109,7 @@
                             <label asp-for="AccrualAmount" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
-                                <input asp-for="AccrualAmount" class="form-control text-end" data-format-currency inputmode="numeric" />
+                                <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
                             </div>
                             @* <span class="text-danger" asp-validation-for="AccrualAmount"></span> *@
                         </div>
@@ -111,15 +117,49 @@
                             <label asp-for="RealizationAmount" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
-                                <input asp-for="RealizationAmount" class="form-control text-end" data-format-currency inputmode="numeric" />
+                                <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
                             </div>
                             @* <span class="text-danger" asp-validation-for="RealizationAmount"></span> *@
                         </div>
-                        <div class="col-md-4">
-                            <label asp-for="Distance" class="form-label"></label>
-                            <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                            <span class="text-danger" asp-validation-for="Distance"></span>
-                        </div>
+
+                        @if (isPengangkutan)
+                        {
+                            <div class="col-md-4">
+                                <label asp-for="Distance" class="form-label"></label>
+                                <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                                <span class="text-danger" asp-validation-for="Distance"></span>
+                            </div>
+                        }
+
+                        @if (isSewaUnit)
+                        {
+                            <div class="col-md-4">
+                                <label asp-for="TglMulaiSewa" class="form-label">Tanggal Mulai Sewa</label>
+                                <input asp-for="TglMulaiSewa" type="date" class="form-control" />
+                                <span class="text-danger" asp-validation-for="TglMulaiSewa"></span>
+                            </div>
+                        }
+
+                        @if (isMoving)
+                        {
+                            <div class="col-md-4">
+                                <label for="TglMulaiMoving" class="form-label">Tanggal Mulai Moving</label>
+                                <input type="date"
+                                       id="TglMulaiMoving"
+                                       name="TglMulaiMoving"
+                                       value="@(Model.TglMulaiMoving?.ToString("yyyy-MM-dd"))"
+                                       class="form-control" />
+                                <span class="text-danger" asp-validation-for="TglMulaiMoving"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Distance" class="form-label">Jarak (Km)</label>
+                                <div class="input-group">
+                                    <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                                    <span class="input-group-text">Km</span>
+                                </div>
+                                <small class="text-muted">Informasi saja, tidak mempengaruhi perhitungan</small>
+                            </div>
+                        }
                     </div>
                 </fieldset>
             </div>
@@ -137,19 +177,37 @@
                             <thead class="table-light">
                                 <tr>
                                     <th style="min-width:220px">Offer Item</th>
-                                    <th class="text-end" style="width:180px">Quantity</th>
-                                    <th class="text-end" style="width:180px">400 km Rate</th>
-                                    <th class="text-end" style="width:160px">Additional Rate</th>
-                                    <th class="text-end" style="width:140px">KM/25</th>
-                                    <th class="text-end" style="width:180px">Operator Cost</th>
+                                    @if (isPengangkutan)
+                                    {
+                                        <th class="text-end" style="width:100px">Qty Items</th>
+                                        <th class="text-end" style="width:100px">Unit Items</th>
+                                        <th class="text-end" style="width:180px">Base Price (400km)</th>
+                                        <th class="text-end" style="width:160px">Additional Rate</th>
+                                        <th class="text-end" style="width:140px">KM/25</th>
+                                        <th class="text-end" style="width:180px">Operator Cost</th>
+                                    }
+                                    else
+                                    {
+                                        <th class="text-end" style="width:100px">Qty Items</th>
+                                        <th class="text-end" style="width:100px">Unit Items</th>
+                                        <th class="text-end" style="width:160px">Quantity/Durasi</th>
+                                        <th class="text-end" style="width:120px">Unit Revenue</th>
+                                        <th class="text-end" style="width:180px">Base Price</th>
+                                    }
                                     <th class="text-end" style="width:180px">Revenue</th>
                                 </tr>
                             </thead>
                             <tbody id="pdcItems">
                                 @for (var i = 0; i < Model.Items.Count; i++) {
                                     var procOfferId = Model.Items[i].ProcOfferId;
-                                    var itemName = Model.OfferItems.FirstOrDefault(x => x.ProcOfferId == procOfferId)?.ItemPenawaran;
-                                    var quantityItem = Model.OfferItems.FirstOrDefault(item => item.ProcOfferId == procOfferId)?.Quantity;
+                                    var offerItem = Model.OfferItems.FirstOrDefault(x => x.ProcOfferId == procOfferId);
+                                    var itemName = offerItem?.ItemPenawaran;
+                                    // For Edit mode, use QtyItems from model if > 0, otherwise from OfferItems
+                                    var quantityItem = Model.Items[i].QtyItems > 0 
+                                        ? Model.Items[i].QtyItems 
+                                        : (int)(offerItem?.Quantity ?? 0);
+                                    var unitItem = offerItem?.Unit;
+                                    var unitRevenue = offerItem?.UnitRevenue;
 
                                     <tr data-item-row data-proc-offer-id="@procOfferId">
                                         <input type="hidden" name="Items.Index" value="@i" />
@@ -157,64 +215,122 @@
 
                                         <td class="fw-semibold">@itemName</td>
 
-                                        <td class="text-end">
-                                            <div class="input-group input-group-sm">
-                                                @if (isEdit && editModel != null) {
+                                        @if (isPengangkutan)
+                                        {
+                                            <!-- Hidden inputs for Angkutan -->
+                                            <input type="hidden" name="Items[@i].UnitRevenue" value="TRIP" />
+                                            <input type="hidden" data-qty-items value="@quantityItem" />
+
+                                            <!-- Qty Items -->
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm">
+                                                    @if (isEdit && editModel != null) {
+                                                        <input class="form-control text-end"
+                                                               asp-for="Items[@i].Quantity"
+                                                               data-unit-qty />
+                                                    } else {
+                                                        <input class="form-control text-end"
+                                                               name="Items[@i].Quantity"
+                                                               data-unit-qty
+                                                               value="@quantityItem" />
+                                                    }
+                                                </div>
+                                                <span class="text-danger small field-validation-valid" asp-validation-for="Items[@i].Quantity"></span>
+                                            </td>
+
+                                            <!-- Unit Items -->
+                                            <td class="text-end">
+                                                <input type="text" class="form-control form-control-sm text-end" value="@unitItem" readonly />
+                                            </td>
+
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Rp</span>
+                                                    <input class="form-control text-end"
+                                                           asp-for="Items[@i].TarifAwal"
+                                                              asp-format="{0:0}"
+                                                           data-tarif-awal
+                                                           data-format-currency
+                                                           autocomplete="off"
+                                                           inputmode="numeric" />
+                                                </div>
+                                            </td>
+
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Rp</span>
+                                                    <input class="form-control text-end"
+                                                           asp-for="Items[@i].TarifAdd"
+                                                              asp-format="{0:0}"
+                                                           data-tarif-add
+                                                           data-format-currency
+                                                           autocomplete="off"
+                                                           inputmode="numeric" />
+                                                </div>
+                                            </td>
+
+                                            <td class="text-end">
+                                                <input class="form-control form-control-sm text-end"
+                                                       asp-for="Items[@i].KmPer25"
+                                                       data-km
+                                                       readonly />
+                                            </td>
+
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Rp</span>
+                                                    <input class="form-control form-control-sm text-end" data-operator readonly />
+                                                </div>
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <!-- Qty Items (read-only + hidden for form binding) -->
+                                            <td class="text-end">
+                                                <input type="hidden" name="Items[@i].QtyItems" value="@quantityItem" />
+                                                <input type="text" class="form-control form-control-sm text-end" value="@quantityItem" data-qty-items readonly />
+                                            </td>
+
+                                            <!-- Unit Items (read-only + hidden for form binding) -->
+                                            <td class="text-end">
+                                                <input type="hidden" name="Items[@i].UnitItems" value="@unitItem" />
+                                                <input type="text" class="form-control form-control-sm text-end" value="@unitItem" data-unit-items readonly />
+                                            </td>
+
+                                            <!-- Quantity/Durasi -->
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm">
                                                     <input class="form-control text-end"
                                                            asp-for="Items[@i].Quantity"
-                                                           data-quantity />
-                                                } else {
+                                                           data-quantity-durasi
+                                                           inputmode="numeric" />
+                                                </div>
+                                            </td>
+
+                                            <!-- Unit Revenue (dropdown) -->
+                                            <td class="text-end">
+                                                <select class="form-select form-select-sm unit-revenue-dropdown"
+                                                        name="Items[@i].UnitRevenue"
+                                                        data-unit-revenue
+                                                        data-current-value="@unitRevenue">
+                                                    <option value="">-- Pilih --</option>
+                                                </select>
+                                            </td>
+
+                                            <!-- Base Price -->
+                                            <td class="text-end">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Rp</span>
                                                     <input class="form-control text-end"
-                                                           name="Items[@i].Quantity"
-                                                           data-quantity
-                                                           value="@quantityItem" />
-                                                }
-                                            </div>
-                                            <span class="text-danger small field-validation-valid" asp-validation-for="Items[@i].Quantity"></span>
-                                        </td>
-
-                                        <td class="text-end">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Rp</span>
-                                                <input class="form-control text-end"
-                                                       asp-for="Items[@i].TarifAwal"
-                                                          asp-format="{0:0}"
-                                                       data-tarif-awal
-                                                       data-format-currency 
-                                                       autocomplete="off"
-                                                       inputmode="numeric" />
-                                                @* <span class="text-danger" asp-validation-for="Items[@i].TarifAwal"></span> *@
-                                            </div>
-                                        </td>
-
-                                        <td class="text-end">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Rp</span>
-                                                <input class="form-control text-end"
-                                                       asp-for="Items[@i].TarifAdd"
-                                                          asp-format="{0:0}"
-                                                       data-tarif-add
-                                                       data-format-currency
-                                                       autocomplete="off"
-                                                       inputmode="numeric" />
-                                                @* <span class="text-danger" asp-validation-for="Items[@i].TarifAdd"></span> *@
-                                            </div>
-                                        </td>
-
-                                        <td class="text-end">
-                                            <input class="form-control form-control-sm text-end"
-                                                   asp-for="Items[@i].KmPer25"
-                                                   data-km 
-                                                   readonly />
-                                        </td>
-
-
-                                        <td class="text-end">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Rp</span>
-                                                <input class="form-control form-control-sm text-end" data-operator readonly />
-                                            </div>
-                                        </td>
+                                                           asp-for="Items[@i].TarifAwal"
+                                                              asp-format="{0:0}"
+                                                           data-base-price
+                                                           data-format-currency
+                                                           autocomplete="off"
+                                                           inputmode="numeric" />
+                                                </div>
+                                            </td>
+                                        }
 
                                         <td class="text-end">
                                             <div class="input-group input-group-sm">
@@ -228,18 +344,47 @@
 
                             <tfoot class="table-light">
                                 <tr>
-                                    <th colspan="6" class="text-end">TOTAL</th>
-                                    @* <th class="text-end">
-                                        <input id="operatorCost" class="form-control form-control-sm text-end" readonly />
-                                    </th> *@
+                                    @if (isPengangkutan)
+                                    {
+                                        <th colspan="7" class="text-end fw-bold">TOTAL</th>
+                                    }
+                                    else
+                                    {
+                                        <th colspan="6" class="text-end fw-bold">TOTAL</th>
+                                    }
                                     <th class="text-end">
-                                        <input id="revenue" class="form-control form-control-sm text-end fw-bold" readonly />
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text fw-bold">Rp</span>
+                                            <input id="revenue" class="form-control form-control-sm text-end fw-bold" readonly />
+                                        </div>
                                     </th>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
-                    <small class="text-muted">KM/25 = (Distance - 400) &times; 25 <br /> Operator cost per item = <em>Additional Rate &times; KM/25</em><br /> Revenue per item = <em>400 km Rate + Operator Cost</em></small>
+                    @if (isPengangkutan)
+                    {
+                        <small class="text-muted">
+                            <strong>Formula Pengangkutan:</strong><br />
+                            KM/25 = (Distance - 400) &divide; 25 <br />
+                            Operator cost per item = <em>Additional Rate &times; KM/25</em><br />
+                            Revenue per item = <em>(Base Price + Operator Cost) &times; UnitQty</em>
+                        </small>
+                    }
+                    else if (isSewaUnit)
+                    {
+                        <small class="text-muted">
+                            <strong>Formula Sewa Unit:</strong><br />
+                            Revenue per item = <em>Base Price &times; Quantity/Durasi &times; UnitQty</em>
+                        </small>
+                    }
+                    else if (isMoving)
+                    {
+                        <small class="text-muted">
+                            <strong>Formula Moving:</strong><br />
+                            Revenue per item = <em>Base Price &times; Quantity &times; UnitQty</em>
+                        </small>
+                    }
                 </fieldset>
             </div>
         </section>
@@ -347,7 +492,8 @@
                             procOfferId = item.ProcOfferId,
                             quantity = item.Quantity,
                             trip = item.Trip,
-                            prices = item.Prices ?? new List<decimal>()
+                            prices = item.Prices ?? new List<decimal>(),
+                            isIncluded = item.IsIncluded
                         })
                         .ToList()
                 })
@@ -382,6 +528,104 @@
             const isEditMode = @(isEdit.ToString().ToLowerInvariant());
             let forcedSubmitInProgress = false;
             const bootstrapModal = window.bootstrap?.Modal;
+
+            // JobType detection
+            const jobTypeName = "@jobTypeName";
+            const isPengangkutan = jobTypeName === "Angkutan";
+            const isSewaUnit = jobTypeName === "StandBy";
+            const isMoving = jobTypeName === "Moving";
+
+            // UnitType data and mapping
+            const unitTypes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(((IEnumerable<ProcurementHTE.Core.Models.UnitType>)ViewBag.UnitTypes ?? new List<ProcurementHTE.Core.Models.UnitType>()).Select(u => new { u.Code, u.Name }).ToList()));
+            const jobTypeUnitMapping = {
+                'Angkutan': ['TRIP'],
+                'StandBy': ['HARI', 'JAM', 'LSP'],
+                'Moving': ['TRIP', 'KALI']
+            };
+
+            // Populate Unit Revenue dropdowns (only for StandBy & Moving)
+            function populateUnitRevenueDropdowns() {
+                // Skip for Angkutan (always TRIP)
+                if (isPengangkutan) return;
+
+                const allowedCodes = jobTypeUnitMapping[jobTypeName] || ['HARI', 'JAM', 'LSP', 'TRIP', 'KALI'];
+
+                document.querySelectorAll('.unit-revenue-dropdown').forEach(dropdown => {
+                    const currentValue = dropdown.dataset.currentValue || dropdown.value;
+                    dropdown.innerHTML = '<option value="">-- Pilih --</option>';
+
+                    unitTypes.forEach(unit => {
+                        if (allowedCodes.includes(unit.Code)) {
+                            const option = document.createElement('option');
+                            option.value = unit.Code;
+                            option.text = unit.Name;
+                            if (unit.Code === currentValue) {
+                                option.selected = true;
+                            }
+                            dropdown.appendChild(option);
+                        }
+                    });
+
+                    // Add event listener to update vendor items when Unit Revenue changes
+                    if (!dropdown.dataset.listenerAdded) {
+                        dropdown.addEventListener('change', (ev) => { updateVendorItemsUnitRevenue(ev); syncVendorItemsFromRevenue(); });
+                        dropdown.dataset.listenerAdded = 'true';
+                    }
+                });
+            }
+
+            // Update Unit Revenue in vendor items when dropdown changes
+            function updateVendorItemsUnitRevenue(event) {
+                const dropdown = event.target;
+                const row = dropdown.closest('[data-item-row]');
+                const procOfferId = row?.dataset?.procOfferId;
+                if (!procOfferId) return;
+
+                const unitRevenueText = dropdown.selectedOptions?.[0]?.text || '';
+
+                // Update all vendor items with matching procOfferId
+                document.querySelectorAll(`[data-vendor-item][data-proc-offer-id="${procOfferId}"]`).forEach(vendorItem => {
+                    const unitRevenueInput = vendorItem.querySelector('[data-unit-revenue-display]');
+                    if (unitRevenueInput) {
+                        unitRevenueInput.value = unitRevenueText;
+                    }
+                });
+            }
+
+            // Sync all vendor item displays (Qty Items, Unit Items, Unit Revenue, and Quantity/Durasi) from PDC rows
+            function syncVendorItemsFromRevenue() {
+                document.querySelectorAll('#pdcItems [data-item-row]').forEach(row => {
+                    const procOfferId = row.dataset.procOfferId;
+                    if (!procOfferId) return;
+
+                    const qtyItems = row.querySelector('[data-qty-items]')?.value || '';
+                    const unitItems = row.querySelector('[data-unit-items]')?.value || '';
+                    const unitRevenue = row.querySelector('[data-unit-revenue]')?.selectedOptions?.[0]?.text || '';
+                    const quantityDurasi = row.querySelector('[data-quantity-durasi]')?.value || '';
+
+                    document.querySelectorAll(`[data-vendor-item][data-proc-offer-id="${procOfferId}"]`).forEach(vendorItem => {
+                        const qtyDisplay = vendorItem.querySelector('[data-qty-items-display]');
+                        const unitDisplay = vendorItem.querySelector('[data-unit-items-display]');
+                        const unitRevDisplay = vendorItem.querySelector('[data-unit-revenue-display]');
+                        const qtyDurasiInput = vendorItem.querySelector('[data-quantity-input]');
+
+                        if (qtyDisplay) qtyDisplay.value = qtyItems;
+                        if (unitDisplay) unitDisplay.value = unitItems;
+                        if (unitRevDisplay) unitRevDisplay.value = unitRevenue;
+                        // Also sync quantity/durasi if current value is empty or 0 (for new items)
+                        if (qtyDurasiInput && quantityDurasi !== '') {
+                            const currentVal = numberValue(qtyDurasiInput);
+                            if (currentVal <= 0 || qtyDurasiInput.value === '') {
+                                qtyDurasiInput.value = quantityDurasi;
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Initialize on page load
+            populateUnitRevenueDropdowns();
+            try { syncVendorItemsFromRevenue(); } catch (e) { console.warn('[PnL] syncVendorItemsFromRevenue init failed', e); }
 
             const showLetterPreview = (url) => {
                 if (!url)
@@ -1066,17 +1310,71 @@
                 block.dataset.vendorItem = '1';
                 block.dataset.procOfferId = meta.procOfferId;
                 block.dataset.itemName = meta.itemPenawaran;
+                // Default included, unless preset explicitly set to false
+                const isIncluded = preset?.isIncluded !== false;
+                block.dataset.isIncluded = isIncluded ? 'true' : 'false';
                 const qtyNumeric = Number(meta.quantity);
                 const woQtyDisplay = Number.isFinite(qtyNumeric)
                     ? formatInteger(qtyNumeric)
                     : '-';
+
+                // Get unit info from revenue builder
+                const revenueRow = document.querySelector(`#pdcItems [data-item-row][data-proc-offer-id="${meta.procOfferId}"]`);
+                const qtyItems = revenueRow?.querySelector('[data-qty-items]')?.value || meta.quantity || '';
+                const unitItems = revenueRow?.querySelector('[data-unit-items]')?.value || '';
+                const unitRevenue = revenueRow?.querySelector('[data-unit-revenue]')?.selectedOptions?.[0]?.text || '';
+
+                let formFields = '';
+                if (isPengangkutan) {
+                    // For Pengangkutan: use || to handle 0 as falsy, default quantity to meta.quantity or 1, trip to 1
+                    const defaultQty = preset?.quantity || meta.quantity || 1;
+                    const defaultTrip = preset?.trip || 1;
+                    formFields = `
+                        <div class="col-md-3">
+                            <label class="form-label">Quantity</label>
+                            <input class="form-control form-control-sm text-end" data-quantity-input value="${defaultQty}" inputmode="numeric" />
+                            <span class="text-danger small field-validation-valid" data-valmsg-qty data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Trip</label>
+                            <input class="form-control form-control-sm text-end" data-trip-input value="${defaultTrip}" inputmode="numeric" />
+                            <span class="text-danger small field-validation-valid" data-valmsg-trip data-valmsg-replace="true"></span>
+                        </div>`;
+                } else {
+                    formFields = `
+                        <div class="col-md-2">
+                            <label class="form-label">Qty Items</label>
+                            <input class="form-control form-control-sm text-end" value="${qtyItems}" readonly data-qty-items-display />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Unit Items</label>
+                            <input class="form-control form-control-sm text-end" value="${unitItems}" readonly data-unit-items-display />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Quantity/Durasi</label>
+                            <input class="form-control form-control-sm text-end" data-quantity-input value="${preset?.quantity ?? meta.quantity ?? ''}" inputmode="numeric" />
+                            <span class="text-danger small field-validation-valid" data-valmsg-qty data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Unit Revenue</label>
+                            <input class="form-control form-control-sm text-end" value="${unitRevenue}" readonly data-unit-revenue-display />
+                        </div>
+                        <input type="hidden" data-trip-input value="${preset?.trip || 1}" />`;
+                }
+
                 block.innerHTML = `
                     <input type="hidden" value="${meta.procOfferId}" data-proc-offer-input />
                     <input type="hidden" data-item-index />
+                    <input type="hidden" value="${isIncluded ? 'true' : 'false'}" data-is-included-input />
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <div class="fw-semibold">${meta.itemPenawaran}</div>
-                            <div class="small text-muted">WO Qty: ${woQtyDisplay}</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" data-include-checkbox ${isIncluded ? 'checked' : ''} title="Include item ini dalam penawaran vendor" />
+                            </div>
+                            <div>
+                                <div class="fw-semibold">${meta.itemPenawaran}</div>
+                                <div class="small text-muted">WO Qty: ${woQtyDisplay}</div>
+                            </div>
                         </div>
                         <div class="hstack gap-1">
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle-item>
@@ -1089,16 +1387,7 @@
                     </div>
                     <div class="mt-3 border rounded-3 p-2 bg-body" data-item-body>
                         <div class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label">Quantity</label>
-                                <input class="form-control form-control-sm text-end" data-quantity-input value="${preset?.quantity ?? meta.quantity ?? ''}" inputmode="numeric" />
-                                <span class="text-danger small field-validation-valid" data-valmsg-qty data-valmsg-replace="true"></span>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Trip</label>
-                                <input class="form-control form-control-sm text-end" data-trip-input value="${preset?.trip ?? ''}" inputmode="numeric" />
-                                <span class="text-danger small field-validation-valid" data-valmsg-trip data-valmsg-replace="true"></span>
-                            </div>
+                            ${formFields}
                         </div>
                         <div class="mt-3 vstack gap-2" data-rounds></div>
                     </div>`;
@@ -1108,6 +1397,30 @@
                     ? preset.prices.map(price => ({ price }))
                     : [{ price: '' }];
                 presetRounds.forEach(round => roundsHost.appendChild(buildRoundRow(block, round)));
+
+                // Handle include checkbox toggle
+                const includeCheckbox = block.querySelector('[data-include-checkbox]');
+                const isIncludedInput = block.querySelector('[data-is-included-input]');
+                const itemBody = block.querySelector('[data-item-body]');
+                
+                includeCheckbox?.addEventListener('change', () => {
+                    const checked = includeCheckbox.checked;
+                    block.dataset.isIncluded = checked ? 'true' : 'false';
+                    if (isIncludedInput) isIncludedInput.value = checked ? 'true' : 'false';
+                    // Visual feedback: dim the item if excluded
+                    if (itemBody) {
+                        itemBody.style.opacity = checked ? '1' : '0.5';
+                        itemBody.style.pointerEvents = checked ? 'auto' : 'none';
+                    }
+                    reindexVendorCards();
+                    recalcSummary();
+                });
+                
+                // Apply initial state
+                if (!isIncluded && itemBody) {
+                    itemBody.style.opacity = '0.5';
+                    itemBody.style.pointerEvents = 'none';
+                }
 
                 block.querySelector('[data-add-round]')?.addEventListener('click', () => {
                     roundsHost.appendChild(buildRoundRow(block));
@@ -1168,34 +1481,69 @@
                         vendorHidden.value = vendorId;
                     }
 
-                    card.querySelectorAll('[data-vendor-item]').forEach((block, itemIdx) => {
-                        const base = `Vendors[${vendorIdx}].Items[${itemIdx}]`;
+                    const allItems = Array.from(card.querySelectorAll('[data-vendor-item]'));
+                    let includedIdx = 0;
+                    
+                    allItems.forEach((block) => {
+                        const isIncluded = block.dataset.isIncluded !== 'false';
                         const procInput = block.querySelector('[data-proc-offer-input]');
                         const qtyInput = block.querySelector('[data-quantity-input]');
                         const tripInput = block.querySelector('[data-trip-input]');
+                        const isIncludedInput = block.querySelector('[data-is-included-input]');
                         const qtyMsg = block.querySelector('[data-valmsg-qty]');
                         const tripMsg = block.querySelector('[data-valmsg-trip]');
-                        if (procInput) procInput.name = `${base}.ProcOfferId`;
-                        if (qtyInput) qtyInput.name = `${base}.Quantity`;
-                        if (tripInput) tripInput.name = `${base}.Trip`;
-                        if (qtyMsg) {
-                            qtyMsg.setAttribute('data-valmsg-for', qtyInput?.name ?? '');
-                            qtyMsg.dataset.valmsgFor = qtyInput?.name ?? '';
-                        }
-                        if (tripMsg) {
-                            tripMsg.setAttribute('data-valmsg-for', tripInput?.name ?? '');
-                            tripMsg.dataset.valmsgFor = tripInput?.name ?? '';
-                        }
-
-                        block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
-                            const priceInput = row.querySelector('[data-price-input]');
-                            const priceMsg = row.querySelector('[data-valmsg-price]');
-                            if (priceInput) priceInput.name = `${base}.Prices[${roundIdx}]`;
-                            if (priceMsg) {
-                                priceMsg.setAttribute('data-valmsg-for', priceInput?.name ?? '');
-                                priceMsg.dataset.valmsgFor = priceInput?.name ?? '';
+                        
+                        if (isIncluded) {
+                            // Assign names for included items
+                            const base = `Vendors[${vendorIdx}].Items[${includedIdx}]`;
+                            if (procInput) procInput.name = `${base}.ProcOfferId`;
+                            if (qtyInput) qtyInput.name = `${base}.Quantity`;
+                            if (tripInput) tripInput.name = `${base}.Trip`;
+                            if (isIncludedInput) isIncludedInput.name = `${base}.IsIncluded`;
+                            if (qtyMsg) {
+                                qtyMsg.setAttribute('data-valmsg-for', qtyInput?.name ?? '');
+                                qtyMsg.dataset.valmsgFor = qtyInput?.name ?? '';
                             }
-                        });
+                            if (tripMsg) {
+                                tripMsg.setAttribute('data-valmsg-for', tripInput?.name ?? '');
+                                tripMsg.dataset.valmsgFor = tripInput?.name ?? '';
+                            }
+
+                            block.querySelectorAll('[data-round-row]').forEach((row, roundIdx) => {
+                                const priceInput = row.querySelector('[data-price-input]');
+                                const priceMsg = row.querySelector('[data-valmsg-price]');
+                                if (priceInput) priceInput.name = `${base}.Prices[${roundIdx}]`;
+                                if (priceMsg) {
+                                    priceMsg.setAttribute('data-valmsg-for', priceInput?.name ?? '');
+                                    priceMsg.dataset.valmsgFor = priceInput?.name ?? '';
+                                }
+                            });
+                            
+                            includedIdx++;
+                        } else {
+                            // Clear names for excluded items so they are not submitted
+                            if (procInput) procInput.removeAttribute('name');
+                            if (qtyInput) qtyInput.removeAttribute('name');
+                            if (tripInput) tripInput.removeAttribute('name');
+                            if (isIncludedInput) isIncludedInput.removeAttribute('name');
+                            if (qtyMsg) {
+                                qtyMsg.removeAttribute('data-valmsg-for');
+                                delete qtyMsg.dataset.valmsgFor;
+                            }
+                            if (tripMsg) {
+                                tripMsg.removeAttribute('data-valmsg-for');
+                                delete tripMsg.dataset.valmsgFor;
+                            }
+                            block.querySelectorAll('[data-round-row]').forEach((row) => {
+                                const priceInput = row.querySelector('[data-price-input]');
+                                const priceMsg = row.querySelector('[data-valmsg-price]');
+                                if (priceInput) priceInput.removeAttribute('name');
+                                if (priceMsg) {
+                                    priceMsg.removeAttribute('data-valmsg-for');
+                                    delete priceMsg.dataset.valmsgFor;
+                                }
+                            });
+                        }
                     });
 
                     assignLetterFieldNames(card, vendorIdx);
@@ -1226,15 +1574,21 @@
                 const itemsHost = card.querySelector('[data-items-host]');
                 if (!itemsHost) return;
                 itemsHost.innerHTML = '';
+                const hasPresetItems = preset?.items && preset.items.length > 0;
                 (procItems || []).forEach(item => {
                     const presetItem = preset?.items?.find(it => it.procOfferId === item.procOfferId);
-                    itemsHost.appendChild(buildVendorItem(item, presetItem));
+                    // If we have preset data (edit mode) but this item is not in preset, default to included
+                    // This ensures new items added after PnL creation are checked and interactive by default
+                    const effectivePreset = presetItem ?? (hasPresetItems ? { isIncluded: true } : undefined);
+                    itemsHost.appendChild(buildVendorItem(item, effectivePreset));
                 });
                 card.querySelector('[data-empty-state]')?.classList.add('d-none');
                 itemsHost.classList.remove('d-none');
                 card.querySelector('[data-total-row]')?.classList.remove('d-none');
                 bindCurrencyWithin(itemsHost);
                 setVendorItemsCollapsed(false);
+                // Ensure vendor item displays (qty, unit, unit revenue) are synchronized with PDC rows
+                try { syncVendorItemsFromRevenue(); } catch (e) { console.warn('[PnL] syncVendorItemsFromRevenue failed', e); }
             };
 
             const assignVendorToCard = (card, vendorId, preset) => {
@@ -1389,10 +1743,29 @@
             const computeVendorFinalOffer = (card) => {
                 if (!card) return 0;
                 let total = 0;
+                // Only include items that are checked (isIncluded !== 'false')
                 card.querySelectorAll('[data-vendor-item]').forEach(block => {
-                    const qty = numberValue(block.querySelector('[data-quantity-input]'));
-                    const trip = numberValue(block.querySelector('[data-trip-input]'));
-                    if (qty <= 0 || trip <= 0) return;
+                    const itemName = block.dataset.itemName || 'unknown';
+                    const isIncludedAttr = block.dataset.isIncluded;
+                    
+                    // Skip excluded items
+                    if (isIncludedAttr === 'false') {
+                        console.log(`[Calc] SKIP ${itemName}: isIncluded=${isIncludedAttr}`);
+                        return;
+                    }
+                    
+                    const qtyInput = block.querySelector('[data-quantity-input]');
+                    const tripInput = block.querySelector('[data-trip-input]');
+                    let qty = numberValue(qtyInput);
+                    let trip = numberValue(tripInput);
+                    
+                    // Default qty and trip to 1 if zero or negative (for calculation purposes)
+                    if (qty <= 0) qty = 1;
+                    if (trip <= 0) trip = 1;
+                    
+                    // Note: We no longer skip items with zero values, we use defaults instead
+                    console.log(`[Calc] Processing ${itemName}: qty=${qty}, trip=${trip}`);
+                    
                     let finalPrice = Number.POSITIVE_INFINITY;
                     block.querySelectorAll('[data-price-input]').forEach(priceInput => {
                         const price = numberValue(priceInput);
@@ -1400,10 +1773,16 @@
                             finalPrice = price;
                         }
                     });
+                    
                     if (Number.isFinite(finalPrice) && finalPrice > 0) {
-                        total += finalPrice * qty * trip;
+                        const itemTotal = finalPrice * qty * trip;
+                        console.log(`[Calc] INCLUDE ${itemName}: price=${finalPrice}, qty=${qty}, trip=${trip}, subtotal=${itemTotal}`);
+                        total += itemTotal;
+                    } else {
+                        console.log(`[Calc] SKIP ${itemName}: no valid price (finalPrice=${finalPrice})`);
                     }
                 });
+                console.log(`[Calc] TOTAL = ${total}`);
                 return total;
             };
 
@@ -1466,44 +1845,69 @@
 
             const recalcHeader = (options = {}) => {
                 const forceDistanceKm = options.forceDistanceKm ?? !isEditMode;
-                const distance = parseFloat(distanceInput?.value?.toString().replace(',', '.') ?? '0') || 0;
                 let revenueSum = 0;
                 const itemSnapshots = [];
-                document.querySelectorAll('#pdcItems [data-item-row]').forEach(row => {
-                    const qty = numberValue(row.querySelector('[data-quantity]'));
-                    const tarifAwal = numberValue(row.querySelector('[data-tarif-awal]'));
-                    const tarifAdd = numberValue(row.querySelector('[data-tarif-add]'));
-                    const kmInput = row.querySelector('[data-km]');
-                    let km = 0;
-                    if (forceDistanceKm && distance > 400) {
-                        km = Math.max(0, (distance - 400) / 25);
-                        setKmDisplay(kmInput, km);
-                    } else if (kmInput) {
-                        km = getKmValue(kmInput);
-                    }
 
-                    const operatorCost = tarifAdd * km;
-                    const revenue = (tarifAwal + operatorCost) * qty;
+                if (isPengangkutan) {
+                    // PENGANGKUTAN calculation: (BasePrice + OperatorCost) × UnitQty
+                    const distance = parseFloat(distanceInput?.value?.toString().replace(',', '.') ?? '0') || 0;
+                    document.querySelectorAll('#pdcItems [data-item-row]').forEach(row => {
+                        const unitQty = numberValue(row.querySelector('[data-unit-qty]'));
+                        const tarifAwal = numberValue(row.querySelector('[data-tarif-awal]'));
+                        const tarifAdd = numberValue(row.querySelector('[data-tarif-add]'));
+                        const kmInput = row.querySelector('[data-km]');
+                        let km = 0;
+                        if (forceDistanceKm && distance > 400) {
+                            km = Math.max(0, (distance - 400) / 25);
+                            setKmDisplay(kmInput, km);
+                        } else if (kmInput) {
+                            km = getKmValue(kmInput);
+                        }
 
-                    setDisplayNumber(row.querySelector('[data-operator]'), operatorCost);
-                    setDisplayNumber(row.querySelector('[data-rev]'), revenue);
+                        const operatorCost = tarifAdd * km;
+                        const revenue = (tarifAwal + operatorCost) * unitQty;
 
-                    revenueSum += revenue;
+                        setDisplayNumber(row.querySelector('[data-operator]'), operatorCost);
+                        setDisplayNumber(row.querySelector('[data-rev]'), revenue);
 
-                    itemSnapshots.push({
-                        procOfferId: row.dataset.procOfferId,
-                        qty,
-                        tarifAwal,
-                        tarifAdd,
-                        km,
-                        operatorCost,
-                        revenue,
+                        revenueSum += revenue;
+
+                        itemSnapshots.push({
+                            procOfferId: row.dataset.procOfferId,
+                            unitQty,
+                            tarifAwal,
+                            tarifAdd,
+                            km,
+                            operatorCost,
+                            revenue,
+                        });
                     });
-                });
+                } else {
+                    // SEWA_UNIT or MOVING calculation: BasePrice × Qty Items × Quantity/Durasi
+                    document.querySelectorAll('#pdcItems [data-item-row]').forEach(row => {
+                        const qtyItems = numberValue(row.querySelector('[data-qty-items]'));
+                        const basePrice = numberValue(row.querySelector('[data-base-price]'));
+                        const quantityDurasi = numberValue(row.querySelector('[data-quantity-durasi]'));
+
+                        const revenue = basePrice * qtyItems * quantityDurasi;
+
+                        setDisplayNumber(row.querySelector('[data-rev]'), revenue);
+
+                        revenueSum += revenue;
+
+                        itemSnapshots.push({
+                            procOfferId: row.dataset.procOfferId,
+                            qtyItems,
+                            basePrice,
+                            quantityDurasi,
+                            revenue,
+                        });
+                    });
+                }
 
                 setDisplayNumber(document.getElementById('revenue'), revenueSum);
                 debugLog('Header totals recalculated', {
-                    distance,
+                    jobType: jobTypeName,
                     revenue: revenueSum,
                     items: itemSnapshots,
                 });
@@ -1538,6 +1942,9 @@
                 vendorAssignments.forEach((card, vendorId) => {
                     const vendorName = vendorNameMap.get(vendorId) ?? vendorId;
                     card.querySelectorAll('[data-vendor-item]').forEach(block => {
+                        // Skip excluded items
+                        if (block.dataset.isIncluded === 'false') return;
+                        
                         const itemName = block.dataset.itemName ?? block.dataset.procOfferId ?? 'Item';
                         const qty = numberValue(block.querySelector('[data-quantity-input]'));
                         const trip = numberValue(block.querySelector('[data-trip-input]'));
@@ -1646,12 +2053,26 @@
                     event.stopPropagation();
                     return;
                 }
+
+                // DEBUG: Check TglMulaiMoving before submit
+                const tglMulaiMovingField = plForm.querySelector('input[name="TglMulaiMoving"]');
+                if (tglMulaiMovingField) {
+                    console.log('TglMulaiMoving BEFORE currency normalization:', tglMulaiMovingField.value);
+                }
+
                 document.querySelectorAll(currencySelector).forEach(input => {
                     const normalized = input.dataset?.rawValue ?? normalizeCurrencyValue(input.value);
                     input.dataset.rawValue = normalized;
                     input.value = normalized ? normalized.replace('.', ',') : '';
                 });
                 debugLog('Currency fields normalized before submit');
+
+                // DEBUG: Check TglMulaiMoving after currency normalization
+                if (tglMulaiMovingField) {
+                    console.log('TglMulaiMoving AFTER currency normalization:', tglMulaiMovingField.value);
+                    console.log('TglMulaiMoving name attribute:', tglMulaiMovingField.name);
+                    console.log('TglMulaiMoving in FormData:', new FormData(plForm).get('TglMulaiMoving'));
+                }
                 enqueueMicrotask(() => {
                     const prevented = event.defaultPrevented;
                     debugLog('Submit bubble completed', { defaultPrevented: prevented });
@@ -1715,7 +2136,7 @@
                 if (!target) return;
                 if (target.matches(currencySelector)) {
                     updateCurrencyInput(target, true);
-                } else if (target.matches('[data-quantity],[data-km]')) {
+                } else if (target.matches('[data-unit-qty],[data-quantity-durasi],[data-km]')) {
                     recalcHeader();
                 } else if (target.matches('[data-quantity-input],[data-trip-input]')) {
                     recalcSummary();
@@ -1757,6 +2178,8 @@
                 recalcKmPer25FromDistance();
             }
             reindexVendorCards();
+            // Ensure summary is recalculated after all initialization
+            recalcSummary();
         })();
     </script>
 }

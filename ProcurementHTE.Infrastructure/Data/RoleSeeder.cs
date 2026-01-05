@@ -20,7 +20,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Admin",
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
-                "HTE",
                 "Operator",
                 "Assistant Manager HTE",
                 "Vice President",
@@ -126,15 +125,6 @@ namespace ProcurementHTE.Infrastructure.Data
                 Permissions.Vendor.Read,
                 Permissions.Doc.Read,
                 Permissions.Doc.Approve
-            );
-
-            await AddPermissions(
-                "HTE",
-                Permissions.Procurement.Read,
-                Permissions.Procurement.Create,
-                Permissions.Procurement.Edit,
-                Permissions.Doc.Read,
-                Permissions.Doc.Upload
             );
 
             await AddPermissions(

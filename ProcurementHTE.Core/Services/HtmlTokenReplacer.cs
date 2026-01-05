@@ -270,17 +270,36 @@ namespace ProcurementHTE.Core.Services
                         : string.Empty;
                 html = ReplaceToken(html, "JustifikasiListItem", justifikasiItem);
 
+                // Token untuk tanggal terima WO (bisa di-extend sesuai kebutuhan)
+                html = ReplaceToken(html, "TglTerimaWO", FormatDate(proc.StartDate));
+
+                // Conditional sidebar rows based on JobType
+                var sidebarRows = GenerateSidebarAdditionalRows(jobTypeName, pnl, FormatDate, FormatDecimal);
+                html = ReplaceToken(html, "SidebarAdditionalRows", sidebarRows);
+
+                // Token TglMulaiSewa dan TglMulaiMoving
+                html = ReplaceToken(html, "TglMulaiSewa", FormatDate(pnl.TglMulaiSewa));
+                html = ReplaceToken(html, "TglMulaiMoving", FormatDate(pnl.TglMulaiMoving));
+
+                // Generate table header based on JobType
+                var itemsTableHeader = GenerateItemsTableHeader(jobTypeName);
+                html = ReplaceToken(html, "PnlItemsTableHeader", itemsTableHeader);
+
+                // Generate colspan for Total Tagihan row
+                var itemsTableColspan = GetItemsTableColspan(jobTypeName);
+                html = ReplaceToken(html, "PnlItemsTableColspan", itemsTableColspan.ToString());
+
                 // Aggregat berdasarkan ProfitLossItem
                 if (pnl.Items != null && pnl.Items.Count != 0)
                 {
-                    var itemsHtml = GenerateItemsTable(pnl.Items, templateKey);
+                    var itemsHtml = GenerateItemsTable(pnl.Items, templateKey, jobTypeName);
                     html = ReplaceToken(html, "PnlItemsTable", itemsHtml);
                 }
 
                 // Tabel penawaran vendor
                 if (pnl.VendorOffers != null && pnl.VendorOffers.Count != 0)
                 {
-                    var vendorOfferHtml = GenerateOfferTable(pnl, proc);
+                    var vendorOfferHtml = GenerateOfferTable(pnl, proc, jobTypeName);
                     html = ReplaceToken(html, "VendorOfferTable", vendorOfferHtml);
 
                     var vendorNegotiationHtml = GenerateVendorNegotiationTable(
@@ -374,7 +393,7 @@ namespace ProcurementHTE.Core.Services
                 }
 
                 // ====== Tabel Profit & Loss Estimate (summary hijau) ======
-                var pnlEstimateHtml = GeneratePnlEstimateTable(pnl, proc);
+                var pnlEstimateHtml = GeneratePnlEstimateTable(pnl, proc, jobTypeName);
                 html = ReplaceToken(html, "PnlEstimateTable", pnlEstimateHtml);
             }
             else
@@ -664,8 +683,8 @@ namespace ProcurementHTE.Core.Services
 
                 var desc = procOffer?.ItemPenawaran ?? "-";
                 var unit = procOffer?.Unit ?? offer.ProcOffer?.Unit ?? "-";
-                var qty = pnlItem?.Quantity ?? offer.Quantity;
-                var trip = offer.Trip > 0 ? offer.Trip : 1;
+                var qty = pnlItem?.UnitQty ?? offer.QuantityItem;
+                var trip = offer.QuantityOfUnit > 0 ? offer.QuantityOfUnit : 1;
                 var price = offer.Price;
                 var total = price * qty * trip;
 
@@ -703,38 +722,185 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GenerateItemsTable(ICollection<ProfitLossItem> items, string? docType)
+        private static string GenerateItemsTable(ICollection<ProfitLossItem> items, string? docType, string? jobTypeName = null)
         {
             var sb = new StringBuilder();
             var no = 1;
 
             foreach (var item in items)
             {
-                var price = item.TarifAwal + (item.TarifAdd * item.KmPer25);
-                var revenue = price * item.Quantity;
                 sb.AppendLine("<tr>");
                 sb.AppendLine($"  <td class='text-center'>{no++}</td>");
-                sb.AppendLine($"  <td>{item.ProcOffer.ItemPenawaran}</td>");
-                sb.AppendLine($"  <td class='text-center'>{item.Quantity}</td>");
+                sb.AppendLine($"  <td>{item.ProcOffer?.ItemPenawaran ?? "-"}</td>");
+                sb.AppendLine($"  <td class='text-center'>{item.UnitQty}</td>");
+                sb.AppendLine($"  <td class='text-center'>{item.ProcOffer?.Unit ?? "-"}</td>");
+
                 if (docType == "OwnerEstimate")
                 {
-                    sb.AppendLine($"  <td class='text-center'>{item.ProcOffer.Unit}</td>");
+                    var price = item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0));
                     sb.AppendLine($"  <td class='text-end'>{price.ToString("C0", Id)}</td>");
+                    var revenue = price * item.UnitQty;
+                    sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
                 }
-                if (docType == "ProfitLoss")
+                else if (docType == "ProfitLoss")
                 {
-                    sb.AppendLine(
-                        $"  <td class='text-end'>{item.TarifAwal.ToString("N0", Id)}</td>"
-                    );
-                    sb.AppendLine(
-                        $"  <td class='text-end'>{item.TarifAdd.ToString("N0", Id)}</td>"
-                    );
-                    sb.AppendLine($"  <td class='text-center'>{item.KmPer25}</td>");
-                    sb.AppendLine(
-                        $"  <td class='text-end'>{item.OperatorCost.ToString("N0", Id)}</td>"
-                    );
+                    // Conditional rendering based on JobType
+                    if (jobTypeName == "Angkutan")
+                    {
+                        // Angkutan: Tarif 400km, Tarif Add, KM/25, Operator Cost, Revenue
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.TarifAdd ?? 0).ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{item.KmPer25 ?? 0}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.OperatorCost ?? 0).ToString("N0", Id)}</td>");
+                        var revenue = (item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0))) * item.UnitQty;
+                        sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+                    }
+                    else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                    {
+                        // Sewa Unit: Durasi, Unit Revenue, Base Price, Revenue
+                        var durasi = item.Quantity ?? 1;
+                        var unitRevenue = item.ProcOffer?.UnitRevenue ?? "-";
+                        sb.AppendLine($"  <td class='text-center'>{durasi.ToString("0.##", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{unitRevenue}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
+                    }
+                    else if (jobTypeName == "Moving")
+                    {
+                        // Moving: Qty Revenue, Unit Revenue, Base Price, Revenue
+                        var quantity = item.Quantity ?? 1;
+                        var unitRevenue = item.ProcOffer?.UnitRevenue ?? "-";
+                        sb.AppendLine($"  <td class='text-center'>{quantity.ToString("0.##", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{unitRevenue}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
+                    }
+                    else
+                    {
+                        // Default/fallback: use original Angkutan logic
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.TarifAdd ?? 0).ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{item.KmPer25 ?? 0}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.OperatorCost ?? 0).ToString("N0", Id)}</td>");
+                        var revenue = (item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0))) * item.UnitQty;
+                        sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+                    }
                 }
-                sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+
+                sb.AppendLine("</tr>");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GenerateItemsTableHeader(string? jobTypeName)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<tr class='text-center'>");
+            sb.AppendLine("  <th scope='col' style='width: 1.5rem'>No</th>");
+            sb.AppendLine("  <th class='text-start' scope='col' style='width: 14rem'>Item</th>");
+            sb.AppendLine("  <th scope='col' style='width: 3rem'>Qty Items</th>");
+            sb.AppendLine("  <th scope='col' style='width: 4rem'>Unit Items</th>");
+
+            if (jobTypeName == "Angkutan")
+            {
+                // Angkutan: Tarif 400km, Tarif Add, KM/25, Operator Cost, Jumlah
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Tarif 400 km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 6rem'>Tarif Add</th>");
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>KM / 25 Km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Operator Cost</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+            else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+            {
+                // Sewa Unit: Durasi, Unit Revenue, Base Price, Jumlah
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>Durasi</th>");
+                sb.AppendLine("  <th scope='col' style='width: 5rem'>Unit Revenue</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Base Price</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+            else if (jobTypeName == "Moving")
+            {
+                // Moving: Qty Revenue, Unit Revenue, Base Price, Jumlah
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>Qty Revenue</th>");
+                sb.AppendLine("  <th scope='col' style='width: 5rem'>Unit Revenue</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Base Price</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+            else
+            {
+                // Default/fallback: Angkutan layout
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Tarif 400 km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 6rem'>Tarif Add</th>");
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>KM / 25 Km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Operator Cost</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+
+            sb.AppendLine("</tr>");
+            return sb.ToString();
+        }
+
+        private static int GetItemsTableColspan(string? jobTypeName)
+        {
+            // Calculate colspan for "Total Tagihan" row based on JobType
+            // Base columns: No, Item, Qty Items, Unit Items = 4
+            if (jobTypeName == "Angkutan")
+            {
+                // + Tarif 400km, Tarif Add, KM/25, Operator Cost = 4 more = 8 total
+                return 8;
+            }
+            else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit" || jobTypeName == "Moving")
+            {
+                // + Durasi/Quantity, Unit Revenue, Base Price = 3 more = 7 total
+                return 7;
+            }
+            // Default: Angkutan layout
+            return 8;
+        }
+
+        private static string GenerateSidebarAdditionalRows(
+            string? jobTypeName,
+            ProfitLoss pnl,
+            Func<DateTime?, string> formatDate,
+            Func<decimal?, string, string> formatDecimal)
+        {
+            var sb = new StringBuilder();
+
+            if (jobTypeName == "Angkutan")
+            {
+                // Angkutan: Tampilkan Jarak (untuk perhitungan KM/25)
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Jarak</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} KM</td>");
+                sb.AppendLine("</tr>");
+            }
+            else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+            {
+                // Sewa Unit: Tampilkan Tanggal Mulai Sewa (tanpa Jarak)
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Tanggal Mulai Sewa</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDate(pnl.TglMulaiSewa)}</td>");
+                sb.AppendLine("</tr>");
+            }
+            else if (jobTypeName == "Moving")
+            {
+                // Moving: Tampilkan BOTH Tanggal Mulai Moving DAN Jarak (info only)
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Tgl Mulai Moving</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDate(pnl.TglMulaiMoving)}</td>");
+                sb.AppendLine("</tr>");
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Jarak</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} Km</td>");
+                sb.AppendLine("</tr>");
+            }
+            else
+            {
+                // Default: Tampilkan Jarak seperti Angkutan
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Jarak</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} KM</td>");
                 sb.AppendLine("</tr>");
             }
 
@@ -769,7 +935,7 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GenerateOfferTable(ProfitLoss pnl, Procurement proc)
+        private static string GenerateOfferTable(ProfitLoss pnl, Procurement proc, string? jobTypeName = null)
         {
             if (pnl.VendorOffers == null || pnl.VendorOffers.Count == 0)
             {
@@ -782,6 +948,14 @@ namespace ProcurementHTE.Core.Services
             var procOffersById = procOffers.ToDictionary(o => o.ProcOfferId, o => o);
 
             var sb = new StringBuilder();
+
+            // Determine column labels based on JobType
+            var tripLabel = jobTypeName switch
+            {
+                "StandBy" or "Sewa Unit" => "Durasi",
+                "Moving" => "Qty Revenue",
+                _ => "Trip"
+            };
 
             // Group berdasarkan vendor
             var vendorGroups = pnl
@@ -822,13 +996,21 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine(
                     "        <th class='blue-header text-center' style='width: 1rem'>No</th>"
                 );
-                sb.AppendLine("        <th class='blue-header' style='width: 15rem'>Item</th>");
+                sb.AppendLine("        <th class='blue-header' style='width: 12rem'>Item</th>");
                 sb.AppendLine(
-                    "        <th class='blue-header text-center' style='width: 2rem'>Unit</th>"
+                    "        <th class='blue-header text-center' style='width: 3rem'>Qty Items</th>"
                 );
                 sb.AppendLine(
-                    "        <th class='blue-header text-center' style='width: 5rem'>Trip</th>"
+                    "        <th class='blue-header text-center' style='width: 4rem'>Unit Items</th>"
                 );
+                sb.AppendLine(
+                    $"        <th class='blue-header text-center' style='width: 4rem'>{tripLabel}</th>"
+                );
+                // Tambah kolom Unit Revenue untuk Moving/Sewa Unit
+                if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                {
+                    sb.AppendLine("        <th class='blue-header text-center' style='width: 4rem'>Unit Revenue</th>");
+                }
                 sb.AppendLine("        <th class='blue-header text-center'>Harga awal</th>");
 
                 // Kolom Harga Nego #1..#n (dinamis dari round)
@@ -858,13 +1040,24 @@ namespace ProcurementHTE.Core.Services
                     var itemName =
                         baseOffer?.ItemPenawaran ?? pnlItem?.ProcOffer?.ItemPenawaran ?? "-";
 
-                    var qty = pnlItem?.Quantity ?? baseOffer?.Qty ?? 0;
+                    var qty = pnlItem?.UnitQty ?? baseOffer?.Qty ?? 0;
 
                     // Trip & unit diambil dari penawaran vendor (asumsi: sama untuk semua round)
                     var firstOfferForItem = itemGroup.OrderBy(vo => vo.Round).First();
 
                     var unit = baseOffer?.Unit ?? "-";
-                    var trip = firstOfferForItem.Trip; // property Trip di VendorOffer
+                    
+                    // Untuk Moving/Sewa Unit, Quantity/Durasi diambil dari ProfitLossItem.Quantity
+                    // Untuk Angkutan, tetap pakai QuantityOfUnit dari VendorOffer
+                    decimal trip;
+                    if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                    {
+                        trip = pnlItem?.Quantity ?? firstOfferForItem.QuantityOfUnit;
+                    }
+                    else
+                    {
+                        trip = firstOfferForItem.QuantityOfUnit;
+                    }
 
                     // List harga per round (nullable), indeks 0 = round minRound (Harga awal)
                     var pricesPerRound = new decimal?[totalRoundCount];
@@ -912,11 +1105,20 @@ namespace ProcurementHTE.Core.Services
                     }
 
                     // RENDER BARIS ITEM
+                    // Ambil Unit Revenue dari baseOffer
+                    var unitRevenue = baseOffer?.UnitRevenue ?? pnlItem?.ProcOffer?.UnitRevenue ?? "-";
+
                     sb.AppendLine("      <tr>");
                     sb.AppendLine($"        <td class='text-center'>{no++}</td>");
                     sb.AppendLine($"        <td>{itemName}</td>");
                     sb.AppendLine($"        <td class='text-center'>{qty.ToString("N0", Id)}</td>");
-                    sb.AppendLine($"        <td class='text-center'>{trip}</td>");
+                    sb.AppendLine($"        <td class='text-center'>{unit}</td>");
+                    sb.AppendLine($"        <td class='text-center'>{trip.ToString("0.##", Id)}</td>");
+                    // Tambah Unit Revenue untuk Moving/Sewa Unit
+                    if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                    {
+                        sb.AppendLine($"        <td class='text-center'>{unitRevenue}</td>");
+                    }
 
                     for (var idx = 0; idx < totalRoundCount; idx++)
                     {
@@ -943,7 +1145,12 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine("    <tfoot>");
                 sb.AppendLine("      <tr>");
 
-                var colspan = 4 + totalRoundCount; // No + Uraian + Unit + Trip + semua harga
+                // No + Item + Qty Items + Unit Items + Trip/Durasi + (Unit Revenue jika Moving/Sewa) + semua harga
+                var colspan = 5 + totalRoundCount;
+                if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                {
+                    colspan += 1; // tambah 1 untuk kolom Unit Revenue
+                }
                 sb.AppendLine($"        <th colspan='{colspan}'>Tagihan</th>");
                 sb.AppendLine($"        <th class='text-end'>{grandTotal.ToString("N0", Id)}</th>");
                 sb.AppendLine("      </tr>");
@@ -955,7 +1162,7 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GeneratePnlEstimateTable(ProfitLoss pnl, Procurement proc)
+        private static string GeneratePnlEstimateTable(ProfitLoss pnl, Procurement proc, string? jobTypeName = null)
         {
             var sb = new StringBuilder();
 
@@ -1022,8 +1229,18 @@ namespace ProcurementHTE.Core.Services
 
                         // qty pakai PNL kalau ada, kalau tidak pakai qty dari penawaran vendor
                         pnlItemsByOfferId.TryGetValue(itemGroup.Key, out var pnlItem);
-                        var qty = pnlItem?.Quantity ?? offerForRound.Quantity;
-                        var trip = offerForRound.Trip;
+                        var qty = pnlItem?.UnitQty ?? offerForRound.QuantityItem;
+                        
+                        // Untuk Moving/Sewa Unit, trip diambil dari ProfitLossItem.Quantity
+                        decimal trip;
+                        if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                        {
+                            trip = pnlItem?.Quantity ?? offerForRound.QuantityOfUnit;
+                        }
+                        else
+                        {
+                            trip = offerForRound.QuantityOfUnit;
+                        }
 
                         if (qty <= 0)
                             continue;
@@ -1231,11 +1448,11 @@ namespace ProcurementHTE.Core.Services
                         continue;
 
                     pnlItemsByOfferId.TryGetValue(group.Key, out var pnlItem);
-                    var qty = pnlItem?.Quantity ?? offer.Quantity;
+                    var qty = pnlItem?.UnitQty ?? offer.QuantityItem;
                     if (qty <= 0)
                         continue;
 
-                    var trip = offer.Trip > 0 ? offer.Trip : 1;
+                    var trip = offer.QuantityOfUnit > 0 ? offer.QuantityOfUnit : 1;
                     total += offer.Price * qty * trip;
                     hasRow = true;
                 }

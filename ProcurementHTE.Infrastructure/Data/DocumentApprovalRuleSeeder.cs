@@ -47,7 +47,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     (500_000_000m, 5_000_000_000m, roleManagerTnl, roleVp),
                     (5_000_000_000m, 10_000_000_000m, roleVp, roleOpDir),
                     (10_000_000_000m, 15_000_000_000m, roleOpDir, rolePresDir),
-                    (15_000_000_000m, decimal.MaxValue, rolePresDir, roleBoard ?? rolePresDir),
+                    (15_000_000_000m, 99_000_000_000m, rolePresDir, roleBoard ?? rolePresDir),
                 };
 
                 foreach (var docType in docTypes)

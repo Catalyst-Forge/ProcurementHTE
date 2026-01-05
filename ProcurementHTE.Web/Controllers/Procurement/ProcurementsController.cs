@@ -36,6 +36,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private readonly IProcDocumentService _procDocService;
         private readonly IVendorRoundLetterRepository _roundLetterRepository;
         private readonly UserManager<User> _userManager;
+        private readonly IUnitTypeRepository _unitTypeRepository;
 
         public ProcurementsController(
             IProcurementService procurementService,
@@ -46,7 +47,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             IDocumentTypeService docTypeService,
             IProcDocumentService procDocService,
             IVendorRoundLetterRepository roundLetterRepository,
-            UserManager<User> userManager
+            UserManager<User> userManager,
+            IUnitTypeRepository unitTypeRepository
         )
         {
             _procurementService = procurementService;
@@ -58,6 +60,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             _procDocService = procDocService;
             _roundLetterRepository = roundLetterRepository;
             _userManager = userManager;
+            _unitTypeRepository = unitTypeRepository;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -412,7 +415,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 viewModel.Statuses = statuses;
                 await PopulateEditUserSelectListsAsync(viewModel);
 
+                var unitTypes = await _unitTypeRepository.GetActiveAsync();
                 var jobTypeName = procurement.JobType?.TypeName ?? "Other";
+                ViewBag.UnitTypes = unitTypes;
                 ViewBag.SelectedJobTypeName = jobTypeName;
 
                 return View(viewModel);
@@ -756,6 +761,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 var viewModel = new ProfitLossInputViewModel
                 {
                     ProcurementId = procurementId,
+                    JobTypeName = procurement.JobType?.TypeName,
                     VendorChoices = vendors
                         .Select(vendor => new VendorChoiceViewModel
                         {
@@ -769,6 +775,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                             ProcOfferId = o.ProcOfferId,
                             ItemPenawaran = o.ItemPenawaran,
                             Quantity = o.Qty,
+                            Unit = o.Unit,
+                            UnitRevenue = o.UnitRevenue,
                         })
                         .ToList(),
                 };
@@ -787,6 +795,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
                 ViewBag.ProcNum = procurement.ProcNum;
                 ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
+                ViewBag.JobTypeName = procurement.JobType?.TypeName ?? "Unknown";
+                ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();
 
                 if (viewModel.OfferItems.Count == 0)
                 {
@@ -813,6 +823,12 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             foreach (var key in offerKeys)
             {
                 ModelState.Remove($"Items[{key}].ProcOfferId");
+            }
+
+            // Backfill OfferItems and quantities early so validation uses default values when user didn't enter them
+            if (!string.IsNullOrWhiteSpace(viewModel.ProcurementId))
+            {
+                await RepopulateVendorChoices(viewModel);
             }
 
             // Validasi ProcurementId
@@ -1079,23 +1095,52 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     .GroupBy(v => v.VendorId, StringComparer.OrdinalIgnoreCase)
                     .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
+                // Get all current ProcOffers to ensure vendor items include new offers
+                var allProcOfferIds = (procurement.ProcOffers ?? [])
+                    .Select(x => x.ProcOfferId)
+                    .ToList();
+
                 var vendorModels = vendorLookup
                     .Select(kvp =>
                     {
                         var vendorEntries = kvp.Value;
-                        var aggregatedItems = vendorEntries
+
+                        // Get existing vendor items
+                        var existingVendorItems = vendorEntries
                             .SelectMany(v => v.Items ?? [])
                             .GroupBy(it => it.ProcOfferId, StringComparer.OrdinalIgnoreCase)
-                            .Select(group =>
+                            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
+
+                        // Build items list including both existing and new ProcOffers
+                        var aggregatedItems = allProcOfferIds
+                            .Select(procOfferId =>
                             {
-                                var representative = group.Last();
-                                return new VendorOfferPerItemInputVm
+                                if (existingVendorItems.TryGetValue(procOfferId, out var existing))
                                 {
-                                    ProcOfferId = representative.ProcOfferId,
-                                    Prices = representative.Prices?.ToList() ?? [],
-                                    Quantity = representative.Quantity,
-                                    Trip = representative.Trip,
-                                };
+                                    // Use existing vendor item data (preserves IsIncluded state)
+                                    return new VendorOfferPerItemInputVm
+                                    {
+                                        ProcOfferId = existing.ProcOfferId,
+                                        Prices = existing.Prices?.ToList() ?? [],
+                                        Quantity = existing.Quantity,
+                                        Trip = existing.Trip,
+                                        IsIncluded = existing.IsIncluded,  // ✅ Preserve checked/unchecked state
+                                    };
+                                }
+                                else
+                                {
+                                    // Create empty entry for new ProcOffer
+                                    // IsIncluded = true ensures JavaScript calculation works properly
+                                    // User can uncheck items they don't want to include
+                                    return new VendorOfferPerItemInputVm
+                                    {
+                                        ProcOfferId = procOfferId,
+                                        Prices = [],
+                                        Quantity = 0,
+                                        Trip = 0,
+                                        IsIncluded = true,  // ✅ Checked by default for proper calculation
+                                    };
+                                }
                             })
                             .ToList();
 
@@ -1114,24 +1159,72 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     })
                     .ToList();
 
+                // Build OfferItems from all current ProcOffers
+                var offerItems = (procurement.ProcOffers ?? [])
+                    .Select(x => new ProcOfferLiteVm
+                    {
+                        ProcOfferId = x.ProcOfferId,
+                        ItemPenawaran = x.ItemPenawaran,
+                        Quantity = x.Qty,
+                        Unit = x.Unit,
+                        UnitRevenue = x.UnitRevenue,
+                    })
+                    .ToList();
+
+                // Create a map of existing ProfitLossItems by ProcOfferId
+                var existingItemsMap = dtoItems.ToDictionary(
+                    x => x.ProcOfferId,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                // Build Items list: include existing items AND create empty entries for new ProcOffers
+                var items = offerItems
+                    .Select(offer =>
+                    {
+                        // If item already exists in ProfitLoss, use existing data
+                        if (existingItemsMap.TryGetValue(offer.ProcOfferId, out var existingItem))
+                        {
+                            return new ItemTariffInputVm
+                            {
+                                ProcOfferId = existingItem.ProcOfferId,
+                                Quantity = existingItem.Quantity,
+                                QtyItems = existingItem.QtyItems,
+                                TarifAwal = existingItem.TarifAwal,
+                                TarifAdd = existingItem.TarifAdd,
+                                KmPer25 = existingItem.KmPer25,
+                                OperatorCost = existingItem.OperatorCost,
+                                UnitRevenue = offer.UnitRevenue,
+                            };
+                        }
+                        // Otherwise, create new empty item for the new ProcOffer
+                        else
+                        {
+                            return new ItemTariffInputVm
+                            {
+                                ProcOfferId = offer.ProcOfferId,
+                                Quantity = (int)offer.Quantity,
+                                QtyItems = (int)offer.Quantity,
+                                TarifAwal = 0m,
+                                TarifAdd = 0m,
+                                KmPer25 = 0m,
+                                OperatorCost = 0m,
+                                UnitRevenue = offer.UnitRevenue,
+                            };
+                        }
+                    })
+                    .ToList();
+
                 var vm = new ProfitLossEditViewModel
                 {
                     ProfitLossId = dto.ProfitLossId,
                     ProcurementId = dto.ProcurementId,
+                    JobTypeName = procurement.JobType?.TypeName,
                     AccrualAmount = dto.AccrualAmount,
                     RealizationAmount = dto.RealizationAmount,
                     Distance = dto.Distance,
-                    Items = dtoItems
-                        .Select(x => new ItemTariffInputVm
-                        {
-                            ProcOfferId = x.ProcOfferId,
-                            Quantity = x.Quantity,
-                            TarifAwal = x.TarifAwal,
-                            TarifAdd = x.TarifAdd,
-                            KmPer25 = x.KmPer25,
-                            OperatorCost = x.OperatorCost,
-                        })
-                        .ToList(),
+                    TglMulaiSewa = dto.TglMulaiSewa,
+                    TglMulaiMoving = dto.TglMulaiMoving,
+                    Items = items,
                     Vendors = vendorModels,
                     SelectedVendorIds = selectedVendorIds,
                     VendorChoices = vendors
@@ -1141,17 +1234,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                             Name = v.VendorName,
                         })
                         .ToList(),
-                    OfferItems = (procurement.ProcOffers ?? [])
-                        .Select(x => new ProcOfferLiteVm
-                        {
-                            ProcOfferId = x.ProcOfferId,
-                            ItemPenawaran = x.ItemPenawaran,
-                        })
-                        .ToList(),
+                    OfferItems = offerItems,
                 };
 
                 ViewBag.ProcNum = procurement.ProcNum;
                 ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
+                ViewBag.JobTypeName = procurement.JobType?.TypeName ?? "Unknown";
+                ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
                 return View("CreateProfitLoss", vm);
             }
@@ -1313,15 +1402,19 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     AccrualAmount = viewModel.AccrualAmount,
                     RealizationAmount = viewModel.RealizationAmount,
                     Distance = viewModel.Distance,
+                    TglMulaiSewa = viewModel.TglMulaiSewa,
+                    TglMulaiMoving = viewModel.TglMulaiMoving,
                     Items = (viewModel.Items ?? [])
                         .Select(x => new ProfitLossItemInputDto
                         {
                             ProcOfferId = x.ProcOfferId,
                             Quantity = x.Quantity,
+                            QtyItems = x.QtyItems,
                             TarifAwal = x.TarifAwal ?? 0m,
                             TarifAdd = x.TarifAdd ?? 0m,
                             KmPer25 = x.KmPer25 ?? 0m,
                             OperatorCost = x.OperatorCost ?? 0m,
+                            UnitRevenue = x.UnitRevenue,
                         })
                         .ToList(),
                     SelectedVendorIds = distinctSelectedVendors,
@@ -1466,15 +1559,22 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             List<string> selectedVendors
         )
         {
+            // Backfill Quantity from OfferItems when user didn't provide Quantity/Durasi
+            var qtyMap = (vm.OfferItems ?? [])
+                .Where(o => !string.IsNullOrWhiteSpace(o.ProcOfferId))
+                .ToDictionary(o => o.ProcOfferId, o => o.Quantity, StringComparer.OrdinalIgnoreCase);
+
             var items = (vm.Items ?? [])
                 .Select(x => new ProfitLossItemInputDto
                 {
                     ProcOfferId = x.ProcOfferId,
-                    Quantity = x.Quantity,
+                    Quantity = x.Quantity > 0 ? x.Quantity : (qtyMap.TryGetValue(x.ProcOfferId, out var q) ? (int)q : x.Quantity),
+                    QtyItems = x.QtyItems > 0 ? x.QtyItems : (qtyMap.TryGetValue(x.ProcOfferId, out var qi) ? (int)qi : 1),
                     TarifAwal = x.TarifAwal ?? 0m,
                     TarifAdd = x.TarifAdd ?? 0m,
                     KmPer25 = x.KmPer25 ?? 0m,
                     OperatorCost = x.OperatorCost ?? 0m,
+                    UnitRevenue = x.UnitRevenue,
                 })
                 .ToList();
 
@@ -1491,6 +1591,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 AccrualAmount = vm.AccrualAmount,
                 RealizationAmount = vm.RealizationAmount,
                 Distance = vm.Distance,
+                TglMulaiSewa = vm.TglMulaiSewa,
+                TglMulaiMoving = vm.TglMulaiMoving,
                 Items = items,
                 SelectedVendorIds = selectedVendors,
                 Vendors = vendorItemOffers,
@@ -1520,6 +1622,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 foreach (var item in vendor!.Items ?? Enumerable.Empty<VendorOfferPerItemInputVm>())
                 {
                     if (string.IsNullOrWhiteSpace(item.ProcOfferId))
+                        continue;
+
+                    // Skip items that are explicitly excluded from the offer
+                    if (!item.IsIncluded)
                         continue;
 
                     var dto = new VendorOfferPerItemDto
@@ -1790,14 +1896,38 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             var procurement = await _procurementService.GetProcurementByIdAsync(
                 viewModel.ProcurementId
             );
+
+            // Build a lookup for existing Items to preserve Unit/UnitRevenue from form submission
+            var existingItemsLookup = viewModel.Items?
+                .Where(i => !string.IsNullOrEmpty(i.ProcOfferId))
+                .ToDictionary(
+                    i => i.ProcOfferId,
+                    i => (Unit: i.UnitItems, UnitRevenue: i.UnitRevenue),
+                    StringComparer.OrdinalIgnoreCase
+                ) ?? new Dictionary<string, (string? Unit, string? UnitRevenue)>();
+
             viewModel.OfferItems = (procurement?.ProcOffers ?? [])
-                .Select(o => new ProcOfferLiteVm
+                .Select(o =>
                 {
-                    ProcOfferId = o.ProcOfferId,
-                    ItemPenawaran = o.ItemPenawaran,
-                    Quantity = o.Qty,
+                    // Try to get Unit/UnitRevenue from submitted form data first
+                    existingItemsLookup.TryGetValue(o.ProcOfferId, out var existing);
+
+                    return new ProcOfferLiteVm
+                    {
+                        ProcOfferId = o.ProcOfferId,
+                        ItemPenawaran = o.ItemPenawaran,
+                        Quantity = o.Qty,
+                        Unit = existing.Unit ?? o.Unit,
+                        UnitRevenue = existing.UnitRevenue ?? o.UnitRevenue,
+                    };
                 })
                 .ToList();
+
+            // Set ViewBag properties for the view
+            ViewBag.ProcNum = procurement?.ProcNum;
+            ViewBag.IssueDate = procurement?.CreatedAt.ToString("d MMMM yyyy");
+            ViewBag.JobTypeName = procurement?.JobType?.TypeName ?? "Unknown";
+            ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();
 
             // Backfill quantity ke Items (Billing) jika hilang
             if (viewModel.Items != null && viewModel.Items.Count > 0)
@@ -1856,6 +1986,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             var selectedJobType =
                 jobTypes.FirstOrDefault(j => j.JobTypeId == jobTypeId) ?? jobTypes.FirstOrDefault();
 
+            var unitTypes = await _unitTypeRepository.GetActiveAsync();
+
             var viewModel = new ProcurementCreateViewModel
             {
                 Procurement = new Procurement
@@ -1870,6 +2002,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             };
 
             await PopulateCreateUserSelectListsAsync(viewModel);
+
+            ViewBag.UnitTypes = unitTypes;
+            ViewBag.SelectedJobTypeName = selectedJobType?.TypeName ?? "Other";
 
             return viewModel;
         }
@@ -1892,6 +2027,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 ?.TypeName;
 
             createViewModel.SelectedJobTypeName = jobTypeName ?? "Other";
+
+            var unitTypes = await _unitTypeRepository.GetActiveAsync();
+            ViewBag.UnitTypes = unitTypes;
             ViewBag.SelectedJobTypeName = createViewModel.SelectedJobTypeName;
         }
 
@@ -1965,7 +2103,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private async Task PopulateEditUserSelectListsAsync(ProcurementEditViewModel viewModel)
         {
             viewModel.PicOpsUsers = await BuildUserSelectListAsync(
-                "Operation",
+                "Operator",
                 viewModel.PicOpsUserId
             );
             viewModel.AnalystUsers = await BuildUserSelectListAsync(

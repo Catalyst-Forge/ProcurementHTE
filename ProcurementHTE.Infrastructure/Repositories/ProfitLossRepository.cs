@@ -30,6 +30,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .FirstOrDefaultAsync(pnl => pnl.ProcurementId == procurementId);
         }
 
+        public async Task<Procurement?> GetProcurementWithJobTypeAsync(string procurementId)
+        {
+            return await _context
+                .Procurements
+                .Include(p => p.JobType)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ProcurementId == procurementId);
+        }
+
         public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string procurementId)
         {
             return _context
@@ -171,6 +180,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 return Task.CompletedTask;
 
             return _context.ProfitLossSelectedVendors.AddRangeAsync(rows);
+        }
+
+        public async Task UpdateProcOfferUnitRevenueAsync(string procOfferId, string unitRevenue)
+        {
+            var procOffer = await _context.ProcOffers.FirstOrDefaultAsync(o => o.ProcOfferId == procOfferId);
+            if (procOffer != null)
+            {
+                procOffer.UnitRevenue = unitRevenue;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

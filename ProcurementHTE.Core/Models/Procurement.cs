@@ -5,7 +5,7 @@ using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Core.Models;
 
-public class Procurement
+public class Procurement : BaseEntity
 {
     [Key]
     public string ProcurementId { get; set; } = Guid.NewGuid().ToString();
