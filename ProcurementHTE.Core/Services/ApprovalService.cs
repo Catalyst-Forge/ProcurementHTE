@@ -10,14 +10,17 @@ namespace ProcurementHTE.Core.Services
     {
         private readonly IApprovalRepository _approvalRepository;
         private readonly IProcurementService _procurementService;
+        private readonly IPurchaseRequisitionTrackingService? _prTrackingService;
 
         public ApprovalService(
             IApprovalRepository approvalRepository,
-            IProcurementService procurementService
+            IProcurementService procurementService,
+            IPurchaseRequisitionTrackingService? prTrackingService = null
         )
         {
             _approvalRepository = approvalRepository;
             _procurementService = procurementService;
+            _prTrackingService = prTrackingService;
         }
 
         // ===== existing =====
@@ -28,12 +31,37 @@ namespace ProcurementHTE.Core.Services
         public async Task ApproveAsync(string approvalId, string approverUserId)
         {
             var result = await _approvalRepository.ApproveAsync(approvalId, approverUserId);
+
+            // Update PR status if tracking service available
+            if (_prTrackingService != null)
+            {
+                var prId = await _approvalRepository.GetPrIdByApprovalIdAsync(approvalId);
+                if (!string.IsNullOrEmpty(prId))
+                {
+                    await _prTrackingService.HandleApprovalStatusChangeAsync(
+                        prId, "approve", approverUserId, null);
+                }
+            }
+
             if (result.AllDocsApproved)
                 await _procurementService.MarkAsCompletedAsync(result.ProcurementId);
         }
 
-        public Task RejectAsync(string approvalId, string approverUserId, string? note) =>
-            _approvalRepository.RejectAsync(approvalId, approverUserId, note);
+        public async Task RejectAsync(string approvalId, string approverUserId, string? note)
+        {
+            await _approvalRepository.RejectAsync(approvalId, approverUserId, note);
+
+            // Update PR status to Rejected if tracking service available
+            if (_prTrackingService != null)
+            {
+                var prId = await _approvalRepository.GetPrIdByApprovalIdAsync(approvalId);
+                if (!string.IsNullOrEmpty(prId))
+                {
+                    await _prTrackingService.RejectPrAsync(
+                        prId, note ?? "Rejected by approver", approverUserId);
+                }
+            }
+        }
 
         public Task<GateInfoDto?> GetCurrentPendingGateByQrAsync(
             string qrText,

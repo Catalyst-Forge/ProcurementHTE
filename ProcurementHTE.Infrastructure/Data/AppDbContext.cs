@@ -11,6 +11,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
         public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }
+        public DbSet<PurchaseRequisitionStatusHistory> PurchaseRequisitionStatusHistories { get; set; }
         public DbSet<JobTypes> JobTypes { get; set; }
         public DbSet<JobTypeDocuments> JobTypeDocuments { get; set; }
         public DbSet<ProcDetail> ProcDetails { get; set; }

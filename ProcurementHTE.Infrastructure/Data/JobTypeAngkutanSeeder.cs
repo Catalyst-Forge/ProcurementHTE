@@ -51,7 +51,6 @@ namespace ProcurementHTE.Infrastructure.Data
             {
                 "Memorandum",
                 "Permintaan Pekerjaan",
-                "Purchase Requisition",
                 "Market Survey",
                 "Profit & Loss",
                 "Surat Perintah Mulai Pekerjaan (SPMP)",
@@ -138,16 +137,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     false,
                     false,
                     "Selalu ada, dikelola via menu Documents (bukan JobType config)",
-                    null
-                ),
-                (
-                    "Purchase Requisition",
-                    5,
-                    true,
-                    false,
-                    true,
-                    true,
-                    "Purchase Requisition upload dengan approval Manager",
                     null
                 ),
                 (

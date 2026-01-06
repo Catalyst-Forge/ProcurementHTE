@@ -281,46 +281,7 @@
                                                             <i class="bi bi-download"></i>
                                                         </button>
                                                     </div>
-
-                                                    <div>
-                                                        <button type="button"
-                                                                class="btn btn-sm btn-outline-success btn-show-qr"
-                                                                data-doc-id="@item.ProcDocumentId"
-                                                                title="Tampilkan QR Code">
-                                                            <i class="bi bi-qr-code"></i>
-                                                        </button>
-                                                        <a class="btn btn-sm btn-outline-success"
-                                                           asp-controller="ProcurementDocuments"
-                                                           asp-action="DownloadQr"
-                                                           asp-route-id="@item.ProcDocumentId"
-                                                           title="Download QR PNG">
-                                                            <i class="bi bi-download"></i>
-                                                        </a>
-                                                        <button type="button"
-                                                                class="btn btn-sm btn-outline-success btn-print-qr"
-                                                                title="Print QR Code">
-                                                            <i class="bi bi-printer"></i>
-                                                        </button>
-                                                    </div>
-
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-dark btn-timeline"
-                                                            data-doc-id="@item.ProcDocumentId"
-                                                            data-doc-name="@item.DocumentTypeName">
-                                                        <i class="bi bi-diagram-3"></i> Timeline
-                                                    </button>
                                                 }
-
-                                                @if (item.RequiresApproval && item.Uploaded && !isPending && !string.Equals(item.Status, "Approved", StringComparison.OrdinalIgnoreCase))
-                                                {
-                                                    <form asp-controller="ProcurementDocuments" asp-action="SendApprovalPerDoc" method="post" class="d-inline" hx-boost="false">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
-                                                        <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
-                                                        <button type="submit" class="btn btn-sm btn-primary">
-                                                            <i class="bi bi-send-check me-1"></i> Send Approval
-                                                        </button>
-                                                    </form>
                                                 }
                                             </div>
                                         </td>

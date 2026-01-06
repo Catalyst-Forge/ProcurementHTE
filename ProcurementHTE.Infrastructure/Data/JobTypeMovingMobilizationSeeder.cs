@@ -58,7 +58,6 @@ namespace ProcurementHTE.Infrastructure.Data
             {
                 "Memorandum",
                 "Permintaan Pekerjaan",
-                "Purchase Requisition",
                 "Market Survey",
                 "Profit & Loss",
                 "Surat Perintah Mulai Pekerjaan (SPMP)",
@@ -147,16 +146,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     false,
                     false,
                     "Selalu ada, dikelola via menu Documents (bukan JobType config)",
-                    null
-                ),
-                (
-                    "Purchase Requisition",
-                    5,
-                    true,
-                    false,
-                    true,
-                    true,
-                    "Purchase Requisition upload dengan approval Manager",
                     null
                 ),
                 (
@@ -350,7 +339,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Owner Estimate (OE)",
                     new[] { ("Assistant Manager HTE", 1), ("Manager Transport & Logistic", 2) }
                 ),
-                ("Purchase Requisition", new[] { ("Manager Transport & Logistic", 1) }),
             };
 
             foreach (var (doc, steps) in approvalMatrix)

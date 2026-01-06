@@ -572,5 +572,17 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 })
                 .FirstOrDefaultAsync(ct);
         }
+
+        public async Task<string?> GetPrIdByApprovalIdAsync(
+            string approvalId,
+            CancellationToken ct = default
+        )
+        {
+            return await _context
+                .ProcDocumentApprovals.AsNoTracking()
+                .Where(a => a.ProcDocumentApprovalId == approvalId)
+                .Select(a => a.Procurement.PrId)
+                .FirstOrDefaultAsync(ct);
+        }
     }
 }

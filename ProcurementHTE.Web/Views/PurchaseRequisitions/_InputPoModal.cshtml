@@ -1,0 +1,59 @@
+@model string
+@* PrId - ID of the Purchase Requisition *@
+
+<!-- Modal Input PO (for SCM only) -->
+<div class="modal fade" id="inputPoModal" tabindex="-1" aria-labelledby="inputPoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-controller="PurchaseRequisitions" asp-action="SubmitPO" method="post" id="formSubmitPO">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="prId" value="@Model" />
+
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="inputPoModalLabel">
+                        <i class="fas fa-file-contract me-2"></i>
+                        Input Nomor PO
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>SCM Only:</strong> Hanya SCM yang dapat mengisi nomor PO.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="poNumber" class="form-label fw-bold">
+                            Nomor PO <span class="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="poNumber"
+                            name="poNumber"
+                            placeholder="Contoh: PO/2024/001"
+                            required>
+                        <div class="invalid-feedback">
+                            Nomor PO wajib diisi.
+                        </div>
+                        <small class="form-text text-muted">
+                            Setelah submit, PR akan berstatus <strong>Done PO</strong>.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-check me-2"></i>
+                        Submit PO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

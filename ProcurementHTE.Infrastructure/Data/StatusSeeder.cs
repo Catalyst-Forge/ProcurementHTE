@@ -14,9 +14,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     new Status { StatusName = "Draft" },
                     new Status { StatusName = "Created" },
                     new Status { StatusName = "In Progress" },
-                    new Status { StatusName = "Uploaded" },
-                    new Status { StatusName = "Pending" },
-                    new Status { StatusName = "Approved" },
                     new Status { StatusName = "Completed" },
                     new Status { StatusName = "Closed" },
                 };

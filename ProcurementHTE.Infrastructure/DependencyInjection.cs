@@ -65,6 +65,9 @@ public static class DependencyInjection
         // ------------- Query Services -------------
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
 
+        // ------------- PR Tracking Service -------------
+        services.AddScoped<IPurchaseRequisitionTrackingService, PurchaseRequisitionTrackingService>();
+
         // ------------- Cross-cutting Infrastructure -------------
         services.AddSingleton<IEmailSender>(sp =>
         {

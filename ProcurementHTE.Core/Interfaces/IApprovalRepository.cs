@@ -68,5 +68,10 @@ namespace ProcurementHTE.Core.Interfaces
             string procDocumentId,
             CancellationToken ct = default
         );
+
+        Task<string?> GetPrIdByApprovalIdAsync(
+            string approvalId,
+            CancellationToken ct = default
+        );
     }
 }

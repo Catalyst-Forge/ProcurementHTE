@@ -433,7 +433,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Policy = Permissions.Procurement.Edit)]
-        public async Task<IActionResult> Edit(string id, ProcurementEditViewModel editViewModel)
+        public async Task<IActionResult> Edit(string id, ProcurementEditViewModel editViewModel, string? submitAction = "Created")
         {
             if (id != editViewModel.ProcurementId)
             {
@@ -549,6 +549,17 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     nameof(editViewModel.ManagerUserId),
                     "Manager Transport & Logistic wajib dipilih"
                 );
+            }
+
+            // Determine status based on submitAction
+            var status = await _procurementService.GetStatusByNameAsync(submitAction ?? "Created");
+            if (status == null)
+            {
+                ModelState.AddModelError("", $"Status '{submitAction}' tidak ditemukan.");
+            }
+            else
+            {
+                editViewModel.StatusId = status.StatusId;
             }
 
             if (!ModelState.IsValid)

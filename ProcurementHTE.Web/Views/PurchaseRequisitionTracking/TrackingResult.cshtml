@@ -1,0 +1,183 @@
+@model ProcurementHTE.Core.Models.DTOs.PRTrackingDto
+
+@{
+    ViewData["Title"] = $"Tracking - {Model.PrNumber}";
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Back Button -->
+        <div class="col-12 mb-3">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Kembali ke Pencarian
+            </a>
+        </div>
+
+        <!-- PR Info Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Informasi PR
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted" width="40%">PR Number:</td>
+                                <td class="fw-bold">@Model.PrNumber</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Request Date:</td>
+                                <td>@Model.RequestDate.ToString("dd MMM yyyy")</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Created By:</td>
+                                <td>@Model.CreatedByFullName</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Description:</td>
+                                <td>@Model.Description</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Current Status:</td>
+                                <td>
+                                    @if (Model.CurrentStatus == ProcurementHTE.Core.Enums.PurchaseRequisitionStatus.Rejected)
+                                    {
+                                        <span class="badge bg-danger">@Model.CurrentStatusDescription</span>
+                                    }
+                                    else if (Model.CurrentStatus == ProcurementHTE.Core.Enums.PurchaseRequisitionStatus.DonePO)
+                                    {
+                                        <span class="badge bg-success">@Model.CurrentStatusDescription</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">@Model.CurrentStatusDescription</span>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Additional Info -->
+                    @if (!string.IsNullOrEmpty(Model.IspaNumber))
+                    {
+                        <hr>
+                        <div class="mb-2">
+                            <small class="text-muted">ISPA Number:</small>
+                            <div class="fw-bold">@Model.IspaNumber</div>
+                            <small class="text-muted">Submitted: @Model.IspaSubmittedAt?.ToString("dd MMM yyyy HH:mm")</small>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.PoNumber))
+                    {
+                        <hr>
+                        <div class="mb-2">
+                            <small class="text-muted">PO Number:</small>
+                            <div class="fw-bold">@Model.PoNumber</div>
+                            <small class="text-muted">Submitted: @Model.PoSubmittedAt?.ToString("dd MMM yyyy HH:mm")</small>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- QR Code / Barcode Card -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        QR Code
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="qrcode" class="mb-3"></div>
+                    <p class="small text-muted mb-0">
+                        Scan QR code ini untuk approval via mobile app
+                    </p>
+                    <div class="mt-3">
+                        <code class="bg-light p-2 rounded">@Model.PrNumber</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>
+                        Progress Tracking
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @await Html.PartialAsync("_PRProgressBar", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status History -->
+    @if (Model.StatusHistory.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Status History
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Status</th>
+                                        <th>Changed By</th>
+                                        <th>Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var history in Model.StatusHistory.OrderByDescending(h => h.ChangedAt))
+                                    {
+                                        <tr>
+                                            <td>@history.ChangedAt.ToString("dd MMM yyyy HH:mm")</td>
+                                            <td>
+                                                <span class="badge bg-info">@history.StatusDescription</span>
+                                            </td>
+                                            <td>@history.ChangedByFullName</td>
+                                            <td>@history.Note</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Generate QR Code
+        new QRCode(document.getElementById("qrcode"), {
+            text: "@Model.PrNumber",
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    </script>
+}

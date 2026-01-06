@@ -157,6 +157,10 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         if (procurementId.Count == 0)
             return;
 
+        // Get "In Progress" status
+        var inProgressStatus = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.StatusName == "In Progress", ct);
+
         var procurements = await _context
             .Procurements.Where(p => procurementId.Contains(p.ProcurementId))
             .ToListAsync(ct);
@@ -164,6 +168,12 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         foreach (var procurement in procurements)
         {
             procurement.PrId = prId;
+            
+            // Update status to "In Progress" when linked to PR
+            if (inProgressStatus != null)
+            {
+                procurement.StatusId = inProgressStatus.StatusId;
+            }
         }
 
         await _context.SaveChangesAsync(ct);
@@ -173,9 +183,22 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
     {
         var procurements = await _context.Procurements.Where(p => p.PrId == prId).ToListAsync(ct);
 
+        if (procurements.Count == 0)
+            return;
+
+        // Get "Created" status to revert procurement status
+        var createdStatus = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.StatusName == "Created", ct);
+
         foreach (var procurement in procurements)
         {
             procurement.PrId = null;
+            
+            // Revert status back to "Created" when unlinked from PR
+            if (createdStatus != null)
+            {
+                procurement.StatusId = createdStatus.StatusId;
+            }
         }
 
         await _context.SaveChangesAsync(ct);

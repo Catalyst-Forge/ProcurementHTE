@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Enums;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -51,9 +52,59 @@ public class PurchaseRequisition : BaseEntity
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
     public DateTime? UpdatedAt { get; set; }
 
+    // PR Tracking Status Fields
+    [Required]
+    [DisplayName("Status")]
+    public PurchaseRequisitionStatus Status { get; set; } = PurchaseRequisitionStatus.OnCreateDP3;
+
+    [MaxLength(100)]
+    [DisplayName("ISPA Number")]
+    public string? IspaNumber { get; set; }
+
+    [DisplayName("ISPA Submitted At")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    public DateTime? IspaSubmittedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("ISPA Submitted By")]
+    public string? IspaSubmittedByUserId { get; set; }
+
+    [MaxLength(100)]
+    [DisplayName("PO Number")]
+    public string? PoNumber { get; set; }
+
+    [DisplayName("PO Submitted At")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    public DateTime? PoSubmittedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("PO Submitted By")]
+    public string? PoSubmittedByUserId { get; set; }
+
+    [MaxLength(1000)]
+    [DisplayName("Rejection Note")]
+    public string? RejectionNote { get; set; }
+
+    [DisplayName("Rejected At")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    public DateTime? RejectedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("Rejected By")]
+    public string? RejectedByUserId { get; set; }
+
     // Navigation Properties
+    [ForeignKey(nameof(IspaSubmittedByUserId))]
+    public User? IspaSubmittedByUser { get; set; }
+
+    [ForeignKey(nameof(PoSubmittedByUserId))]
+    public User? PoSubmittedByUser { get; set; }
+
+    [ForeignKey(nameof(RejectedByUserId))]
+    public User? RejectedByUser { get; set; }
     [ForeignKey(nameof(CreatedByUserId))]
     public User? CreatedByUser { get; set; }
 
     public ICollection<Procurement> Procurements { get; set; } = [];
+    public ICollection<PurchaseRequisitionStatusHistory> StatusHistories { get; set; } = [];
 }

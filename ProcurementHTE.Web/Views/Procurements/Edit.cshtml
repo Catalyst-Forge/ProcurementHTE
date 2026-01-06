@@ -302,9 +302,15 @@
         </fieldset>
     </section>
 
-    <div class="mb-3 d-flex w-100 justify-content-end">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check2-circle"></i> Save Changes
+    <div class="mb-3 d-flex w-100 justify-content-end gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+
+        <button type="submit" class="btn btn-outline-secondary" name="submitAction" value="Draft">
+            <i class="bi bi-save"></i> Save as Draft
+        </button>
+
+        <button type="submit" class="btn btn-success" name="submitAction" value="Created">
+            <i class="bi bi-check2-circle"></i> Save & Publish
         </button>
     </div>
 </form>

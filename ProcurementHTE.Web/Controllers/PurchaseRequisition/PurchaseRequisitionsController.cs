@@ -30,6 +30,7 @@ namespace ProcurementHTE.Web.Controllers.PR
         private readonly IObjectStorage _objectStorage;
         private readonly ObjectStorageOptions _storageOptions;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IPurchaseRequisitionTrackingService _trackingService;
 
         private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
         private static readonly string[] AllowedExtensions =
@@ -54,7 +55,8 @@ namespace ProcurementHTE.Web.Controllers.PR
             IProcurementService procurementService,
             IObjectStorage objectStorage,
             IOptions<ObjectStorageOptions> storageOptions,
-            IHttpClientFactory httpClientFactory
+            IHttpClientFactory httpClientFactory,
+            IPurchaseRequisitionTrackingService trackingService
         )
         {
             _procurementRepository = procurementRepository;
@@ -70,6 +72,7 @@ namespace ProcurementHTE.Web.Controllers.PR
             _objectStorage = objectStorage;
             _storageOptions = storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
             _httpClientFactory = httpClientFactory;
+            _trackingService = trackingService;
         }
 
         // GET: PurchaseRequisitionsController
@@ -173,6 +176,10 @@ namespace ProcurementHTE.Web.Controllers.PR
 
                 viewModel.Procurements.Add(procVm);
             }
+
+            // Fetch PR Tracking data
+            var tracking = await _trackingService.GetTrackingByPrIdAsync(id, HttpContext.RequestAborted);
+            ViewData["PRTracking"] = tracking;
 
             return View(viewModel);
         }
@@ -706,34 +713,6 @@ namespace ProcurementHTE.Web.Controllers.PR
             return RedirectToAction(nameof(Details), new { id = prId });
         }
 
-        // POST: PurchaseRequisitionsController/SendApproval
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendApproval(
-            string prId,
-            string procDocumentId,
-            string procurementId
-        )
-        {
-            try
-            {
-                var userId = User.Identity?.Name ?? "-";
-                await _procDocumentService.SendApprovalAsync(
-                    procDocumentId,
-                    userId,
-                    HttpContext.RequestAborted
-                );
-                TempData["SuccessMessage"] =
-                    "Document sent for approval. Status changed to Pending Approval.";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Failed to send approval: {ex.Message}";
-            }
-
-            return RedirectToAction(nameof(Details), new { id = prId });
-        }
-
         // API: Get filtered procurements
         [HttpGet]
         public async Task<JsonResult> GetFilteredProcurements(
@@ -898,6 +877,164 @@ namespace ProcurementHTE.Web.Controllers.PR
             {
                 // Ignore delete errors
             }
+        }
+
+        #endregion
+
+        #region PR Tracking Actions
+
+        // POST: PurchaseRequisitions/SendApproval/{prId}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendApproval(string prId)
+        {
+            // Check if user has AP-PO or Admin role
+            if (!User.IsInRole("AP-PO") && !User.IsInRole("Admin"))
+            {
+                TempData["Error"] = "Hanya role AP-PO yang dapat mengirim untuk approval.";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            // Get tracking data to validate requirements
+            var tracking = await _trackingService.GetTrackingByPrIdAsync(prId, HttpContext.RequestAborted);
+            if (tracking == null)
+            {
+                TempData["Error"] = "PR tidak ditemukan.";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            // Validate status
+            if (tracking.CurrentStatus != PurchaseRequisitionStatus.OnCreateDP3)
+            {
+                TempData["Error"] = "PR tidak dalam status yang dapat dikirim untuk approval.";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            // Validate linked procurements
+            if (tracking.LinkedProcurementsCount == 0)
+            {
+                TempData["Error"] = "Tidak dapat mengirim approval: Belum ada procurement yang di-link.";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            // Validate mandatory documents
+            if (!tracking.AllMandatoryDocsReady)
+            {
+                TempData["Error"] = $"Tidak dapat mengirim approval: Dokumen mandatory belum lengkap ({tracking.UploadedMandatoryDocs}/{tracking.TotalMandatoryDocs} uploaded).";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            // Update PR status first - approval is at PR level, not per document
+            var success = await _trackingService.UpdatePrStatusAsync(
+                prId,
+                PurchaseRequisitionStatus.WaitingApprovalAnalyst,
+                userId,
+                "Send for approval",
+                HttpContext.RequestAborted
+            );
+
+            if (success)
+            {
+                TempData["Success"] = "PR berhasil dikirim untuk approval.";
+            }
+            else
+            {
+                TempData["Error"] = "Gagal mengirim PR untuk approval.";
+            }
+
+            return RedirectToAction("Details", new { id = prId });
+        }
+
+        // POST: PurchaseRequisitions/SubmitIspa
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitIspa(string prId, string ispaNumber)
+        {
+            if (string.IsNullOrWhiteSpace(ispaNumber))
+            {
+                TempData["Error"] = "Nomor ISPA tidak boleh kosong.";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var result = await _trackingService.SubmitIspaAsync(
+                prId,
+                ispaNumber.Trim(),
+                userId,
+                HttpContext.RequestAborted
+            );
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction("Details", new { id = prId });
+        }
+
+        // POST: PurchaseRequisitions/SubmitJustification
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitJustification(string prId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var result = await _trackingService.SubmitJustificationAsync(
+                prId,
+                userId,
+                HttpContext.RequestAborted
+            );
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction("Details", new { id = prId });
+        }
+
+        // POST: PurchaseRequisitions/SubmitPO
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SCM")] // Only SCM can submit PO
+        public async Task<IActionResult> SubmitPO(string prId, string poNumber)
+        {
+            if (string.IsNullOrWhiteSpace(poNumber))
+            {
+                TempData["Error"] = "Nomor PO tidak boleh kosong.";
+                return RedirectToAction("Details", new { id = prId });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var result = await _trackingService.SubmitPoAsync(
+                prId,
+                poNumber.Trim(),
+                userId,
+                HttpContext.RequestAborted
+            );
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction("Details", new { id = prId });
         }
 
         #endregion
