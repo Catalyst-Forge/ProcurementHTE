@@ -21,6 +21,13 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct
         );
         Task<int> CountAllProcurementsAsync(CancellationToken ct);
+        Task<PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        );
 
         // Lookup Methods
         Task<(
@@ -44,5 +51,8 @@ namespace ProcurementHTE.Core.Interfaces
         );
         Task DeleteProcurementAsync(Procurement procurement);
         Task MarkAsCompletedAsync(string procurementId);
+        Task ApproveByAppoAsync(string procurementId, string appoUserId);
+        Task RejectByAppoAsync(string procurementId);
+        Task PublishAsync(string procurementId);
     }
 }

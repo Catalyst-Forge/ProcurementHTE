@@ -27,6 +27,7 @@
     var isPengangkutan = jobTypeName == "Angkutan";
     var isSewaUnit = jobTypeName == "StandBy";
     var isMoving = jobTypeName == "Moving";
+    var canPublish = pnl != null && Model?.Status?.StatusName == "Created";
 }
 
 <header class="mb-3">
@@ -39,6 +40,12 @@
 
         <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
             <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
+            @if (canPublish)
+            {
+                <button type="button" class="btn btn-success btn-publish" data-procurement-id="@Model?.ProcurementId" data-procnum="@Model?.ProcNum">
+                    <i class="bi bi-send-fill"></i> Publish
+                </button>
+            }
             <a asp-action="Edit" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
             <a asp-action="Delete" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
             <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
@@ -734,6 +741,14 @@
     </section>
 </div>
 
+@* Hidden form for Publish action *@
+@if (canPublish)
+{
+    <form id="publishForm" method="post" asp-action="Publish" asp-route-id="@Model?.ProcurementId" style="display: none;">
+        @Html.AntiForgeryToken()
+    </form>
+}
+
 @* PDF Preview Modal *@
 <div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -874,6 +889,30 @@
             tab.show()
 
             initPreviewHandlers();
+
+            // SweetAlert2 for Publish button
+            document.querySelectorAll('.btn-publish').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const procNum = this.dataset.procnum;
+
+                    Swal.fire({
+                        title: 'Publish Procurement?',
+                        html: `Apakah Anda yakin ingin mempublish procurement <strong>${procNum}</strong>?<br><small class="text-muted">Status akan berubah menjadi "In Progress"</small>`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-send-fill"></i> Ya, Publish',
+                        cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('publishForm').submit();
+                        }
+                    });
+                });
+            });
         });
     </script>
 }

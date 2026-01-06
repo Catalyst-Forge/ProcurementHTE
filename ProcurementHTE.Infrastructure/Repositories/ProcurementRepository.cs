@@ -111,6 +111,30 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<Core.Common.PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
+        {
+            var query = BuildBaseQuery()
+                .Where(p =>
+                    p.Status != null && p.Status.StatusName == "In Progress" && p.AppoUserId == null
+                );
+
+            if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
+                query = ApplySearchFilter(query, search.Trim(), fields);
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(w => w.CreatedAt),
+                ct: ct
+            );
+        }
+
         #endregion
 
         #region Lookup Methods

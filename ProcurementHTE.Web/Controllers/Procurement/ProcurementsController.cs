@@ -17,7 +17,7 @@ using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule
 {
-    [Authorize]
+    [Authorize(Roles = "Admin, Operator")]
     public class ProcurementsController : Controller
     {
         #region Construct
@@ -719,6 +719,50 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Procurements/Publish/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Procurement.Edit)]
+        public async Task<IActionResult> Publish(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["ErrorMessage"] = "ID Procurement tidak valid";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                // Cek apakah procurement memiliki Profit & Loss
+                var profitLoss = await _pnlService.GetByProcurementAsync(id);
+                if (profitLoss == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "Tidak dapat publish procurement. Buat Profit & Loss terlebih dahulu.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                await _procurementService.PublishAsync(id);
+                TempData["SuccessMessage"] =
+                    "Procurement berhasil dipublish dan status berubah menjadi 'In Progress'.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Terjadi kesalahan saat publish procurement: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         //GET: Procurements/5/CreatePnl
         [HttpGet("Procurements/{procurementId}/CreateProfitLoss")]
         public async Task<IActionResult> CreateProfitLoss(string procurementId)
@@ -1109,7 +1153,11 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         var existingVendorItems = vendorEntries
                             .SelectMany(v => v.Items ?? [])
                             .GroupBy(it => it.ProcOfferId, StringComparer.OrdinalIgnoreCase)
-                            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
+                            .ToDictionary(
+                                g => g.Key,
+                                g => g.Last(),
+                                StringComparer.OrdinalIgnoreCase
+                            );
 
                         // Build items list including both existing and new ProcOffers
                         var aggregatedItems = allProcOfferIds
@@ -1124,7 +1172,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                                         Prices = existing.Prices?.ToList() ?? [],
                                         Quantity = existing.Quantity,
                                         Trip = existing.Trip,
-                                        IsIncluded = existing.IsIncluded,  // ✅ Preserve checked/unchecked state
+                                        IsIncluded = existing.IsIncluded, // ✅ Preserve checked/unchecked state
                                     };
                                 }
                                 else
@@ -1138,7 +1186,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                                         Prices = [],
                                         Quantity = 0,
                                         Trip = 0,
-                                        IsIncluded = true,  // ✅ Checked by default for proper calculation
+                                        IsIncluded = true, // ✅ Checked by default for proper calculation
                                     };
                                 }
                             })
@@ -1562,14 +1610,24 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             // Backfill Quantity from OfferItems when user didn't provide Quantity/Durasi
             var qtyMap = (vm.OfferItems ?? [])
                 .Where(o => !string.IsNullOrWhiteSpace(o.ProcOfferId))
-                .ToDictionary(o => o.ProcOfferId, o => o.Quantity, StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(
+                    o => o.ProcOfferId,
+                    o => o.Quantity,
+                    StringComparer.OrdinalIgnoreCase
+                );
 
             var items = (vm.Items ?? [])
                 .Select(x => new ProfitLossItemInputDto
                 {
                     ProcOfferId = x.ProcOfferId,
-                    Quantity = x.Quantity > 0 ? x.Quantity : (qtyMap.TryGetValue(x.ProcOfferId, out var q) ? (int)q : x.Quantity),
-                    QtyItems = x.QtyItems > 0 ? x.QtyItems : (qtyMap.TryGetValue(x.ProcOfferId, out var qi) ? (int)qi : 1),
+                    Quantity =
+                        x.Quantity > 0
+                            ? x.Quantity
+                            : (qtyMap.TryGetValue(x.ProcOfferId, out var q) ? (int)q : x.Quantity),
+                    QtyItems =
+                        x.QtyItems > 0
+                            ? x.QtyItems
+                            : (qtyMap.TryGetValue(x.ProcOfferId, out var qi) ? (int)qi : 1),
                     TarifAwal = x.TarifAwal ?? 0m,
                     TarifAdd = x.TarifAdd ?? 0m,
                     KmPer25 = x.KmPer25 ?? 0m,
@@ -1898,13 +1956,14 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             );
 
             // Build a lookup for existing Items to preserve Unit/UnitRevenue from form submission
-            var existingItemsLookup = viewModel.Items?
-                .Where(i => !string.IsNullOrEmpty(i.ProcOfferId))
-                .ToDictionary(
-                    i => i.ProcOfferId,
-                    i => (Unit: i.UnitItems, UnitRevenue: i.UnitRevenue),
-                    StringComparer.OrdinalIgnoreCase
-                ) ?? new Dictionary<string, (string? Unit, string? UnitRevenue)>();
+            var existingItemsLookup =
+                viewModel
+                    .Items?.Where(i => !string.IsNullOrEmpty(i.ProcOfferId))
+                    .ToDictionary(
+                        i => i.ProcOfferId,
+                        i => (Unit: i.UnitItems, UnitRevenue: i.UnitRevenue),
+                        StringComparer.OrdinalIgnoreCase
+                    ) ?? new Dictionary<string, (string? Unit, string? UnitRevenue)>();
 
             viewModel.OfferItems = (procurement?.ProcOffers ?? [])
                 .Select(o =>
