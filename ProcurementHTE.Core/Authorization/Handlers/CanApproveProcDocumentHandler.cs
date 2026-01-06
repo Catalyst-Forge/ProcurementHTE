@@ -60,9 +60,7 @@ namespace ProcurementHTE.Core.Authorization.Handlers
             const decimal ThreshHoldVP = 300_000_000m;
             bool needVP = resource.TotalPenawaran > ThreshHoldVP;
 
-            var configured = config
-                .DocumentApprovals.OrderBy(a => a.Level)
-                .ToList();
+            var configured = config.DocumentApprovals.OrderBy(a => a.Level).ToList();
 
             if (!needVP)
             {

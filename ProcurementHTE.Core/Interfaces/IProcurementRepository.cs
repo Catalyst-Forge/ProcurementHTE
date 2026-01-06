@@ -29,6 +29,17 @@ namespace ProcurementHTE.Core.Interfaces
         /// </summary>
         Task<IReadOnlyList<Procurement>> GetAllForSelectionAsync();
 
+        /// <summary>
+        /// Get all procurements with status "In Progress" for AP-PO approval
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        );
+
         // Lookup Methods
         Task<Status?> GetStatusByNameAsync(string name);
         Task<List<Status>> GetStatusesAsync();

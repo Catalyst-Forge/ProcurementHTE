@@ -25,7 +25,6 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; }
         public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
         public DbSet<DocumentType> DocumentTypes { get; set; }
-        public DbSet<Tender> Tenders { get; set; }
         public DbSet<VendorRoundLetter> VendorRoundLetters { get; set; }
         public DbSet<DocumentApprovalRule> DocumentApprovalRules { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }

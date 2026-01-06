@@ -57,6 +57,23 @@ public class ProcurementService : IProcurementService
         return _procurementRepository.CountAsync(ct);
     }
 
+    public Task<PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(
+        int page,
+        int pageSize,
+        string? search,
+        ISet<string> fields,
+        CancellationToken ct
+    )
+    {
+        return _procurementRepository.GetProcurementsForAppoApprovalAsync(
+            page,
+            pageSize,
+            search,
+            fields,
+            ct
+        );
+    }
+
     #endregion
 
     #region Lookup Methods
@@ -165,6 +182,86 @@ public class ProcurementService : IProcurementService
         var completedStatus = await GetCompletedStatusAsync();
         procurement.StatusId = completedStatus.StatusId;
         procurement.CompletedAt = DateTime.UtcNow;
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task ApproveByAppoAsync(string procurementId, string appoUserId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        if (string.IsNullOrWhiteSpace(appoUserId))
+            throw new ArgumentException("User ID AP-PO tidak boleh kosong", nameof(appoUserId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        if (procurement.Status?.StatusName != "In Progress")
+            throw new InvalidOperationException(
+                "Hanya procurement dengan status 'In Progress' yang dapat diapprove"
+            );
+
+        if (!string.IsNullOrWhiteSpace(procurement.AppoUserId))
+            throw new InvalidOperationException("Procurement ini sudah di-approve oleh AP-PO");
+
+        procurement.AppoUserId = appoUserId;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task RejectByAppoAsync(string procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        if (procurement.Status?.StatusName != "In Progress")
+            throw new InvalidOperationException(
+                "Hanya procurement dengan status 'In Progress' yang dapat direject"
+            );
+
+        var createdStatus =
+            await _procurementRepository.GetStatusByNameAsync("Created")
+            ?? throw new InvalidOperationException("Status 'Created' tidak ditemukan");
+
+        procurement.StatusId = createdStatus.StatusId;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task PublishAsync(string procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        if (procurement.Status?.StatusName != "Created")
+            throw new InvalidOperationException(
+                "Hanya procurement dengan status 'Created' yang dapat dipublish"
+            );
+
+        var inProgressStatus =
+            await _procurementRepository.GetStatusByNameAsync("In Progress")
+            ?? throw new InvalidOperationException("Status 'In Progress' tidak ditemukan");
+
+        procurement.StatusId = inProgressStatus.StatusId;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 

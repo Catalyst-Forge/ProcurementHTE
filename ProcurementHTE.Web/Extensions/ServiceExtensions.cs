@@ -31,7 +31,6 @@ public static class ServiceExtensions
         services.AddScoped<IProcurementService, ProcurementService>();
         services.AddScoped<IPurchaseRequisitionService, PurchaseRequisitionService>();
         services.AddScoped<IVendorService, VendorService>();
-        services.AddScoped<ITenderService, TenderService>();
         services.AddScoped<IJobTypeService, JobTypesService>();
         services.AddScoped<IDocumentTypeService, DocumentTypeService>();
         services.AddScoped<IProfitLossService, ProfitLossService>();

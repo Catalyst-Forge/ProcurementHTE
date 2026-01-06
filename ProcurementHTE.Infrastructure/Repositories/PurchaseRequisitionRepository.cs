@@ -71,6 +71,9 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             .ThenInclude(p => p.JobType)
             .Include(pr => pr.Procurements)
             .ThenInclude(p => p.Status)
+            .Include(pr => pr.Procurements)
+            .ThenInclude(p => p.ProfitLosses)
+            .ThenInclude(pl => pl.SelectedVendor)
             .AsSplitQuery()
             .AsNoTracking()
             .FirstOrDefaultAsync(pr => pr.PrId == id, ct);

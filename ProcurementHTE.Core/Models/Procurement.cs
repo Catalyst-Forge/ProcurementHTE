@@ -101,6 +101,10 @@ public class Procurement : BaseEntity
     [DisplayName("Manager User")]
     public string ManagerUserId { get; set; } = null!;
 
+    [MaxLength(450)]
+    [DisplayName("AP-PO User")]
+    public string? AppoUserId { get; set; }
+
     [Required]
     [DisplayName("Jenis Pengadaan")]
     public ProcurementCategory ProcurementCategory { get; set; }
