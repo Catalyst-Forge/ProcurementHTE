@@ -58,7 +58,6 @@ namespace ProcurementHTE.Infrastructure.Data
             {
                 "Memorandum",
                 "Permintaan Pekerjaan",
-                "Purchase Requisition",
                 "Market Survey",
                 "Profit & Loss",
                 "Surat Perintah Mulai Pekerjaan (SPMP)",
@@ -150,18 +149,8 @@ namespace ProcurementHTE.Infrastructure.Data
                     null
                 ),
                 (
-                    "Purchase Requisition",
-                    5,
-                    true,
-                    false,
-                    true,
-                    true,
-                    "Purchase Requisition upload dengan approval Manager",
-                    null
-                ),
-                (
                     "Surat Perintah Mulai Pekerjaan (SPMP)",
-                    6,
+                    5,
                     true,
                     true,
                     false,
@@ -171,7 +160,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Bill of Quantity (BOQ)",
-                    7,
+                    6,
                     true,
                     true,
                     false,
@@ -181,7 +170,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Owner Estimate (OE)",
-                    8,
+                    7,
                     true,
                     true,
                     false,
@@ -191,7 +180,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Memorandum",
-                    9,
+                    8,
                     true,
                     true,
                     false,
@@ -201,7 +190,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Rencana Kerja dan Syarat-Syarat (RKS)",
-                    10,
+                    9,
                     true,
                     true,
                     false,
@@ -211,7 +200,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Risk Assessment (RA)",
-                    11,
+                    10,
                     true,
                     true,
                     false,
@@ -221,7 +210,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Market Survey",
-                    12,
+                    11,
                     true,
                     false,
                     true,
@@ -231,7 +220,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 ),
                 (
                     "Justifikasi",
-                    13,
+                    12,
                     true,
                     true,
                     false,
