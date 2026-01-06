@@ -31,7 +31,7 @@ public static class ProcurementSeeder
             "Manager Transport & Logistic"
         );
 
-        var requiredStatuses = new[] { "Draft", "Created", "In Progress", "Uploaded", "Completed" };
+        var requiredStatuses = new[] { "Draft", "Created", "In Progress", "Completed" };
         var statusLookup = await db
             .Statuses.Where(s => s.StatusName != null && requiredStatuses.Contains(s.StatusName))
             .ToDictionaryAsync(s => s.StatusName!, StringComparer.OrdinalIgnoreCase);
@@ -87,7 +87,7 @@ public static class ProcurementSeeder
             new()
             {
                 JobTypeName = "Angkutan",
-                StatusName = "Created",
+                StatusName = "Draft",
                 ContractType = ContractType.Spot,
                 ProcurementCategory = ProcurementCategory.Barang,
                 JobName = "Pengangkutan material konstruksi ke lokasi proyek Sumatra",
@@ -118,7 +118,7 @@ public static class ProcurementSeeder
             new()
             {
                 JobTypeName = "StandBy",
-                StatusName = "In Progress",
+                StatusName = "Draft",
                 ContractType = ContractType.RO,
                 ProcurementCategory = ProcurementCategory.Jasa,
                 JobName = "Sewa unit excavator untuk proyek pemboran geothermal",
@@ -149,7 +149,7 @@ public static class ProcurementSeeder
             new()
             {
                 JobTypeName = "StandBy",
-                StatusName = "Uploaded",
+                StatusName = "Draft",
                 ContractType = ContractType.STB,
                 ProcurementCategory = ProcurementCategory.Barang,
                 JobName = "Sewa generator standby untuk base camp operasional",
@@ -180,7 +180,7 @@ public static class ProcurementSeeder
             new()
             {
                 JobTypeName = "Moving",
-                StatusName = "Completed",
+                StatusName = "Draft",
                 ContractType = ContractType.LTC,
                 ProcurementCategory = ProcurementCategory.Jasa,
                 JobName = "Jasa mobilisasi rig dan demobilisasi dari lokasi Jambi ke Riau",
