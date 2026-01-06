@@ -16,6 +16,8 @@ namespace ProcurementHTE.Infrastructure.Data
                     new Status { StatusName = "In Progress" },
                     new Status { StatusName = "Completed" },
                     new Status { StatusName = "Closed" },
+                    new Status { StatusName = "Uploaded"}
+
                 };
 
                 await db.Statuses.AddRangeAsync(statuses);
