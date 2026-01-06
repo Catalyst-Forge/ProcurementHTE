@@ -5,21 +5,25 @@
 }
 
 <div class="container-fluid py-4">
-    <div class="row">
-        <!-- Back Button -->
-        <div class="col-12 mb-3">
+    <header class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-0">Tracking Details</h1>
+        </div>
+
+        <div class="d-flex gap-2">
             <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>
+                <i class="bi bi-arrow-left"></i>
                 Kembali ke Pencarian
             </a>
         </div>
-
+    </header>
+    <div class="row">
         <!-- PR Info Card -->
         <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
+                        <i class="bi bi-info-circle me-2"></i>
                         Informasi PR
                     </h5>
                 </div>
@@ -89,12 +93,12 @@
             <div class="card shadow-sm mt-4">
                 <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-qrcode me-2"></i>
+                        <i class="bi bi-qr-code me-2"></i>
                         QR Code
                     </h5>
                 </div>
                 <div class="card-body text-center">
-                    <div id="qrcode" class="mb-3"></div>
+                    <div id="qrcode" class="mb-3 d-flex justify-content-center"></div>
                     <p class="small text-muted mb-0">
                         Scan QR code ini untuk approval via mobile app
                     </p>
@@ -110,7 +114,7 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-tasks me-2"></i>
+                        <i class="bi bi-list-task me-2"></i>
                         Progress Tracking
                     </h5>
                 </div>
@@ -129,7 +133,7 @@
                 <div class="card shadow-sm">
                     <div class="card-header bg-secondary text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-history me-2"></i>
+                            <i class="bi bi-clock-history me-2"></i>
                             Status History
                         </h5>
                     </div>
@@ -167,17 +171,60 @@
 </div>
 
 @section Scripts {
-    <!-- QR Code Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- QR Code Library with integrity check -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" 
+            integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" 
+            crossorigin="anonymous" 
+            referrerpolicy="no-referrer"></script>
     <script>
-        // Generate QR Code
-        new QRCode(document.getElementById("qrcode"), {
-            text: "@Model.PrNumber",
-            width: 200,
-            height: 200,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        (function() {
+            function generateQRCode() {
+                var qrContainer = document.getElementById("qrcode");
+                var prNumber = "@Html.Raw(Model.PrNumber)";
+                
+                if (!qrContainer) {
+                    console.error("QR container not found");
+                    return;
+                }
+                
+                // Clear any existing content
+                qrContainer.innerHTML = '';
+                
+                // Check if QRCode library is loaded
+                if (typeof QRCode === 'undefined') {
+                    console.error("QRCode library not loaded, retrying...");
+                    // Show loading indicator
+                    qrContainer.innerHTML = '<div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Loading...</span></div>';
+                    // Retry after a delay
+                    setTimeout(generateQRCode, 500);
+                    return;
+                }
+                
+                try {
+                    new QRCode(qrContainer, {
+                        text: prNumber,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } catch (e) {
+                    console.error("Error generating QR code:", e);
+                    qrContainer.innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Gagal memuat QR Code. <button class="btn btn-sm btn-outline-secondary ms-2" onclick="location.reload()">Refresh</button></div>';
+                }
+            }
+            
+            // Wait for DOM to be ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Additional delay to ensure library is loaded
+                    setTimeout(generateQRCode, 100);
+                });
+            } else {
+                // DOM is already ready
+                setTimeout(generateQRCode, 100);
+            }
+        })();
     </script>
 }

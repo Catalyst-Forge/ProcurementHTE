@@ -8,7 +8,7 @@ using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
-[Authorize]
+[Authorize(Roles = "Admin, AP-PO")]
 public class ProcurementDocumentsController : Controller
 {
     private static readonly HashSet<string> _roundLetterDocNames = new(

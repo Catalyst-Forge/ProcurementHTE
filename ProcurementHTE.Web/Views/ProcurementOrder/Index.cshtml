@@ -22,7 +22,7 @@
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">AP-PO Approval</h1>
+    <h1 class="h3 mb-0">Procurement Order List</h1>
 </header>
 
 @if (TempData["SuccessMessage"] != null)
@@ -93,7 +93,7 @@
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="7" class="text-center text-muted">Tidak ada procurement yang perlu di-approve</td>
+                    <td colspan="7" class="text-center text-muted">Tidak ada procurement yang perlu di-pickup</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
@@ -124,7 +124,7 @@
                             <form method="post" asp-action="Approve" asp-route-id="@item.ProcurementId" style="display: inline;" class="approve-form">
                                 @Html.AntiForgeryToken()
                                 <button type="button" class="btn btn-success btn-sm btn-approve" data-procnum="@item.ProcNum">
-                                    <i class="bi bi-check-circle"></i> Terima
+                                    <i class="bi bi-check-circle"></i> Pick up
                                 </button>
                             </form>
                         </td>

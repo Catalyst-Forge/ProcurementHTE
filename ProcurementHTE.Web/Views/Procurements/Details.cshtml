@@ -39,7 +39,6 @@
         </button>
 
         <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
-            <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-primary" role="button"><i class="bi bi-file-earmark-post"></i> Document</a>
             @if (canPublish)
             {
                 <button type="button" class="btn btn-success btn-publish" data-procurement-id="@Model?.ProcurementId" data-procnum="@Model?.ProcNum">
