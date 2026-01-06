@@ -164,22 +164,6 @@
                                                 <dd class="fw-medium">@p.EndDate.ToString("d MMM yyyy")</dd>
                                             </dl>
                                         </div>
-
-                                        <div class="mt-2">
-                                            <a asp-controller="Procurements"
-                                               asp-action="Details"
-                                               asp-route-id="@p.ProcurementId"
-                                               class="btn btn-sm btn-outline-primary me-1">
-                                                <i class="bi bi-eye"></i> View Details
-                                            </a>
-
-                                            <a asp-controller="ProcurementDocuments"
-                                               asp-action="Index"
-                                               asp-route-procurementId="@p.ProcurementId"
-                                               class="btn btn-sm btn-outline-info">
-                                                <i class="bi bi-folder2-open"></i> Document Manager
-                                            </a>
-                                        </div>
                                     </div>
                                 </article>
 

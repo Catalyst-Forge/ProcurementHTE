@@ -13,7 +13,7 @@ using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.PR
 {
-    [Authorize]
+    [Authorize(Roles = "Admin, AP-PO")]
     public class PurchaseRequisitionsController : Controller
     {
         private const string ActivePageName = "Index PR Service";
@@ -68,7 +68,8 @@ namespace ProcurementHTE.Web.Controllers.PR
             _documentTypeRepository = documentTypeRepository;
             _procurementService = procurementService;
             _objectStorage = objectStorage;
-            _storageOptions = storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
+            _storageOptions =
+                storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
             _httpClientFactory = httpClientFactory;
         }
 
@@ -192,7 +193,10 @@ namespace ProcurementHTE.Web.Controllers.PR
             // Validate at least one procurement is selected
             if (model.ProcurementIds == null || model.ProcurementIds.Count == 0)
             {
-                ModelState.AddModelError("ProcurementIds", "At least one procurement must be selected.");
+                ModelState.AddModelError(
+                    "ProcurementIds",
+                    "At least one procurement must be selected."
+                );
             }
 
             if (!ModelState.IsValid)
@@ -365,7 +369,10 @@ namespace ProcurementHTE.Web.Controllers.PR
                     }
 
                     // Build new object key for MinIO
-                    var objectKey = BuildPrDocumentObjectKey(existingPr.PrId, model.DocumentFile.FileName);
+                    var objectKey = BuildPrDocumentObjectKey(
+                        existingPr.PrId,
+                        model.DocumentFile.FileName
+                    );
 
                     // Upload to object storage (MinIO)
                     await using var stream = model.DocumentFile.OpenReadStream();
@@ -458,7 +465,8 @@ namespace ProcurementHTE.Web.Controllers.PR
                 {
                     ["response-content-disposition"] =
                         $"attachment; filename=\"{Uri.EscapeDataString(pr.DocumentFileName ?? "document")}\"",
-                    ["response-content-type"] = pr.DocumentContentType ?? "application/octet-stream",
+                    ["response-content-type"] =
+                        pr.DocumentContentType ?? "application/octet-stream",
                 };
 
                 var url = await _objectStorage.GetPresignedUrlHeaderAsync(
@@ -534,7 +542,9 @@ namespace ProcurementHTE.Web.Controllers.PR
             }
             catch (Exception ex)
             {
-                return Json(new { ok = false, error = $"Failed to create preview link: {ex.Message}" });
+                return Json(
+                    new { ok = false, error = $"Failed to create preview link: {ex.Message}" }
+                );
             }
         }
 
@@ -743,20 +753,29 @@ namespace ProcurementHTE.Web.Controllers.PR
         )
         {
             var procurements = await _procurementRepository.GetAllForSelectionAsync();
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             // Filter procurements that don't have PR linked yet (PrId is null)
-            // and have status "Created" only
+            // and have status "In Progress" (procurement that has been approved by AP-PO)
+            // and have AppoUserId filled (procurement that has been accepted by AP-PO)
             procurements = procurements
                 .Where(p => p.PrId == null) // Only procurements not yet linked to a PR
                 .Where(p =>
                     p.Status != null
                     && string.Equals(
                         p.Status.StatusName,
-                        "Created",
+                        "In Progress",
                         StringComparison.OrdinalIgnoreCase
                     )
                 )
+                .Where(p => !string.IsNullOrWhiteSpace(p.AppoUserId)) // Only approved procurements
                 .ToList();
+
+            // If user is AP-PO (not Admin), filter by AppoUserId
+            if (User.IsInRole("AP-PO") && !User.IsInRole("Admin"))
+            {
+                procurements = procurements.Where(p => p.AppoUserId == currentUserId).ToList();
+            }
 
             // Apply filters
             if (!string.IsNullOrEmpty(vendorId))
@@ -819,8 +838,8 @@ namespace ProcurementHTE.Web.Controllers.PR
                 return Json(Array.Empty<object>());
             }
 
-            var result = pr.Procurements
-                .Select(p => new
+            var result = pr
+                .Procurements.Select(p => new
                 {
                     id = p.ProcurementId,
                     procNum = p.ProcNum,
@@ -833,7 +852,8 @@ namespace ProcurementHTE.Web.Controllers.PR
                     status = p.Status?.StatusName ?? "Unknown",
                     startDate = p.StartDate.ToString("yyyy-MM-dd"),
                     vendorId = p.ProfitLosses?.FirstOrDefault()?.SelectedVendorId ?? "",
-                    vendorName = p.ProfitLosses?.FirstOrDefault()?.SelectedVendor?.VendorName ?? "-",
+                    vendorName = p.ProfitLosses?.FirstOrDefault()?.SelectedVendor?.VendorName
+                        ?? "-",
                 })
                 .ToList();
 
@@ -892,7 +912,11 @@ namespace ProcurementHTE.Web.Controllers.PR
         {
             try
             {
-                await _objectStorage.DeleteAsync(_storageOptions.Bucket, objectKey, HttpContext.RequestAborted);
+                await _objectStorage.DeleteAsync(
+                    _storageOptions.Bucket,
+                    objectKey,
+                    HttpContext.RequestAborted
+                );
             }
             catch
             {

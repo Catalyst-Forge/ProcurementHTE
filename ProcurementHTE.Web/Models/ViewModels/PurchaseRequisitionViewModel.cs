@@ -99,7 +99,7 @@ public class ProcurementWithDocsViewModel
 
     public List<RequiredDocItemDto> RequiredDocuments { get; set; } = [];
     public List<VendorRoundLetter> RoundLetters { get; set; } = [];
-    
+
     public int CompletedDocs { get; set; }
     public int TotalDocs { get; set; }
     public int ProgressPercent => TotalDocs > 0 ? (CompletedDocs * 100 / TotalDocs) : 0;
