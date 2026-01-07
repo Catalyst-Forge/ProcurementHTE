@@ -87,22 +87,22 @@
 
 <div class="table-responsive border rounded-3">
     <table class="table table-hover align-middle mobile-table">
-        <thead class="table-light">
+        <thead class="table-light text-center">
             <tr class="align-middle">
-                <th class="border-end">Job Name</th>
+                <th class="border-end" style="min-width: 220px">Job Name</th>
                 <th class="border-end">WO Number</th>
-                <th class="border-end">Start Date</th>
-                <th class="border-end">Job Type</th>
-                <th class="border-end">Revenue</th>
-                <th class="border-end">Cost</th>
-                <th class="border-end">Profit %</th>
-                <th class="border-end">Vendor</th>
-                <th class="border-end">Project Region</th>
-                <th class="border-end text-center">Analyst</th>
-                <th class="border-end text-center">Asst. Manager</th>
-                <th class="border-end text-center">Manager</th>
+                <th class="border-end" style="min-width: 110px">Start Date</th>
+                <th class="border-end" style="min-width: 100px">Job Type</th>
+                <th class="border-end" style="min-width: 130px">Revenue</th>
+                <th class="border-end" style="min-width: 130px">Cost</th>
+                <th class="border-end" style="min-width: 70px">Profit %</th>
+                <th class="border-end" style="min-width: 150px">Vendor</th>
+                <th class="border-end" style="min-width: 130px">Project Region</th>
+                <th class="border-end text-center" style="min-width: 150px">Analyst</th>
+                <th class="border-end text-center" style="min-width: 150px">Asst. Manager</th>
+                <th class="border-end text-center" style="min-width: 150px">Manager</th>
                 <th class="border-end text-center">Status</th>
-                <th class="text-center width-10-rem">Action</th>
+                <th class="text-center position-sticky end-0 width-10-rem">Action</th>
             </tr>
         </thead>
 
@@ -171,14 +171,14 @@
                         <td class="text-center d-flex d-sm-table-cell" data-label="Status">
                             <span class="badge rounded-pill @BadgeClass(statusName)">@statusName</span>
                         </td>
-                        <td class="text-md-center d-flex d-sm-table-cell width-10-rem" data-label="Action">
+                        <td class="text-md-center d-flex d-sm-table-cell position-sticky end-0 width-10-rem" data-label="Action">
                             @if (!hideButton) {
-                                <a class="btn btn-outline-warning mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
+                                <a class="btn btn-outline-warning btn-sm mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
                                     <i class="bi bi-pencil-fill"></i>
                                     <span class="ms-1">Edit</span>
                                 </a>
                             }
-                            <a class="btn btn-outline-info mb-sm-2 w-100" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
+                            <a class="btn btn-outline-info btn-sm mb-sm-2 w-100" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
                                 <i class="bi bi-eye-fill"></i>
                                 <span class="ms-1">Detail</span>
                             </a>
@@ -200,7 +200,7 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.ProcurementId" />
                                     <button type="submit"
-                                            class="btn btn-outline-danger mb-sm-2 w-100">
+                                            class="btn btn-outline-danger btn-sm mb-sm-2 w-100">
                                         <i class="bi bi-trash-fill"></i>
                                         <span class="ms-1">Delete</span>
                                     </button>
@@ -257,7 +257,7 @@
 @section HeadScripts {
     <style>
         .width-10-rem {
-            width: 10rem;
+            min-width: 10rem;
         }
     </style>
 }
