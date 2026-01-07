@@ -11,7 +11,7 @@
         bodyClass = $"{bodyClass} {customBodyClass}".Trim();
     }
     var layoutRowClass = hideSidebar ? "row g-0 w-100" : "row g-0 flex-nowrap";
-    var contentColumnClass = hideSidebar ? "col-12" : "col";
+    var contentColumnClass = hideSidebar ? "col-12" : "col col-lg-9 col-xl-10";
     var hxBoostValue = disableHxBoost ? "false" : "true";
 }
 <!DOCTYPE html>
@@ -68,25 +68,6 @@
                             </nav>
                         </div>
                     }
-
-                    @* <!-- Alert Messages -->
-                    @if (TempData["SuccessMessage"] != null) {
-                        <div class="container-fluid mt-3">
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        </div>
-                    }
-
-                    @if (TempData["ErrorMessage"] != null) {
-                        <div class="container-fluid mt-3">
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        </div>
-                    } *@
 
                     @RenderBody()
                 </main>
