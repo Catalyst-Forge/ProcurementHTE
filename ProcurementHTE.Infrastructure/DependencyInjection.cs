@@ -59,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<IDocumentApprovalsRepository, DocumentApprovalsRepository>();
         services.AddScoped<IJobTypeDocumentAdminRepository, JobTypeDocumentAdminRepository>();
         services.AddScoped<IUnitTypeRepository, UnitTypeRepository>();
+        services.AddScoped<ILdpRepository, LdpRepository>();
         services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IDocumentGenerator, DocumentGenerator>();
 
@@ -66,7 +67,10 @@ public static class DependencyInjection
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
 
         // ------------- PR Tracking Service -------------
-        services.AddScoped<IPurchaseRequisitionTrackingService, PurchaseRequisitionTrackingService>();
+        services.AddScoped<
+            IPurchaseRequisitionTrackingService,
+            PurchaseRequisitionTrackingService
+        >();
 
         // ------------- Cross-cutting Infrastructure -------------
         services.AddSingleton<IEmailSender>(sp =>

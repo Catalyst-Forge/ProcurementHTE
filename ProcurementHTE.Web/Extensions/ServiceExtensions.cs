@@ -52,6 +52,7 @@ public static class ServiceExtensions
         services.AddScoped<ITemplateProvider, FileSystemTemplateProvider>();
         services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
         services.AddScoped<IJobTypeCalculationService, JobTypeCalculationService>();
+        services.AddScoped<ILdpService, LdpService>();
 
         return services;
     }

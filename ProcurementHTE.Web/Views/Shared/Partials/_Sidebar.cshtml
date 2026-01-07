@@ -229,6 +229,17 @@
             </li>
         }
 
+        @* LDP Menu *@
+        <li class="nav-item w-100">
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Ldp" }))" 
+            data-nav-controller="Ldp" 
+            asp-controller="Ldp" 
+            asp-action="Index" 
+            data-page="LDP Data">
+                <i class="bi bi-table"></i> <span class="ms-1">LDP</span>
+            </a>
+        </li>
+
         @* Hanya Admin yang lihat menu ini *@
         @if (User.IsInRole("Admin")) {
             <li class="nav-item w-100">

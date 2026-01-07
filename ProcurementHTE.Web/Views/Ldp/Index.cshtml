@@ -1,0 +1,209 @@
+@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Web.Models.ViewModels
+@model LdpIndexViewModel
+@inject IAuthorizationService AuthZ
+@{
+    ViewData["Title"] = "LDP - Laporan Data Procurement";
+    var currentSearch = Model.Search ?? "";
+    Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
+    Func<DateTime?, string> formatDate = value => value?.ToString("dd MMM yyyy") ?? "-";
+    Func<DateTime?, string> formatDateTime = value => value?.ToString("dd MMM yyyy HH:mm") ?? "-";
+    Func<int?, string> formatYear = value => value?.ToString() ?? "-";
+    Func<string?, string> formatText = value => !string.IsNullOrWhiteSpace(value) ? value : "-";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">LDP - Laporan Data Procurement</h1>
+        <p class="text-muted mb-0">Rekapitulasi semua data procurement dalam satu tabel</p>
+    </div>
+    <span class="badge bg-info fs-6">Total: @Model.Total data</span>
+</header>
+
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-3">
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" style="width: 25rem;" 
+               placeholder="Cari berdasarkan No WO, Job Name, No SPK..." 
+               value="@currentSearch" />
+    </div>
+
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@Model.PageSize" />
+</form>
+
+<div class="table-responsive border rounded-3 mb-2">
+    <table class="table table-hover align-middle table-sm mb-0">
+        <thead class="table-light">
+            <tr class="align-middle text-center">
+                <th class="border-end" style="min-width: 60px;">No</th>
+                <th class="border-end" style="min-width: 120px;">No WO</th>
+                <th class="border-end" style="min-width: 150px;">No SPK</th>
+                <th class="border-end" style="min-width: 150px;">Vendor Terpilih</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Selesai</th>
+                <th class="border-end" style="min-width: 200px;">Job Name</th>
+                <th class="border-end" style="min-width: 120px;">Job Type</th>
+                <th class="border-end" style="min-width: 100px;">Contract Type</th>
+                <th class="border-end" style="min-width: 150px;">LTC Name</th>
+                <th class="border-end" style="min-width: 200px;">Text Pekerjaan PR</th>
+                <th class="border-end" style="min-width: 80px;">50K</th>
+                <th class="border-end" style="min-width: 120px;">No Accrual</th>
+                <th class="border-end" style="min-width: 80px;">Year Job</th>
+                <th class="border-end" style="min-width: 120px;">No Rig</th>
+                <th class="border-end" style="min-width: 120px;">Nilai PnL</th>
+                <th class="border-end" style="min-width: 120px;">Nilai Accrual</th>
+                <th class="border-end" style="min-width: 120px;">Nilai Realisasi</th>
+                <th class="border-end" style="min-width: 120px;">No SPMP</th>
+                <th class="border-end" style="min-width: 120px;">No HTE</th>
+                <th class="border-end" style="min-width: 100px;">Project Region</th>
+                <th class="border-end" style="min-width: 120px;">Project Code</th>
+                <th class="border-end" style="min-width: 150px;">Link Dokumen</th>
+                <th class="border-end" style="min-width: 200px;">Unit Item</th>
+                <th class="border-end" style="min-width: 150px;">Surat Penawaran</th>
+                <th class="border-end" style="min-width: 120px;">Memorandum</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Doc</th>
+                <th class="border-end" style="min-width: 150px;">Keterangan-1</th>
+                <th class="border-end" style="min-width: 120px;">Potensi Accrual</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Accrual</th>
+                <th class="border-end" style="min-width: 100px;">Status Accrual</th>
+                <th class="border-end" style="min-width: 100px;">RKS Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">RKS Tgl Selesai</th>
+                <th class="border-end" style="min-width: 100px;">BOQ Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">BOQ Tgl Selesai</th>
+                <th class="border-end" style="min-width: 100px;">Memo Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Memo Tgl Selesai</th>
+                <th class="border-end" style="min-width: 100px;">RA Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">RA Tgl Selesai</th>
+                <th class="border-end" style="min-width: 120px;">No PR</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Buat PR</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Rilis PR</th>
+                <th class="border-end" style="min-width: 120px;">Tgl Approval Ops</th>
+                <th class="border-end" style="min-width: 120px;">Tgl Approval Mgr</th>
+                <th class="border-end" style="min-width: 120px;">Tgl Approval VP</th>
+                <th class="border-end" style="min-width: 120px;">Tgl Approval Dir</th>
+                <th style="min-width: 120px;">Tgl Submit ISPA</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any())
+            {
+                <tr>
+                    <td colspan="47" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                        @if (!string.IsNullOrWhiteSpace(Model?.Search))
+                        {
+                            <p class="mb-2">Tidak ditemukan data yang sesuai dengan pencarian "<strong>@Model.Search</strong>"</p>
+                            <a href="@Url.Action("Index")" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-left"></i> Tampilkan Semua Data
+                            </a>
+                        }
+                        else
+                        {
+                            <p class="mb-0">Tidak ada data LDP yang tersedia</p>
+                        }
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @for (int i = 0; i < Model.Items.Count; i++)
+                {
+                    var item = Model.Items[i];
+                    var rowNumber = ((Model.Page - 1) * Model.PageSize) + i + 1;
+                    <tr>
+                        <td class="text-center">@rowNumber</td>
+                        <td>@formatText(item.NoWo)</td>
+                        <td>@formatText(item.NoSpk)</td>
+                        <td>@formatText(item.NamaVendor)</td>
+                        <td class="text-center">@formatDate(item.TglMulai)</td>
+                        <td class="text-center">@formatDate(item.TglSelesai)</td>
+                        <td>@formatText(item.TextPekerjaan)</td>
+                        <td>@formatText(item.JobType)</td>
+                        <td>@formatText(item.ContractType)</td>
+                        <td>@formatText(item.LtcName)</td>
+                        <td>@formatText(item.TextPekerjaanPr)</td>
+                        <td class="text-center">@formatText(item.Flag50K)</td>
+                        <td>@formatText(item.NoAccrual)</td>
+                        <td class="text-center">@formatYear(item.YearJob)</td>
+                        <td>@formatText(item.NoRig)</td>
+                        <td class="text-end">@formatMoney(item.NilaiPnl)</td>
+                        <td class="text-end">@formatMoney(item.NilaiAccrual)</td>
+                        <td class="text-end">@formatMoney(item.NilaiRealisasi)</td>
+                        <td>@formatText(item.NoSpmp)</td>
+                        <td>@formatText(item.NoHte)</td>
+                        <td>@formatText(item.ProjectRegion)</td>
+                        <td>@formatText(item.ProjectCode)</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.LinkDokumen))
+                            {
+                                <small class="text-success"><i class="bi bi-check-circle"></i> Ada</small>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </td>
+                        <td>@formatText(item.UnitItemPenawaran)</td>
+                        <td>@formatText(item.SuratPenawaranVendor)</td>
+                        <td>@formatText(item.Memorandum)</td>
+                        <td class="text-center">@formatDate(item.TglDoc)</td>
+                        <td>@formatText(item.Keterangan1)</td>
+                        <td class="text-end">@formatMoney(item.PotensiAccrual)</td>
+                        <td class="text-center">@formatDate(item.TglAccrual)</td>
+                        <td>@formatText(item.StatusAccrual)</td>
+                        <td class="text-center">@formatDate(item.RksTglMulai)</td>
+                        <td class="text-center">@formatDate(item.RksTglSelesai)</td>
+                        <td class="text-center">@formatDate(item.BoqTglMulai)</td>
+                        <td class="text-center">@formatDate(item.BoqTglSelesai)</td>
+                        <td class="text-center">@formatDate(item.MemoTglMulai)</td>
+                        <td class="text-center">@formatDate(item.MemoTglSelesai)</td>
+                        <td class="text-center">@formatDate(item.RaTglMulai)</td>
+                        <td class="text-center">@formatDate(item.RaTglSelesai)</td>
+                        <td>@formatText(item.NoPr)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalBuatPr)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalRilisPr)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalApprovalOps)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalApprovalManager)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalApprovalVp)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalApprovalDirektur)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalSubmitIspa)</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@await Html.PartialAsync("_Pager", Model)
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('filterForm');
+            const searchBox = document.getElementById('searchBox');
+            const pageHidden = document.getElementById('pageHidden');
+
+            // Enter di search langsung submit (page reset ke 1)
+            searchBox.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    pageHidden.value = 1;
+                    form.submit();
+                }
+            });
+
+            // Refresh: hapus search, reset page ke 1 & submit
+            document.getElementById('btnRefresh').addEventListener('click', function () {
+                searchBox.value = '';
+                pageHidden.value = 1;
+                form.submit();
+            });
+        })();
+    </script>
+}
