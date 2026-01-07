@@ -256,6 +256,73 @@ namespace ProcurementHTE.Infrastructure.Services
             };
         }
 
+        public async Task<PRTrackingResponse> SendForApprovalAsync(
+            string prId,
+            string sentByUserId,
+            CancellationToken ct = default
+        )
+        {
+            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            if (pr == null)
+                return new PRTrackingResponse
+                {
+                    Success = false,
+                    Message = "Purchase Requisition tidak ditemukan.",
+                };
+
+            if (pr.Status != PurchaseRequisitionStatus.OnCreateDP3)
+                return new PRTrackingResponse
+                {
+                    Success = false,
+                    Message = $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. Hanya PR dengan status 'On Create DP3' yang bisa dikirim untuk approval.",
+                };
+
+            // Generate unique approval token
+            var token = GenerateApprovalToken();
+            
+            pr.ApprovalToken = token;
+            pr.ApprovalTokenGeneratedAt = DateTime.UtcNow;
+            pr.ApprovalSentByUserId = sentByUserId;
+            pr.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync(ct);
+
+            await UpdatePrStatusAsync(
+                prId,
+                PurchaseRequisitionStatus.WaitingApprovalAnalyst,
+                sentByUserId,
+                "Send for approval - QR Code generated",
+                ct
+            );
+
+            _logger.LogInformation(
+                "PR {PrId} sent for approval by {UserId}. Token: {Token}",
+                prId,
+                sentByUserId,
+                token
+            );
+
+            var tracking = await GetTrackingByPrIdAsync(prId, ct);
+
+            return new PRTrackingResponse
+            {
+                Success = true,
+                Message = "PR berhasil dikirim untuk approval. QR Code telah di-generate.",
+                Data = tracking,
+            };
+        }
+
+        /// <summary>
+        /// Generate unique approval token untuk QR Code
+        /// Format: APPR-{shortGuid}-{timestamp}
+        /// </summary>
+        private static string GenerateApprovalToken()
+        {
+            var shortGuid = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+            var timestamp = DateTime.UtcNow.ToString("yyMMddHHmm");
+            return $"APPR-{shortGuid}-{timestamp}";
+        }
+
         public async Task<PRTrackingResponse> RejectPrAsync(
             string prId,
             string rejectionNote,
@@ -464,19 +531,16 @@ namespace ProcurementHTE.Infrastructure.Services
                 }
             }
 
-            // Calculate documents pending/approved
-            var documentsPendingApproval = 0;
-            var documentsApproved = 0;
+            // Calculate documents - status sekarang di level PR bukan per document
+            // Semua document dianggap ada jika sudah di-upload
+            var totalDocuments = 0;
             if (pr.Procurements != null)
             {
                 foreach (var proc in pr.Procurements)
                 {
                     if (proc.ProcDocuments != null)
                     {
-                        documentsPendingApproval += proc.ProcDocuments.Count(d => 
-                            string.Equals(d.Status, "Pending Approval", StringComparison.OrdinalIgnoreCase));
-                        documentsApproved += proc.ProcDocuments.Count(d => 
-                            string.Equals(d.Status, "Approved", StringComparison.OrdinalIgnoreCase));
+                        totalDocuments += proc.ProcDocuments.Count;
                     }
                 }
             }
@@ -512,9 +576,12 @@ namespace ProcurementHTE.Infrastructure.Services
                 LinkedProcurementsCount = linkedProcurementsCount,
                 TotalMandatoryDocs = totalMandatoryDocs,
                 UploadedMandatoryDocs = uploadedMandatoryDocs,
-                DocumentsPendingApproval = documentsPendingApproval,
-                DocumentsApproved = documentsApproved,
+                TotalDocuments = totalDocuments,
                 NextApproverRole = nextApproverRole,
+                // Generate QR URL using stored token
+                ApprovalQrUrl = !string.IsNullOrEmpty(pr.ApprovalToken) 
+                    ? $"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={Uri.EscapeDataString($"procurehte://approve/{pr.ApprovalToken}")}"
+                    : null,
                 StatusHistory = pr
                     .StatusHistories.OrderBy(h => h.ChangedAt)
                     .Select(h => new PRStatusHistoryDto

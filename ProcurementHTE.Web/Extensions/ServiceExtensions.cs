@@ -38,12 +38,13 @@ public static class ServiceExtensions
         services.AddScoped<IProcDocumentService, ProcDocumentService>();
         services.AddScoped<IJobTypeDocumentService, JobTypeDocumentService>();
         services.AddScoped<IJobTypeDocumentAdminService, JobTypeDocumentAdminService>();
-        services.AddScoped<IProcDocumentApprovalService, ProcDocumentApprovalService>();
-        services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
+        // Approval per-document removed - approval sekarang hanya di level PR
+        // services.AddScoped<IProcDocumentApprovalService, ProcDocumentApprovalService>();
+        // services.AddScoped<IProcDocApprovalFlowService, ProcDocApprovalFlowService>();
         services.AddScoped<IDocumentApprovalRuleService, DocumentApprovalRuleService>();
         services.AddScoped<IDocumentApprovalsService, DocumentApprovalsService>();
-        services.AddScoped<IApprovalService, ApprovalService>();
-        services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();
+        // services.AddScoped<IApprovalService, ApprovalService>();
+        // services.AddScoped<IApprovalServiceApi, ApprovalServiceApi>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAccountService, AccountService>();
@@ -330,8 +331,7 @@ public static class ServiceExtensions
         // ------------- Authorization Handlers -------------
         services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
-        services.AddScoped<IAuthorizationRequirement, CanApproveProcDocumentRequirement>();
-        services.AddScoped<IAuthorizationHandler, CanApproveProcDocumentHandler>();
+        // CanApproveProcDocument removed - approval per-document sudah dihapus
 
         return services;
     }

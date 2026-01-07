@@ -121,7 +121,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             var query = BuildBaseQuery()
                 .Where(p =>
-                    p.Status != null && p.Status.StatusName == "In Progress" && p.AppoUserId == null
+                    p.Status != null && p.Status.StatusName == "Waiting Pickup"
                 );
 
             if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
@@ -320,20 +320,25 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
         }
 
-        public async Task DropProcurementAsync(Procurement procurement)
+        public async Task DeleteAsync(Procurement procurement, string deletedByUserId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var entityToDelete = await _context.Procurements.FirstOrDefaultAsync(
+                p => p.ProcurementId == procurement.ProcurementId
+            );
 
-            try
+            if (entityToDelete != null)
             {
-                _context.Procurements.Remove(procurement);
+                entityToDelete.IsDeleted = true;
+                entityToDelete.DeletedAt = DateTime.UtcNow;
+                entityToDelete.DeletedBy = deletedByUserId;
+                
+                // Prepend dash to ProcNum to allow reuse of the same number
+                if (!string.IsNullOrEmpty(entityToDelete.ProcNum))
+                {
+                    entityToDelete.ProcNum = $"-{entityToDelete.ProcNum}";
+                }
+                
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
             }
         }
 

@@ -442,7 +442,8 @@ namespace ProcurementHTE.Web.Controllers.PR
                     await SafeDeleteFromStorageAsync(pr.DocumentFilePath);
                 }
 
-                await _purchaseRequisitionService.DeleteAsync(id);
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                await _purchaseRequisitionService.DeleteAsync(id, currentUserId);
 
                 TempData["SuccessMessage"] =
                     $"Purchase Requisition {pr.PrNumber} deleted successfully.";
@@ -950,22 +951,20 @@ namespace ProcurementHTE.Web.Controllers.PR
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            // Update PR status first - approval is at PR level, not per document
-            var success = await _trackingService.UpdatePrStatusAsync(
+            // Use new SendForApprovalAsync method that generates QR token
+            var result = await _trackingService.SendForApprovalAsync(
                 prId,
-                PurchaseRequisitionStatus.WaitingApprovalAnalyst,
                 userId,
-                "Send for approval",
                 HttpContext.RequestAborted
             );
 
-            if (success)
+            if (result.Success)
             {
-                TempData["Success"] = "PR berhasil dikirim untuk approval.";
+                TempData["Success"] = result.Message;
             }
             else
             {
-                TempData["Error"] = "Gagal mengirim PR untuk approval.";
+                TempData["Error"] = result.Message;
             }
 
             return RedirectToAction("Details", new { id = prId });

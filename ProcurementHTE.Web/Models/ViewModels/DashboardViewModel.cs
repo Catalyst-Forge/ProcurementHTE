@@ -44,8 +44,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
         // Distribution and Analytics - using ViewModels
         public List<JobTypeCountViewModel> JobTypeDistribution { get; set; } = new();
         public List<StatusCountViewModel> DocumentApprovalStats { get; set; } = new();
-        public IReadOnlyList<ApprovalStatusCountDto> ApprovalStatus { get; set; } =
-            Array.Empty<ApprovalStatusCountDto>();
+        // ApprovalStatus removed - approval per-document sudah dihapus
 
         // Approvals - using ViewModels
         public List<ApprovalSummaryViewModel> PendingApprovalsDetail { get; set; } = new();

@@ -35,7 +35,7 @@ public interface IPurchaseRequisitionRepository
 
     Task UpdateAsync(PurchaseRequisition purchaseRequisition, CancellationToken ct = default);
 
-    Task DeleteAsync(PurchaseRequisition purchaseRequisition, CancellationToken ct = default);
+    Task DeleteAsync(PurchaseRequisition purchaseRequisition, string deletedByUserId, CancellationToken ct = default);
 
     Task LinkProcurementsAsync(
         string prId,

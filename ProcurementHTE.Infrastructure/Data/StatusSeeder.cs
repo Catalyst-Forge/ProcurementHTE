@@ -7,18 +7,28 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public static async Task SeedAsync(AppDbContext db)
         {
-            if (!await db.Statuses.AnyAsync())
+            var requiredStatuses = new[]
             {
-                var statuses = new[]
-                {
-                    new Status { StatusName = "Draft" },
-                    new Status { StatusName = "Created" },
-                    new Status { StatusName = "In Progress" },
-                    new Status { StatusName = "Completed" },
-                    new Status { StatusName = "Closed" },
-                };
+                "Draft",
+                "Created",
+                "Waiting Pickup",
+                "In Progress",
+                "Completed",
+                "Closed"
+            };
 
-                await db.Statuses.AddRangeAsync(statuses);
+            var existingStatuses = await db.Statuses
+                .Select(s => s.StatusName)
+                .ToListAsync();
+
+            var missingStatuses = requiredStatuses
+                .Where(s => !existingStatuses.Contains(s))
+                .Select(s => new Status { StatusName = s })
+                .ToList();
+
+            if (missingStatuses.Count > 0)
+            {
+                await db.Statuses.AddRangeAsync(missingStatuses);
                 await db.SaveChangesAsync();
             }
         }

@@ -49,7 +49,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             var totalRevenueThisMonth = await ProfitLossService.GetTotalRevenueThisMonthAsync();
             var procurementsByStatus = await DashboardService.GetProcurementStatusCountsAsync();
             var revenuePerMonth = await DashboardService.GetRevenuePerMonthAsync(DateTime.Now.Year);
-            var approvalStatus = await DashboardService.GetApprovalStatusCountsAsync();
+            // approvalStatus removed - approval per-document sudah dihapus
 
             // Fetch DTOs from service layer
             var recentProcsDto = await DashboardService.GetRecentProcurementsAsync(10, ct);
@@ -90,7 +90,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 // Status Counts - DTOs only for chart data
                 ProcurementStatusCounts = procurementsByStatus,
                 RevenuePerMonth = revenuePerMonth,
-                ApprovalStatus = approvalStatus,
+                // ApprovalStatus removed - approval per-document sudah dihapus
 
                 // Core Metrics
                 ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),

@@ -105,6 +105,10 @@ public class Procurement : BaseEntity
     [DisplayName("AP-PO User")]
     public string? AppoUserId { get; set; }
 
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    [DisplayName("Picked Up At")]
+    public DateTime? PickedUpAt { get; set; }
+
     [Required]
     [DisplayName("Jenis Pengadaan")]
     public ProcurementCategory ProcurementCategory { get; set; }
@@ -138,6 +142,9 @@ public class Procurement : BaseEntity
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 
+    [ForeignKey(nameof(AppoUserId))]
+    public User? AppoUser { get; set; }
+
     [ForeignKey(nameof(PrId))]
     public PurchaseRequisition? PurchaseRequisition { get; set; }
 
@@ -145,6 +152,6 @@ public class Procurement : BaseEntity
     public ICollection<ProcDocuments>? ProcDocuments { get; set; } = [];
     public ICollection<ProcDetail>? ProcDetails { get; set; } = [];
     public ICollection<VendorOffer> VendorOffers { get; set; } = [];
-    public ICollection<ProcDocumentApprovals> DocumentApprovals { get; set; } = [];
+    // DocumentApprovals collection removed - approval sekarang di level PR
     public ICollection<ProfitLoss> ProfitLosses { get; set; } = [];
 }

@@ -49,10 +49,12 @@ namespace ProcurementHTE.Core.Interfaces
             List<ProcDetail> details,
             List<ProcOffer> offers
         );
-        Task DeleteProcurementAsync(Procurement procurement);
+        Task DeleteProcurementAsync(Procurement procurement, string deletedByUserId);
         Task MarkAsCompletedAsync(string procurementId);
         Task ApproveByAppoAsync(string procurementId, string appoUserId);
         Task RejectByAppoAsync(string procurementId);
         Task PublishAsync(string procurementId);
+        Task UnpublishAsync(string procurementId);
+        Task PickupAsync(string procurementId, string appoUserId);
     }
 }

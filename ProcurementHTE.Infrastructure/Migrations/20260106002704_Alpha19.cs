@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPRTrackingFeatures : Migration
+    public partial class Alpha19 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

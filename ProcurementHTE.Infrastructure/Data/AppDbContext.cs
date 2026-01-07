@@ -17,7 +17,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<ProcDetail> ProcDetails { get; set; }
         public DbSet<ProcOffer> ProcOffers { get; set; }
         public DbSet<ProcDocuments> ProcDocuments { get; set; }
-        public DbSet<ProcDocumentApprovals> ProcDocumentApprovals { get; set; }
+        // ProcDocumentApprovals removed - approval sekarang di level PR
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<VendorOffer> VendorOffers { get; set; }
         public DbSet<ProfitLoss> ProfitLosses { get; set; }
@@ -55,7 +55,7 @@ namespace ProcurementHTE.Infrastructure.Data
             ConfigureVendorOffer(builder);
             ConfigureDocumentType(builder);
             ConfigureProcDocuments(builder);
-            ConfigureProcDocumentApprovals(builder);
+            // ConfigureProcDocumentApprovals removed - approval sekarang di level PR
             ConfigureProfitLoss(builder);
             ConfigureProfitLossItem(builder);
             ConfigureJobTypeDocuments(builder);
@@ -78,6 +78,8 @@ namespace ProcurementHTE.Infrastructure.Data
         private static void ConfigureGlobalQueryFilters(ModelBuilder builder)
         {
             // Apply soft delete filter for all entities inheriting from BaseEntity
+            // Note: Child entities (ProcDetail, ProcOffer, etc.) don't have IsDeleted
+            // They are cascade deleted when parent is deleted, so this is expected behavior
             builder.Entity<Procurement>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<ProfitLoss>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<VendorOffer>().HasQueryFilter(e => !e.IsDeleted);
@@ -269,11 +271,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(profitLoss => profitLoss.ProcurementId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                entity
-                    .HasMany(procurement => procurement.DocumentApprovals)
-                    .WithOne(documentApproval => documentApproval.Procurement)
-                    .HasForeignKey(documentApproval => documentApproval.ProcurementId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                // DocumentApprovals navigation removed - approval per-document sudah dihapus
             });
 
             builder
@@ -442,61 +440,14 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(document => document.DocumentTypeId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity
-                    .HasMany(document => document.Approvals)
-                    .WithOne(approval => approval.ProcDocument)
-                    .HasForeignKey(approval => approval.ProcDocumentId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                // Approvals navigation removed - approval per-document sudah dihapus
             });
         }
 
         #endregion
 
-        #region ProcDocumentApprovals
-
-        private static void ConfigureProcDocumentApprovals(ModelBuilder builder)
-        {
-            builder.Entity<ProcDocumentApprovals>(entity =>
-            {
-                // Properties
-                entity
-                    .Property(documentApproval => documentApproval.ProcDocumentApprovalId)
-                    .ValueGeneratedNever();
-
-                // Relationships
-                entity
-                    .HasOne(documentApproval => documentApproval.Procurement)
-                    .WithMany(procurement => procurement.DocumentApprovals)
-                    .HasForeignKey(documentApproval => documentApproval.ProcurementId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.ProcDocument)
-                    .WithMany(document => document.Approvals)
-                    .HasForeignKey(documentApproval => documentApproval.ProcDocumentId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.Role)
-                    .WithMany()
-                    .HasForeignKey(documentApproval => documentApproval.RoleId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.AssignedApprover)
-                    .WithMany()
-                    .HasForeignKey(documentApproval => documentApproval.AssignedApproverId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.Approver)
-                    .WithMany()
-                    .HasForeignKey(documentApproval => documentApproval.ApproverId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
-        #endregion
+        // #region ProcDocumentApprovals - REMOVED
+        // Approval per document sudah dihapus, approval sekarang di level PR
 
         #region ProfitLoss
 

@@ -41,13 +41,11 @@
             @await Html.PartialAsync("_PRProgressBar", Model)
 
             <!-- Approval Status Card - Shows when waiting for approval -->
-            @if (Model.IsWaitingApproval)
+            @if (Model.IsWaitingApproval && !string.IsNullOrEmpty(Model.ApprovalQrUrl))
             {
-                // QR data format: procurehte://approve/{prId} (for Flutter deep link)
-                // Alternative: JSON format for more info
-                var qrData = $"procurehte://approve/{Model.PrId}";
-                var qrImageUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={Uri.EscapeDataString(qrData)}";
-                var qrImageUrlLarge = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={Uri.EscapeDataString(qrData)}";
+                // Use stored approval token from database
+                var qrImageUrl = Model.ApprovalQrUrl;
+                var qrImageUrlLarge = Model.ApprovalQrUrl?.Replace("size=200x200", "size=300x300");
                 
                 <div class="row mt-4">
                     <div class="col-12">
@@ -103,13 +101,9 @@
                                                                 <i class="bi bi-file-earmark-check text-info fs-4"></i>
                                                             </div>
                                                             <div>
-                                                                <small class="text-muted d-block">Docs Status</small>
+                                                                <small class="text-muted d-block">Docs</small>
                                                                 <strong>
-                                                                    <span class="text-warning">@Model.DocumentsPendingApproval pending</span>
-                                                                    @if (Model.DocumentsApproved > 0)
-                                                                    {
-                                                                        <span class="text-success ms-2">@Model.DocumentsApproved approved</span>
-                                                                    }
+                                                                    <span class="text-primary">@Model.TotalDocuments dokumen</span>
                                                                 </strong>
                                                             </div>
                                                         </div>
@@ -119,7 +113,7 @@
 
                                             <div class="alert alert-info mb-0 py-2">
                                                 <i class="bi bi-info-circle me-2"></i>
-                                                <small>Approver dapat scan QR code di atas atau klik link di email untuk melakukan approval.</small>
+                                                <small>Approver dapat scan QR code di samping.</small>
                                             </div>
                                         </div>
                                     </div>
@@ -144,11 +138,11 @@
                             @if (Model.CanSendApproval)
                             {
                                 <!-- Send for Approval Button - All requirements met -->
-                                <form asp-controller="PurchaseRequisitions" asp-action="SendApproval" method="post" class="d-inline">
+                                <form asp-controller="PurchaseRequisitions" asp-action="SendApproval" method="post" class="d-inline" id="sendApprovalForm-@Model.PrId">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="prId" value="@Model.PrId" />
-                                    <button type="submit" class="btn btn-primary btn-lg shadow-sm" 
-                                            onclick="return confirm('Send PR untuk approval? QR Code akan di-generate untuk dokumen yang memerlukan approval.')">
+                                    <button type="button" class="btn btn-primary btn-lg shadow-sm" 
+                                            onclick="confirmSendApproval('@Model.PrId', '@Model.PrNumber')">
                                         <i class="bi bi-send-fill me-2"></i>
                                         Send for Approval
                                     </button>
@@ -310,24 +304,26 @@ else
     </div>
 }
 
-<script>
-    function printQrCode(qrUrl, prNumber) {
-        var w = window.open('', '_blank', 'width=500,height=600');
-        w.document.write('<html><head><title>QR Code - ' + prNumber + '</title>');
-        w.document.write('<style>');
-        w.document.write('body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }');
-        w.document.write('.qr-container { border: 2px solid #333; padding: 20px; display: inline-block; }');
-        w.document.write('h2 { margin-bottom: 20px; }');
-        w.document.write('img { max-width: 300px; }');
-        w.document.write('p { margin-top: 15px; font-size: 14px; color: #666; }');
-        w.document.write('</style></head><body>');
-        w.document.write('<div class="qr-container">');
-        w.document.write('<h2>PR Approval</h2>');
-        w.document.write('<img src="' + qrUrl + '" alt="QR Code"/>');
-        w.document.write('<p><strong>PR Number:</strong> ' + prNumber + '</p>');
-        w.document.write('<p>Scan dengan aplikasi ProcureHTE untuk approval</p>');
-        w.document.write('</div></body></html>');
-        w.document.close();
-        w.onload = function () { w.print(); };
-    }
-</script>
+@section Scripts {
+    <script>
+        function printQrCode(qrUrl, prNumber) {
+            var w = window.open('', '_blank', 'width=500,height=600');
+            w.document.write('<html><head><title>QR Code - ' + prNumber + '</title>');
+            w.document.write('<style>');
+            w.document.write('body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }');
+            w.document.write('.qr-container { border: 2px solid #333; padding: 20px; display: inline-block; }');
+            w.document.write('h2 { margin-bottom: 20px; }');
+            w.document.write('img { max-width: 300px; }');
+            w.document.write('p { margin-top: 15px; font-size: 14px; color: #666; }');
+            w.document.write('</style></head><body>');
+            w.document.write('<div class="qr-container">');
+            w.document.write('<h2>PR Approval</h2>');
+            w.document.write('<img src="' + qrUrl + '" alt="QR Code"/>');
+            w.document.write('<p><strong>PR Number:</strong> ' + prNumber + '</p>');
+            w.document.write('<p>Scan dengan aplikasi ProcureHTE untuk approval</p>');
+            w.document.write('</div></body></html>');
+            w.document.close();
+            w.onload = function () { w.print(); };
+        }
+    </script>
+}

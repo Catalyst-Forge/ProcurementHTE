@@ -56,6 +56,15 @@ namespace ProcurementHTE.Core.Interfaces
         );
 
         /// <summary>
+        /// Send PR for approval - generates QR token and updates status
+        /// </summary>
+        Task<PRTrackingResponse> SendForApprovalAsync(
+            string prId,
+            string sentByUserId,
+            CancellationToken ct = default
+        );
+
+        /// <summary>
         /// Reject PR dengan note (status → Rejected)
         /// </summary>
         Task<PRTrackingResponse> RejectPrAsync(

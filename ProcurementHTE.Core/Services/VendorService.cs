@@ -109,14 +109,16 @@ public class VendorService : IVendorService
         }
     }
 
-    public async Task DeleteVendorAsync(Vendor vendor)
+    public async Task DeleteVendorAsync(Vendor vendor, string deletedByUserId)
     {
         if (vendor == null)
             throw new ArgumentException("Vendor or ID cannot be null");
+        if (string.IsNullOrWhiteSpace(deletedByUserId))
+            throw new ArgumentException("User ID cannot be null", nameof(deletedByUserId));
 
         try
         {
-            await _vendorRepository.DropVendorAsync(vendor);
+            await _vendorRepository.DeleteAsync(vendor, deletedByUserId);
         }
         catch (DbUpdateConcurrencyException)
         {

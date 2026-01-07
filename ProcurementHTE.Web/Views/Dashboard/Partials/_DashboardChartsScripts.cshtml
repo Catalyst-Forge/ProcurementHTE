@@ -7,7 +7,8 @@
     // Use ProcurementsByStatus (ViewModels) for charts
     var procurementStatusJson = JsonSerializer.Serialize(Model.ProcurementsByStatus ?? new List<StatusCountViewModel>(), jsonOptions);
     var revenuePerMonthJson = JsonSerializer.Serialize(Model.RevenuePerMonth ?? Array.Empty<RevenuePerMonthDto>(), jsonOptions);
-    var approvalStatusJson = JsonSerializer.Serialize(Model.ApprovalStatus ?? Array.Empty<ApprovalStatusCountDto>(), jsonOptions);
+    // ApprovalStatus removed - approval per-document sudah dihapus
+    var documentApprovalStatsJson = JsonSerializer.Serialize(Model.DocumentApprovalStats ?? new List<StatusCountViewModel>(), jsonOptions);
     var jobTypeDistributionJson = JsonSerializer.Serialize(Model.JobTypeDistribution ?? new List<JobTypeCountViewModel>(), jsonOptions);
     var monthlyProcurementTrendJson = JsonSerializer.Serialize(Model.MonthlyProcurementTrend ?? new List<MonthlyTrendViewModel>(), jsonOptions);
     var monthlyPrTrendJson = JsonSerializer.Serialize(Model.MonthlyPurchaseRequisitionTrend ?? new List<MonthlyTrendViewModel>(), jsonOptions);
@@ -128,10 +129,10 @@
             }
         }
 
-        // Approval Status Chart
+        // Approval Status Chart - now using DocumentApprovalStats (PR status based)
         const approvalCanvas = document.getElementById("approvalStatusChart");
         if (approvalCanvas) {
-            const approvalStatus = @Html.Raw(approvalStatusJson);
+            const approvalStatus = @Html.Raw(documentApprovalStatsJson);
             const approvalCtx = approvalCanvas.getContext("2d");
             destroyExistingChart(approvalCanvas);
             
@@ -139,10 +140,10 @@
                 new Chart(approvalCtx, {
                     type: "doughnut",
                     data: {
-                        labels: approvalStatus.map(x => x.status),
+                        labels: approvalStatus.map(x => x.statusName),
                         datasets: [{
                             data: approvalStatus.map(x => x.count),
-                            backgroundColor: ["#198754", "#ffc107", "#dc3545"],
+                            backgroundColor: ["#198754", "#ffc107", "#dc3545", "#0d6efd"],
                         }]
                     },
                     options: {

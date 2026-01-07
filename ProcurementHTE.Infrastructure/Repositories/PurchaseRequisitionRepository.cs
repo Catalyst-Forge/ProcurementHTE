@@ -132,6 +132,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
 
     public async Task DeleteAsync(
         PurchaseRequisition purchaseRequisition,
+        string deletedByUserId,
         CancellationToken ct = default
     )
     {
@@ -145,7 +146,11 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         {
             entityToDelete.IsDeleted = true;
             entityToDelete.DeletedAt = DateTime.UtcNow;
-            // Note: DeletedBy should be set by the service layer with current user ID
+            entityToDelete.DeletedBy = deletedByUserId;
+            
+            // Prepend dash to PrNumber to allow reuse of the same PR number
+            entityToDelete.PrNumber = $"-{entityToDelete.PrNumber}";
+            
             await _context.SaveChangesAsync(ct);
         }
     }
@@ -189,18 +194,18 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         if (procurements.Count == 0)
             return;
 
-        // Get "Created" status to revert procurement status
-        var createdStatus = await _context.Statuses
-            .FirstOrDefaultAsync(s => s.StatusName == "Created", ct);
+        // Get "Waiting Pickup" status to revert procurement status
+        var waitingPickupStatus = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.StatusName == "Waiting Pickup", ct);
 
         foreach (var procurement in procurements)
         {
             procurement.PrId = null;
             
-            // Revert status back to "Created" when unlinked from PR
-            if (createdStatus != null)
+            // Revert status back to "Waiting Pickup" when unlinked from PR
+            if (waitingPickupStatus != null)
             {
-                procurement.StatusId = createdStatus.StatusId;
+                procurement.StatusId = waitingPickupStatus.StatusId;
             }
         }
 

@@ -162,10 +162,13 @@ public class ProcurementService : IProcurementService
         );
     }
 
-    public async Task DeleteProcurementAsync(Procurement procurement)
+    public async Task DeleteProcurementAsync(Procurement procurement, string deletedByUserId)
     {
         ArgumentNullException.ThrowIfNull(procurement);
-        await _procurementRepository.DropProcurementAsync(procurement);
+        if (string.IsNullOrWhiteSpace(deletedByUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(deletedByUserId));
+        
+        await _procurementRepository.DeleteAsync(procurement, deletedByUserId);
     }
 
     public async Task MarkAsCompletedAsync(string procurementId)
@@ -255,11 +258,68 @@ public class ProcurementService : IProcurementService
                 "Hanya procurement dengan status 'Created' yang dapat dipublish"
             );
 
+        var waitingPickupStatus =
+            await _procurementRepository.GetStatusByNameAsync("Waiting Pickup")
+            ?? throw new InvalidOperationException("Status 'Waiting Pickup' tidak ditemukan");
+
+        procurement.StatusId = waitingPickupStatus.StatusId;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task UnpublishAsync(string procurementId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        if (procurement.Status?.StatusName != "Waiting Pickup")
+            throw new InvalidOperationException(
+                "Hanya procurement dengan status 'Waiting Pickup' yang dapat dibatalkan publish-nya"
+            );
+
+        var createdStatus =
+            await _procurementRepository.GetStatusByNameAsync("Created")
+            ?? throw new InvalidOperationException("Status 'Created' tidak ditemukan");
+
+        procurement.StatusId = createdStatus.StatusId;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task PickupAsync(string procurementId, string appoUserId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        if (string.IsNullOrWhiteSpace(appoUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(appoUserId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        if (procurement.Status?.StatusName != "Waiting Pickup")
+            throw new InvalidOperationException(
+                "Hanya procurement dengan status 'Waiting Pickup' yang dapat di-pickup"
+            );
+
         var inProgressStatus =
             await _procurementRepository.GetStatusByNameAsync("In Progress")
             ?? throw new InvalidOperationException("Status 'In Progress' tidak ditemukan");
 
         procurement.StatusId = inProgressStatus.StatusId;
+        procurement.AppoUserId = appoUserId;
+        procurement.PickedUpAt = DateTime.UtcNow;
         procurement.UpdatedAt = DateTime.UtcNow;
 
         await _procurementRepository.UpdateProcurementAsync(procurement);

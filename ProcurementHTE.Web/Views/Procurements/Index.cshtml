@@ -98,10 +98,10 @@
                 <th class="border-end">Profit %</th>
                 <th class="border-end">Vendor</th>
                 <th class="border-end">Project Region</th>
-                <th class="border-end text-center">PIC Ops</th>
                 <th class="border-end text-center">Analyst</th>
                 <th class="border-end text-center">Asst. Manager</th>
                 <th class="border-end text-center">Manager</th>
+                <th class="border-end text-center">Status</th>
                 <th class="text-center width-10-rem">Action</th>
             </tr>
         </thead>
@@ -109,7 +109,7 @@
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="14" class="text-center text-muted">No Procurement data found</td>
+                    <td colspan="13" class="text-center text-muted">No Procurement data found</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
@@ -126,11 +126,11 @@
                     ?? "-";
                     var region = item.ProjectRegion.ToString();
                     var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
-                    var picOps = resolveUserName(item.PicOpsUserId);
                     var analyst = resolveUserName(item.AnalystHteUserId);
                     var assistant = resolveUserName(item.AssistantManagerUserId);
                     var manager = resolveUserName(item.ManagerUserId);
-
+                    var statusName = item.Status?.StatusName ?? "-";
+                    var hideButton = statusName.Equals("Completed", StringComparison.OrdinalIgnoreCase) || statusName.Equals("Closed", StringComparison.OrdinalIgnoreCase) || statusName.Equals("Waiting Pickup", StringComparison.OrdinalIgnoreCase) || statusName.Equals("In Progress", StringComparison.OrdinalIgnoreCase);
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
                             @item.JobName
@@ -159,9 +159,6 @@
                         <td class="d-flex d-sm-table-cell" data-label="Project Region">
                             @(!string.IsNullOrWhiteSpace(region) ? region : "-")
                         </td>
-                        <td class="text-center d-flex d-sm-table-cell" data-label="PIC Ops">
-                            @picOps
-                        </td>
                         <td class="text-center d-flex d-sm-table-cell" data-label="Analyst">
                             @analyst
                         </td>
@@ -171,16 +168,21 @@
                         <td class="text-center d-flex d-sm-table-cell" data-label="Manager">
                             @manager
                         </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Status">
+                            <span class="badge rounded-pill @BadgeClass(statusName)">@statusName</span>
+                        </td>
                         <td class="text-md-center d-flex d-sm-table-cell width-10-rem" data-label="Action">
-                            <a class="btn btn-outline-warning mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
-                                <i class="bi bi-pencil-fill"></i>
-                                <span class="ms-1">Edit</span>
-                            </a>
+                            @if (!hideButton) {
+                                <a class="btn btn-outline-warning mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
+                                    <i class="bi bi-pencil-fill"></i>
+                                    <span class="ms-1">Edit</span>
+                                </a>
+                            }
                             <a class="btn btn-outline-info mb-sm-2 w-100" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
                                 <i class="bi bi-eye-fill"></i>
                                 <span class="ms-1">Detail</span>
                             </a>
-                            @if (canDelete.Succeeded) {
+                            @if (canDelete.Succeeded && !hideButton) {
                                 var deleteTitle = string.IsNullOrWhiteSpace(item.Wonum)
                                 ? "Delete procurement?"
                                 : $"Delete {item.Wonum}?";

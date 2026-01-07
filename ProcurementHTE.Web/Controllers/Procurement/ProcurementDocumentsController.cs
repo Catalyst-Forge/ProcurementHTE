@@ -27,7 +27,7 @@ public class ProcurementDocumentsController : Controller
     private readonly IHttpClientFactory _http;
     private readonly IDocumentGenerator _docGenerator;
     private readonly IDocumentTypeRepository _docTypeRepo;
-    private readonly IApprovalService _approvalSvc;
+    // IApprovalService removed - approval sekarang di level PR
 
     public ProcurementDocumentsController(
         IProcurementDocumentQuery query,
@@ -37,8 +37,7 @@ public class ProcurementDocumentsController : Controller
         IVendorRoundLetterRepository roundLetterRepo,
         IHttpClientFactory http,
         IDocumentGenerator docGenerator,
-        IDocumentTypeRepository docTypeRepo,
-        IApprovalService approvalSvc
+        IDocumentTypeRepository docTypeRepo
     )
     {
         _query = query;
@@ -49,7 +48,6 @@ public class ProcurementDocumentsController : Controller
         _http = http;
         _docGenerator = docGenerator;
         _docTypeRepo = docTypeRepo;
-        _approvalSvc = approvalSvc;
     }
 
     // GET: /ProcurementDocuments/Index/{procurementId}
@@ -104,7 +102,7 @@ public class ProcurementDocumentsController : Controller
                         ProcDocumentId = x.ProcDocumentId,
                         FileName = x.FileName,
                         Size = x.Size,
-                        Status = x.Status,
+                        // Status removed - tracking sekarang di level PR
                     }),
                 ],
             };
@@ -324,7 +322,8 @@ public class ProcurementDocumentsController : Controller
 
         try
         {
-            var ok = await _docSvc.DeleteAsync(id);
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var ok = await _docSvc.DeleteAsync(id, currentUserId);
             TempData[ok ? "success" : "error"] = ok ? "Document deleted." : "Document not found.";
         }
         catch (Exception ex)
@@ -380,36 +379,14 @@ public class ProcurementDocumentsController : Controller
         }
     }
 
+    /// <summary>
+    /// QR sekarang di level PR, bukan per document.
+    /// Method ini deprecated.
+    /// </summary>
     [HttpGet("ProcurementDocuments/DownloadQr/{id}")]
-    public async Task<IActionResult> DownloadQr(string id)
+    public IActionResult DownloadQr(string id)
     {
-        try
-        {
-            var doc = await _docSvc.GetByIdAsync(id);
-            if (doc is null || string.IsNullOrWhiteSpace(doc.QrObjectKey))
-                return NotFound();
-
-            var url = await _docSvc.GetPresignedQrUrlAsync(
-                id,
-                TimeSpan.FromMinutes(30),
-                HttpContext.RequestAborted
-            );
-
-            var client = _http.CreateClient("MinioProxy"); // sama seperti download file
-            var resp = await client.GetAsync(
-                url!,
-                HttpCompletionOption.ResponseHeadersRead,
-                HttpContext.RequestAborted
-            );
-            resp.EnsureSuccessStatusCode();
-
-            var stream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
-            return File(stream, "image/png", fileDownloadName: Path.GetFileName(doc.QrObjectKey));
-        }
-        catch (Exception ex)
-        {
-            return BadRequest($"Failed to download QR: {ex.Message}");
-        }
+        return NotFound("QR code sekarang dikelola di level Purchase Requisition.");
     }
 
     [HttpPost]
@@ -566,32 +543,8 @@ public class ProcurementDocumentsController : Controller
         }
     }
 
-    // ? NEW: GET /ProcurementDocuments/ApprovalTimeline/{procDocumentId}
-    [HttpGet("ProcurementDocuments/ApprovalTimeline/{procDocumentId}")]
-    public async Task<IActionResult> ApprovalTimeline(string procDocumentId)
-    {
-        if (string.IsNullOrWhiteSpace(procDocumentId))
-            return BadRequest(new { ok = false, message = "Invalid procDocumentId." });
-
-        try
-        {
-            var dto = await _approvalSvc.GetApprovalTimelineAsync(
-                procDocumentId,
-                HttpContext.RequestAborted
-            );
-            if (dto is null)
-                return NotFound(new { ok = false, message = "Document was not found." });
-
-            return Ok(new { ok = true, data = dto });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(
-                500,
-                new { ok = false, message = $"Failed to load approval timeline: {ex.Message}" }
-            );
-        }
-    }
+    // ApprovalTimeline removed - approval per-document sudah dihapus
+    // Approval sekarang di level PR via PurchaseRequisition.Status
 
     private static string SanitizeFileNameBase(string? name)
     {

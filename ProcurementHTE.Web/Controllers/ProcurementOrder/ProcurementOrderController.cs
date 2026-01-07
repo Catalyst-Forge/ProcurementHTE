@@ -64,9 +64,9 @@ namespace ProcurementHTE.Web.Controllers.AppoApproval
             return View(procurements);
         }
 
-        [HttpPost("Approve/{id}")]
+        [HttpPost("Pickup/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Approve(string id)
+        public async Task<IActionResult> Pickup(string id)
         {
             try
             {
@@ -77,12 +77,12 @@ namespace ProcurementHTE.Web.Controllers.AppoApproval
                     return RedirectToAction(nameof(Index));
                 }
 
-                await _procurementService.ApproveByAppoAsync(id, userId);
-                TempData["SuccessMessage"] = "Procurement berhasil diterima";
+                await _procurementService.PickupAsync(id, userId);
+                TempData["SuccessMessage"] = "Procurement berhasil di-pickup";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Gagal menerima procurement: {ex.Message}";
+                TempData["ErrorMessage"] = $"Gagal pickup procurement: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

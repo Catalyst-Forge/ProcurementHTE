@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Infrastructure.Data;
@@ -62,14 +63,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToList();
         }
 
-        public async Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync()
-        {
-            return await _context
-                .ProcDocumentApprovals.Where(a => a.Status == "Pending")
-                .GroupBy(d => d.Status)
-                .Select(g => new ApprovalStatusCountDto { Status = g.Key, Count = g.Count() })
-                .ToListAsync();
-        }
+        // GetApprovalStatusCountsAsync removed - approval per-document sudah dihapus
 
         // Dashboard Metrics
         public async Task<int> GetActiveProcurementsCountAsync(CancellationToken ct = default)
@@ -84,7 +78,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<int> GetPendingApprovalsCountAsync(CancellationToken ct = default)
         {
-            return await _context.ProcDocumentApprovals.CountAsync(a => a.Status == "Pending", ct);
+            // ProcDocumentApprovals removed - sekarang count pending approvals dari PR status
+            return await _context.PurchaseRequisitions.CountAsync(
+                pr => pr.Status == PurchaseRequisitionStatus.WaitingApprovalAnalyst
+                    || pr.Status == PurchaseRequisitionStatus.WaitingApprovalAsstManager
+                    || pr.Status == PurchaseRequisitionStatus.WaitingApprovalManager,
+                ct
+            );
         }
 
         public async Task<int> GetTotalVendorsCountAsync(CancellationToken ct = default)
@@ -144,19 +144,23 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
+            // ProcDocumentApprovals removed - sekarang pending approvals dari PR status
             return await _context
-                .ProcDocumentApprovals.Include(a => a.ProcDocument)
-                .ThenInclude(d => d.Procurement)
-                .Include(a => a.Role)
-                .Where(a => a.Status == "Pending")
-                .OrderByDescending(a => a.ProcDocument.CreatedAt)
+                .PurchaseRequisitions
+                .Include(pr => pr.Procurements)
+                .Where(pr => pr.Status == PurchaseRequisitionStatus.WaitingApprovalAnalyst
+                    || pr.Status == PurchaseRequisitionStatus.WaitingApprovalAsstManager
+                    || pr.Status == PurchaseRequisitionStatus.WaitingApprovalManager)
+                .OrderByDescending(pr => pr.CreatedAt)
                 .Take(take)
-                .Select(a => new ApprovalSummary
+                .Select(pr => new ApprovalSummary
                 {
-                    ProcNum = a.ProcDocument.Procurement.ProcNum,
-                    DocumentName = a.ProcDocument.FileName,
-                    ApprovalRole = a.Role != null ? a.Role.Name! : string.Empty,
-                    CreatedDate = a.ProcDocument.CreatedAt,
+                    ProcNum = pr.Procurements.FirstOrDefault() != null 
+                        ? pr.Procurements.First().ProcNum 
+                        : "-",
+                    DocumentName = pr.PrNumber ?? "-",
+                    ApprovalRole = pr.Status.ToString(),
+                    CreatedDate = pr.CreatedAt,
                 })
                 .ToListAsync(ct);
         }
@@ -302,8 +306,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
+            // ProcDocumentApprovals removed - sekarang approval stats dari PR status
             return await _context
-                .ProcDocumentApprovals.GroupBy(a => a.Status)
+                .PurchaseRequisitions
+                .Where(pr => pr.Status == PurchaseRequisitionStatus.WaitingApprovalAnalyst
+                    || pr.Status == PurchaseRequisitionStatus.WaitingApprovalAsstManager
+                    || pr.Status == PurchaseRequisitionStatus.WaitingApprovalManager
+                    || pr.Status == PurchaseRequisitionStatus.DonePO)
+                .GroupBy(pr => pr.Status.ToString())
                 .Select(g => new StatusCount { StatusName = g.Key, Count = g.Count() })
                 .ToListAsync(ct);
         }

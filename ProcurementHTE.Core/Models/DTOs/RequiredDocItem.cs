@@ -16,5 +16,5 @@ public class RequiredDocItemDto
     public string? ProcDocumentId { get; set; }
     public string? FileName { get; set; }
     public long? Size { get; set; }
-    public string? Status { get; set; }
+    // Status removed - tracking sekarang di level PR
 }

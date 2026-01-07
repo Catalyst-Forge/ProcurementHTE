@@ -167,7 +167,63 @@
       const bodyAction = (document.body.dataset.activeAction || "").toLowerCase();
       updateHxBoost(bodyController, bodyAction);
     }
+    
+    // Reinitialize Bootstrap dropdowns after HTMX swap
+    reinitializeBootstrapComponents();
   });
+
+  // Function to reinitialize Bootstrap components after HTMX navigation
+  function reinitializeBootstrapComponents() {
+    // Reinitialize all dropdowns (including navbar dropdowns)
+    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggle) {
+      // Dispose existing instance if any
+      const existingInstance = bootstrap.Dropdown.getInstance(dropdownToggle);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      // Create new instance
+      new bootstrap.Dropdown(dropdownToggle);
+    });
+    
+    // Reinitialize all tooltips
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(tooltipTrigger) {
+      const existingInstance = bootstrap.Tooltip.getInstance(tooltipTrigger);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      new bootstrap.Tooltip(tooltipTrigger);
+    });
+    
+    // Reinitialize all popovers
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(popoverTrigger) {
+      const existingInstance = bootstrap.Popover.getInstance(popoverTrigger);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      new bootstrap.Popover(popoverTrigger);
+    });
+    
+    // Reinitialize all tabs
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(tabTrigger) {
+      const existingInstance = bootstrap.Tab.getInstance(tabTrigger);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      new bootstrap.Tab(tabTrigger);
+    });
+    
+    // Reinitialize all collapses
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(collapseTrigger) {
+      const existingInstance = bootstrap.Collapse.getInstance(collapseTrigger);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      // Don't auto-initialize collapse, just ensure toggle works
+    });
+  }
+  
+  // Also reinitialize on page load for safety
+  document.addEventListener("DOMContentLoaded", reinitializeBootstrapComponents);
 
   document.body.addEventListener("htmx:beforeSwap", (event) => {
     const status = event.detail?.xhr?.status;
@@ -590,3 +646,43 @@
     }
   });
 })();
+
+// Global function for Send for Approval with SweetAlert2
+function confirmSendApproval(prId, prNumber) {
+  Swal.fire({
+    title: '<i class="bi bi-send-fill text-primary"></i> Send for Approval?',
+    html: `
+      <div class="text-start">
+        <p class="mb-2">PR <strong>${prNumber}</strong> akan dikirim untuk approval.</p>
+        <div class="alert alert-info py-2 mb-0">
+          <i class="bi bi-qr-code me-2"></i>
+          <small>QR Code akan di-generate untuk proses approval</small>
+        </div>
+      </div>
+    `,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#0d6efd',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Kirim',
+    cancelButtonText: '<i class="bi bi-x-lg me-1"></i> Batal',
+    reverseButtons: true,
+    focusCancel: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Show loading
+      Swal.fire({
+        title: 'Mengirim...',
+        html: 'Sedang memproses dan generate QR Code',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      const form = document.getElementById('sendApprovalForm-' + prId);
+      if (form) {
+        form.submit();
+      }
+    }
+  });
+}

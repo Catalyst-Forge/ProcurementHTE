@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Alpha19 : Migration
+    public partial class Alpha20 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

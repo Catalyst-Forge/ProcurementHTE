@@ -58,6 +58,6 @@ namespace ProcurementHTE.Core.Interfaces
             List<ProcDetail> details,
             List<ProcOffer> offers
         );
-        Task DropProcurementAsync(Procurement procurement);
+        Task DeleteAsync(Procurement procurement, string deletedByUserId);
     }
 }

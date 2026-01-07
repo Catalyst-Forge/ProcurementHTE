@@ -18,8 +18,10 @@
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "waiting pickup" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        "in progress" => "bg-primary-subtle text-primary-emphasis border border-primary-subtle",
         "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
-        "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        "closed" => "bg-dark-subtle text-dark-emphasis border border-dark-subtle",
         _ => "bg-light text-body border"
     };  
     var selectedNames = pnl?.SelectedVendorNames ?? new List<string>();
@@ -27,7 +29,10 @@
     var isPengangkutan = jobTypeName == "Angkutan";
     var isSewaUnit = jobTypeName == "StandBy";
     var isMoving = jobTypeName == "Moving";
-    var canPublish = pnl != null && Model?.Status?.StatusName == "Created";
+    var statusName = Model?.Status?.StatusName;
+    var canPublish = pnl != null && statusName == "Created";
+    var canUnpublish = statusName == "Waiting Pickup";
+    var canEditDelete = statusName == "Created" || statusName == "Draft";
 }
 
 <header class="mb-3">
@@ -45,8 +50,17 @@
                     <i class="bi bi-send-fill"></i> Publish
                 </button>
             }
-            <a asp-action="Edit" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
-            <a asp-action="Delete" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+            @if (canUnpublish)
+            {
+                <button type="button" class="btn btn-warning btn-unpublish" data-procurement-id="@Model?.ProcurementId" data-procnum="@Model?.ProcNum">
+                    <i class="bi bi-arrow-counterclockwise"></i> Batal Publish
+                </button>
+            }
+            @if (canEditDelete)
+            {
+                <a asp-action="Edit" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+                <a asp-action="Delete" asp-route-id="@Model?.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+            }
             <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
         </div>
     </div>
@@ -317,6 +331,28 @@
                                     @Model?.CompletedAt.ToTanggalIndonesia()
                                 </dd>
                             </dl>
+
+                            @if (Model?.AppoUser != null)
+                            {
+                                <dl class="col-12">
+                                    <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                        Picked Up By
+                                    </dt>
+                                    <dd class="fw-medium text-secondary-emphasis">
+                                        <i class="bi bi-box-arrow-in-down text-success me-1"></i>
+                                        @Model.AppoUser.FullName
+                                    </dd>
+                                </dl>
+
+                                <dl class="col-12">
+                                    <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                        Picked Up At
+                                    </dt>
+                                    <dd class="fw-medium text-secondary-emphasis">
+                                        @Model.PickedUpAt?.ToTanggalIndonesia()
+                                    </dd>
+                                </dl>
+                            }
                         </div>
                     </div>
                 </article>
@@ -748,6 +784,14 @@
     </form>
 }
 
+@* Hidden form for Unpublish action *@
+@if (canUnpublish)
+{
+    <form id="unpublishForm" method="post" asp-action="Unpublish" asp-route-id="@Model?.ProcurementId" style="display: none;">
+        @Html.AntiForgeryToken()
+    </form>
+}
+
 @* PDF Preview Modal *@
 <div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -878,40 +922,87 @@
         const toggleButtonGroup = document.getElementById("buttonNavToggle");
         const buttonGroupWrap = document.getElementById("groupNavButton");
 
-        toggleButtonGroup.addEventListener("click", () => {
-        buttonGroupWrap.classList.toggle("show");
-        });
+        if (toggleButtonGroup && buttonGroupWrap) {
+            toggleButtonGroup.addEventListener("click", () => {
+                buttonGroupWrap.classList.toggle("show");
+            });
+        }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            var triggerEl = document.querySelector('#procurement-tab')
-            var tab = new bootstrap.Tab(triggerEl)
-            tab.show()
+        // Initialize tabs
+        (function initTabs() {
+            var triggerEl = document.querySelector('#procurement-tab');
+            if (triggerEl) {
+                var tab = new bootstrap.Tab(triggerEl);
+                tab.show();
+            }
+        })();
 
-            initPreviewHandlers();
+        // Initialize preview handlers
+        initPreviewHandlers();
 
-            // SweetAlert2 for Publish button
-            document.querySelectorAll('.btn-publish').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const procNum = this.dataset.procnum;
+        // SweetAlert2 for Publish button - using event delegation on document
+        // Remove any existing delegated handler first to avoid duplicates
+        if (!window._publishHandlerAttached) {
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-publish');
+                if (!btn) return;
+                
+                e.preventDefault();
+                const procNum = btn.dataset.procnum;
+                const procId = btn.dataset.procurementId;
 
-                    Swal.fire({
-                        title: 'Publish Procurement?',
-                        html: `Apakah Anda yakin ingin mempublish procurement <strong>${procNum}</strong>?<br><small class="text-muted">Status akan berubah menjadi "In Progress"</small>`,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: '#198754',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bi bi-send-fill"></i> Ya, Publish',
-                        cancelButtonText: '<i class="bi bi-x"></i> Batal',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById('publishForm').submit();
+                Swal.fire({
+                    title: 'Publish Procurement?',
+                    html: `Apakah Anda yakin ingin mempublish procurement <strong>${procNum}</strong>?<br><small class="text-muted">Status akan berubah menjadi "Waiting Pickup"</small>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-send-fill"></i> Ya, Publish',
+                    cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const publishForm = document.getElementById('publishForm');
+                        if (publishForm) {
+                            publishForm.submit();
                         }
-                    });
+                    }
                 });
             });
-        });
+            window._publishHandlerAttached = true;
+        }
+
+        // SweetAlert2 for Unpublish button - using event delegation on document
+        if (!window._unpublishHandlerAttached) {
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-unpublish');
+                if (!btn) return;
+                
+                e.preventDefault();
+                const procNum = btn.dataset.procnum;
+                const procId = btn.dataset.procurementId;
+
+                Swal.fire({
+                    title: 'Batal Publish Procurement?',
+                    html: `Apakah Anda yakin ingin membatalkan publish procurement <strong>${procNum}</strong>?<br><small class="text-muted">Status akan kembali menjadi "Created" dan dapat diedit kembali</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-arrow-counterclockwise"></i> Ya, Batal Publish',
+                    cancelButtonText: '<i class="bi bi-x"></i> Tidak',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const unpublishForm = document.getElementById('unpublishForm');
+                        if (unpublishForm) {
+                            unpublishForm.submit();
+                        }
+                    }
+                });
+            });
+            window._unpublishHandlerAttached = true;
+        }
     </script>
 }

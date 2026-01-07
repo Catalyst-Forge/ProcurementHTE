@@ -31,12 +31,11 @@
                                 foreach (var item in Model.Items.OrderBy(x => x.Sequence))
                                 {
                                     rowIndex++;
-                                    var status = !string.IsNullOrWhiteSpace(item.Status)
-                                        ? item.Status
-                                        : (item.Uploaded ? "Uploaded" : (item.IsMandatory ? "Required" : "Optional"));
+                                    // Status removed - just check if uploaded
+                                    var status = item.Uploaded ? "Uploaded" : (item.IsMandatory ? "Required" : "Optional");
 
-                                    var isPending = string.Equals(status, "Pending Approval", StringComparison.OrdinalIgnoreCase);
-                                    var isUploaded = item.Uploaded && !isPending;
+                                    var isPending = false; // No more pending per document
+                                    var isUploaded = item.Uploaded;
 
                                     <tr
                                         data-doc-id="@item.ProcDocumentId"

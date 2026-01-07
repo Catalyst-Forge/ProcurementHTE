@@ -93,6 +93,19 @@ public class PurchaseRequisition : BaseEntity
     [DisplayName("Rejected By")]
     public string? RejectedByUserId { get; set; }
 
+    // Approval QR Code Fields
+    [MaxLength(100)]
+    [DisplayName("Approval Token")]
+    public string? ApprovalToken { get; set; }
+
+    [DisplayName("Approval Token Generated At")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    public DateTime? ApprovalTokenGeneratedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("Approval Sent By")]
+    public string? ApprovalSentByUserId { get; set; }
+
     // Navigation Properties
     [ForeignKey(nameof(IspaSubmittedByUserId))]
     public User? IspaSubmittedByUser { get; set; }
@@ -102,8 +115,12 @@ public class PurchaseRequisition : BaseEntity
 
     [ForeignKey(nameof(RejectedByUserId))]
     public User? RejectedByUser { get; set; }
+    
     [ForeignKey(nameof(CreatedByUserId))]
     public User? CreatedByUser { get; set; }
+
+    [ForeignKey(nameof(ApprovalSentByUserId))]
+    public User? ApprovalSentByUser { get; set; }
 
     public ICollection<Procurement> Procurements { get; set; } = [];
     public ICollection<PurchaseRequisitionStatusHistory> StatusHistories { get; set; } = [];

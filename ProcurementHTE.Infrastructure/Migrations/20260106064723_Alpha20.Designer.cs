@@ -12,8 +12,8 @@ using ProcurementHTE.Infrastructure.Data;
 namespace ProcurementHTE.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260106064723_Alpha19")]
-    partial class Alpha19
+    [Migration("20260106064723_Alpha20")]
+    partial class Alpha20
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

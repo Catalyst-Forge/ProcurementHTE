@@ -31,8 +31,7 @@ namespace ProcurementHTE.Core.Services
             int take = 10
         ) => await _dashboardRepository.GetRecentActivitiesAsync(take);
 
-        public async Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync() =>
-            await _dashboardRepository.GetApprovalStatusCountsAsync();
+        // ApprovalStatusCountDto removed - approval per-document sudah dihapus
 
         // Dashboard Metrics - delegating to repository
         public async Task<int> GetActiveProcurementsCountAsync(CancellationToken ct = default) =>

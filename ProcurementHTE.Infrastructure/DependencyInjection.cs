@@ -46,9 +46,10 @@ public static class DependencyInjection
         services.AddScoped<IVendorRoundLetterRepository, VendorRoundLetterRepository>();
         services.AddScoped<IProcDocumentRepository, ProcDocumentRepository>();
         services.AddScoped<IJobTypeDocumentRepository, JobTypeDocumentRepository>();
-        services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();
-        services.AddScoped<IProcDocApprovalFlowRepository, ProcDocApprovalFlowRepository>();
-        services.AddScoped<IApprovalRepository, ApprovalRepository>();
+        // Approval per-document removed - approval sekarang hanya di level PR
+        // services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();
+        // services.AddScoped<IProcDocApprovalFlowRepository, ProcDocApprovalFlowRepository>();
+        // services.AddScoped<IApprovalRepository, ApprovalRepository>();
         services.AddScoped<IDocumentApprovalRuleRepository, DocumentApprovalRuleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserRepository, UserRepository>();

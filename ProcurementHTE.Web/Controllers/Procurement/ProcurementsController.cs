@@ -193,9 +193,11 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             procurementViewModel.Procurement ??= new Procurement();
             procurementViewModel.Details ??= new List<ProcDetail>();
             procurementViewModel.Offers ??= new List<ProcOffer>();
-            procurementViewModel.Procurement.UserId = User.FindFirstValue(
-                ClaimTypes.NameIdentifier
-            );
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
+                ?? throw new InvalidOperationException("User tidak terautentikasi");
+            procurementViewModel.Procurement.UserId = currentUserId;
+            // PIC Ops = User yang membuat procurement
+            procurementViewModel.Procurement.PicOpsUserId = currentUserId;
 
             // Validasi JobTypeId
             if (string.IsNullOrWhiteSpace(procurementViewModel.Procurement.JobTypeId))
@@ -519,14 +521,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
 
             // Validasi User IDs
-            if (string.IsNullOrWhiteSpace(editViewModel.PicOpsUserId))
-            {
-                ModelState.AddModelError(
-                    nameof(editViewModel.PicOpsUserId),
-                    "PIC Operations wajib dipilih"
-                );
-            }
-
             if (string.IsNullOrWhiteSpace(editViewModel.AnalystHteUserId))
             {
                 ModelState.AddModelError(
@@ -570,6 +564,14 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             try
             {
+                // Ambil PicOpsUserId dari procurement existing (tidak boleh diubah)
+                var existingProcurement = await _procurementService.GetProcurementByIdAsync(id);
+                if (existingProcurement == null)
+                {
+                    TempData["ErrorMessage"] = "Procurement tidak ditemukan";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var procurement = new Procurement
                 {
                     ProcurementId = editViewModel.ProcurementId,
@@ -592,7 +594,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     LtcName = editViewModel.LtcName,
                     Note = editViewModel.Note,
                     ProcurementCategory = editViewModel.ProcurementCategory,
-                    PicOpsUserId = editViewModel.PicOpsUserId!,
+                    PicOpsUserId = existingProcurement.PicOpsUserId, // Tetap gunakan nilai asli
                     AnalystHteUserId = editViewModel.AnalystHteUserId!,
                     AssistantManagerUserId = editViewModel.AssistantManagerUserId!,
                     ManagerUserId = editViewModel.ManagerUserId!,
@@ -708,7 +710,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                await _procurementService.DeleteProcurementAsync(procurement);
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                await _procurementService.DeleteProcurementAsync(procurement, currentUserId);
                 TempData["SuccessMessage"] = "Procurement deleted successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -755,7 +758,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
                 await _procurementService.PublishAsync(id);
                 TempData["SuccessMessage"] =
-                    "Procurement berhasil dipublish dan status berubah menjadi 'In Progress'.";
+                    "Procurement berhasil dipublish dan status berubah menjadi 'Waiting Pickup'.";
             }
             catch (KeyNotFoundException ex)
             {
@@ -769,6 +772,41 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             {
                 TempData["ErrorMessage"] =
                     $"Terjadi kesalahan saat publish procurement: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // POST: Procurements/Unpublish/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Procurement.Edit)]
+        public async Task<IActionResult> Unpublish(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["ErrorMessage"] = "ID Procurement tidak valid";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                await _procurementService.UnpublishAsync(id);
+                TempData["SuccessMessage"] =
+                    "Publish procurement berhasil dibatalkan. Status kembali menjadi 'Created'.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Terjadi kesalahan saat membatalkan publish procurement: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -1817,7 +1855,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     {
                         try
                         {
-                            await _procDocService.DeleteAsync(docId!);
+                            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                            await _procDocService.DeleteAsync(docId!, currentUserId);
                         }
                         catch (Exception ex)
                         {

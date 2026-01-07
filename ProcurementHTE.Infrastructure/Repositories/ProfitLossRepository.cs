@@ -191,5 +191,21 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task DeleteAsync(string profitLossId, string deletedByUserId)
+        {
+            var entityToDelete = await _context.ProfitLosses.FirstOrDefaultAsync(
+                p => p.ProfitLossId == profitLossId
+            );
+
+            if (entityToDelete != null)
+            {
+                entityToDelete.IsDeleted = true;
+                entityToDelete.DeletedAt = DateTime.UtcNow;
+                entityToDelete.DeletedBy = deletedByUserId;
+                
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

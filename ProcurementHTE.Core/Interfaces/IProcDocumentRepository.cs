@@ -30,6 +30,6 @@ public interface IProcDocumentRepository
     );
     Task AddAsync(ProcDocuments doc);
     Task UpdateAsync(ProcDocuments doc);
-    Task DeleteAsync(string id);
+    Task DeleteAsync(string id, string deletedByUserId);
     Task SaveAsync();
 }

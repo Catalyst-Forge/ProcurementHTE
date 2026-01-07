@@ -303,11 +303,12 @@
 
                                                     @foreach (var doc in p.RequiredDocuments.OrderBy(x => x.Sequence)) {
                                                         rowIndex++;
-                                                        var status = doc.Uploaded ? (doc.Status ?? "Uploaded") : (doc.IsMandatory ? "Required" : "Optional");
-                                                        var isPending = status.Equals("Pending Approval", StringComparison.OrdinalIgnoreCase);
-                                                        var isApproved = status.Equals("Approved", StringComparison.OrdinalIgnoreCase);
-                                                        var isUploaded = doc.Uploaded && !isPending;
-                                                        var disableGen = doc.RequiresApproval && (isPending || isApproved);
+                                                        // Status removed - just check if uploaded
+                                                        var status = doc.Uploaded ? "Uploaded" : (doc.IsMandatory ? "Required" : "Optional");
+                                                        var isPending = false; // No more pending per document
+                                                        var isApproved = false; // No more approved per document
+                                                        var isUploaded = doc.Uploaded;
+                                                        var disableGen = false;
 
                                                         <tr class="@(isApproved ? "table-success" : isPending ? "table-warning" : "")"
                                                             data-doc-id="@doc.ProcDocumentId"

@@ -26,5 +26,6 @@ namespace ProcurementHTE.Core.Interfaces
             IEnumerable<VendorOffer> vendorOffers
         );
         Task UpdateProcOfferUnitRevenueAsync(string procOfferId, string unitRevenue);
+        Task DeleteAsync(string profitLossId, string deletedByUserId);
     }
 }

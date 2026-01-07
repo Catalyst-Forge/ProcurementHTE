@@ -71,9 +71,8 @@ namespace ProcurementHTE.Core.Models.DTOs
                                          || CurrentStatus == PurchaseRequisitionStatus.WaitingApprovalAsstManager
                                          || CurrentStatus == PurchaseRequisitionStatus.WaitingApprovalManager;
 
-        // Documents pending approval count
-        public int DocumentsPendingApproval { get; set; }
-        public int DocumentsApproved { get; set; }
+        // Total documents count (status sekarang di level PR)
+        public int TotalDocuments { get; set; }
     }
 
     /// <summary>

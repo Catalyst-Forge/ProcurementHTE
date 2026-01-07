@@ -7,7 +7,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task<IReadOnlyList<ProcurementStatusCountDto>> GetProcurementStatusCountsAsync();
         Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year);
         Task<IReadOnlyList<RecentActivityDto>> GetRecentActivitiesAsync(int take = 10);
-        Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync();
+        // ApprovalStatusCountDto removed - approval per-document sudah dihapus
 
         // Dashboard Metrics
         Task<int> GetActiveProcurementsCountAsync(CancellationToken ct = default);

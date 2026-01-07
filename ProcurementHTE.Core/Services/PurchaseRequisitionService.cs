@@ -1,4 +1,5 @@
 using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Utils;
@@ -85,6 +86,19 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         }
 
         purchaseRequisition.CreatedAt = DateTime.UtcNow;
+        
+        // Set initial status
+        purchaseRequisition.Status = PurchaseRequisitionStatus.OnCreateDP3;
+        
+        // Add initial status history - On Create DP3 (APPO)
+        purchaseRequisition.StatusHistories.Add(new PurchaseRequisitionStatusHistory
+        {
+            PrId = purchaseRequisition.PrId,
+            Status = PurchaseRequisitionStatus.OnCreateDP3,
+            ChangedAt = purchaseRequisition.CreatedAt,
+            ChangedByUserId = purchaseRequisition.CreatedByUserId,
+            Note = "PR created"
+        });
 
         // Create the purchase requisition
         await _purchaseRequisitionRepository.CreateAsync(purchaseRequisition, ct);
@@ -144,10 +158,13 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         }
     }
 
-    public async Task DeleteAsync(string id, CancellationToken ct = default)
+    public async Task DeleteAsync(string id, string deletedByUserId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("ID tidak boleh kosong", nameof(id));
+
+        if (string.IsNullOrWhiteSpace(deletedByUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(deletedByUserId));
 
         var existing =
             await _purchaseRequisitionRepository.GetByIdAsync(id, ct)
@@ -159,7 +176,7 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         await _purchaseRequisitionRepository.UnlinkAllProcurementsAsync(id, ct);
 
         // Delete the purchase requisition
-        await _purchaseRequisitionRepository.DeleteAsync(existing, ct);
+        await _purchaseRequisitionRepository.DeleteAsync(existing, deletedByUserId, ct);
     }
 
     #endregion
