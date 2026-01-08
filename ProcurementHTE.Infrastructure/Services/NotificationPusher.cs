@@ -40,12 +40,6 @@ namespace ProcurementHTE.Infrastructure.Services
                             unreadCount = notification.UnreadCount,
                         }
                     );
-
-                _logger.LogInformation(
-                    "Pushed notification {NotificationId} to user {UserId}",
-                    notification.NotificationId,
-                    userId
-                );
             }
             catch (Exception ex)
             {
@@ -84,11 +78,6 @@ namespace ProcurementHTE.Infrastructure.Services
                         unreadCount = notification.UnreadCount,
                     }
                 );
-
-                _logger.LogInformation(
-                    "Broadcasted notification {NotificationId} to all users",
-                    notification.NotificationId
-                );
             }
             catch (Exception ex)
             {
@@ -107,12 +96,6 @@ namespace ProcurementHTE.Infrastructure.Services
                 await _hubContext
                     .Clients.Group($"user_{userId}")
                     .SendAsync("UpdateNotificationBadge", new { unreadCount });
-
-                _logger.LogDebug(
-                    "Updated notification badge for user {UserId}: {Count}",
-                    userId,
-                    unreadCount
-                );
             }
             catch (Exception ex)
             {

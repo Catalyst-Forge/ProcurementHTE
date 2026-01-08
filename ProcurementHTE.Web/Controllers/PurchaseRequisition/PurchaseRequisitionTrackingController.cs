@@ -10,15 +10,12 @@ namespace ProcurementHTE.Web.Controllers.PR
     public class PurchaseRequisitionTrackingController : Controller
     {
         private readonly IPurchaseRequisitionTrackingService _trackingService;
-        private readonly ILogger<PurchaseRequisitionTrackingController> _logger;
 
         public PurchaseRequisitionTrackingController(
-            IPurchaseRequisitionTrackingService trackingService,
-            ILogger<PurchaseRequisitionTrackingController> logger
+            IPurchaseRequisitionTrackingService trackingService
         )
         {
             _trackingService = trackingService;
-            _logger = logger;
         }
 
         // GET: /PRTracking
@@ -70,18 +67,22 @@ namespace ProcurementHTE.Web.Controllers.PR
         {
             if (string.IsNullOrWhiteSpace(prNumber))
             {
-                return BadRequest(new { success = false, message = "Nomor PR tidak boleh kosong." });
+                return BadRequest(
+                    new { success = false, message = "Nomor PR tidak boleh kosong." }
+                );
             }
 
             var tracking = await _trackingService.GetTrackingByPrNumberAsync(prNumber.Trim(), ct);
 
             if (tracking == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = $"PR dengan nomor '{prNumber}' tidak ditemukan.",
-                });
+                return NotFound(
+                    new
+                    {
+                        success = false,
+                        message = $"PR dengan nomor '{prNumber}' tidak ditemukan.",
+                    }
+                );
             }
 
             return Ok(new { success = true, data = tracking });
