@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Enums;
@@ -5,8 +7,6 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Infrastructure.Data;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace ProcurementHTE.Infrastructure.Services
 {
@@ -14,14 +14,17 @@ namespace ProcurementHTE.Infrastructure.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<PurchaseRequisitionTrackingService> _logger;
+        private readonly INotificationService _notificationService;
 
         public PurchaseRequisitionTrackingService(
             AppDbContext context,
-            ILogger<PurchaseRequisitionTrackingService> logger
+            ILogger<PurchaseRequisitionTrackingService> logger,
+            INotificationService notificationService
         )
         {
             _context = context;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public async Task<PRTrackingDto?> GetTrackingByPrNumberAsync(
@@ -36,21 +39,22 @@ namespace ProcurementHTE.Infrastructure.Services
                 .Include(p => p.PoSubmittedByUser)
                 .Include(p => p.RejectedByUser)
                 .Include(p => p.StatusHistories)
-                    .ThenInclude(h => h.ChangedByUser)
+                .ThenInclude(h => h.ChangedByUser)
                 .Include(p => p.Procurements)
-                    .ThenInclude(proc => proc.ProcDocuments)
+                .ThenInclude(proc => proc.ProcDocuments)
                 .Include(p => p.Procurements)
-                    .ThenInclude(proc => proc.JobType)
-                        .ThenInclude(jt => jt!.JobTypeDocuments)
-                            .ThenInclude(jtd => jtd.DocumentType)
+                .ThenInclude(proc => proc.JobType)
+                .ThenInclude(jt => jt!.JobTypeDocuments)
+                .ThenInclude(jtd => jtd.DocumentType)
                 .FirstOrDefaultAsync(p => p.PrNumber == prNumber, ct);
 
-            if (pr == null) return null;
-            
+            if (pr == null)
+                return null;
+
             // Get procurement IDs for ProfitLoss lookup
             var procurementIds = pr.Procurements?.Select(p => p.ProcurementId).ToList() ?? [];
             var needsJustifikasiMap = await GetNeedsJustifikasiMapAsync(procurementIds, ct);
-            
+
             return MapToDto(pr, needsJustifikasiMap);
         }
 
@@ -66,17 +70,18 @@ namespace ProcurementHTE.Infrastructure.Services
                 .Include(p => p.PoSubmittedByUser)
                 .Include(p => p.RejectedByUser)
                 .Include(p => p.StatusHistories)
-                    .ThenInclude(h => h.ChangedByUser)
+                .ThenInclude(h => h.ChangedByUser)
                 .Include(p => p.Procurements)
-                    .ThenInclude(proc => proc.ProcDocuments)
+                .ThenInclude(proc => proc.ProcDocuments)
                 .Include(p => p.Procurements)
-                    .ThenInclude(proc => proc.JobType)
-                        .ThenInclude(jt => jt!.JobTypeDocuments)
-                            .ThenInclude(jtd => jtd.DocumentType)
+                .ThenInclude(proc => proc.JobType)
+                .ThenInclude(jt => jt!.JobTypeDocuments)
+                .ThenInclude(jtd => jtd.DocumentType)
                 .FirstOrDefaultAsync(p => p.PrId == prId, ct);
-            
-            if (pr == null) return null;
-            
+
+            if (pr == null)
+                return null;
+
             // Get procurement IDs for ProfitLoss lookup
             var procurementIds = pr.Procurements?.Select(p => p.ProcurementId).ToList() ?? [];
             var needsJustifikasiMap = await GetNeedsJustifikasiMapAsync(procurementIds, ct);
@@ -144,7 +149,8 @@ namespace ProcurementHTE.Infrastructure.Services
                 return new PRTrackingResponse
                 {
                     Success = false,
-                    Message = $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. ISPA hanya bisa disubmit saat status 'On Submit ISPA'.",
+                    Message =
+                        $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. ISPA hanya bisa disubmit saat status 'On Submit ISPA'.",
                 };
 
             pr.IspaNumber = ispaNumber;
@@ -188,7 +194,8 @@ namespace ProcurementHTE.Infrastructure.Services
                 return new PRTrackingResponse
                 {
                     Success = false,
-                    Message = $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. Justifikasi hanya bisa disubmit saat status 'On Submit Hardcopy'.",
+                    Message =
+                        $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. Justifikasi hanya bisa disubmit saat status 'On Submit Hardcopy'.",
                 };
 
             pr.UpdatedAt = DateTime.UtcNow;
@@ -230,7 +237,8 @@ namespace ProcurementHTE.Infrastructure.Services
                 return new PRTrackingResponse
                 {
                     Success = false,
-                    Message = $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. PO hanya bisa disubmit saat status 'On Submit PO'.",
+                    Message =
+                        $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. PO hanya bisa disubmit saat status 'On Submit PO'.",
                 };
 
             pr.PoNumber = poNumber;
@@ -274,12 +282,13 @@ namespace ProcurementHTE.Infrastructure.Services
                 return new PRTrackingResponse
                 {
                     Success = false,
-                    Message = $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. Hanya PR dengan status 'On Create DP3' yang bisa dikirim untuk approval.",
+                    Message =
+                        $"Status PR saat ini adalah {GetStatusDescription(pr.Status)}. Hanya PR dengan status 'On Create DP3' yang bisa dikirim untuk approval.",
                 };
 
             // Generate unique approval token
             var token = GenerateApprovalToken();
-            
+
             pr.ApprovalToken = token;
             pr.ApprovalTokenGeneratedAt = DateTime.UtcNow;
             pr.ApprovalSentByUserId = sentByUserId;
@@ -330,7 +339,9 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _context
+                .PurchaseRequisitions.Include(p => p.Procurements)
+                .FirstOrDefaultAsync(p => p.PrId == prId, ct);
             if (pr == null)
                 return new PRTrackingResponse
                 {
@@ -365,6 +376,24 @@ namespace ProcurementHTE.Infrastructure.Services
                 ct
             );
 
+            // Send notification about rejection
+            var procurement = pr.Procurements?.FirstOrDefault();
+            if (procurement != null && !string.IsNullOrEmpty(procurement.AppoUserId))
+            {
+                var rejectorUser = await _context.Users.FindAsync([rejectedByUserId], ct);
+                var rejectorName = rejectorUser?.FullName ?? rejectorUser?.UserName ?? "Approver";
+
+                await _notificationService.NotifyPrRejectedAsync(
+                    prId,
+                    pr.PrNumber ?? "-",
+                    rejectedByUserId,
+                    rejectorName,
+                    rejectionNote,
+                    procurement.AppoUserId,
+                    ct
+                );
+            }
+
             var tracking = await GetTrackingByPrIdAsync(prId, ct);
 
             return new PRTrackingResponse
@@ -383,7 +412,9 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _context
+                .PurchaseRequisitions.Include(p => p.Procurements)
+                .FirstOrDefaultAsync(p => p.PrId == prId, ct);
             if (pr == null)
             {
                 _logger.LogWarning("PR {PrId} not found for approval status change", prId);
@@ -395,53 +426,130 @@ namespace ProcurementHTE.Infrastructure.Services
             // Handle reject
             if (approvalAction.Equals("reject", StringComparison.OrdinalIgnoreCase))
             {
-                await RejectPrAsync(prId, note ?? "Rejected by approver", approverUserId ?? "System", ct);
+                await RejectPrAsync(
+                    prId,
+                    note ?? "Rejected by approver",
+                    approverUserId ?? "System",
+                    ct
+                );
                 return true;
             }
 
             // Handle approve - transition to next approval status
             var newStatus = currentStatus switch
             {
-                PurchaseRequisitionStatus.WaitingApprovalAnalyst => PurchaseRequisitionStatus
-                    .WaitingApprovalAsstManager,
-                PurchaseRequisitionStatus.WaitingApprovalAsstManager => PurchaseRequisitionStatus
-                    .WaitingApprovalManager,
-                PurchaseRequisitionStatus.WaitingApprovalManager => PurchaseRequisitionStatus.OnSubmitISPA,
+                PurchaseRequisitionStatus.WaitingApprovalAnalyst =>
+                    PurchaseRequisitionStatus.WaitingApprovalAsstManager,
+                PurchaseRequisitionStatus.WaitingApprovalAsstManager =>
+                    PurchaseRequisitionStatus.WaitingApprovalManager,
+                PurchaseRequisitionStatus.WaitingApprovalManager =>
+                    PurchaseRequisitionStatus.OnSubmitISPA,
                 _ => currentStatus, // No change for other statuses
             };
 
             if (newStatus != currentStatus)
             {
                 await UpdatePrStatusAsync(prId, newStatus, approverUserId, note, ct);
+
+                // Send notification for approval
+                await SendApprovalNotificationAsync(
+                    pr,
+                    currentStatus,
+                    newStatus,
+                    approverUserId,
+                    ct
+                );
+
                 return true;
             }
 
             return false;
         }
 
+        /// <summary>
+        /// Send notification when approval status changes
+        /// </summary>
+        private async Task SendApprovalNotificationAsync(
+            PurchaseRequisition pr,
+            PurchaseRequisitionStatus previousStatus,
+            PurchaseRequisitionStatus newStatus,
+            string? approverUserId,
+            CancellationToken ct
+        )
+        {
+            try
+            {
+                var procurement = pr.Procurements?.FirstOrDefault();
+                if (procurement == null)
+                    return;
+
+                // Get approver info
+                var approverUser = !string.IsNullOrEmpty(approverUserId)
+                    ? await _context.Users.FindAsync([approverUserId], ct)
+                    : null;
+                var approverUserName =
+                    approverUser?.FullName ?? approverUser?.UserName ?? "Approver";
+
+                // Determine approver role based on previous status
+                var approverRole = previousStatus switch
+                {
+                    PurchaseRequisitionStatus.WaitingApprovalAnalyst => "Analyst HTE & LTS",
+                    PurchaseRequisitionStatus.WaitingApprovalAsstManager => "Assistant Manager HTE",
+                    PurchaseRequisitionStatus.WaitingApprovalManager =>
+                        "Manager Transport & Logistic",
+                    _ => "Approver",
+                };
+
+                // Determine next approver role
+                var nextApproverRole = newStatus switch
+                {
+                    PurchaseRequisitionStatus.WaitingApprovalAsstManager => "Assistant Manager HTE",
+                    PurchaseRequisitionStatus.WaitingApprovalManager =>
+                        "Manager Transport & Logistic",
+                    PurchaseRequisitionStatus.OnSubmitISPA => "Semua Approval Selesai",
+                    _ => "",
+                };
+
+                await _notificationService.NotifyDocumentApprovedAsync(
+                    pr.PrId,
+                    pr.PrNumber ?? "-",
+                    approverRole,
+                    approverUserId ?? "",
+                    approverUserName,
+                    nextApproverRole,
+                    ct
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send approval notification for PR {PrId}", pr.PrId);
+            }
+        }
+
         // Helper methods
-        
+
         /// <summary>
         /// Get map of procurement ID to whether it needs Justifikasi document (value > 300 million)
         /// </summary>
         private async Task<Dictionary<string, bool>> GetNeedsJustifikasiMapAsync(
-            List<string> procurementIds, 
-            CancellationToken ct)
+            List<string> procurementIds,
+            CancellationToken ct
+        )
         {
             var result = new Dictionary<string, bool>();
-            
+
             if (procurementIds.Count == 0)
                 return result;
 
             // Get latest ProfitLoss for each procurement and check if value > 300 million
-            var profitLossData = await _context.ProfitLosses
-                .AsNoTracking()
+            var profitLossData = await _context
+                .ProfitLosses.AsNoTracking()
                 .Where(p => procurementIds.Contains(p.ProcurementId))
                 .GroupBy(p => p.ProcurementId)
-                .Select(g => new 
-                { 
-                    ProcurementId = g.Key, 
-                    LatestPnl = g.OrderByDescending(p => p.CreatedAt).FirstOrDefault() 
+                .Select(g => new
+                {
+                    ProcurementId = g.Key,
+                    LatestPnl = g.OrderByDescending(p => p.CreatedAt).FirstOrDefault(),
                 })
                 .ToListAsync(ct);
 
@@ -449,16 +557,16 @@ namespace ProcurementHTE.Infrastructure.Services
             {
                 var pnlData = profitLossData.FirstOrDefault(p => p.ProcurementId == procId);
                 var needsJustifikasi = false;
-                
+
                 if (pnlData?.LatestPnl != null)
                 {
                     var bestFinalOffer = pnlData.LatestPnl.SelectedVendorFinalOffer;
-                    
+
                     if (bestFinalOffer <= 0m)
                     {
                         // Calculate from vendor offers
-                        var offers = await _context.VendorOffers
-                            .AsNoTracking()
+                        var offers = await _context
+                            .VendorOffers.AsNoTracking()
                             .Where(o => o.ProfitLossId == pnlData.LatestPnl.ProfitLossId)
                             .ToListAsync(ct);
 
@@ -473,7 +581,9 @@ namespace ProcurementHTE.Infrastructure.Services
                                         .Select(gg =>
                                         {
                                             var last = gg.OrderBy(x => x.Round).Last();
-                                            return last.Price * last.QuantityItem * last.QuantityOfUnit;
+                                            return last.Price
+                                                * last.QuantityItem
+                                                * last.QuantityOfUnit;
                                         });
                                     return perItem.Sum();
                                 })
@@ -481,17 +591,20 @@ namespace ProcurementHTE.Infrastructure.Services
                                 .Min();
                         }
                     }
-                    
+
                     needsJustifikasi = bestFinalOffer > 300_000_000m;
                 }
-                
+
                 result[procId] = needsJustifikasi;
             }
-            
+
             return result;
         }
-        
-        private static PRTrackingDto MapToDto(PurchaseRequisition pr, Dictionary<string, bool> needsJustifikasiMap)
+
+        private static PRTrackingDto MapToDto(
+            PurchaseRequisition pr,
+            Dictionary<string, bool> needsJustifikasiMap
+        )
         {
             // Calculate mandatory documents status from linked procurements
             var linkedProcurementsCount = pr.Procurements?.Count ?? 0;
@@ -503,16 +616,25 @@ namespace ProcurementHTE.Infrastructure.Services
                 foreach (var procurement in pr.Procurements)
                 {
                     // Check if this procurement needs Justifikasi document
-                    var needsJustifikasi = needsJustifikasiMap.GetValueOrDefault(procurement.ProcurementId, false);
-                    
+                    var needsJustifikasi = needsJustifikasiMap.GetValueOrDefault(
+                        procurement.ProcurementId,
+                        false
+                    );
+
                     // Get mandatory JobTypeDocuments for this procurement's job type
                     // Filter by ProcurementCategory (Jasa/Barang) - same logic as ProcurementDocumentQuery
                     // Also filter out Justifikasi if not needed (value <= 300 million)
-                    var mandatoryJobTypeDocs = procurement.JobType?.JobTypeDocuments?
-                        .Where(jtd => jtd.IsMandatory)
-                        .Where(jtd => jtd.ProcurementCategory == null || jtd.ProcurementCategory == procurement.ProcurementCategory)
-                        .Where(jtd => jtd.DocumentType?.Name != "Justifikasi" || needsJustifikasi)
-                        .ToList() ?? [];
+                    var mandatoryJobTypeDocs =
+                        procurement
+                            .JobType?.JobTypeDocuments?.Where(jtd => jtd.IsMandatory)
+                            .Where(jtd =>
+                                jtd.ProcurementCategory == null
+                                || jtd.ProcurementCategory == procurement.ProcurementCategory
+                            )
+                            .Where(jtd =>
+                                jtd.DocumentType?.Name != "Justifikasi" || needsJustifikasi
+                            )
+                            .ToList() ?? [];
 
                     totalMandatoryDocs += mandatoryJobTypeDocs.Count;
 
@@ -522,8 +644,9 @@ namespace ProcurementHTE.Infrastructure.Services
                     {
                         // Match by DocumentTypeId since ProcDocuments doesn't have JobTypeDocumentId
                         var uploaded = procDocs.Any(pd =>
-                            pd.DocumentTypeId == jtd.DocumentTypeId &&
-                            !string.IsNullOrEmpty(pd.FileName));
+                            pd.DocumentTypeId == jtd.DocumentTypeId
+                            && !string.IsNullOrEmpty(pd.FileName)
+                        );
 
                         if (uploaded)
                             uploadedMandatoryDocs++;
@@ -551,7 +674,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 PurchaseRequisitionStatus.WaitingApprovalAnalyst => "Analyst HTE",
                 PurchaseRequisitionStatus.WaitingApprovalAsstManager => "Asst. Manager",
                 PurchaseRequisitionStatus.WaitingApprovalManager => "Manager",
-                _ => null
+                _ => null,
             };
 
             return new PRTrackingDto
@@ -579,7 +702,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 TotalDocuments = totalDocuments,
                 NextApproverRole = nextApproverRole,
                 // Generate QR URL using stored token
-                ApprovalQrUrl = !string.IsNullOrEmpty(pr.ApprovalToken) 
+                ApprovalQrUrl = !string.IsNullOrEmpty(pr.ApprovalToken)
                     ? $"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={Uri.EscapeDataString($"procurehte://approve/{pr.ApprovalToken}")}"
                     : null,
                 StatusHistory = pr

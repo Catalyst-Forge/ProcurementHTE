@@ -99,7 +99,12 @@
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;"></div>
 
     @* Render section Scripts HANYA SEKALI di akhir body *@
     @await RenderSectionAsync("Scripts", required: false)

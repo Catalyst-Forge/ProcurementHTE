@@ -37,6 +37,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private readonly IVendorRoundLetterRepository _roundLetterRepository;
         private readonly UserManager<User> _userManager;
         private readonly IUnitTypeRepository _unitTypeRepository;
+        private readonly INotificationService _notificationService;
 
         public ProcurementsController(
             IProcurementService procurementService,
@@ -48,7 +49,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             IProcDocumentService procDocService,
             IVendorRoundLetterRepository roundLetterRepository,
             UserManager<User> userManager,
-            IUnitTypeRepository unitTypeRepository
+            IUnitTypeRepository unitTypeRepository,
+            INotificationService notificationService
         )
         {
             _procurementService = procurementService;
@@ -61,6 +63,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             _roundLetterRepository = roundLetterRepository;
             _userManager = userManager;
             _unitTypeRepository = unitTypeRepository;
+            _notificationService = notificationService;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -193,7 +196,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             procurementViewModel.Procurement ??= new Procurement();
             procurementViewModel.Details ??= new List<ProcDetail>();
             procurementViewModel.Offers ??= new List<ProcOffer>();
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
+            var currentUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? throw new InvalidOperationException("User tidak terautentikasi");
             procurementViewModel.Procurement.UserId = currentUserId;
             // PIC Ops = User yang membuat procurement
@@ -435,7 +439,11 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Policy = Permissions.Procurement.Edit)]
-        public async Task<IActionResult> Edit(string id, ProcurementEditViewModel editViewModel, string? submitAction = "Created")
+        public async Task<IActionResult> Edit(
+            string id,
+            ProcurementEditViewModel editViewModel,
+            string? submitAction = "Created"
+        )
         {
             if (id != editViewModel.ProcurementId)
             {
@@ -756,7 +764,27 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
+                // Get procurement details before publishing for notification
+                var procurement = await _procurementService.GetProcurementByIdAsync(id);
+
                 await _procurementService.PublishAsync(id);
+
+                // Send notification to all AP-PO users
+                if (procurement != null)
+                {
+                    var currentUser = await _userManager.GetUserAsync(User);
+                    var publisherName =
+                        currentUser?.FullName ?? currentUser?.UserName ?? "Operator";
+
+                    await _notificationService.NotifyProcurementPublishedAsync(
+                        id,
+                        procurement.ProcNum ?? "-",
+                        currentUser?.Id ?? "",
+                        publisherName,
+                        HttpContext.RequestAborted
+                    );
+                }
+
                 TempData["SuccessMessage"] =
                     "Procurement berhasil dipublish dan status berubah menjadi 'Waiting Pickup'.";
             }

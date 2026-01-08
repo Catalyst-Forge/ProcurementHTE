@@ -32,6 +32,10 @@ builder.Services.AddSingleton<
     ProcurementHTE.Core.Interfaces.IUserActivityNotifier,
     ProcurementHTE.Infrastructure.Services.UserActivityNotifier<ProcurementHTE.Web.Hubs.DashboardHub>
 >();
+builder.Services.AddSingleton<
+    ProcurementHTE.Core.Interfaces.INotificationPusher,
+    ProcurementHTE.Infrastructure.Services.NotificationPusher<ProcurementHTE.Web.Hubs.DashboardHub>
+>();
 var app = builder.Build();
 
 // ==================== ENSURE TEMPLATES DIRECTORY EXISTS ====================
