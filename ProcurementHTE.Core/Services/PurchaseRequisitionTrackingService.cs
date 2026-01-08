@@ -1,28 +1,25 @@
 using System.ComponentModel;
 using System.Reflection;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Infrastructure.Data;
 
-namespace ProcurementHTE.Infrastructure.Services
-{
+namespace ProcurementHTE.Core.Services {
     public class PurchaseRequisitionTrackingService : IPurchaseRequisitionTrackingService
     {
-        private readonly AppDbContext _context;
+        private readonly IPurchaseRequisitionTrackingRepository _repository;
         private readonly ILogger<PurchaseRequisitionTrackingService> _logger;
         private readonly INotificationService _notificationService;
 
         public PurchaseRequisitionTrackingService(
-            AppDbContext context,
+            IPurchaseRequisitionTrackingRepository repository,
             ILogger<PurchaseRequisitionTrackingService> logger,
             INotificationService notificationService
         )
         {
-            _context = context;
+            _repository = repository;
             _logger = logger;
             _notificationService = notificationService;
         }
@@ -32,28 +29,17 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context
-                .PurchaseRequisitions.AsNoTracking()
-                .Include(p => p.CreatedByUser)
-                .Include(p => p.IspaSubmittedByUser)
-                .Include(p => p.PoSubmittedByUser)
-                .Include(p => p.RejectedByUser)
-                .Include(p => p.StatusHistories)
-                .ThenInclude(h => h.ChangedByUser)
-                .Include(p => p.Procurements)
-                .ThenInclude(proc => proc.ProcDocuments)
-                .Include(p => p.Procurements)
-                .ThenInclude(proc => proc.JobType)
-                .ThenInclude(jt => jt!.JobTypeDocuments)
-                .ThenInclude(jtd => jtd.DocumentType)
-                .FirstOrDefaultAsync(p => p.PrNumber == prNumber, ct);
+            var pr = await _repository.GetWithTrackingIncludesByPrNumberAsync(prNumber, ct);
 
             if (pr == null)
                 return null;
 
             // Get procurement IDs for ProfitLoss lookup
             var procurementIds = pr.Procurements?.Select(p => p.ProcurementId).ToList() ?? [];
-            var needsJustifikasiMap = await GetNeedsJustifikasiMapAsync(procurementIds, ct);
+            var needsJustifikasiMap = await _repository.GetNeedsJustifikasiMapAsync(
+                procurementIds,
+                ct
+            );
 
             return MapToDto(pr, needsJustifikasiMap);
         }
@@ -63,28 +49,17 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context
-                .PurchaseRequisitions.AsNoTracking()
-                .Include(p => p.CreatedByUser)
-                .Include(p => p.IspaSubmittedByUser)
-                .Include(p => p.PoSubmittedByUser)
-                .Include(p => p.RejectedByUser)
-                .Include(p => p.StatusHistories)
-                .ThenInclude(h => h.ChangedByUser)
-                .Include(p => p.Procurements)
-                .ThenInclude(proc => proc.ProcDocuments)
-                .Include(p => p.Procurements)
-                .ThenInclude(proc => proc.JobType)
-                .ThenInclude(jt => jt!.JobTypeDocuments)
-                .ThenInclude(jtd => jtd.DocumentType)
-                .FirstOrDefaultAsync(p => p.PrId == prId, ct);
+            var pr = await _repository.GetWithTrackingIncludesByPrIdAsync(prId, ct);
 
             if (pr == null)
                 return null;
 
             // Get procurement IDs for ProfitLoss lookup
             var procurementIds = pr.Procurements?.Select(p => p.ProcurementId).ToList() ?? [];
-            var needsJustifikasiMap = await GetNeedsJustifikasiMapAsync(procurementIds, ct);
+            var needsJustifikasiMap = await _repository.GetNeedsJustifikasiMapAsync(
+                procurementIds,
+                ct
+            );
 
             return MapToDto(pr, needsJustifikasiMap);
         }
@@ -97,7 +72,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _repository.GetByIdAsync(prId, ct);
             if (pr == null)
                 return false;
 
@@ -106,18 +81,8 @@ namespace ProcurementHTE.Infrastructure.Services
             pr.UpdatedAt = DateTime.UtcNow;
 
             // Log to history
-            _context.PurchaseRequisitionStatusHistories.Add(
-                new PurchaseRequisitionStatusHistory
-                {
-                    PrId = prId,
-                    Status = newStatus,
-                    ChangedAt = DateTime.UtcNow,
-                    ChangedByUserId = changedByUserId,
-                    Note = note,
-                }
-            );
-
-            await _context.SaveChangesAsync(ct);
+            await _repository.AddStatusHistoryAsync(prId, newStatus, changedByUserId, note, ct);
+            await _repository.SaveChangesAsync(ct);
 
             _logger.LogInformation(
                 "PR {PrId} status changed from {OldStatus} to {NewStatus} by user {UserId}",
@@ -137,7 +102,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _repository.GetByIdAsync(prId, ct);
             if (pr == null)
                 return new PRTrackingResponse
                 {
@@ -182,7 +147,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _repository.GetByIdAsync(prId, ct);
             if (pr == null)
                 return new PRTrackingResponse
                 {
@@ -225,7 +190,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _repository.GetByIdAsync(prId, ct);
             if (pr == null)
                 return new PRTrackingResponse
                 {
@@ -270,7 +235,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context.PurchaseRequisitions.FindAsync([prId], ct);
+            var pr = await _repository.GetByIdAsync(prId, ct);
             if (pr == null)
                 return new PRTrackingResponse
                 {
@@ -294,7 +259,7 @@ namespace ProcurementHTE.Infrastructure.Services
             pr.ApprovalSentByUserId = sentByUserId;
             pr.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync(ct);
+            await _repository.SaveChangesAsync(ct);
 
             await UpdatePrStatusAsync(
                 prId,
@@ -339,9 +304,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context
-                .PurchaseRequisitions.Include(p => p.Procurements)
-                .FirstOrDefaultAsync(p => p.PrId == prId, ct);
+            var pr = await _repository.GetByIdWithProcurementsAsync(prId, ct);
             if (pr == null)
                 return new PRTrackingResponse
                 {
@@ -380,7 +343,7 @@ namespace ProcurementHTE.Infrastructure.Services
             var procurement = pr.Procurements?.FirstOrDefault();
             if (procurement != null && !string.IsNullOrEmpty(procurement.AppoUserId))
             {
-                var rejectorUser = await _context.Users.FindAsync([rejectedByUserId], ct);
+                var rejectorUser = await _repository.GetUserByIdAsync(rejectedByUserId, ct);
                 var rejectorName = rejectorUser?.FullName ?? rejectorUser?.UserName ?? "Approver";
 
                 await _notificationService.NotifyPrRejectedAsync(
@@ -412,9 +375,7 @@ namespace ProcurementHTE.Infrastructure.Services
             CancellationToken ct = default
         )
         {
-            var pr = await _context
-                .PurchaseRequisitions.Include(p => p.Procurements)
-                .FirstOrDefaultAsync(p => p.PrId == prId, ct);
+            var pr = await _repository.GetByIdWithProcurementsAsync(prId, ct);
             if (pr == null)
             {
                 _logger.LogWarning("PR {PrId} not found for approval status change", prId);
@@ -485,7 +446,7 @@ namespace ProcurementHTE.Infrastructure.Services
 
                 // Get approver info
                 var approverUser = !string.IsNullOrEmpty(approverUserId)
-                    ? await _context.Users.FindAsync([approverUserId], ct)
+                    ? await _repository.GetUserByIdAsync(approverUserId, ct)
                     : null;
                 var approverUserName =
                     approverUser?.FullName ?? approverUser?.UserName ?? "Approver";
@@ -527,79 +488,6 @@ namespace ProcurementHTE.Infrastructure.Services
         }
 
         // Helper methods
-
-        /// <summary>
-        /// Get map of procurement ID to whether it needs Justifikasi document (value > 300 million)
-        /// </summary>
-        private async Task<Dictionary<string, bool>> GetNeedsJustifikasiMapAsync(
-            List<string> procurementIds,
-            CancellationToken ct
-        )
-        {
-            var result = new Dictionary<string, bool>();
-
-            if (procurementIds.Count == 0)
-                return result;
-
-            // Get latest ProfitLoss for each procurement and check if value > 300 million
-            var profitLossData = await _context
-                .ProfitLosses.AsNoTracking()
-                .Where(p => procurementIds.Contains(p.ProcurementId))
-                .GroupBy(p => p.ProcurementId)
-                .Select(g => new
-                {
-                    ProcurementId = g.Key,
-                    LatestPnl = g.OrderByDescending(p => p.CreatedAt).FirstOrDefault(),
-                })
-                .ToListAsync(ct);
-
-            foreach (var procId in procurementIds)
-            {
-                var pnlData = profitLossData.FirstOrDefault(p => p.ProcurementId == procId);
-                var needsJustifikasi = false;
-
-                if (pnlData?.LatestPnl != null)
-                {
-                    var bestFinalOffer = pnlData.LatestPnl.SelectedVendorFinalOffer;
-
-                    if (bestFinalOffer <= 0m)
-                    {
-                        // Calculate from vendor offers
-                        var offers = await _context
-                            .VendorOffers.AsNoTracking()
-                            .Where(o => o.ProfitLossId == pnlData.LatestPnl.ProfitLossId)
-                            .ToListAsync(ct);
-
-                        if (offers.Count > 0)
-                        {
-                            bestFinalOffer = offers
-                                .GroupBy(o => o.VendorId)
-                                .Select(group =>
-                                {
-                                    var perItem = group
-                                        .GroupBy(x => x.ProcOfferId)
-                                        .Select(gg =>
-                                        {
-                                            var last = gg.OrderBy(x => x.Round).Last();
-                                            return last.Price
-                                                * last.QuantityItem
-                                                * last.QuantityOfUnit;
-                                        });
-                                    return perItem.Sum();
-                                })
-                                .DefaultIfEmpty(0m)
-                                .Min();
-                        }
-                    }
-
-                    needsJustifikasi = bestFinalOffer > 300_000_000m;
-                }
-
-                result[procId] = needsJustifikasi;
-            }
-
-            return result;
-        }
 
         private static PRTrackingDto MapToDto(
             PurchaseRequisition pr,

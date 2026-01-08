@@ -64,6 +64,10 @@ public static class DependencyInjection
         services.AddScoped<IDocumentGenerator, DocumentGenerator>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
+        services.AddScoped<
+            IPurchaseRequisitionTrackingRepository,
+            PurchaseRequisitionTrackingRepository
+        >();
 
         // ------------- Cross-cutting Infrastructure -------------
         services.AddSingleton<IEmailSender>(sp =>
