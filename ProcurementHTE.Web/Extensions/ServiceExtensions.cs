@@ -12,6 +12,7 @@ using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure;
 using ProcurementHTE.Infrastructure.Data;
+using ProcurementHTE.Infrastructure.Services;
 
 namespace ProcurementHTE.Web.Extensions;
 
@@ -53,6 +54,11 @@ public static class ServiceExtensions
         services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
         services.AddScoped<IJobTypeCalculationService, JobTypeCalculationService>();
         services.AddScoped<ILdpService, LdpService>();
+        services.AddScoped<
+            IPurchaseRequisitionTrackingService,
+            PurchaseRequisitionTrackingService
+        >();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }

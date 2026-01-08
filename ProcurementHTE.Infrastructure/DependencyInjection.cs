@@ -62,15 +62,8 @@ public static class DependencyInjection
         services.AddScoped<ILdpRepository, LdpRepository>();
         services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IDocumentGenerator, DocumentGenerator>();
-
-        // ------------- Query Services -------------
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
-
-        // ------------- PR Tracking Service -------------
-        services.AddScoped<
-            IPurchaseRequisitionTrackingService,
-            PurchaseRequisitionTrackingService
-        >();
 
         // ------------- Cross-cutting Infrastructure -------------
         services.AddSingleton<IEmailSender>(sp =>
