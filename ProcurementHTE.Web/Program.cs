@@ -82,20 +82,53 @@ app.MapHub<ProcurementHTE.Web.Hubs.DashboardHub>("/hubs/dashboard");
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<AppDbContext>();
 
     try
     {
-        // 1️⃣ Jalankan migrasi otomatis jika belum ada tabel
-        var context = services.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+        // 1️⃣ Cek apakah ada pending migrations
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation(
+                "Applying {Count} pending migration(s)...",
+                pendingMigrations.Count()
+            );
+            foreach (var migration in pendingMigrations)
+            {
+                logger.LogInformation("  - {Migration}", migration);
+            }
+
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogInformation("Database is up to date. No pending migrations.");
+        }
+
+        // 2️⃣ Jalankan seeder
         await DataSeeder.SeedAsync(services);
+        logger.LogInformation("Data seeding completed.");
+    }
+    catch (Exception ex)
+        when (ex.Message.Contains("already exists")
+            || ex.Message.Contains("already an object named")
+            || ex.Message.Contains("duplicate key")
+        )
+    {
+        // Skip jika table/column sudah ada
+        logger.LogWarning(
+            "Migration skipped - database objects already exist: {Message}",
+            ex.Message
+        );
     }
     catch (Exception ex)
     {
-        throw new InvalidOperationException(
-            $"Failed to migrate or seed database: {ex.Message}",
-            ex
-        );
+        logger.LogError(ex, "Failed to migrate or seed database");
+        throw;
     }
 }
 
