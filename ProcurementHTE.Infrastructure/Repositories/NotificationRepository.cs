@@ -129,5 +129,30 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Notifications.Where(n => n.CreatedAt < cutoffDate && n.IsRead)
                 .ExecuteDeleteAsync(ct);
         }
+
+        public async Task<PurchaseRequisitionNotificationInfo?> GetPrForNotificationAsync(
+            string prId,
+            CancellationToken ct = default
+        )
+        {
+            var pr = await _context
+                .PurchaseRequisitions.AsNoTracking()
+                .Include(p => p.Procurements)
+                .FirstOrDefaultAsync(p => p.PrId == prId, ct);
+
+            if (pr == null)
+                return null;
+
+            var procurement = pr.Procurements?.FirstOrDefault();
+
+            return new PurchaseRequisitionNotificationInfo
+            {
+                PrId = pr.PrId,
+                PrNumber = pr.PrNumber,
+                AppoUserId = procurement?.AppoUserId,
+                AssistantManagerUserId = procurement?.AssistantManagerUserId,
+                ManagerUserId = procurement?.ManagerUserId,
+            };
+        }
     }
 }

@@ -1,33 +1,27 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Infrastructure.Data;
 
-namespace ProcurementHTE.Infrastructure.Services
+namespace ProcurementHTE.Core.Services
 {
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepository _repository;
         private readonly INotificationPusher _pusher;
-        private readonly UserManager<User> _userManager;
-        private readonly AppDbContext _context;
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<NotificationService> _logger;
 
         public NotificationService(
             INotificationRepository repository,
             INotificationPusher pusher,
-            UserManager<User> userManager,
-            AppDbContext context,
+            IUserRepository userRepository,
             ILogger<NotificationService> logger
         )
         {
             _repository = repository;
             _pusher = pusher;
-            _userManager = userManager;
-            _context = context;
+            _userRepository = userRepository;
             _logger = logger;
         }
 
@@ -100,8 +94,8 @@ namespace ProcurementHTE.Infrastructure.Services
         {
             try
             {
-                // Get all users with the specified role
-                var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+                // Get all users with the specified role via abstraction
+                var usersInRole = await _userRepository.GetUsersByRoleAsync(roleName, ct);
 
                 if (!usersInRole.Any())
                 {
@@ -112,7 +106,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 var notifications = usersInRole
                     .Select(user => new Notification
                     {
-                        UserId = user.Id,
+                        UserId = user.UserId,
                         Title = title,
                         Message = message,
                         NotificationType = notificationType,
@@ -197,16 +191,10 @@ namespace ProcurementHTE.Infrastructure.Services
         {
             try
             {
-                // Get PR to find AP-PO user
-                var pr = await _context
-                    .PurchaseRequisitions.Include(p => p.Procurements)
-                    .FirstOrDefaultAsync(p => p.PrId == prId, ct);
+                // Get PR info via repository (no direct DbContext access)
+                var prInfo = await _repository.GetPrForNotificationAsync(prId, ct);
 
-                if (pr == null)
-                    return;
-
-                var procurement = pr.Procurements?.FirstOrDefault();
-                if (procurement == null)
+                if (prInfo == null)
                     return;
 
                 string notificationType;
@@ -218,8 +206,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 if (approverRole.Contains("Analyst", StringComparison.OrdinalIgnoreCase))
                 {
                     notificationType = NotificationTypes.ApprovedByAnalyst;
-                    // Notify next approver (Assistant Manager)
-                    targetUserId = procurement.AssistantManagerUserId ?? "";
+                    targetUserId = prInfo.AssistantManagerUserId ?? "";
                     title = "Menunggu Approval Anda";
                     message =
                         $"PR {prNumber} telah diapprove oleh {approverUserName} (Analyst HTE & LTS). Silakan review dan approve.";
@@ -227,8 +214,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 else if (approverRole.Contains("Assistant", StringComparison.OrdinalIgnoreCase))
                 {
                     notificationType = NotificationTypes.ApprovedByAssistantManager;
-                    // Notify next approver (Manager)
-                    targetUserId = procurement.ManagerUserId ?? "";
+                    targetUserId = prInfo.ManagerUserId ?? "";
                     title = "Menunggu Approval Anda";
                     message =
                         $"PR {prNumber} telah diapprove oleh {approverUserName} (Asst. Manager). Silakan review dan approve.";
@@ -236,8 +222,7 @@ namespace ProcurementHTE.Infrastructure.Services
                 else if (approverRole.Contains("Manager", StringComparison.OrdinalIgnoreCase))
                 {
                     notificationType = NotificationTypes.ApprovedByManager;
-                    // Notify AP-PO that all approvals complete
-                    targetUserId = procurement.AppoUserId ?? "";
+                    targetUserId = prInfo.AppoUserId ?? "";
                     title = "Approval Selesai";
                     message =
                         $"PR {prNumber} telah diapprove oleh {approverUserName} (Manager). Semua approval selesai, silakan lanjutkan ke ISPA.";
@@ -264,17 +249,14 @@ namespace ProcurementHTE.Infrastructure.Services
                 );
 
                 // Also notify AP-PO about approval progress
-                if (
-                    !string.IsNullOrEmpty(procurement.AppoUserId)
-                    && procurement.AppoUserId != targetUserId
-                )
+                if (!string.IsNullOrEmpty(prInfo.AppoUserId) && prInfo.AppoUserId != targetUserId)
                 {
                     var appoTitle = "Update Status Approval";
                     var appoMessage =
                         $"PR {prNumber} telah diapprove oleh {approverUserName} ({approverRole}).";
 
                     await SendNotificationAsync(
-                        procurement.AppoUserId,
+                        prInfo.AppoUserId,
                         appoTitle,
                         appoMessage,
                         notificationType,

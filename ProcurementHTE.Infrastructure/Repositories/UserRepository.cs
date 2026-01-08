@@ -37,5 +37,31 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<string>> GetRolesAsync(User user) =>
             (await _userManager.GetRolesAsync(user)).ToList();
+
+        public async Task<IList<string>> GetUserIdsByRoleAsync(
+            string roleName,
+            CancellationToken ct = default
+        )
+        {
+            var users = await _userManager.GetUsersInRoleAsync(roleName);
+            return users.Select(u => u.Id).ToList();
+        }
+
+        public async Task<IList<UserBasicInfo>> GetUsersByRoleAsync(
+            string roleName,
+            CancellationToken ct = default
+        )
+        {
+            var users = await _userManager.GetUsersInRoleAsync(roleName);
+            return users
+                .Select(u => new UserBasicInfo
+                {
+                    UserId = u.Id,
+                    UserName = u.UserName ?? string.Empty,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                })
+                .ToList();
+        }
     }
 }

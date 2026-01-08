@@ -23,5 +23,18 @@ namespace ProcurementHTE.Core.Interfaces
         Task MarkAllAsReadAsync(string userId, CancellationToken ct = default);
         Task DeleteAsync(string notificationId, CancellationToken ct = default);
         Task DeleteOldNotificationsAsync(int daysOld = 30, CancellationToken ct = default);
+        Task<PurchaseRequisitionNotificationInfo?> GetPrForNotificationAsync(
+            string prId,
+            CancellationToken ct = default
+        );
+    }
+
+    public class PurchaseRequisitionNotificationInfo
+    {
+        public string PrId { get; set; } = string.Empty;
+        public string? PrNumber { get; set; }
+        public string? AppoUserId { get; set; }
+        public string? AssistantManagerUserId { get; set; }
+        public string? ManagerUserId { get; set; }
     }
 }
