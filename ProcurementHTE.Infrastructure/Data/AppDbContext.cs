@@ -17,6 +17,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<ProcDetail> ProcDetails { get; set; }
         public DbSet<ProcOffer> ProcOffers { get; set; }
         public DbSet<ProcDocuments> ProcDocuments { get; set; }
+
         // ProcDocumentApprovals removed - approval sekarang di level PR
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<VendorOffer> VendorOffers { get; set; }
@@ -31,6 +32,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<UserSecurityLog> UserSecurityLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<UnitType> UnitTypes { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -63,6 +65,7 @@ namespace ProcurementHTE.Infrastructure.Data
             ConfigureVendorRoundLetters(builder);
             ConfigureDocumentApprovalRules(builder);
             ConfigureUnitType(builder);
+            ConfigureNotification(builder);
 
             // ========================================
             // SEED DATA
@@ -665,6 +668,52 @@ namespace ProcurementHTE.Infrastructure.Data
                     r.MaxAmount,
                     r.IsActive,
                 });
+            });
+        }
+
+        #endregion
+
+        #region Notification
+
+        private static void ConfigureNotification(ModelBuilder builder)
+        {
+            builder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(n => n.NotificationId);
+
+                entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
+
+                entity.Property(n => n.Message).IsRequired().HasMaxLength(1000);
+
+                entity.Property(n => n.NotificationType).IsRequired().HasMaxLength(50);
+
+                entity.Property(n => n.ActionUrl).HasMaxLength(500);
+
+                entity.Property(n => n.ReferenceId).HasMaxLength(450);
+
+                entity.Property(n => n.IsRead).HasDefaultValue(false);
+
+                entity.Property(n => n.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Relationship with User (recipient)
+                entity
+                    .HasOne(n => n.User)
+                    .WithMany()
+                    .HasForeignKey(n => n.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with Creator (optional)
+                entity
+                    .HasOne(n => n.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(n => n.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Indexes for common queries
+                entity.HasIndex(n => n.UserId);
+                entity.HasIndex(n => new { n.UserId, n.IsRead });
+                entity.HasIndex(n => n.CreatedAt);
+                entity.HasIndex(n => n.NotificationType);
             });
         }
 
