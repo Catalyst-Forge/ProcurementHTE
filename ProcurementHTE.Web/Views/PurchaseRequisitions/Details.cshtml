@@ -2,6 +2,11 @@
 @{
     ViewData["Title"] = $"PR Details - {Model.PrNumber}";
     var rowIndex = 0;
+    
+    // Check if current user can edit/delete this PR
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isAdmin = User.IsInRole("Admin");
+    var canEditDelete = isAdmin || Model.CreatedByUserId == currentUserId;
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
@@ -11,7 +16,10 @@
     </div>
 
     <div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.PrId" class="btn btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
+        @if (canEditDelete)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.PrId" class="btn btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
+        }
         <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
     </div>
 </header>
@@ -77,10 +85,11 @@
     </div>
 </section>
 
-@* PR Tracking Section *@
-@if (ViewData["PRTracking"] != null)
+@* Procurement Tracking Summary *@
+@if (ViewData["ProcurementTrackings"] != null)
 {
-    @await Html.PartialAsync("_PRTrackingSection", (ProcurementHTE.Core.Models.DTOs.PRTrackingDto)ViewData["PRTracking"]!)
+    var procurementTrackings = (List<ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto>)ViewData["ProcurementTrackings"]!;
+    @await Html.PartialAsync("_ProcurementTrackingList", procurementTrackings)
 }
 
 <!-- Linked Procurements Section -->
@@ -123,7 +132,7 @@
 
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge @badge">@p.StatusName</span>
-                                        <span class="badge bg-light text-dark border">@p.CompletedDocs/@p.TotalDocs</span>
+                                        <span id="linked-doc-count-@p.ProcurementId" class="badge bg-light text-dark border">@p.CompletedDocs/@p.TotalDocs</span>
                                     </div>
                                 </div>
                             </button>
@@ -409,7 +418,7 @@
                                                             <td class="pe-4" data-actions-row="@rowIndex">
                                                                 <div class="d-flex gap-2 justify-content-end flex-wrap">
                                                                     @if (!doc.Uploaded && doc.IsUploadRequired && !doc.IsGenerated) {
-                                                                        <form class="d-inline-flex gap-2 align-items-center flex-wrap upload-form"
+                                                                        <form class="d-inline-flex gap-2 align-items-center flex-nowrap upload-form"
                                                                               asp-controller="ProcurementDocuments"
                                                                               asp-action="Upload"
                                                                               method="post"
@@ -421,34 +430,26 @@
                                                                             <input type="hidden" name="ProcurementId" value="@p.ProcurementId" />
                                                                             <input type="hidden" name="DocumentTypeId" value="@doc.DocumentTypeId" />
 
-                                                                            <div class="upload-input-stack" data-row="@rowIndex">
-                                                                                <label class="upload-dropzone mb-1" data-row="@rowIndex" tabindex="0">
-                                                                                    <div class="d-flex flex-column">
-                                                                                        <span class="fw-semibold">
-                                                                                            <i class="bi bi-cloud-arrow-up me-1"></i>Drop/Select (PDF)
-                                                                                        </span>
-                                                                                        <small class="text-muted">Max 10MB</small>
-                                                                                    </div>
+                                                                            <label class="upload-dropzone" data-row="@rowIndex" tabindex="0" style="white-space: nowrap;">
+                                                                                <span class="fw-semibold small">
+                                                                                    <i class="bi bi-cloud-arrow-up me-1"></i>Drop/Select (PDF)
+                                                                                </span>
+                                                                                <input class="d-none file-input" type="file" name="File" accept="application/pdf,.pdf" required data-row="@rowIndex" />
+                                                                            </label>
 
-                                                                                    <input class="d-none file-input" type="file" name="File" accept="application/pdf,.pdf" required data-row="@rowIndex" />
-                                                                                </label>
-
-                                                                                <div class="selected-file small text-muted" data-row="@rowIndex">
-                                                                                    <i class="bi bi-info-circle me-1"></i>No file
-                                                                                </div>
+                                                                            <div class="selected-file small text-muted text-nowrap" data-row="@rowIndex">
+                                                                                <i class="bi bi-info-circle me-1"></i>No file
                                                                             </div>
 
-                                                                            <div class="d-flex flex-column">
-                                                                                <button class="btn btn-sm btn-primary upload-btn" type="submit" disabled data-row="@rowIndex">
-                                                                                    <i class="bi bi-upload"></i> Upload
-                                                                                </button>
+                                                                            <button class="btn btn-sm btn-primary upload-btn" type="submit" disabled data-row="@rowIndex">
+                                                                                <i class="bi bi-upload"></i> Upload
+                                                                            </button>
 
-                                                                                <div class="upload-feedback small text-muted mt-1" data-row="@rowIndex"></div>
-                                                                            </div>
+                                                                            <div class="upload-feedback small text-muted" data-row="@rowIndex"></div>
                                                                         </form>
                                                                     }
 
-                                                                    @if (doc.IsGenerated) {
+                                                                    @if (doc.IsGenerated && !isUploaded) {
                                                                         <div>
                                                                             <form asp-controller="PurchaseRequisitions"
                                                                                   asp-action="GenerateDocument"
@@ -461,63 +462,67 @@
                                                                                 <input type="hidden" name="procurementId" value="@p.ProcurementId" />
                                                                                 <input type="hidden" name="documentTypeId" value="@doc.DocumentTypeId" />
 
-                                                                                @if (!string.IsNullOrEmpty(doc.ProcDocumentId)) {
-                                                                                    <input type="hidden" name="procDocumentId" value="@doc.ProcDocumentId" />
-                                                                                }
-
                                                                                 <button type="submit"
                                                                                         class="btn btn-sm btn-success js-generate-btn"
                                                                                         @(disableGen ? "disabled" : "")
                                                                                         title="@(disableGen ? "Disabled while approval in progress" : "")">
-                                                                                    <i class="bi bi-file-earmark-arrow-down me-1"></i> @(doc.Uploaded ? "Regenerate" : "Generate")
+                                                                                    <i class="bi bi-file-earmark-arrow-down me-1"></i> Generate
                                                                                 </button>
                                                                             </form>
                                                                         </div>
                                                                     }
 
                                                                     @if (isUploaded && !string.IsNullOrEmpty(doc.ProcDocumentId)) {
-                                                                        <div>
+                                                                        <div class="btn-group btn-group-sm" role="group">
                                                                             <button type="button"
-                                                                                    class="btn btn-sm btn-outline-secondary btn-preview"
-                                                                                    data-doc-id="@doc.ProcDocumentId"
-                                                                                    data-doc-name="@doc.DocumentTypeName"
-                                                                                    data-file-name="@doc.FileName">
-                                                                                <i class="bi bi-eye"></i> Preview
-                                                                            </button>
-
-                                                                            <button type="button"
-                                                                                    class="btn btn-sm btn-outline-primary btn-download"
-                                                                                    data-doc-id="@doc.ProcDocumentId"
-                                                                                    data-file-name="@doc.FileName">
-                                                                                <i class="bi bi-download"></i> Download
-                                                                            </button>
-
-                                                                            <button type="button"
-                                                                                    class="btn btn-sm btn-outline-danger btn-delete"
+                                                                                    class="btn btn-outline-secondary btn-preview"
                                                                                     data-doc-id="@doc.ProcDocumentId"
                                                                                     data-doc-name="@doc.DocumentTypeName"
                                                                                     data-file-name="@doc.FileName"
-                                                                                    data-procurement-id="@p.ProcurementId">
-                                                                                <i class="bi bi-trash"></i> Delete
+                                                                                    title="Preview">
+                                                                                <i class="bi bi-eye"></i>
+                                                                            </button>
+
+                                                                            <button type="button"
+                                                                                    class="btn btn-outline-primary btn-download"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-file-name="@doc.FileName"
+                                                                                    title="Download">
+                                                                                <i class="bi bi-download"></i>
+                                                                            </button>
+
+                                                                            <button type="button"
+                                                                                    class="btn btn-outline-danger btn-delete"
+                                                                                    data-doc-id="@doc.ProcDocumentId"
+                                                                                    data-doc-name="@doc.DocumentTypeName"
+                                                                                    data-file-name="@doc.FileName"
+                                                                                    data-procurement-id="@p.ProcurementId"
+                                                                                    data-document-type-id="@doc.DocumentTypeId"
+                                                                                    data-is-generated="@doc.IsGenerated.ToString().ToLower()"
+                                                                                    data-pr-id="@Model.PrId"
+                                                                                    title="Delete">
+                                                                                <i class="bi bi-trash"></i>
                                                                             </button>
                                                                         </div>
                                                                     }
 
                                                                     @if (isPending && !string.IsNullOrEmpty(doc.ProcDocumentId)) {
-                                                                        <div>
+                                                                        <div class="btn-group btn-group-sm" role="group">
                                                                             <button type="button"
-                                                                                    class="btn btn-sm btn-outline-secondary btn-preview"
+                                                                                    class="btn btn-outline-secondary btn-preview"
                                                                                     data-doc-id="@doc.ProcDocumentId"
                                                                                     data-doc-name="@doc.DocumentTypeName"
-                                                                                    data-file-name="@doc.FileName">
-                                                                                <i class="bi bi-eye"></i> Preview
+                                                                                    data-file-name="@doc.FileName"
+                                                                                    title="Preview">
+                                                                                <i class="bi bi-eye"></i>
                                                                             </button>
 
                                                                             <button type="button"
-                                                                                    class="btn btn-sm btn-outline-primary btn-download"
+                                                                                    class="btn btn-outline-primary btn-download"
                                                                                     data-doc-id="@doc.ProcDocumentId"
-                                                                                    data-file-name="@doc.FileName">
-                                                                                <i class="bi bi-download"></i> Download
+                                                                                    data-file-name="@doc.FileName"
+                                                                                    title="Download">
+                                                                                <i class="bi bi-download"></i>
                                                                             </button>
                                                                         </div>
                                                                     }
@@ -728,13 +733,18 @@
       }
       function initDeleteHandlers() {
         bindOnce(".btn-delete", "boundDelete", (b) => {
-          b.addEventListener("click", function (e) {
+          b.addEventListener("click", async function (e) {
             e.preventDefault();
-            const docId = this.dataset.docId,
-              docName = this.dataset.docName,
-              fileName = this.dataset.fileName,
-              procId = this.dataset.procurementId;
-            Swal.fire({
+            const btn = this;
+            const docId = btn.dataset.docId,
+              docName = btn.dataset.docName,
+              fileName = btn.dataset.fileName,
+              procId = btn.dataset.procurementId,
+              docTypeId = btn.dataset.documentTypeId || '',
+              isGenerated = btn.dataset.isGenerated === 'true',
+              prId = btn.dataset.prId || '';
+            
+            const result = await Swal.fire({
               title: "Delete Document?",
               html: `<p>Are you sure you want to delete <strong>${docName || ""}</strong>?</p>`,
               icon: "warning",
@@ -744,13 +754,188 @@
               cancelButtonText: "Cancel",
               reverseButtons: true,
               focusCancel: true,
-            }).then((r) => {
-              if (r.isConfirmed) {
-                document.getElementById("deleteDocId").value = docId;
-                document.getElementById("deleteProcurementId").value = procId;
-                document.getElementById("deleteForm").submit();
-              }
             });
+            
+            if (!result.isConfirmed) return;
+            
+            // Show loading state
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            
+            try {
+              const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+              const formData = new FormData();
+              formData.append('id', docId);
+              formData.append('procurementId', procId);
+              formData.append('documentTypeId', docTypeId);
+              
+              const response = await fetch('/ProcurementDocuments/DeleteAjax', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': token },
+                body: formData
+              });
+              
+              // Check if response has content
+              const text = await response.text();
+              let p;
+              try {
+                p = JSON.parse(text);
+              } catch (parseErr) {
+                throw new Error('Server returned invalid response');
+              }
+              
+              if (!response.ok || !p.ok) {
+                throw new Error(p.error || 'Delete failed');
+              }
+              
+              showToast('success', 'Document deleted', docName || '');
+              
+              // Update document count badge in Procurement Tracking Summary
+              if (p.procurementId && typeof p.uploadedDocs !== 'undefined' && typeof p.totalDocs !== 'undefined') {
+                const badge = document.getElementById('doc-count-' + p.procurementId);
+                if (badge) {
+                  badge.textContent = p.uploadedDocs + '/' + p.totalDocs;
+                  badge.dataset.uploaded = p.uploadedDocs;
+                  badge.dataset.total = p.totalDocs;
+                  // Update badge color based on completion
+                  const allDocsReady = p.uploadedDocs >= p.totalDocs && p.totalDocs > 0;
+                  if (allDocsReady) {
+                    badge.classList.remove('bg-warning');
+                    badge.classList.add('bg-success');
+                  } else {
+                    badge.classList.remove('bg-success');
+                    badge.classList.add('bg-warning');
+                  }
+                  
+                  // Update Send Approval button state
+                  const sendApprovalBtn = document.getElementById('send-approval-btn-' + p.procurementId);
+                  if (sendApprovalBtn) {
+                    sendApprovalBtn.disabled = !allDocsReady;
+                  }
+                }
+                
+                // Also update Linked Procurements badge
+                const linkedBadge = document.getElementById('linked-doc-count-' + p.procurementId);
+                if (linkedBadge) {
+                  linkedBadge.textContent = p.uploadedDocs + '/' + p.totalDocs;
+                }
+              }
+              
+              // Update UI - find the row and reset to upload state
+              const row = btn.closest('tr');
+              if (row) {
+                // Column structure: 1=No, 2=Document Name, 3=Type, 4=Status, 5=File, 6=Action
+                // Do NOT change Type column (3) - only update Status (4) and File (5)
+                
+                // Update Status column (4th column) to Required/Optional
+                const statusCell = row.querySelector('td:nth-child(4)');
+                if (statusCell) {
+                  // Check if this document is mandatory by looking at Type column badges
+                  const typeCell = row.querySelector('td:nth-child(3)');
+                  const isMandatory = typeCell && typeCell.textContent.includes('Required');
+                  if (isMandatory) {
+                    statusCell.innerHTML = '<span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis py-2 px-3"><i class="bi bi-exclamation-lg"></i> Required</span>';
+                  } else {
+                    statusCell.innerHTML = '<span class="badge rounded-pill bg-light text-dark border py-2 px-3">Optional</span>';
+                  }
+                }
+                
+                // Update File column (5th column) to "-"
+                const fileCell = row.querySelector('td:nth-child(5)');
+                if (fileCell) {
+                  fileCell.innerHTML = '<span class="text-muted">-</span>';
+                }
+                
+                // Update actions column - remove action buttons and recreate upload form
+                const actionsCell = row.querySelector('td[data-actions-row]');
+                if (actionsCell) {
+                  const rowIdx = actionsCell.dataset.actionsRow;
+                  const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                  
+                  // Remove the div containing Preview/Download/Delete buttons
+                  const btnWrapper = btn.closest('div');
+                  if (btnWrapper) {
+                    btnWrapper.remove();
+                  }
+                  
+                  // Get the parent wrapper
+                  const parentWrapper = actionsCell.querySelector('.d-flex.gap-2');
+                  
+                  let formHtml = '';
+                  
+                  if (isGenerated) {
+                    // Create Generate button form (matches server-rendered structure)
+                    formHtml = `
+                      <div>
+                        <form action="/PurchaseRequisitions/GenerateDocument"
+                              method="post"
+                              class="d-inline js-generate-form"
+                              data-generate-form="true">
+                            <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+                            <input type="hidden" name="prId" value="${prId}" />
+                            <input type="hidden" name="procurementId" value="${procId}" />
+                            <input type="hidden" name="documentTypeId" value="${docTypeId}" />
+                            <button type="submit" class="btn btn-sm btn-success js-generate-btn">
+                                <i class="bi bi-file-earmark-arrow-down me-1"></i> Generate
+                            </button>
+                        </form>
+                      </div>
+                    `;
+                  } else {
+                    // Create Upload form (matches server-rendered structure - horizontal layout)
+                    formHtml = `
+                      <form class="d-inline-flex gap-2 align-items-center flex-nowrap upload-form"
+                            action="/ProcurementDocuments/Upload"
+                            method="post"
+                            enctype="multipart/form-data"
+                            hx-boost="false"
+                            data-row="${rowIdx}"
+                            data-upload-form="true">
+                          <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+                          <input type="hidden" name="ProcurementId" value="${procId}" />
+                          <input type="hidden" name="DocumentTypeId" value="${docTypeId}" />
+
+                          <label class="upload-dropzone" data-row="${rowIdx}" tabindex="0" style="white-space: nowrap;">
+                              <span class="fw-semibold small">
+                                  <i class="bi bi-cloud-arrow-up me-1"></i>Drop/Select (PDF)
+                              </span>
+                              <input class="d-none file-input" type="file" name="File" accept="application/pdf,.pdf" required data-row="${rowIdx}" />
+                          </label>
+
+                          <div class="selected-file small text-muted text-nowrap" data-row="${rowIdx}">
+                              <i class="bi bi-info-circle me-1"></i>No file
+                          </div>
+
+                          <button class="btn btn-sm btn-primary upload-btn" type="submit" disabled data-row="${rowIdx}">
+                              <i class="bi bi-upload"></i> Upload
+                          </button>
+
+                          <div class="upload-feedback small text-muted" data-row="${rowIdx}"></div>
+                      </form>
+                    `;
+                  }
+                  
+                  if (parentWrapper) {
+                    parentWrapper.insertAdjacentHTML('afterbegin', formHtml);
+                  } else {
+                    actionsCell.insertAdjacentHTML('afterbegin', `<div class="d-flex gap-2 justify-content-end flex-wrap">${formHtml}</div>`);
+                  }
+                  
+                  // Re-initialize handlers for new form
+                  if (isGenerated) {
+                    initGenerateFormHandlers();
+                  } else {
+                    initUploadFormHandlers();
+                    initFileInputHandlers();
+                  }
+                }
+              }
+            } catch (err) {
+              btn.disabled = false;
+              btn.innerHTML = origHtml;
+              showToast('error', 'Delete failed', err.message);
+            }
           });
         });
       }
@@ -885,14 +1070,118 @@
               const ct = r.headers.get("content-type") || "";
               if (ct.includes("application/json")) p = await r.json();
               if (!r.ok || (p && p.ok === false)) throw new Error(p?.error || "Upload failed");
-              showToast("success", "Upload successful");
-              btn.innerHTML = '<i class="bi bi-check2"></i> Uploaded';
-              if (fb) {
-                fb.classList.remove("text-muted", "text-danger");
-                fb.classList.add("text-success");
-                fb.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Done';
+              showToast("success", "Upload successful", p?.document?.name || "");
+              
+              // Update document count badge in Procurement Tracking Summary
+              if (p && p.procurementId && typeof p.uploadedDocs !== 'undefined' && typeof p.totalDocs !== 'undefined') {
+                const badge = document.getElementById('doc-count-' + p.procurementId);
+                if (badge) {
+                  badge.textContent = p.uploadedDocs + '/' + p.totalDocs;
+                  badge.dataset.uploaded = p.uploadedDocs;
+                  badge.dataset.total = p.totalDocs;
+                  // Update badge color based on completion
+                  const allDocsReady = p.uploadedDocs >= p.totalDocs && p.totalDocs > 0;
+                  if (allDocsReady) {
+                    badge.classList.remove('bg-warning');
+                    badge.classList.add('bg-success');
+                  } else {
+                    badge.classList.remove('bg-success');
+                    badge.classList.add('bg-warning');
+                  }
+                  
+                  // Update Send Approval button state
+                  const sendApprovalBtn = document.getElementById('send-approval-btn-' + p.procurementId);
+                  if (sendApprovalBtn) {
+                    sendApprovalBtn.disabled = !allDocsReady;
+                  }
+                }
+                
+                // Also update Linked Procurements badge
+                const linkedBadge = document.getElementById('linked-doc-count-' + p.procurementId);
+                if (linkedBadge) {
+                  linkedBadge.textContent = p.uploadedDocs + '/' + p.totalDocs;
+                }
               }
-              setTimeout(() => location.reload(), 1500);
+              
+              // Update UI without page reload
+              const tableRow = form.closest('tr');
+              if (tableRow && p && p.document) {
+                // Column structure: 1=No, 2=Document Name, 3=Type, 4=Status, 5=File, 6=Action
+                
+                // Update Status column (4th column) to Uploaded
+                const statusCell = tableRow.querySelector('td:nth-child(4)');
+                if (statusCell) {
+                  statusCell.innerHTML = '<span class="badge rounded-pill bg-success bg-opacity-25 text-success py-2 px-3"><i class="bi bi-check-lg"></i> Uploaded</span>';
+                }
+                
+                // Update File column (5th column) with file info
+                const fileCell = tableRow.querySelector('td:nth-child(5)');
+                if (fileCell && p.document.name) {
+                  const sizeBytes = p.document.size || 0;
+                  const sizeKB = sizeBytes / 1024;
+                  const sizeMB = sizeKB / 1024;
+                  const sizeStr = sizeMB >= 1 ? sizeMB.toFixed(2) + ' MB' : sizeKB.toFixed(2) + ' KB';
+                  fileCell.innerHTML = `<small class="text-muted"><i class="bi bi-file-pdf text-danger"></i> ${p.document.name}</small> <span class="text-muted small">&bull; ${sizeStr}</span>`;
+                }
+                
+                // Update actions column - remove upload form entirely and show action buttons
+                const actionsCell = tableRow.querySelector('td[data-actions-row]');
+                if (actionsCell) {
+                  // Get values before removing form
+                  const procIdInput = form.querySelector('input[name="ProcurementId"]');
+                  const procId = procIdInput ? procIdInput.value : '';
+                  const docTypeId = form.querySelector('input[name="DocumentTypeId"]')?.value || '';
+                  
+                  // Get the parent wrapper (d-flex div that contains the form)
+                  const parentWrapper = actionsCell.querySelector('.d-flex.gap-2');
+                  
+                  // Remove the upload form completely
+                  form.remove();
+                  
+                  // Create buttons using innerHTML (btn-group with icon only)
+                  const btnContainer = document.createElement('div');
+                  btnContainer.className = 'btn-group btn-group-sm';
+                  btnContainer.setAttribute('role', 'group');
+                  btnContainer.innerHTML = `
+                    <button type="button" class="btn btn-outline-secondary btn-preview"
+                            data-doc-id="${p.document.id}"
+                            data-doc-name="${p.document.name}"
+                            data-file-name="${p.document.name}"
+                            title="Preview">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-download"
+                            data-doc-id="${p.document.id}"
+                            data-file-name="${p.document.name}"
+                            title="Download">
+                        <i class="bi bi-download"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-delete"
+                            data-doc-id="${p.document.id}"
+                            data-doc-name="${p.document.name}"
+                            data-file-name="${p.document.name}"
+                            data-procurement-id="${procId}"
+                            data-document-type-id="${docTypeId}"
+                            data-is-generated="false"
+                            data-pr-id=""
+                            title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                  `;
+                  
+                  // Insert button container into parent wrapper or actionsCell
+                  if (parentWrapper) {
+                    parentWrapper.appendChild(btnContainer);
+                  } else {
+                    actionsCell.appendChild(btnContainer);
+                  }
+                  
+                  // Re-initialize handlers for new buttons
+                  initPreviewHandlers();
+                  initDownloadHandlers();
+                  initDeleteHandlers();
+                }
+              }
             } catch (err) {
               btn.disabled = false;
               btn.innerHTML = orig;
@@ -910,14 +1199,130 @@
         bindOnce('form[data-generate-form="true"]', "boundGenerateForm", (form) => {
           const btn = form.querySelector(".js-generate-btn");
           if (!btn) return;
-          form.addEventListener("submit", () => {
+          
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
             if (btn.dataset.loading === "true") return;
             btn.dataset.loading = "true";
             btn.dataset.originalHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+            try {
+              const formData = new FormData(form);
+              const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+              
+              const response = await fetch('/PurchaseRequisitions/GenerateDocumentAjax', {
+                method: 'POST',
+                headers: {
+                  'RequestVerificationToken': token
+                },
+                body: formData
+              });
+
+              const result = await response.json();
+              
+              if (result.success) {
+                showToast("success", "Success", result.message);
+                
+                // Find the row and update UI
+                const row = form.closest('tr');
+                if (row) {
+                  // Column structure: 1=No, 2=Document Name, 3=Type, 4=Status, 5=File, 6=Action
+                  
+                  // Hide the generate form after successful generation (user must delete first to regenerate)
+                  const formWrapper = form.closest('div');
+                  if (formWrapper) {
+                    formWrapper.remove();
+                  }
+                  
+                  // Update Status column (4th column) to Uploaded
+                  const statusCell = row.querySelector('td:nth-child(4)');
+                  if (statusCell) {
+                    statusCell.innerHTML = '<span class="badge rounded-pill bg-success bg-opacity-25 text-success py-2 px-3"><i class="bi bi-check-lg"></i> Uploaded</span>';
+                  }
+                  
+                  // Update File column (5th column) with file info
+                  const fileCell = row.querySelector('td:nth-child(5)');
+                  if (fileCell && result.fileName) {
+                    const sizeBytes = result.fileSize || 0;
+                    const sizeKB = sizeBytes / 1024;
+                    const sizeMB = sizeKB / 1024;
+                    const sizeStr = sizeBytes > 0 ? (sizeMB >= 1 ? sizeMB.toFixed(2) + ' MB' : sizeKB.toFixed(2) + ' KB') : '';
+                    fileCell.innerHTML = `<small class="text-muted"><i class="bi bi-file-pdf text-danger"></i> ${result.fileName}</small>${sizeStr ? ' <span class="text-muted small">&bull; ' + sizeStr + '</span>' : ''}`;
+                  }
+                  
+                  // Add action buttons (Preview, Download, Delete)
+                  const actionsCell = row.querySelector('td[data-actions-row]');
+                  if (actionsCell && result.procDocumentId) {
+                    const parentWrapper = actionsCell.querySelector('.d-flex.gap-2');
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    const procId = form.querySelector('input[name="procurementId"]')?.value || '';
+                    const docTypeId = form.querySelector('input[name="documentTypeId"]')?.value || '';
+                    const prId = form.querySelector('input[name="prId"]')?.value || '';
+                    
+                    const btnHtml = `
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-preview"
+                                data-doc-id="${result.procDocumentId}"
+                                data-doc-name="${result.documentTypeName || ''}"
+                                data-file-name="${result.fileName || ''}"
+                                title="Preview">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-download"
+                                data-doc-id="${result.procDocumentId}"
+                                data-file-name="${result.fileName || ''}"
+                                title="Download">
+                            <i class="bi bi-download"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-delete"
+                                data-doc-id="${result.procDocumentId}"
+                                data-doc-name="${result.documentTypeName || ''}"
+                                data-file-name="${result.fileName || ''}"
+                                data-procurement-id="${procId}"
+                                data-document-type-id="${docTypeId}"
+                                data-is-generated="true"
+                                data-pr-id="${prId}"
+                                title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    `;
+                    
+                    if (parentWrapper) {
+                      parentWrapper.insertAdjacentHTML('beforeend', btnHtml);
+                    } else {
+                      actionsCell.insertAdjacentHTML('beforeend', `<div class="d-flex gap-2 justify-content-end flex-wrap">${btnHtml}</div>`);
+                    }
+                    
+                    // Re-initialize handlers for new buttons
+                    initPreviewHandlers();
+                    initDownloadHandlers();
+                    initDeleteHandlers();
+                  }
+                }
+              } else {
+                showToast("error", "Error", result.message);
+                btn.innerHTML = btn.dataset.originalHtml;
+              }
+            } catch (error) {
+              console.error('Generate error:', error);
+              showToast("error", "Error", "Failed to generate document");
+              btn.innerHTML = btn.dataset.originalHtml;
+            } finally {
+              btn.disabled = false;
+              btn.dataset.loading = "false";
+            }
           });
         });
+      }
+      
+      function createActionDiv(button) {
+        const div = document.createElement('div');
+        div.appendChild(button);
+        return div;
       }
       function initQrHandlers() {
         bindOnce(".btn-show-qr", "boundShowQr", (b) => {
