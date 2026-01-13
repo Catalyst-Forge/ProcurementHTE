@@ -37,6 +37,10 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string? ProjectCode { get; set; }
         public string? LinkDokumen { get; set; }
 
+        // Invoice Data
+        public string? SANo { get; set; }
+        public string? SP3No { get; set; }
+
         // Items
         public string? UnitItemPenawaran { get; set; }
         public string? SuratPenawaranVendor { get; set; }
