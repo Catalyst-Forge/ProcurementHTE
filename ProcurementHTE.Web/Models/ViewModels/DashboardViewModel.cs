@@ -72,6 +72,20 @@ namespace ProcurementHTE.Web.Models.ViewModels
             get => UserActivities;
             set => UserActivities = value;
         }
+
+        // Admin-only: Extended Metrics
+        public int PendingAccrualCount { get; set; }
+        public int FilledAccrualCount { get; set; }
+        public decimal TotalPotensiAccrual { get; set; }
+        public int AccrualFillPercentage => TotalProcurements > 0
+            ? (int)Math.Round((decimal)FilledAccrualCount / TotalProcurements * 100)
+            : 0;
+
+        // Role Distribution
+        public List<RoleDistributionViewModel> RoleDistribution { get; set; } = new();
+
+        // Region Distribution
+        public List<RegionDistributionViewModel> RegionDistribution { get; set; } = new();
     }
 
     #region Dashboard Detail ViewModels
@@ -306,6 +320,38 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         [DisplayName("Description")]
         public string? Description { get; set; }
+    }
+
+    #endregion
+
+    #region Role Distribution ViewModels
+
+    public class RoleDistributionViewModel
+    {
+        [DisplayName("Role Name")]
+        public string RoleName { get; set; } = string.Empty;
+
+        [DisplayName("User Count")]
+        public int UserCount { get; set; }
+
+        [DisplayName("Color")]
+        public string Color { get; set; } = "#6c757d";
+    }
+
+    #endregion
+
+    #region Region Distribution ViewModels
+
+    public class RegionDistributionViewModel
+    {
+        [DisplayName("Region")]
+        public string RegionName { get; set; } = string.Empty;
+
+        [DisplayName("Count")]
+        public int Count { get; set; }
+
+        [DisplayName("Total Value")]
+        public decimal TotalValue { get; set; }
     }
 
     #endregion

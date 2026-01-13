@@ -64,6 +64,7 @@ public class PurchaseRequisitionListViewModel
     public string? Description { get; set; }
     public string? DocumentFileName { get; set; }
     public int ProcurementCount { get; set; }
+    public string? CreatedByUserId { get; set; }
     public string? CreatedByUserName { get; set; }
     public DateTime CreatedAt { get; set; }
 }
@@ -77,6 +78,7 @@ public class PurchaseRequisitionDetailsViewModel
     public string? DocumentFileName { get; set; }
     public string? DocumentFilePath { get; set; }
     public long? DocumentFileSize { get; set; }
+    public string? CreatedByUserId { get; set; }
     public string? CreatedByUserName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

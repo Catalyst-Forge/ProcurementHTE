@@ -85,6 +85,14 @@ public class ProcurementEditViewModel
     [DisplayName("RA Number")]
     public string? RaNumber { get; set; }
 
+    [DisplayName("No. Rig")]
+    [MaxLength(100)]
+    public string? NoRig { get; set; }
+
+    [DisplayName("No. HTE")]
+    [MaxLength(100)]
+    public string? NoHte { get; set; }
+
     [DisplayName("Project Code")]
     public string? ProjectCode { get; set; }
 
