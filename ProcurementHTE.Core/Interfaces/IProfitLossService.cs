@@ -16,5 +16,8 @@ namespace ProcurementHTE.Core.Interfaces
         // Transaction DB
         Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto);
         Task<ProfitLoss> EditProfitLossAsync(ProfitLossUpdateDto dto);
+        
+        // Delete
+        Task<bool> DeleteByProcurementAsync(string procurementId, string deletedByUserId);
     }
 }

@@ -28,6 +28,8 @@ public interface IPurchaseRequisitionService
 
     Task<int> CountAsync(CancellationToken ct = default);
 
+    Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default);
+
     // Command Methods
     Task<PurchaseRequisition> CreateAsync(
         PurchaseRequisition purchaseRequisition,

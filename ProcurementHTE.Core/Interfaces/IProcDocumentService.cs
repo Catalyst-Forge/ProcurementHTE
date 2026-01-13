@@ -8,6 +8,7 @@ public interface IProcDocumentService
 {
     Task<string?> GetPresignedUrlAsync(string procDocumentId, TimeSpan? expires = null);
     Task<bool> DeleteAsync(string procDocumentId, string deletedByUserId);
+    Task<int> DeleteAllByProcurementAsync(string procurementId, string deletedByUserId);
     Task<ProcDocuments?> GetByIdAsync(string id);
     Task<IReadOnlyList<ProcDocuments>> ListByProcurementAsync(string procurementId);
     Task<UploadProcDocumentResult> UploadAsync(

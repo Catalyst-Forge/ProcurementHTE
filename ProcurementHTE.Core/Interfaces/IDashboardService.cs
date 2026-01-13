@@ -50,5 +50,13 @@ namespace ProcurementHTE.Core.Interfaces
             int take = 30,
             CancellationToken ct = default
         );
+
+        // Admin Extended Metrics
+        Task<AccrualStatistics> GetAccrualStatisticsAsync(CancellationToken ct = default);
+        Task<List<RegionDistribution>> GetRegionDistributionAsync(CancellationToken ct = default);
     }
+
+    // DTOs for Admin Extended Metrics
+    public record AccrualStatistics(int PendingCount, int FilledCount, decimal TotalPotensiAccrual);
+    public record RegionDistribution(string RegionName, int Count, decimal TotalValue);
 }
