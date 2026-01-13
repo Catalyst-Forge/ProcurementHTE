@@ -27,6 +27,7 @@ public class ProcurementDocumentsController : Controller
     private readonly IHttpClientFactory _http;
     private readonly IDocumentGenerator _docGenerator;
     private readonly IDocumentTypeRepository _docTypeRepo;
+    private readonly IProcurementTrackingService _trackingService;
     // IApprovalService removed - approval sekarang di level PR
 
     public ProcurementDocumentsController(
@@ -37,7 +38,8 @@ public class ProcurementDocumentsController : Controller
         IVendorRoundLetterRepository roundLetterRepo,
         IHttpClientFactory http,
         IDocumentGenerator docGenerator,
-        IDocumentTypeRepository docTypeRepo
+        IDocumentTypeRepository docTypeRepo,
+        IProcurementTrackingService trackingService
     )
     {
         _query = query;
@@ -48,6 +50,7 @@ public class ProcurementDocumentsController : Controller
         _http = http;
         _docGenerator = docGenerator;
         _docTypeRepo = docTypeRepo;
+        _trackingService = trackingService;
     }
 
     // GET: /ProcurementDocuments/Index/{procurementId}
@@ -182,6 +185,9 @@ public class ProcurementDocumentsController : Controller
 
             if (IsAjaxRequest())
             {
+                // Get updated document count after upload
+                var (uploaded, total) = await _trackingService.GetDocumentCountAsync(ProcurementId);
+                
                 return Json(
                     new
                     {
@@ -189,6 +195,8 @@ public class ProcurementDocumentsController : Controller
                         message,
                         procurementId = ProcurementId,
                         documentTypeId = DocumentTypeId,
+                        uploadedDocs = uploaded,
+                        totalDocs = total,
                         document = new
                         {
                             id = result.ProcDocumentId,
@@ -332,6 +340,44 @@ public class ProcurementDocumentsController : Controller
         }
 
         return RedirectToAction(nameof(Index), new { procurementId });
+    }
+
+    // POST: /ProcurementDocuments/DeleteAjax - AJAX version for dynamic UI update
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAjax([FromForm] string id, [FromForm] string procurementId, [FromForm] string documentTypeId)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest(new { ok = false, error = "Invalid document ID" });
+
+        try
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var ok = await _docSvc.DeleteAsync(id, currentUserId);
+            
+            if (ok)
+            {
+                // Get updated document count after deletion
+                var (uploaded, total) = await _trackingService.GetDocumentCountAsync(procurementId);
+                
+                return Json(new { 
+                    ok = true, 
+                    message = "Document deleted successfully.",
+                    procurementId,
+                    documentTypeId,
+                    uploadedDocs = uploaded,
+                    totalDocs = total
+                });
+            }
+            else
+            {
+                return Json(new { ok = false, error = "Document not found." });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = $"Failed to delete document: {ex.Message}" });
+        }
     }
 
     // POST: /ProcurementDocuments/SendApprovalPerDoc

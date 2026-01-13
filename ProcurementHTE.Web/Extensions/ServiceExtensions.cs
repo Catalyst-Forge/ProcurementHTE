@@ -54,10 +54,7 @@ public static class ServiceExtensions
         services.AddScoped<IHtmlTokenReplacer, HtmlTokenReplacer>();
         services.AddScoped<IJobTypeCalculationService, JobTypeCalculationService>();
         services.AddScoped<ILdpService, LdpService>();
-        services.AddScoped<
-            IPurchaseRequisitionTrackingService,
-            PurchaseRequisitionTrackingService
-        >();
+        services.AddScoped<IProcurementTrackingService, ProcurementTrackingService>();
         services.AddScoped<INotificationService, NotificationService>();
 
         return services;

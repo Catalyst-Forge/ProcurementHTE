@@ -30,7 +30,7 @@ namespace ProcurementHTE.Web.Controllers.PR
         private readonly IObjectStorage _objectStorage;
         private readonly ObjectStorageOptions _storageOptions;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IPurchaseRequisitionTrackingService _trackingService;
+        private readonly IProcurementTrackingService _procurementTrackingService;
 
         private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
         private static readonly string[] AllowedExtensions =
@@ -56,7 +56,7 @@ namespace ProcurementHTE.Web.Controllers.PR
             IObjectStorage objectStorage,
             IOptions<ObjectStorageOptions> storageOptions,
             IHttpClientFactory httpClientFactory,
-            IPurchaseRequisitionTrackingService trackingService
+            IProcurementTrackingService procurementTrackingService
         )
         {
             _procurementRepository = procurementRepository;
@@ -73,7 +73,7 @@ namespace ProcurementHTE.Web.Controllers.PR
             _storageOptions =
                 storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
             _httpClientFactory = httpClientFactory;
-            _trackingService = trackingService;
+            _procurementTrackingService = procurementTrackingService;
         }
 
         // GET: PurchaseRequisitionsController
@@ -100,6 +100,7 @@ namespace ProcurementHTE.Web.Controllers.PR
                     Description = pr.Description,
                     DocumentFileName = pr.DocumentFileName,
                     ProcurementCount = pr.Procurements?.Count ?? 0,
+                    CreatedByUserId = pr.CreatedByUserId,
                     CreatedByUserName = pr.CreatedByUser?.FullName,
                     CreatedAt = pr.CreatedAt,
                 })
@@ -134,6 +135,7 @@ namespace ProcurementHTE.Web.Controllers.PR
                 DocumentFileName = pr.DocumentFileName,
                 DocumentFilePath = pr.DocumentFilePath,
                 DocumentFileSize = pr.DocumentFileSize,
+                CreatedByUserId = pr.CreatedByUserId,
                 CreatedByUserName = pr.CreatedByUser?.FullName ?? pr.CreatedByUser?.UserName,
                 CreatedAt = pr.CreatedAt,
                 UpdatedAt = pr.UpdatedAt,
@@ -178,9 +180,20 @@ namespace ProcurementHTE.Web.Controllers.PR
                 viewModel.Procurements.Add(procVm);
             }
 
-            // Fetch PR Tracking data
-            var tracking = await _trackingService.GetTrackingByPrIdAsync(id, HttpContext.RequestAborted);
-            ViewData["PRTracking"] = tracking;
+            // Fetch Procurement Tracking data for all procurements
+            var procurementTrackings = new List<ProcurementTrackingDto>();
+            foreach (var proc in viewModel.Procurements)
+            {
+                var procTracking = await _procurementTrackingService.GetTrackingByProcurementIdAsync(
+                    proc.ProcurementId,
+                    HttpContext.RequestAborted
+                );
+                if (procTracking != null)
+                {
+                    procurementTrackings.Add(procTracking);
+                }
+            }
+            ViewData["ProcurementTrackings"] = procurementTrackings;
 
             return View(viewModel);
         }
@@ -205,7 +218,6 @@ namespace ProcurementHTE.Web.Controllers.PR
                     "At least one procurement must be selected."
                 );
             }
-
             if (!ModelState.IsValid)
             {
                 await PopulateViewBagForCreate();
@@ -236,6 +248,18 @@ namespace ProcurementHTE.Web.Controllers.PR
                 );
                 await PopulateViewBagForCreate();
                 return View(model);
+            }
+
+            // Validate PR Number uniqueness
+            if (!string.IsNullOrWhiteSpace(model.PRNumber))
+            {
+                var prExists = await _purchaseRequisitionService.IsPrNumberExistsAsync(model.PRNumber);
+                if (prExists)
+                {
+                    ModelState.AddModelError("PRNumber", $"PR Number '{model.PRNumber}' sudah digunakan. Gunakan nomor lain.");
+                    await PopulateViewBagForCreate();
+                    return View(model);
+                }
             }
 
             try
@@ -284,6 +308,7 @@ namespace ProcurementHTE.Web.Controllers.PR
 
                 TempData["SuccessMessage"] =
                     $"Purchase Requisition {purchaseRequisition.PrNumber} created successfully.";
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -301,6 +326,15 @@ namespace ProcurementHTE.Web.Controllers.PR
             if (pr == null)
             {
                 return NotFound();
+            }
+
+            // Authorization check: Only Admin or Creator can edit
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && pr.CreatedByUserId != currentUserId)
+            {
+                TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk mengedit PR ini.";
+                return RedirectToAction(nameof(Index));
             }
 
             var model = new PurchaseRequisitionEditViewModel
@@ -334,12 +368,33 @@ namespace ProcurementHTE.Web.Controllers.PR
                 return View(model);
             }
 
+            // Validate PR Number uniqueness (exclude current PR)
+            if (!string.IsNullOrWhiteSpace(model.PRNumber))
+            {
+                var prExists = await _purchaseRequisitionService.IsPrNumberExistsAsync(model.PRNumber, model.PrId);
+                if (prExists)
+                {
+                    ModelState.AddModelError("PRNumber", $"PR Number '{model.PRNumber}' sudah digunakan. Gunakan nomor lain.");
+                    await PopulateViewBagForCreate();
+                    return View(model);
+                }
+            }
+
             try
             {
                 var existingPr = await _purchaseRequisitionService.GetByIdAsync(id);
                 if (existingPr == null)
                 {
                     return NotFound();
+                }
+
+                // Authorization check: Only Admin or Creator can edit
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var isAdmin = User.IsInRole("Admin");
+                if (!isAdmin && existingPr.CreatedByUserId != currentUserId)
+                {
+                    TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk mengedit PR ini.";
+                    return RedirectToAction(nameof(Index));
                 }
 
                 // Update basic properties
@@ -402,6 +457,7 @@ namespace ProcurementHTE.Web.Controllers.PR
 
                 TempData["SuccessMessage"] =
                     $"Purchase Requisition {existingPr.PrNumber} updated successfully.";
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -420,6 +476,16 @@ namespace ProcurementHTE.Web.Controllers.PR
             {
                 return NotFound();
             }
+
+            // Authorization check: Only Admin or Creator can delete
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && pr.CreatedByUserId != currentUserId)
+            {
+                TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk menghapus PR ini.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(pr);
         }
 
@@ -436,13 +502,21 @@ namespace ProcurementHTE.Web.Controllers.PR
                     return NotFound();
                 }
 
+                // Authorization check: Only Admin or Creator can delete
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                var isAdmin = User.IsInRole("Admin");
+                if (!isAdmin && pr.CreatedByUserId != currentUserId)
+                {
+                    TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk menghapus PR ini.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Delete file from object storage if exists
                 if (!string.IsNullOrEmpty(pr.DocumentFilePath))
                 {
                     await SafeDeleteFromStorageAsync(pr.DocumentFilePath);
                 }
 
-                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
                 await _purchaseRequisitionService.DeleteAsync(id, currentUserId);
 
                 TempData["SuccessMessage"] =
@@ -724,6 +798,103 @@ namespace ProcurementHTE.Web.Controllers.PR
             return RedirectToAction(nameof(Details), new { id = prId });
         }
 
+        // AJAX: Generate Document without page refresh
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateDocumentAjax(
+            string prId,
+            string procurementId,
+            string documentTypeId,
+            string? procDocumentId
+        )
+        {
+            try
+            {
+                var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+                if (procurement == null)
+                {
+                    return Json(new { success = false, message = "Procurement not found." });
+                }
+
+                var docType = await _documentTypeRepository.GetByIdAsync(documentTypeId);
+                if (docType == null)
+                {
+                    return Json(new { success = false, message = "Document type not found." });
+                }
+
+                // Generate PDF based on document type name
+                byte[] pdfBytes = docType.Name switch
+                {
+                    "Memorandum" => await _documentGenerator.GenerateMemorandumAsync(procurement),
+                    "Permintaan Pekerjaan" =>
+                        await _documentGenerator.GeneratePermintaanPekerjaanAsync(procurement),
+                    "Service Order" => await _documentGenerator.GenerateServiceOrderAsync(
+                        procurement
+                    ),
+                    "Market Survey" => await _documentGenerator.GenerateMarketSurveyAsync(
+                        procurement
+                    ),
+                    "Surat Perintah Mulai Pekerjaan (SPMP)" =>
+                        await _documentGenerator.GenerateSPMPAsync(procurement),
+                    "Surat Penawaran Harga" =>
+                        await _documentGenerator.GenerateSuratPenawaranHargaAsync(procurement),
+                    "Surat Negosiasi Harga" =>
+                        await _documentGenerator.GenerateSuratNegosiasiHargaAsync(procurement),
+                    "Rencana Kerja dan Syarat-Syarat (RKS)" =>
+                        await _documentGenerator.GenerateRKSAsync(procurement),
+                    "Risk Assessment (RA)" => await _documentGenerator.GenerateRiskAssessmentAsync(
+                        procurement
+                    ),
+                    "Owner Estimate (OE)" => await _documentGenerator.GenerateOwnerEstimateAsync(
+                        procurement
+                    ),
+                    "Bill of Quantity (BOQ)" => await _documentGenerator.GenerateBOQAsync(
+                        procurement
+                    ),
+                    "Profit & Loss" => await _documentGenerator.GenerateProfitLossAsync(
+                        procurement
+                    ),
+                    "Justifikasi" => await _documentGenerator.GenerateJustifikasiAsync(procurement),
+                    _ => throw new NotImplementedException(
+                        $"Template for '{docType.Name}' is not available yet."
+                    ),
+                };
+
+                // Save to MinIO
+                var result = await _procDocumentService.SaveGeneratedAsync(
+                    new GeneratedProcDocumentRequest
+                    {
+                        ProcurementId = procurementId,
+                        DocumentTypeId = documentTypeId,
+                        Bytes = pdfBytes,
+                        FileName = $"{docType.Name}.pdf",
+                        ContentType = "application/pdf",
+                        Description =
+                            $"Generated from PR Service on {DateTime.Now:dd MMM yyyy HH:mm}",
+                        CreatedAt = DateTime.UtcNow,
+                        GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                        ProcDocumentId = procDocumentId,
+                    }
+                );
+
+                return Json(new { 
+                    success = true, 
+                    message = $"Document '{docType.Name}' generated successfully!",
+                    procDocumentId = result.ProcDocumentId,
+                    fileName = result.FileName,
+                    documentTypeName = docType.Name
+                });
+            }
+            catch (NotImplementedException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Failed to generate document: {ex.Message}" });
+            }
+        }
+
         // API: Get filtered procurements
         [HttpGet]
         public async Task<JsonResult> GetFilteredProcurements(
@@ -840,6 +1011,32 @@ namespace ProcurementHTE.Web.Controllers.PR
             return Json(result);
         }
 
+        // POST: PurchaseRequisitions/SendApproval
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendApproval(string procurementId, string prId, CancellationToken ct)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["ErrorMessage"] = "User tidak teridentifikasi.";
+                return RedirectToAction(nameof(Details), new { id = prId });
+            }
+
+            var result = await _procurementTrackingService.SendForApprovalAsync(procurementId, userId, ct);
+
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Details), new { id = prId });
+        }
+
         #region Private Helper Methods
 
         private async Task PopulateViewBagForCreate()
@@ -902,162 +1099,6 @@ namespace ProcurementHTE.Web.Controllers.PR
             {
                 // Ignore delete errors
             }
-        }
-
-        #endregion
-
-        #region PR Tracking Actions
-
-        // POST: PurchaseRequisitions/SendApproval/{prId}
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendApproval(string prId)
-        {
-            // Check if user has AP-PO or Admin role
-            if (!User.IsInRole("AP-PO") && !User.IsInRole("Admin"))
-            {
-                TempData["Error"] = "Hanya role AP-PO yang dapat mengirim untuk approval.";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            // Get tracking data to validate requirements
-            var tracking = await _trackingService.GetTrackingByPrIdAsync(prId, HttpContext.RequestAborted);
-            if (tracking == null)
-            {
-                TempData["Error"] = "PR tidak ditemukan.";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            // Validate status
-            if (tracking.CurrentStatus != PurchaseRequisitionStatus.OnCreateDP3)
-            {
-                TempData["Error"] = "PR tidak dalam status yang dapat dikirim untuk approval.";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            // Validate linked procurements
-            if (tracking.LinkedProcurementsCount == 0)
-            {
-                TempData["Error"] = "Tidak dapat mengirim approval: Belum ada procurement yang di-link.";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            // Validate mandatory documents
-            if (!tracking.AllMandatoryDocsReady)
-            {
-                TempData["Error"] = $"Tidak dapat mengirim approval: Dokumen mandatory belum lengkap ({tracking.UploadedMandatoryDocs}/{tracking.TotalMandatoryDocs} uploaded).";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-            // Use new SendForApprovalAsync method that generates QR token
-            var result = await _trackingService.SendForApprovalAsync(
-                prId,
-                userId,
-                HttpContext.RequestAborted
-            );
-
-            if (result.Success)
-            {
-                TempData["Success"] = result.Message;
-            }
-            else
-            {
-                TempData["Error"] = result.Message;
-            }
-
-            return RedirectToAction("Details", new { id = prId });
-        }
-
-        // POST: PurchaseRequisitions/SubmitIspa
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitIspa(string prId, string ispaNumber)
-        {
-            if (string.IsNullOrWhiteSpace(ispaNumber))
-            {
-                TempData["Error"] = "Nomor ISPA tidak boleh kosong.";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-            var result = await _trackingService.SubmitIspaAsync(
-                prId,
-                ispaNumber.Trim(),
-                userId,
-                HttpContext.RequestAborted
-            );
-
-            if (result.Success)
-            {
-                TempData["Success"] = result.Message;
-            }
-            else
-            {
-                TempData["Error"] = result.Message;
-            }
-
-            return RedirectToAction("Details", new { id = prId });
-        }
-
-        // POST: PurchaseRequisitions/SubmitJustification
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitJustification(string prId)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-            var result = await _trackingService.SubmitJustificationAsync(
-                prId,
-                userId,
-                HttpContext.RequestAborted
-            );
-
-            if (result.Success)
-            {
-                TempData["Success"] = result.Message;
-            }
-            else
-            {
-                TempData["Error"] = result.Message;
-            }
-
-            return RedirectToAction("Details", new { id = prId });
-        }
-
-        // POST: PurchaseRequisitions/SubmitPO
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SCM")] // Only SCM can submit PO
-        public async Task<IActionResult> SubmitPO(string prId, string poNumber)
-        {
-            if (string.IsNullOrWhiteSpace(poNumber))
-            {
-                TempData["Error"] = "Nomor PO tidak boleh kosong.";
-                return RedirectToAction("Details", new { id = prId });
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-            var result = await _trackingService.SubmitPoAsync(
-                prId,
-                poNumber.Trim(),
-                userId,
-                HttpContext.RequestAborted
-            );
-
-            if (result.Success)
-            {
-                TempData["Success"] = result.Message;
-            }
-            else
-            {
-                TempData["Error"] = result.Message;
-            }
-
-            return RedirectToAction("Details", new { id = prId });
         }
 
         #endregion
