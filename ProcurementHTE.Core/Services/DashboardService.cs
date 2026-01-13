@@ -103,5 +103,14 @@ namespace ProcurementHTE.Core.Services
             int take = 30,
             CancellationToken ct = default
         ) => await _dashboardRepository.GetUserActivityStatusAsync(take, ct);
+
+        // Admin Extended Metrics
+        public async Task<AccrualStatistics> GetAccrualStatisticsAsync(
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetAccrualStatisticsAsync(ct);
+
+        public async Task<List<RegionDistribution>> GetRegionDistributionAsync(
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetRegionDistributionAsync(ct);
     }
 }

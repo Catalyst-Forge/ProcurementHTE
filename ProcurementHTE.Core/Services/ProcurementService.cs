@@ -74,6 +74,25 @@ public class ProcurementService : IProcurementService
         );
     }
 
+    public Task<PagedResult<Procurement>> GetMyAppoPickupsAsync(
+        string appoUserId,
+        int page,
+        int pageSize,
+        string? search,
+        ISet<string> fields,
+        CancellationToken ct
+    )
+    {
+        return _procurementRepository.GetMyAppoPickupsAsync(
+            appoUserId,
+            page,
+            pageSize,
+            search,
+            fields,
+            ct
+        );
+    }
+
     #endregion
 
     #region Lookup Methods
@@ -325,6 +344,157 @@ public class ProcurementService : IProcurementService
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
+    public async Task PickupForApInvoiceAsync(string procurementId, string apInvoiceUserId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        if (string.IsNullOrWhiteSpace(apInvoiceUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(apInvoiceUserId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        // Must be picked up by AP-PO first
+        if (string.IsNullOrEmpty(procurement.AppoUserId))
+            throw new InvalidOperationException(
+                "Procurement harus di-pickup oleh AP-PO terlebih dahulu"
+            );
+
+        // Cannot be picked up twice
+        if (!string.IsNullOrEmpty(procurement.ApInvoiceUserId))
+            throw new InvalidOperationException("Procurement sudah di-pickup oleh AP-Invoice");
+
+        procurement.ApInvoiceUserId = apInvoiceUserId;
+        procurement.ApInvoicePickedUpAt = DateTime.UtcNow;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task UpdateInvoiceDataAsync(
+        string procurementId,
+        string? saNo,
+        string? sp3No,
+        string filledByUserId
+    )
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        procurement.SANo = saNo;
+        procurement.SP3No = sp3No;
+        procurement.ApInvoiceUserId = filledByUserId;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task PickupForArAsync(string procurementId, string arUserId)
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        if (string.IsNullOrWhiteSpace(arUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(arUserId));
+
+        var procurement =
+            await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException(
+                $"Procurement dengan ID {procurementId} tidak ditemukan"
+            );
+
+        // AR dapat pickup secara paralel dengan AP-PO setelah publish
+        // Tidak perlu menunggu AP-Invoice (AP-Invoice adalah yang terakhir)
+
+        // Cannot be picked up twice
+        if (!string.IsNullOrEmpty(procurement.ArUserId))
+            throw new InvalidOperationException("Procurement sudah di-pickup oleh AR");
+
+        procurement.ArUserId = arUserId;
+        procurement.ArPickedUpAt = DateTime.UtcNow;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public async Task<PagedResult<Procurement>> GetProcurementsForApInvoiceAsync(
+        int page,
+        int pageSize,
+        string? search,
+        string? filter,
+        CancellationToken ct
+    )
+    {
+        return await _procurementRepository.GetProcurementsForApInvoiceAsync(
+            page,
+            pageSize,
+            search,
+            filter,
+            ct
+        );
+    }
+
+    public async Task<PagedResult<Procurement>> GetMyApInvoicePickupsAsync(
+        string apInvoiceUserId,
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken ct
+    )
+    {
+        return await _procurementRepository.GetMyApInvoicePickupsAsync(
+            apInvoiceUserId,
+            page,
+            pageSize,
+            search,
+            ct
+        );
+    }
+
+    public async Task<PagedResult<Procurement>> GetProcurementsForArPickupAsync(
+        int page,
+        int pageSize,
+        string? search,
+        string? filter,
+        CancellationToken ct
+    )
+    {
+        return await _procurementRepository.GetProcurementsForArPickupAsync(
+            page,
+            pageSize,
+            search,
+            filter,
+            ct
+        );
+    }
+
+    public async Task<PagedResult<Procurement>> GetMyArPickupsAsync(
+        string arUserId,
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken ct
+    )
+    {
+        return await _procurementRepository.GetMyArPickupsAsync(
+            arUserId,
+            page,
+            pageSize,
+            search,
+            ct
+        );
+    }
+
     #endregion
 
     #region Private Helper Methods
@@ -408,6 +578,48 @@ public class ProcurementService : IProcurementService
             );
 
         return completedStatus;
+    }
+
+    #endregion
+
+    #region Accrual Methods
+
+    public async Task UpdateAccrualDataAsync(
+        string procurementId,
+        string? noAccrual,
+        decimal? potensiAccrual,
+        string? statusAccrual,
+        string filledByUserId
+    )
+    {
+        if (string.IsNullOrWhiteSpace(procurementId))
+            throw new ArgumentException("ID procurement tidak boleh kosong", nameof(procurementId));
+
+        if (string.IsNullOrWhiteSpace(filledByUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(filledByUserId));
+
+        var procurement = await _procurementRepository.GetByIdAsync(procurementId)
+            ?? throw new KeyNotFoundException($"Procurement dengan ID {procurementId} tidak ditemukan");
+
+        procurement.NoAccrual = noAccrual;
+        procurement.PotensiAccrual = potensiAccrual;
+        procurement.StatusAccrual = statusAccrual;
+        procurement.AccrualFilledByUserId = filledByUserId;
+        procurement.AccrualFilledAt = DateTime.UtcNow;
+        procurement.UpdatedAt = DateTime.UtcNow;
+
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
+    public Task<PagedResult<Procurement>> GetProcurementsForAccrualAsync(
+        int page,
+        int pageSize,
+        string? search,
+        string? filter,
+        CancellationToken ct
+    )
+    {
+        return _procurementRepository.GetProcurementsForAccrualAsync(page, pageSize, search, filter, ct);
     }
 
     #endregion

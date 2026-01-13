@@ -230,6 +230,8 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "ConditionalApproveHeaderCell", extraHeader);
             html = ReplaceToken(html, "ConditionalApproveBlankCell", extraBlank);
             html = ReplaceToken(html, "ConditionalApproveRoleCell", extraRoleCell);
+            var extraNameCell = needExtraApprove ? "<td>Agus Sudjatmoko</td>" : string.Empty;
+            html = ReplaceToken(html, "ConditionalApproveNameCell", extraNameCell);
 
             // ProcDetails - Generate table rows
             if (proc.ProcDetails != null && proc.ProcDetails.Count != 0)

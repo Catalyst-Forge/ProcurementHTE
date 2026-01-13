@@ -9,13 +9,19 @@ namespace ProcurementHTE.Core.Services;
 public class PurchaseRequisitionService : IPurchaseRequisitionService
 {
     private readonly IPurchaseRequisitionRepository _purchaseRequisitionRepository;
+    private readonly IProcurementTrackingService _procurementTrackingService;
     private const string PR_PREFIX = "PR";
 
-    public PurchaseRequisitionService(IPurchaseRequisitionRepository purchaseRequisitionRepository)
+    public PurchaseRequisitionService(
+        IPurchaseRequisitionRepository purchaseRequisitionRepository,
+        IProcurementTrackingService procurementTrackingService)
     {
         _purchaseRequisitionRepository =
             purchaseRequisitionRepository
             ?? throw new ArgumentNullException(nameof(purchaseRequisitionRepository));
+        _procurementTrackingService =
+            procurementTrackingService
+            ?? throw new ArgumentNullException(nameof(procurementTrackingService));
     }
 
     #region Query Methods
@@ -66,6 +72,11 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         return _purchaseRequisitionRepository.CountAsync(ct);
     }
 
+    public Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default)
+    {
+        return _purchaseRequisitionRepository.IsPrNumberExistsAsync(prNumber, excludePrId, ct);
+    }
+
     #endregion
 
     #region Command Methods
@@ -91,9 +102,9 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         purchaseRequisition.Status = PurchaseRequisitionStatus.OnCreateDP3;
         
         // Add initial status history - On Create DP3 (APPO)
+        // Don't set PrId explicitly - EF will set it from the navigation property
         purchaseRequisition.StatusHistories.Add(new PurchaseRequisitionStatusHistory
         {
-            PrId = purchaseRequisition.PrId,
             Status = PurchaseRequisitionStatus.OnCreateDP3,
             ChangedAt = purchaseRequisition.CreatedAt,
             ChangedByUserId = purchaseRequisition.CreatedByUserId,
@@ -112,6 +123,9 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
                 procIds,
                 ct
             );
+
+            // Recalculate PR status based on linked procurements
+            await _procurementTrackingService.RecalculatePrStatusAsync(purchaseRequisition.PrId, ct);
         }
 
         return purchaseRequisition;
@@ -155,6 +169,9 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
             {
                 await _purchaseRequisitionRepository.LinkProcurementsAsync(existing.PrId, procIds, ct);
             }
+
+            // Recalculate PR status based on linked procurements
+            await _procurementTrackingService.RecalculatePrStatusAsync(existing.PrId, ct);
         }
     }
 

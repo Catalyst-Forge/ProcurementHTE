@@ -82,6 +82,29 @@ public sealed class ProcDocumentService : IProcDocumentService
         return true;
     }
 
+    public async Task<int> DeleteAllByProcurementAsync(string procurementId, string deletedByUserId)
+    {
+        var documents = await _procDocumentRepository.GetByProcurementAsync(procurementId);
+        if (documents == null || documents.Count == 0)
+            return 0;
+
+        var deletedCount = 0;
+        foreach (var doc in documents)
+        {
+            // Soft delete file dari storage jika ada
+            if (!string.IsNullOrWhiteSpace(doc.ObjectKey))
+            {
+                await SafeDeleteAsync(doc.ObjectKey);
+            }
+
+            await _procDocumentRepository.DeleteAsync(doc.ProcDocumentId, deletedByUserId);
+            deletedCount++;
+        }
+
+        await _procDocumentRepository.SaveAsync();
+        return deletedCount;
+    }
+
     public Task<ProcDocuments?> GetByIdAsync(string id) => _procDocumentRepository.GetByIdAsync(id);
 
     public Task<IReadOnlyList<ProcDocuments>> ListByProcurementAsync(string procurementId) =>

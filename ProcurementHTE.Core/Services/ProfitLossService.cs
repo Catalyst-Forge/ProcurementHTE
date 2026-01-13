@@ -27,6 +27,19 @@ namespace ProcurementHTE.Core.Services
             _jobTypeCalc = jobTypeCalculationService;
         }
 
+        public async Task<bool> DeleteByProcurementAsync(string procurementId, string deletedByUserId)
+        {
+            if (string.IsNullOrWhiteSpace(procurementId))
+                return false;
+                
+            var pnl = await _pnlRepository.GetByProcurementAsync(procurementId);
+            if (pnl == null)
+                return false;
+                
+            await _pnlRepository.DeleteAsync(pnl.ProfitLossId, deletedByUserId);
+            return true;
+        }
+
         public Task<ProfitLoss?> GetByProcurementAsync(string procurementId)
         {
             return _pnlRepository.GetByProcurementAsync(procurementId);
