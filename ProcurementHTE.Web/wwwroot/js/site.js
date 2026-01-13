@@ -212,13 +212,15 @@
       new bootstrap.Tab(tabTrigger);
     });
     
-    // Reinitialize all collapses
-    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(collapseTrigger) {
-      const existingInstance = bootstrap.Collapse.getInstance(collapseTrigger);
+    // Reinitialize all collapses - fix for sidebar menu not expanding
+    // Note: Bootstrap Collapse should be initialized from the target element, not the trigger
+    document.querySelectorAll('.collapse').forEach(function(collapseElement) {
+      const existingInstance = bootstrap.Collapse.getInstance(collapseElement);
       if (existingInstance) {
         existingInstance.dispose();
       }
-      // Don't auto-initialize collapse, just ensure toggle works
+      // Initialize new collapse instance with toggle: false to preserve current state
+      new bootstrap.Collapse(collapseElement, { toggle: false });
     });
   }
   
@@ -327,10 +329,19 @@
   window.addEventListener("pageshow", (event) => {
     if (event.persisted || isBackForwardNavigation()) {
       suppressOverlay(750);
+      // Reinitialize Bootstrap components after back/forward navigation
+      // Use setTimeout to ensure DOM is fully ready after bfcache restore
+      setTimeout(() => {
+        reinitializeBootstrapComponents();
+      }, 50);
     }
   });
   window.addEventListener("popstate", () => {
     suppressOverlay(750);
+    // Reinitialize Bootstrap components after popstate (browser back/forward)
+    setTimeout(() => {
+      reinitializeBootstrapComponents();
+    }, 50);
   });
   window.addEventListener("beforeunload", () => {
     // Keep overlay visible when we're intentionally navigating after a submit;
