@@ -12,6 +12,7 @@
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     bool isManager = (await AuthZ.AuthorizeAsync(User, "AtLeast.Manager")).Succeeded || User.IsInRole("Admin");
+    
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
         "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
         "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
@@ -130,7 +131,13 @@
                     var assistant = resolveUserName(item.AssistantManagerUserId);
                     var manager = resolveUserName(item.ManagerUserId);
                     var statusName = item.Status?.StatusName ?? "-";
-                    var hideButton = statusName.Equals("Completed", StringComparison.OrdinalIgnoreCase) || statusName.Equals("Closed", StringComparison.OrdinalIgnoreCase) || statusName.Equals("Waiting Pickup", StringComparison.OrdinalIgnoreCase) || statusName.Equals("In Progress", StringComparison.OrdinalIgnoreCase);
+                    // Status setelah publish - tidak boleh edit/delete
+                    var isPublished = statusName.Equals("Waiting Pickup", StringComparison.OrdinalIgnoreCase) 
+                                   || statusName.Equals("In Progress", StringComparison.OrdinalIgnoreCase)
+                                   || statusName.Equals("Completed", StringComparison.OrdinalIgnoreCase) 
+                                   || statusName.Equals("Closed", StringComparison.OrdinalIgnoreCase);
+                    var canEditThisItem = canEdit.Succeeded && !isPublished;
+                    var canDeleteThisItem = canDelete.Succeeded && !isPublished;
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
                             @item.JobName
@@ -172,7 +179,7 @@
                             <span class="badge rounded-pill @BadgeClass(statusName)">@statusName</span>
                         </td>
                         <td class="text-md-center d-flex d-sm-table-cell position-sticky end-0 width-10-rem" data-label="Action">
-                            @if (!hideButton) {
+                            @if (canEditThisItem) {
                                 <a class="btn btn-outline-warning btn-sm mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
                                     <i class="bi bi-pencil-fill"></i>
                                     <span class="ms-1">Edit</span>
@@ -182,7 +189,7 @@
                                 <i class="bi bi-eye-fill"></i>
                                 <span class="ms-1">Detail</span>
                             </a>
-                            @if (canDelete.Succeeded && !hideButton) {
+                            @if (canDeleteThisItem) {
                                 var deleteTitle = string.IsNullOrWhiteSpace(item.Wonum)
                                 ? "Delete procurement?"
                                 : $"Delete {item.Wonum}?";

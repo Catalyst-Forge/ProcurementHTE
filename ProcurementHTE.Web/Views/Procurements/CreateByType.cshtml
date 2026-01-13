@@ -18,6 +18,9 @@
     var assistantManagerOptions = (Model.AssistantManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
     var managerOptions = (Model.ManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
 
+    // Helper untuk format date - return null jika MinValue agar input kosong
+    string? FormatDateValue(DateTime date) => date == DateTime.MinValue ? null : date.ToString("yyyy-MM-dd");
+
     var jobTypeOptions = new SelectList(jobTypes, "JobTypeId", "TypeName", procurement.JobTypeId);
 
     var unitTypes = ViewBag.UnitTypes as List<UnitType> ?? new List<UnitType>();
@@ -33,10 +36,26 @@
     </a>
 </header>
 
-<form asp-action="Create" method="post" enctype="multipart/form-data" class="js-loading-form" id="procurementForm">
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="js-loading-form" id="procurementForm" novalidate hx-boost="false">
     @Html.AntiForgeryToken()
 
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    <!-- General Errors Display (for status not found, etc.) -->
+    @if (!ViewData.ModelState.IsValid)
+    {
+        var generalErrors = ViewData.ModelState[""]?.Errors;
+        if (generalErrors != null && generalErrors.Count > 0)
+        {
+            <div class="alert alert-danger mb-3">
+                <strong><i class="bi bi-exclamation-triangle"></i> Error:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach (var error in generalErrors)
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+    }
 
     <!-- OVERVIEW -->
     <section class="card shadow-sm mb-3 p-2 rounded-4">
@@ -111,17 +130,17 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label asp-for="Procurement.DocumentDate" class="form-label"></label>
-                    <input asp-for="Procurement.DocumentDate" type="date" class="form-control" />
+                    <input asp-for="Procurement.DocumentDate" type="date" class="form-control" value="@FormatDateValue(Model.Procurement.DocumentDate)" />
                     <span class="text-danger" asp-validation-for="Procurement.DocumentDate"></span>
                 </div>
                 <div class="col-md-3">
                     <label asp-for="Procurement.StartDate" class="form-label"></label>
-                    <input asp-for="Procurement.StartDate" type="date" class="form-control" />
+                    <input asp-for="Procurement.StartDate" type="date" class="form-control" value="@FormatDateValue(Model.Procurement.StartDate)" />
                     <span class="text-danger" asp-validation-for="Procurement.StartDate"></span>
                 </div>
                 <div class="col-md-3">
                     <label asp-for="Procurement.EndDate" class="form-label"></label>
-                    <input asp-for="Procurement.EndDate" type="date" class="form-control" />
+                    <input asp-for="Procurement.EndDate" type="date" class="form-control" value="@FormatDateValue(Model.Procurement.EndDate)" />
                     <span class="text-danger" asp-validation-for="Procurement.EndDate"></span>
                 </div>
                 <div class="col-md-3">
@@ -164,7 +183,7 @@
                     <label asp-for="Procurement.SpmpNumber" class="form-label"></label>
                     <div class="input-group">
                         <input asp-for="Procurement.SpmpNumber" class="form-control" maxlength="50" placeholder="e.g., 4514" />
-                        <span class="input-group-text">/PDC-1110/2025-S0</span>
+                        <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
                     </div>
                     <small class="form-text text-muted">Masukkan angka/kode saja (contoh: 4514)</small>
                     <span class="text-danger" asp-validation-for="Procurement.SpmpNumber"></span>
@@ -182,7 +201,7 @@
                     <label asp-for="Procurement.OeNumber" class="form-label"></label>
                     <div class="input-group">
                         <input asp-for="Procurement.OeNumber" class="form-control" maxlength="50" placeholder="e.g., OE-TRS" />
-                        <span class="input-group-text">/PDC-1110/2025-S0</span>
+                        <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
                     </div>
                     <small class="form-text text-muted">Masukkan prefix saja (contoh: OE-TRS)</small>
                     <span class="text-danger" asp-validation-for="Procurement.OeNumber"></span>
@@ -196,6 +215,20 @@
                         <input class="form-control" asp-for="Procurement.RaNumber" />
                         <span class="text-danger" asp-validation-for="Procurement.RaNumber"></span>
                     }
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <label asp-for="Procurement.NoRig" class="form-label"></label>
+                    <input asp-for="Procurement.NoRig" class="form-control" maxlength="100" placeholder="Masukkan No. Rig" />
+                    <span class="text-danger" asp-validation-for="Procurement.NoRig"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Procurement.NoHte" class="form-label"></label>
+                    <input asp-for="Procurement.NoHte" class="form-control" maxlength="100" placeholder="Masukkan No. HTE" />
+                    <span class="text-danger" asp-validation-for="Procurement.NoHte"></span>
                 </div>
             </div>
         </fieldset>
@@ -215,39 +248,58 @@
             <hr />
 
             <div class="row g-3" id="offers-container">
-                <div class="col-12 offer-row position-relative">
-                    <input type="hidden" name="Offers.Index" value="0" />
+                @{
+                    var offers = Model.Offers ?? new List<ProcOffer>();
+                    // Jika tidak ada offers, tampilkan 1 row kosong
+                    if (!offers.Any())
+                    {
+                        offers = new List<ProcOffer> { new ProcOffer() };
+                    }
+                }
+                @for (var i = 0; i < offers.Count; i++)
+                {
+                    var offer = offers[i];
+                    var idx = i;
+                    <div class="col-12 offer-row position-relative">
+                        <input type="hidden" name="Offers.Index" value="@idx" />
 
-                    <div class="row g-1 align-items-end">
-                        <div class="col-md-10">
-                            <div class="row g-1">
-                                <div class="col-md-6">
-                                    <label class="form-label" for="Offers_ItemPenawaran">Item <span class="text-danger">*</span></label>
-                                    <input class="form-control" id="Offers_ItemPenawaran" name="Offers[0].ItemPenawaran" data-val="true" data-val-required="The ItemPenawaran field is required." aria-describedby="Offers_ItemPenawaran-error" aria-invalid="false" />
-                                    <span class="text-danger field-validation-valid" data-valmsg-for="Offers[0].ItemPenawaran" data-valmsg-replace="true"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label" for="Offers_Qty">Qty Items <span class="text-danger">*</span></label>
-                                    <input type="number" min="1" step="1"
-                                           class="form-control text-end" id="Offers_Qty"
-                                           name="Offers[0].Qty" data-val="true" data-val-required="The Quantity field is required." aria-describedby="Offers_Qty-error" aria-invalid="false" />
-                                    <span class="text-danger field-validation-valid" data-valmsg-for="Offers[0].Qty" data-valmsg-replace="true"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label" for="Offers_Unit">Unit Items <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="Offers_Unit" name="Offers[0].Unit" placeholder="Pcs, Unit, Set..." data-val="true" data-val-required="The Unit field is required." aria-describedby="Offers_Unit-error" aria-invalid="false" />
-                                    <span class="text-danger field-validation-valid" data-valmsg-for="Offers[0].Unit" data-valmsg-replace="true"></span>
+                        <div class="row g-1 align-items-end">
+                            <div class="col-md-10">
+                                <div class="row g-1">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Item <span class="text-danger">*</span></label>
+                                        <input class="form-control" 
+                                               name="Offers[@(idx)].ItemPenawaran" 
+                                               value="@offer.ItemPenawaran" />
+                                        @Html.ValidationMessage($"Offers[{idx}].ItemPenawaran", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Qty Items <span class="text-danger">*</span></label>
+                                        <input type="number" min="1" step="1"
+                                               class="form-control text-end"
+                                               name="Offers[@(idx)].Qty" 
+                                               value="@(offer.Qty > 0 ? offer.Qty : "")" />
+                                        @Html.ValidationMessage($"Offers[{idx}].Qty", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Unit Items <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" 
+                                               name="Offers[@(idx)].Unit" 
+                                               value="@offer.Unit"
+                                               placeholder="Pcs, Unit, Set..." />
+                                        @Html.ValidationMessage($"Offers[{idx}].Unit", new { @class = "text-danger" })
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="button"
-                                    class="btn btn-outline-danger js-remove-offer w-100">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="col-md-2">
+                                <button type="button"
+                                        class="btn btn-outline-danger js-remove-offer w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
         </fieldset>
     </section>
@@ -286,21 +338,23 @@
         </fieldset>
     </section>
 
+    <!-- Hidden field for submit action -->
+    <input type="hidden" name="submitAction" id="submitActionField" value="Created" />
+    
     <div class="d-flex justify-content-end gap-2 mb-2">
         <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
 
-        <button type="submit" class="btn btn-outline-secondary" name="submitAction" value="Draft">
+        <button type="submit" class="btn btn-outline-secondary" id="btn-save-draft" onclick="document.getElementById('submitActionField').value='Draft';">
             <i class="bi bi-save"></i> Save as Draft
         </button>
 
-        <button type="submit" class="btn btn-success" name="submitAction" value="Created">
+        <button type="submit" class="btn btn-success" id="btn-create" onclick="document.getElementById('submitActionField').value='Created';">
             <i class="bi bi-check2-circle"></i> Create
         </button>
     </div>
 </form>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script>
         (function () {
             if (window.procurementOfferInit) return;
@@ -324,7 +378,15 @@
             }
 
             function getNextIndex() {
-                return document.querySelectorAll('input[name="Offers.Index"]').length;
+                const indexInputs = document.querySelectorAll('input[name="Offers.Index"]');
+                let maxIndex = -1;
+                indexInputs.forEach(function(input) {
+                    const val = parseInt(input.value, 10);
+                    if (!isNaN(val) && val > maxIndex) {
+                        maxIndex = val;
+                    }
+                });
+                return maxIndex + 1;
             }
 
             // Offer Row Template

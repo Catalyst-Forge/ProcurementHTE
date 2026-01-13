@@ -25,6 +25,20 @@
     var emptyOfferKey = Guid.NewGuid().ToString("N");
 }
 
+@functions {
+    // Helper function to format date for input type="date"
+    // Returns empty string if date is default (01/01/0001)
+    string FormatDateValue(DateTime date)
+    {
+        return date == default ? "" : date.ToString("yyyy-MM-dd");
+    }
+
+    string FormatNullableDateValue(DateTime? date)
+    {
+        return date.HasValue && date.Value != default ? date.Value.ToString("yyyy-MM-dd") : "";
+    }
+}
+
 <header class="hstack justify-content-between mb-3">
     <div>
         <h2 class="mb-1">@ViewData["Title"]</h2>
@@ -39,7 +53,7 @@
     </a>
 </header>
 
-<form asp-action="Edit" method="post" enctype="multipart/form-data" class="js-loading-form">
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="js-loading-form" hx-boost="false">
     @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="ProcurementId" />
@@ -62,7 +76,6 @@
                 <div class="col-md-4">
                     <label asp-for="ProcurementCategory" class="form-label">Jenis Pengadaan</label>
                     <select asp-for="ProcurementCategory" class="form-select" asp-items="categoryOptions">
-                        <option value="">Goods atau Services</option>
                     </select>
                     <span asp-validation-for="ProcurementCategory" class="text-danger"></span>
                 </div>
@@ -105,22 +118,22 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label asp-for="DocumentDate" class="form-label"></label>
-                    <input asp-for="DocumentDate" type="date" class="form-control" />
+                    <input asp-for="DocumentDate" type="date" class="form-control" value="@FormatDateValue(Model.DocumentDate)" />
                     <span asp-validation-for="DocumentDate" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
                     <label asp-for="StartDate" class="form-label"></label>
-                    <input asp-for="StartDate" type="date" class="form-control" />
+                    <input asp-for="StartDate" type="date" class="form-control" value="@FormatDateValue(Model.StartDate)" />
                     <span asp-validation-for="StartDate" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
                     <label asp-for="EndDate" class="form-label"></label>
-                    <input asp-for="EndDate" type="date" class="form-control" />
+                    <input asp-for="EndDate" type="date" class="form-control" value="@FormatDateValue(Model.EndDate)" />
                     <span asp-validation-for="EndDate" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
                     <label asp-for="PotentialAccrualDate" class="form-label"></label>
-                    <input asp-for="PotentialAccrualDate" type="date" class="form-control" />
+                    <input asp-for="PotentialAccrualDate" type="date" class="form-control" value="@FormatNullableDateValue(Model.PotentialAccrualDate)" />
                     <span asp-validation-for="PotentialAccrualDate" class="text-danger"></span>
                 </div>
             </div>
@@ -155,7 +168,7 @@
                     <label asp-for="SpmpNumber" class="form-label"></label>
                     <div class="input-group">
                         <input asp-for="SpmpNumber" class="form-control" maxlength="50" placeholder="e.g., 4514" />
-                        <span class="input-group-text">/PDC-1110/2025-S0</span>
+                        <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
                     </div>
                     <small class="form-text text-muted">Masukkan angka/kode saja (contoh: 4514)</small>
                     <span asp-validation-for="SpmpNumber" class="text-danger"></span>
@@ -172,7 +185,7 @@
                     <label asp-for="OeNumber" class="form-label"></label>
                     <div class="input-group">
                         <input asp-for="OeNumber" class="form-control" maxlength="50" placeholder="e.g., OE-TRS" />
-                        <span class="input-group-text">/PDC-1110/2025-S0</span>
+                        <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
                     </div>
                     <small class="form-text text-muted">Masukkan prefix saja (contoh: OE-TRS)</small>
                     <span asp-validation-for="OeNumber" class="text-danger"></span>
@@ -181,6 +194,19 @@
                     <label asp-for="RaNumber" class="form-label"></label>
                     <input asp-for="RaNumber" class="form-control" maxlength="100" />
                     <span asp-validation-for="RaNumber" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <label asp-for="NoRig" class="form-label"></label>
+                    <input asp-for="NoRig" class="form-control" maxlength="100" placeholder="Masukkan No. Rig" />
+                    <span asp-validation-for="NoRig" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="NoHte" class="form-label"></label>
+                    <input asp-for="NoHte" class="form-control" maxlength="100" placeholder="Masukkan No. HTE" />
+                    <span asp-validation-for="NoHte" class="text-danger"></span>
                 </div>
             </div>
         </fieldset>

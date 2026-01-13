@@ -60,6 +60,8 @@
                 <th class="border-end" style="min-width: 120px;">Nilai Realisasi</th>
                 <th class="border-end" style="min-width: 120px;">No SPMP</th>
                 <th class="border-end" style="min-width: 120px;">No HTE</th>
+                <th class="border-end" style="min-width: 120px;">SA No</th>
+                <th class="border-end" style="min-width: 120px;">SP3 No</th>
                 <th class="border-end" style="min-width: 100px;">Project Region</th>
                 <th class="border-end" style="min-width: 120px;">Project Code</th>
                 <th class="border-end" style="min-width: 150px;">Link Dokumen</th>
@@ -94,7 +96,7 @@
             @if (Model == null || !Model.Items.Any())
             {
                 <tr>
-                    <td colspan="47" class="text-center text-muted py-5">
+                    <td colspan="49" class="text-center text-muted py-5">
                         <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                         @if (!string.IsNullOrWhiteSpace(Model?.Search))
                         {
@@ -137,6 +139,8 @@
                         <td class="text-end">@formatMoney(item.NilaiRealisasi)</td>
                         <td>@formatText(item.NoSpmp)</td>
                         <td>@formatText(item.NoHte)</td>
+                        <td>@formatText(item.SANo)</td>
+                        <td>@formatText(item.SP3No)</td>
                         <td>@formatText(item.ProjectRegion)</td>
                         <td>@formatText(item.ProjectCode)</td>
                         <td>

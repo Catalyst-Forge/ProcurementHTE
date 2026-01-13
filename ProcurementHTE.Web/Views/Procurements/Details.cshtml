@@ -32,7 +32,19 @@
     var statusName = Model?.Status?.StatusName;
     var canPublish = pnl != null && statusName == "Created";
     var canUnpublish = statusName == "Waiting Pickup";
-    var canEditDelete = statusName == "Created" || statusName == "Draft";
+    
+    // Role-based edit authorization
+    var prePickupStatuses = new[] { "Draft", "Created", "Waiting Pickup" };
+    var isPrePickup = prePickupStatuses.Contains(statusName, StringComparer.OrdinalIgnoreCase);
+    var earlyEditRoles = new[] { "Admin", "Operation", "Assistant Manager HTE" };
+    var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS", "Supply Chain Management" };
+    var userRoles = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+    var hasEarlyEditRole = userRoles.Any(r => earlyEditRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
+    var hasLateEditRole = userRoles.Any(r => lateEditRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
+    
+    // canEditDelete: hanya tampil jika status Draft/Created DAN user punya akses
+    var canEditByStatus = hasEarlyEditRole || (!isPrePickup && hasLateEditRole) || (!hasLateEditRole && !hasEarlyEditRole);
+    var canEditDelete = (statusName == "Created" || statusName == "Draft") && canEdit.Succeeded && canEditByStatus;
 }
 
 <header class="mb-3">
@@ -831,14 +843,16 @@
 
 @section Scripts {
     <script>
-        var currentDownloadDocId = null;
-        var currentPreviewUrl = null;
-        const docPreviewUrlTemplate = '@Url.Action("PreviewUrl", "ProcurementDocuments", new { id = "__DOC_ID__", procurementId = Model?.ProcurementId })';
-        const buildDocPreviewUrl = (docId) => (
-            docId
-                ? docPreviewUrlTemplate.replace('__DOC_ID__', encodeURIComponent(docId))
-                : '#'
-        );
+        (function() {
+            // Wrap in IIFE to avoid duplicate declaration errors on HTMX navigation
+            var currentDownloadDocId = null;
+            var currentPreviewUrl = null;
+            var docPreviewUrlTemplate = '@Url.Action("PreviewUrl", "ProcurementDocuments", new { id = "__DOC_ID__", procurementId = Model?.ProcurementId })';
+            var buildDocPreviewUrl = function(docId) {
+                return docId
+                    ? docPreviewUrlTemplate.replace('__DOC_ID__', encodeURIComponent(docId))
+                    : '#';
+            };
 
         function initPreviewHandlers() {
             document.querySelectorAll(".btn-preview").forEach(btn => {
@@ -1004,5 +1018,6 @@
             });
             window._unpublishHandlerAttached = true;
         }
+        })(); // End IIFE
     </script>
 }
