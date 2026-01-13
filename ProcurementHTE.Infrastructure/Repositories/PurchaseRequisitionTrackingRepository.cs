@@ -52,7 +52,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(p => p.StatusHistories)
                 .ThenInclude(h => h.ChangedByUser)
                 .Include(p => p.Procurements)
-                .ThenInclude(proc => proc.ProcDocuments)
+                .ThenInclude(proc => proc.ProcDocuments!)
+                .ThenInclude(pd => pd.DocumentType)
                 .Include(p => p.Procurements)
                 .ThenInclude(proc => proc.JobType)
                 .ThenInclude(jt => jt!.JobTypeDocuments)
@@ -84,10 +85,24 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await _context.Users.FindAsync([userId], ct);
         }
 
-        public Task UpdateAsync(PurchaseRequisition pr, CancellationToken ct = default)
+        public async Task UpdateAsync(PurchaseRequisition pr, CancellationToken ct = default)
         {
-            _context.Entry(pr).State = EntityState.Modified;
-            return Task.CompletedTask;
+            // Check if entity is already being tracked
+            var trackedEntity = _context.ChangeTracker.Entries<PurchaseRequisition>()
+                .FirstOrDefault(e => e.Entity.PrId == pr.PrId);
+            
+            if (trackedEntity != null)
+            {
+                // Entity is already tracked, update its properties
+                var entry = trackedEntity;
+                entry.CurrentValues.SetValues(pr);
+            }
+            else
+            {
+                // Entity is not tracked, attach and mark as modified
+                _context.Entry(pr).State = EntityState.Modified;
+            }
+            await Task.CompletedTask;
         }
 
         public async Task AddStatusHistoryAsync(

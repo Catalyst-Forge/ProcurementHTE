@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Infrastructure.Data;
@@ -25,6 +26,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var query = _context
                 .Procurements.Include(p => p.JobType)
                 .Include(p => p.PurchaseRequisition)
+                .ThenInclude(pr => pr!.StatusHistories)
                 .Include(p => p.ProcOffers)
                 .Include(p => p.ProcDocuments!)
                 .ThenInclude(pd => pd.DocumentType)
@@ -102,6 +104,26 @@ namespace ProcurementHTE.Infrastructure.Repositories
                             ? string.Join(", ", p.ProcOffers.Select(o => o.ItemPenawaran))
                             : null;
 
+                    // Get approval dates from PR Status History
+                    var statusHistories = pr?.StatusHistories?.ToList() ?? new List<Core.Models.PurchaseRequisitionStatusHistory>();
+                    
+                    // Tanggal Approval Analyst = ketika status berubah ke WaitingApprovalAsstManager
+                    var approvalAnalystDate = statusHistories
+                        .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.WaitingApprovalAsstManager)?.ChangedAt;
+                    
+                    // Tanggal Approval Asst Manager = ketika status berubah ke WaitingApprovalManager  
+                    var approvalAsstManagerDate = statusHistories
+                        .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.WaitingApprovalManager)?.ChangedAt;
+                    
+                    // Tanggal Approval Manager = ketika status berubah ke OnSubmitISPA
+                    // Ini adalah tanggal selesai untuk dokumen RKS, BOQ, MEMO, RA
+                    var approvalManagerDate = statusHistories
+                        .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.OnSubmitISPA)?.ChangedAt;
+                    
+                    // Tanggal Release PR = ketika status berubah ke OnSubmitHardcopy
+                    var releasePrDate = statusHistories
+                        .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.OnSubmitHardcopy)?.ChangedAt;
+
                     return new LdpRecapDto
                     {
                         ProcurementId = p.ProcurementId,
@@ -120,11 +142,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         // PR Related - use PR description as text pekerjaan PR
                         TextPekerjaanPr = pr?.Description,
 
-                        // Additional Info - fields not available, will show "-"
-                        Flag50K = null,
-                        NoAccrual = null,
+                        // Additional Info - Flag50K computed from TextPekerjaanPr length
+                        Flag50K = !string.IsNullOrEmpty(pr?.Description) ? pr.Description.Length.ToString() : null,
+                        NoAccrual = p.NoAccrual,
                         YearJob = p.StartDate.Year,
-                        NoRig = null,
+                        NoRig = p.NoRig,
 
                         // Financial
                         NilaiPnl = profitLoss?.Profit,
@@ -133,10 +155,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
                         // Document Numbers
                         NoSpmp = p.SpmpNumber,
-                        NoHte = null,
+                        NoHte = p.NoHte,
                         ProjectRegion = p.ProjectRegion.ToString(),
                         ProjectCode = p.ProjectCode,
                         LinkDokumen = procDocs.FirstOrDefault()?.ObjectKey,
+
+                        // Invoice Data
+                        SANo = p.SANo,
+                        SP3No = p.SP3No,
 
                         // Items
                         UnitItemPenawaran = unitItems,
@@ -144,30 +170,30 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         Memorandum = p.MemoNumber,
                         TglDoc = p.DocumentDate,
 
-                        // Keterangan - fields not available
+                        // Keterangan - Accrual fields now mapped from Procurement
                         Keterangan1 = p.Note,
-                        PotensiAccrual = null,
+                        PotensiAccrual = p.PotensiAccrual,
                         TglAccrual = p.PotentialAccrualDate,
-                        StatusAccrual = null,
+                        StatusAccrual = p.StatusAccrual,
 
-                        // Document Dates - CreatedAt as start date, no end date available
+                        // Document Dates - CreatedAt as start date, Manager approval as end date
                         RksTglMulai = rksDoc?.CreatedAt,
-                        RksTglSelesai = null,
+                        RksTglSelesai = approvalManagerDate,
                         BoqTglMulai = boqDoc?.CreatedAt,
-                        BoqTglSelesai = null,
+                        BoqTglSelesai = approvalManagerDate,
                         MemoTglMulai = memoDoc?.CreatedAt,
-                        MemoTglSelesai = null,
+                        MemoTglSelesai = approvalManagerDate,
                         RaTglMulai = raDoc?.CreatedAt,
-                        RaTglSelesai = null,
+                        RaTglSelesai = approvalManagerDate,
 
                         // Purchase Requisition
                         NoPr = pr?.PrNumber,
                         TanggalBuatPr = pr?.CreatedAt,
-                        TanggalRilisPr = null,
+                        TanggalRilisPr = pr?.CreatedAt, // Tanggal rilis PR = tanggal buat PR
 
-                        // Approval Dates - not available in current model
-                        TanggalApprovalOps = null,
-                        TanggalApprovalManager = null,
+                        // Approval Dates - from PR Status History
+                        TanggalApprovalOps = approvalAnalystDate,
+                        TanggalApprovalManager = approvalManagerDate,
                         TanggalApprovalVp = null,
                         TanggalApprovalDirektur = null,
                         TanggalSubmitIspa = pr?.IspaSubmittedAt,

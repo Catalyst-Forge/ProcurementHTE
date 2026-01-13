@@ -126,10 +126,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Take(take)
                 .Select(proc => new ProcurementSummary
                 {
-                    ProcNum = proc.ProcNum,
+                    ProcNum = proc.ProcNum ?? string.Empty,
                     JobTypeName = proc.JobType != null ? proc.JobType.TypeName : string.Empty,
                     StatusName = proc.Status != null ? proc.Status.StatusName : string.Empty,
-                    CreatedBy = proc.User != null ? proc.User.FullName! : string.Empty,
+                    CreatedBy = proc.User != null ? proc.User.FullName ?? string.Empty : string.Empty,
                     CreatedDate = proc.CreatedAt,
                     TotalAmount =
                         proc.ProfitLosses.SelectMany(pl => pl.Items)
@@ -156,7 +156,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Select(pr => new ApprovalSummary
                 {
                     ProcNum = pr.Procurements.FirstOrDefault() != null 
-                        ? pr.Procurements.First().ProcNum 
+                        ? pr.Procurements.First().ProcNum ?? "-"
                         : "-",
                     DocumentName = pr.PrNumber ?? "-",
                     ApprovalRole = pr.Status.ToString(),
@@ -340,6 +340,58 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     IsOnline = u.LastLoginAt >= onlineThreshold,
                 })
                 .ToListAsync(ct);
+        }
+
+        // Admin Extended Metrics
+        public async Task<AccrualStatistics> GetAccrualStatisticsAsync(CancellationToken ct = default)
+        {
+            var totalProcurements = await _context.Procurements.CountAsync(ct);
+            var filledCount = await _context.Procurements
+                .CountAsync(p => p.NoAccrual != null && p.NoAccrual != "", ct);
+            var pendingCount = totalProcurements - filledCount;
+            var totalPotensiAccrual = await _context.Procurements
+                .Where(p => p.PotensiAccrual.HasValue)
+                .SumAsync(p => p.PotensiAccrual ?? 0m, ct);
+
+            return new AccrualStatistics(pendingCount, filledCount, totalPotensiAccrual);
+        }
+
+        public async Task<List<RegionDistribution>> GetRegionDistributionAsync(CancellationToken ct = default)
+        {
+            // Get procurements with their region - use simple query to avoid translation issues
+            var procurements = await _context.Procurements
+                .Where(p => !p.IsDeleted)
+                .Select(p => new
+                {
+                    p.ProcurementId,
+                    Region = p.ProjectRegion
+                })
+                .ToListAsync(ct);
+
+            // Get revenue data separately
+            var revenueData = await _context.ProfitLosses
+                .Where(pl => !pl.IsDeleted)
+                .Select(pl => new
+                {
+                    pl.ProcurementId,
+                    Revenue = pl.Items.Sum(item => (decimal?)item.Revenue) ?? 0m
+                })
+                .ToListAsync(ct);
+
+            // Join and aggregate in memory
+            var revenueByProcurement = revenueData
+                .GroupBy(r => r.ProcurementId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Revenue));
+
+            return procurements
+                .GroupBy(p => p.Region)
+                .Select(g => new RegionDistribution(
+                    g.Key.ToString(),
+                    g.Count(),
+                    g.Sum(p => revenueByProcurement.GetValueOrDefault(p.ProcurementId, 0m))
+                ))
+                .OrderByDescending(r => r.Count)
+                .ToList();
         }
     }
 }

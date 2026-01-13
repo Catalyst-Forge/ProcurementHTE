@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -55,6 +56,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Include(procurement => procurement.User)
                 .Include(procurement => procurement.ProcDetails)
                 .Include(procurement => procurement.ProfitLosses)
+                    .ThenInclude(pl => pl.SelectedVendor)
+                .Include(procurement => procurement.AppoUser)
+                .Include(procurement => procurement.ApInvoiceUser)
+                .Include(procurement => procurement.ArUser)
                 .FirstOrDefaultAsync(procurement => procurement.ProcurementId == id);
         }
 
@@ -123,6 +128,30 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Where(p =>
                     p.Status != null && p.Status.StatusName == "Waiting Pickup"
                 );
+
+            if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
+                query = ApplySearchFilter(query, search.Trim(), fields);
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(w => w.CreatedAt),
+                ct: ct
+            );
+        }
+
+        public async Task<Core.Common.PagedResult<Procurement>> GetMyAppoPickupsAsync(
+            string appoUserId,
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        )
+        {
+            var query = BuildBaseQuery()
+                .Include(p => p.AppoUser)
+                .Where(p => p.AppoUserId == appoUserId);
 
             if (!string.IsNullOrWhiteSpace(search) && fields.Count > 0)
                 query = ApplySearchFilter(query, search.Trim(), fields);
@@ -461,6 +490,388 @@ namespace ProcurementHTE.Infrastructure.Repositories
             ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx
             && sqlEx.Number == 2627
             && (sqlEx.Message?.Contains("AK_Procurements_ProcNum") ?? false);
+
+        #endregion
+
+        #region Accrual Methods
+
+        public async Task<Core.Common.PagedResult<Procurement>> GetProcurementsForAccrualAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? filter,
+            CancellationToken ct
+        )
+        {
+            // Status yang diizinkan untuk muncul di Accrual (setelah Waiting Pickup)
+            var allowedStatuses = new[] { "Waiting Pickup", "In Progress", "Completed", "Closed" };
+
+            var query = _context.Procurements
+                .Include(p => p.JobType)
+                .Include(p => p.Status)
+                .Include(p => p.ProfitLosses)
+                    .ThenInclude(pl => pl.SelectedVendor)
+                .Include(p => p.AccrualFilledByUser)
+                .AsNoTracking();
+
+            // Filter: hanya procurement yang sudah punya SPMP (setelah Operation selesai)
+            // DAN status minimal "Waiting Pickup"
+            query = query.Where(p => 
+                !string.IsNullOrEmpty(p.SpmpNumber) &&
+                p.Status != null && 
+                allowedStatuses.Contains(p.Status.StatusName));
+
+            // Filter berdasarkan status accrual
+            if (!string.IsNullOrEmpty(filter))
+            {
+                query = filter.ToLower() switch
+                {
+                    "pending" => query.Where(p => string.IsNullOrEmpty(p.NoAccrual)),
+                    "filled" => query.Where(p => !string.IsNullOrEmpty(p.NoAccrual)),
+                    _ => query
+                };
+            }
+
+            // Search
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = $"%{search.Trim()}%";
+                query = query.Where(p =>
+                    (p.Wonum != null && EF.Functions.Like(p.Wonum, searchTerm))
+                    || (p.JobName != null && EF.Functions.Like(p.JobName, searchTerm))
+                    || (p.SpkNumber != null && EF.Functions.Like(p.SpkNumber, searchTerm))
+                    || (p.ProcNum != null && EF.Functions.Like(p.ProcNum, searchTerm))
+                    || (p.NoAccrual != null && EF.Functions.Like(p.NoAccrual, searchTerm))
+                );
+            }
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(p => p.CreatedAt),
+                ct: ct
+            );
+        }
+
+        public async Task<Core.Common.PagedResult<Procurement>> GetProcurementsForApInvoiceAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? filter,
+            CancellationToken ct
+        )
+        {
+            var query = _context.Procurements
+                .Include(p => p.JobType)
+                .Include(p => p.Status)
+                .Include(p => p.AppoUser)
+                .Include(p => p.ApInvoiceUser)
+                .Include(p => p.ProfitLosses)
+                    .ThenInclude(pl => pl.SelectedVendor)
+                .AsNoTracking();
+
+            // Filter: procurement yang sudah di-pickup oleh AP-PO DAN sudah Done PO
+            query = query.Where(p =>
+                !string.IsNullOrEmpty(p.AppoUserId) &&
+                p.ProcurementStatus == ProcurementStatus.DonePO);
+
+            // Filter berdasarkan status AP-Invoice pickup
+            if (!string.IsNullOrEmpty(filter))
+            {
+                query = filter.ToLower() switch
+                {
+                    "pending" => query.Where(p => string.IsNullOrEmpty(p.ApInvoiceUserId)),
+                    "filled" => query.Where(p => !string.IsNullOrEmpty(p.ApInvoiceUserId)),
+                    _ => query
+                };
+            }
+
+            // Search
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = $"%{search.Trim()}%";
+                query = query.Where(p =>
+                    (p.Wonum != null && EF.Functions.Like(p.Wonum, searchTerm))
+                    || (p.JobName != null && EF.Functions.Like(p.JobName, searchTerm))
+                    || (p.SpkNumber != null && EF.Functions.Like(p.SpkNumber, searchTerm))
+                    || (p.ProcNum != null && EF.Functions.Like(p.ProcNum, searchTerm))
+                    || (p.SANo != null && EF.Functions.Like(p.SANo, searchTerm))
+                    || (p.SP3No != null && EF.Functions.Like(p.SP3No, searchTerm))
+                );
+            }
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(p => p.CreatedAt),
+                ct: ct
+            );
+        }
+
+        public async Task<Core.Common.PagedResult<Procurement>> GetMyApInvoicePickupsAsync(
+            string apInvoiceUserId,
+            int page,
+            int pageSize,
+            string? search,
+            CancellationToken ct
+        )
+        {
+            var query = _context.Procurements
+                .Include(p => p.JobType)
+                .Include(p => p.Status)
+                .Include(p => p.AppoUser)
+                .Include(p => p.ApInvoiceUser)
+                .Include(p => p.ProfitLosses)
+                    .ThenInclude(pl => pl.SelectedVendor)
+                .AsNoTracking()
+                .Where(p => p.ApInvoiceUserId == apInvoiceUserId);
+
+            // Search
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = $"%{search.Trim()}%";
+                query = query.Where(p =>
+                    (p.Wonum != null && EF.Functions.Like(p.Wonum, searchTerm))
+                    || (p.JobName != null && EF.Functions.Like(p.JobName, searchTerm))
+                    || (p.SpkNumber != null && EF.Functions.Like(p.SpkNumber, searchTerm))
+                    || (p.ProcNum != null && EF.Functions.Like(p.ProcNum, searchTerm))
+                    || (p.SANo != null && EF.Functions.Like(p.SANo, searchTerm))
+                    || (p.SP3No != null && EF.Functions.Like(p.SP3No, searchTerm))
+                );
+            }
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(p => p.ApInvoicePickedUpAt ?? p.CreatedAt),
+                ct: ct
+            );
+        }
+
+        public async Task<Core.Common.PagedResult<Procurement>> GetProcurementsForArPickupAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? filter,
+            CancellationToken ct
+        )
+        {
+            // Status yang diizinkan untuk AR pickup (setelah publish)
+            var allowedStatuses = new[] { "Waiting Pickup", "In Progress", "Completed", "Closed" };
+
+            var query = _context.Procurements
+                .Include(p => p.JobType)
+                .Include(p => p.Status)
+                .Include(p => p.AppoUser)
+                .Include(p => p.ArUser)
+                .Include(p => p.AccrualFilledByUser)
+                .Include(p => p.ProfitLosses)
+                    .ThenInclude(pl => pl.SelectedVendor)
+                .AsNoTracking();
+
+            // Filter: procurement yang sudah publish (status minimal "Waiting Pickup")
+            // AR bisa pickup secara paralel dengan AP-PO setelah publish
+            query = query.Where(p => 
+                p.Status != null && 
+                allowedStatuses.Contains(p.Status.StatusName));
+
+            // Filter berdasarkan status AR pickup
+            if (!string.IsNullOrEmpty(filter))
+            {
+                query = filter.ToLower() switch
+                {
+                    "pending" => query.Where(p => string.IsNullOrEmpty(p.ArUserId)),
+                    "picked" => query.Where(p => !string.IsNullOrEmpty(p.ArUserId)),
+                    _ => query
+                };
+            }
+
+            // Search
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = $"%{search.Trim()}%";
+                query = query.Where(p =>
+                    (p.Wonum != null && EF.Functions.Like(p.Wonum, searchTerm))
+                    || (p.JobName != null && EF.Functions.Like(p.JobName, searchTerm))
+                    || (p.SpkNumber != null && EF.Functions.Like(p.SpkNumber, searchTerm))
+                    || (p.ProcNum != null && EF.Functions.Like(p.ProcNum, searchTerm))
+                    || (p.NoAccrual != null && EF.Functions.Like(p.NoAccrual, searchTerm))
+                );
+            }
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(p => p.CreatedAt),
+                ct: ct
+            );
+        }
+
+        public async Task<Core.Common.PagedResult<Procurement>> GetMyArPickupsAsync(
+            string arUserId,
+            int page,
+            int pageSize,
+            string? search,
+            CancellationToken ct
+        )
+        {
+            var query = _context.Procurements
+                .Include(p => p.JobType)
+                .Include(p => p.Status)
+                .Include(p => p.AppoUser)
+                .Include(p => p.ArUser)
+                .Include(p => p.AccrualFilledByUser)
+                .Include(p => p.ProfitLosses)
+                    .ThenInclude(pl => pl.SelectedVendor)
+                .AsNoTracking()
+                .Where(p => p.ArUserId == arUserId);
+
+            // Search
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = $"%{search.Trim()}%";
+                query = query.Where(p =>
+                    (p.Wonum != null && EF.Functions.Like(p.Wonum, searchTerm))
+                    || (p.JobName != null && EF.Functions.Like(p.JobName, searchTerm))
+                    || (p.SpkNumber != null && EF.Functions.Like(p.SpkNumber, searchTerm))
+                    || (p.ProcNum != null && EF.Functions.Like(p.ProcNum, searchTerm))
+                    || (p.NoAccrual != null && EF.Functions.Like(p.NoAccrual, searchTerm))
+                );
+            }
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                orderBy: q => q.OrderByDescending(p => p.CreatedAt),
+                ct: ct
+            );
+        }
+
+        #endregion
+
+        #region Procurement Tracking Methods
+
+        public async Task<Procurement?> GetWithTrackingDataAsync(string procurementId, CancellationToken ct = default)
+        {
+            return await _context.Procurements
+                .Include(p => p.JobType)
+                    .ThenInclude(jt => jt!.JobTypeDocuments)
+                    .ThenInclude(jtd => jtd.DocumentType)
+                .Include(p => p.Status)
+                .Include(p => p.PurchaseRequisition)
+                .Include(p => p.IspaSubmittedByUser)
+                .Include(p => p.PoSubmittedByUser)
+                .Include(p => p.HardcopySubmittedByUser)
+                .Include(p => p.RejectedByUser)
+                .Include(p => p.ApprovalSentByUser)
+                .Include(p => p.StatusHistories.OrderBy(h => h.ChangedAt))
+                    .ThenInclude(h => h.ChangedByUser)
+                .Include(p => p.ProcDocuments!)
+                    .ThenInclude(pd => pd.DocumentType)
+                .AsNoTracking()
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(p => p.ProcurementId == procurementId, ct);
+        }
+
+        public async Task<Procurement?> GetByProcNumWithTrackingAsync(string procNum, CancellationToken ct = default)
+        {
+            // Search by ProcNum OR Wonum (Work Order Number)
+            return await _context.Procurements
+                .Include(p => p.JobType)
+                    .ThenInclude(jt => jt!.JobTypeDocuments)
+                    .ThenInclude(jtd => jtd.DocumentType)
+                .Include(p => p.Status)
+                .Include(p => p.PurchaseRequisition)
+                .Include(p => p.IspaSubmittedByUser)
+                .Include(p => p.PoSubmittedByUser)
+                .Include(p => p.HardcopySubmittedByUser)
+                .Include(p => p.RejectedByUser)
+                .Include(p => p.ApprovalSentByUser)
+                .Include(p => p.StatusHistories.OrderBy(h => h.ChangedAt))
+                    .ThenInclude(h => h.ChangedByUser)
+                .Include(p => p.ProcDocuments!)
+                    .ThenInclude(pd => pd.DocumentType)
+                .AsNoTracking()
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(p => p.ProcNum == procNum || p.Wonum == procNum || p.SpmpNumber == procNum, ct);
+        }
+
+        public async Task<IReadOnlyList<Procurement>> GetByPrIdWithTrackingAsync(string prId, CancellationToken ct = default)
+        {
+            return await _context.Procurements
+                .Where(p => p.PrId == prId)
+                .Include(p => p.JobType)
+                    .ThenInclude(jt => jt!.JobTypeDocuments)
+                    .ThenInclude(jtd => jtd.DocumentType)
+                .Include(p => p.Status)
+                .Include(p => p.IspaSubmittedByUser)
+                .Include(p => p.PoSubmittedByUser)
+                .Include(p => p.HardcopySubmittedByUser)
+                .Include(p => p.RejectedByUser)
+                .Include(p => p.ApprovalSentByUser)
+                .Include(p => p.StatusHistories.OrderBy(h => h.ChangedAt))
+                    .ThenInclude(h => h.ChangedByUser)
+                .Include(p => p.ProcDocuments!)
+                    .ThenInclude(pd => pd.DocumentType)
+                .AsNoTracking()
+                .AsSplitQuery()
+                .OrderBy(p => p.CreatedAt)
+                .ToListAsync(ct);
+        }
+
+        public async Task<bool> UpdateStatusWithHistoryAsync(
+            string procurementId,
+            ProcurementStatus newStatus,
+            string? changedByUserId = null,
+            string? note = null,
+            CancellationToken ct = default)
+        {
+            var procurement = await _context.Procurements
+                .FirstOrDefaultAsync(p => p.ProcurementId == procurementId, ct);
+
+            if (procurement == null)
+                return false;
+
+            // Update status
+            var oldStatus = procurement.ProcurementStatus;
+            procurement.ProcurementStatus = newStatus;
+            procurement.UpdatedAt = DateTime.UtcNow;
+
+            // Create history entry
+            var historyEntry = new ProcurementStatusHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                ProcurementId = procurementId,
+                Status = newStatus,
+                ChangedAt = DateTime.UtcNow,
+                ChangedByUserId = changedByUserId,
+                Note = note ?? $"Status changed from {oldStatus} to {newStatus}"
+            };
+
+            _context.ProcurementStatusHistories.Add(historyEntry);
+
+            try
+            {
+                await _context.SaveChangesAsync(ct);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<IReadOnlyList<ProcurementStatusCountDto>> GetCountByProcurementStatusAsync(CancellationToken ct = default)
+        {
+            return await _context.Procurements
+                .GroupBy(p => p.ProcurementStatus)
+                .Select(group => new ProcurementStatusCountDto
+                {
+                    Status = group.Key.ToString(),
+                    Count = group.Count()
+                })
+                .ToListAsync(ct);
+        }
 
         #endregion
     }

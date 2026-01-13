@@ -56,7 +56,6 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
     {
         return await _context
             .PurchaseRequisitions.Include(pr => pr.CreatedByUser)
-            .AsNoTracking()
             .FirstOrDefaultAsync(pr => pr.PrId == id, ct);
     }
 
@@ -108,6 +107,19 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             .FirstOrDefaultAsync(ct);
     }
 
+    public async Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default)
+    {
+        var query = _context.PurchaseRequisitions
+            .Where(pr => pr.PrNumber == prNumber && !pr.IsDeleted);
+        
+        if (!string.IsNullOrEmpty(excludePrId))
+        {
+            query = query.Where(pr => pr.PrId != excludePrId);
+        }
+        
+        return await query.AnyAsync(ct);
+    }
+
     #endregion
 
     #region Command Methods
@@ -126,7 +138,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         CancellationToken ct = default
     )
     {
-        _context.Entry(purchaseRequisition).State = EntityState.Modified;
+        // Entity is already tracked from GetByIdAsync, just save changes
         await _context.SaveChangesAsync(ct);
     }
 
@@ -148,8 +160,10 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             entityToDelete.DeletedAt = DateTime.UtcNow;
             entityToDelete.DeletedBy = deletedByUserId;
             
-            // Prepend dash to PrNumber to allow reuse of the same PR number
-            entityToDelete.PrNumber = $"-{entityToDelete.PrNumber}";
+            // Append deletion timestamp to PrNumber to allow reuse of the same PR number
+            // Format: DELETED_<original>_<timestamp> to ensure uniqueness
+            var timestamp = entityToDelete.DeletedAt.Value.ToString("yyyyMMddHHmmssfff");
+            entityToDelete.PrNumber = $"DELETED_{entityToDelete.PrNumber}_{timestamp}";
             
             await _context.SaveChangesAsync(ct);
         }
