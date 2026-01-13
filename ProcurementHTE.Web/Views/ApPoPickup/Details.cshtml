@@ -1,0 +1,337 @@
+@using ProcurementHTE.Core.Models
+@model Procurement
+@{
+    ViewData["Title"] = "Procurement Details";
+    var no = 1;
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "waiting pickup" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        "in progress" => "bg-primary-subtle text-primary-emphasis border border-primary-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "closed" => "bg-dark-subtle text-dark-emphasis border border-dark-subtle",
+        _ => "bg-light text-body border"
+    };
+    var statusName = Model?.Status?.StatusName;
+}
+
+<header class="mb-3">
+    <div class="hstack flex-wrap justify-content-between my-2">
+        <h1 class="h2 fw-bold">@ViewBag.Title</h1>
+
+        <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button" id="groupNavButton" role="group" aria-label="Button Action">
+            <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
+        </div>
+    </div>
+</header>
+
+@* Content body *@
+<div class="d-grid gap-md-3 mt-2 procurement-content">
+    <div>
+        @* Job Information card *@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Job Information</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <div class="row mb-0">
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ContractType)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ContractType)</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">Job Type</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@((Model?.JobType?.TypeName) ?? "-")</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcurementCategory)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcurementCategory)</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcNum)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcNum)</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectRegion)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProjectRegion)</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectCode)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.ProjectCode</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.JobName)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.JobName)</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.LtcName)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.LtcName)</dd>
+                    </dl>
+                </div>
+            </div>
+        </article>
+
+        @* Reference Numbers Card *@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-hash text-primary me-1"></i> Reference Numbers</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <div class="row mb-0">
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpkNumber)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.SpkNumber</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.SpmpNumber)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.SpmpNumber</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.MemoNumber)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.MemoNumber</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.OeNumber)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.OeNumber</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.RaNumber)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.RaNumber</dd>
+                    </dl>
+                </div>
+            </div>
+        </article>
+
+        @* Schedule & Financials Card *@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-calendar-check text-primary me-1"></i> Schedule</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <div class="row mb-0">
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.StartDate)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.StartDate.ToTanggalIndonesia()</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.EndDate)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.EndDate.ToTanggalIndonesia()</dd>
+                    </dl>
+
+                    <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                        <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.PotentialAccrualDate)</dt>
+                        <dd class="fw-medium text-secondary-emphasis">@Model?.PotentialAccrualDate.ToTanggalIndonesia()</dd>
+                    </dl>
+                </div>
+            </div>
+        </article>
+
+        @* Item penawaran card*@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-list-check text-primary me-1"></i> Items</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <div class="table-responsive rounded-3">
+                    <table class="table table-hover">
+                        <thead class="table-info">
+                            <tr>
+                                <th class="mw-100 text-nowrap text-uppercase">No</th>
+                                <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
+                                <th class="mw-100 text-nowrap text-uppercase">Quantity</th>
+                                <th class="mw-100 text-nowrap text-uppercase">Unit</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @if (Model?.ProcOffers != null)
+                            {
+                                @foreach (var item in Model.ProcOffers)
+                                {
+                                    <tr>
+                                        <td class="text-nowrap">@no</td>
+                                        <td>@item.ItemPenawaran</td>
+                                        <td>@item.Qty</td>
+                                        <td>@item.Unit</td>
+                                    </tr>
+                                    no++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </article>
+
+        @* Job Description card *@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-file-text-fill text-primary me-1"></i> Job Description</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <div class="row mb-0">
+                    <dl class="col-12 mb-3">
+                        <dt class="fw-semibold text-uppercase text-secondary mb-2">@Html.DisplayNameFor(model => model.Note)</dt>
+                        <dd class="bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info rounded-3 border-5">@Html.DisplayFor(model => model.Note)</dd>
+                    </dl>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div>
+        @* Procurement Status card *@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Status</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <div class="row mb-0">
+                    <dl class="col-12">
+                        <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                            @Html.DisplayNameFor(model => model.JobType)
+                        </dt>
+                        <dd>
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">
+                                @Html.DisplayFor(model => model.JobType!.TypeName)
+                            </span>
+                        </dd>
+                    </dl>
+
+                    <dl class="col-12">
+                        <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                            @Html.DisplayNameFor(model => model.Status)
+                        </dt>
+                        <dd>
+                            <span class="badge @BadgeClass(statusName ?? "") rounded-5 p-2 px-3">
+                                @Html.DisplayFor(model => model.Status!.StatusName)
+                            </span>
+                        </dd>
+                    </dl>
+
+                    <dl class="col-12">
+                        <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                            @Html.DisplayNameFor(model => model.CreatedAt)
+                        </dt>
+                        <dd class="fw-medium text-secondary-emphasis">
+                            @Model?.CreatedAt.ToTanggalIndonesia()
+                        </dd>
+                    </dl>
+
+                    <dl class="col-12">
+                        <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                            @Html.DisplayNameFor(model => model.User)
+                        </dt>
+                        <dd class="fw-medium text-secondary-emphasis">
+                            @Html.DisplayFor(model => model.User!.FullName)
+                        </dd>
+                    </dl>
+
+                    <dl class="col-12">
+                        <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                            @Html.DisplayNameFor(model => model.CompletedAt)
+                        </dt>
+                        <dd class="fw-medium text-secondary-emphasis">
+                            @Model?.CompletedAt.ToTanggalIndonesia()
+                        </dd>
+                    </dl>
+
+                    @if (Model?.AppoUser != null)
+                    {
+                        <dl class="col-12">
+                            <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                Picked Up By
+                            </dt>
+                            <dd class="fw-medium text-secondary-emphasis">
+                                <i class="bi bi-box-arrow-in-down text-success me-1"></i>
+                                @Model.AppoUser.FullName
+                            </dd>
+                        </dl>
+
+                        <dl class="col-12">
+                            <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                                Picked Up At
+                            </dt>
+                            <dd class="fw-medium text-secondary-emphasis">
+                                @Model.PickedUpAt?.ToTanggalIndonesia()
+                            </dd>
+                        </dl>
+                    }
+                </div>
+            </div>
+        </article>
+
+        @* Approvers card *@
+        <article class="card shadow-sm mb-3 rounded-4">
+            <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+                <h2 class="card-title mb-0 h5"><i class="bi bi-people text-primary me-1"></i> Approvers</h2>
+            </header>
+            <hr class="mx-3 my-2" />
+
+            <div class="card-body">
+                <dl class="text-bg-light p-3 rounded-4 mb-2">
+                    <dt class="fw-semibold text-secondary mb-2">PIC Ops</dt>
+                    <dd class="fw-medium text-secondary-emphasis">@(ViewBag.PicOpsName ?? "-")</dd>
+                </dl>
+
+                <dl class="text-bg-light p-3 rounded-4 mb-2">
+                    <dt class="fw-semibold text-secondary mb-2">Analyst HTE</dt>
+                    <dd class="fw-medium text-secondary-emphasis">@(ViewBag.AnalystName ?? "-")</dd>
+                </dl>
+
+                <dl class="text-bg-light p-3 rounded-4 mb-2">
+                    <dt class="fw-semibold text-secondary mb-2">Assistant Manager</dt>
+                    <dd class="fw-medium text-secondary-emphasis">@(ViewBag.AssistantManagerName ?? "-")</dd>
+                </dl>
+
+                <dl class="text-bg-light p-3 rounded-4 mb-2">
+                    <dt class="fw-semibold text-secondary mb-2">Manager</dt>
+                    <dd class="fw-medium text-secondary-emphasis">@(ViewBag.ManagerName ?? "-")</dd>
+                </dl>
+            </div>
+        </article>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .procurement-content {
+            grid-template-columns: 1fr;
+        }
+
+        @@media (min-width: 768px) {
+            .procurement-content {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+    </style>
+}
