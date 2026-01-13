@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="~/ProcurementHTE.Web.styles.css" asp-append-version="true" />
     @* (Opsional) kalau butuh section khusus di <head> *@
     @RenderSection("HeadScripts", required: false)
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body class="@bodyClass" data-active-page="@ViewBag.ActivePage" data-active-controller="@currentController" data-active-action="@currentAction">
@@ -58,6 +59,8 @@
                       hx-target="#app-content"
                       hx-indicator="#content-loading"
                       hx-push-url="true">
+
+                    @await Html.PartialAsync("_SweetAlerts")
 
                     @if (ViewData["Breadcrumb"] != null) {
                         <div class="container-fluid mt-3">
@@ -93,7 +96,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    @await Html.PartialAsync("_SweetAlerts")
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>

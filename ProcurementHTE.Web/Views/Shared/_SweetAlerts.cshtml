@@ -1,51 +1,82 @@
 ﻿@{
-    var success = TempData["SuccessMessage"] as string;
-    var error = TempData["ErrorMessage"] as string;
+    // Support multiple TempData key variants
+    var success = TempData["SuccessMessage"] as string 
+                  ?? TempData["Success"] as string;
+    var error = TempData["ErrorMessage"] as string 
+                ?? TempData["Error"] as string;
+    var warning = TempData["WarningMessage"] as string 
+                  ?? TempData["Warning"] as string;
+    var info = TempData["InfoMessage"] as string 
+               ?? TempData["Info"] as string;
+    
+    // Only render if there's something to show
+    var hasMessage = !string.IsNullOrEmpty(success) || !string.IsNullOrEmpty(error) 
+                  || !string.IsNullOrEmpty(warning) || !string.IsNullOrEmpty(info);
 }
 
-<!-- SweetAlert2 CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- data carrier biar aman dari encoding -->
-<div id="swal-tempdata"
-     data-success="@success"
-     data-error="@error">
-</div>
-
+@if (hasMessage)
+{
 <script>
-    (function () {
-      const el = document.getElementById('swal-tempdata');
-      if (!el) return;
-
-      const success = el.dataset.success;
-      const error   = el.dataset.error;
-
-      // Toast config reusable
-      const Toast = Swal.mixin({
-        toast: true,
-        position: 'bottom-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-          toast.onmouseenter = Swal.stopTimer;
-          toast.onmouseleave = Swal.resumeTimer;
+(function() {
+    // Wait for Swal to be available (retry up to 20 times with 100ms interval)
+    var attempts = 0;
+    var maxAttempts = 20;
+    
+    function tryShowAlert() {
+        if (typeof Swal === 'undefined') {
+            attempts++;
+            if (attempts < maxAttempts) {
+                setTimeout(tryShowAlert, 100);
+            } else {
+                console.warn('SweetAlert2 not loaded after multiple attempts');
+            }
+            return;
         }
-      });
-
-      if (success && success.length) {
-        Toast.fire({ icon: 'success', title: success });
-      }
-
-      if (error && error.length) {
-        // untuk error, tampilkan modal penuh agar terbaca jelas
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops…',
-          html: `<div style="text-align:left;">${error}</div>`,
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#0d6efd'
+        
+        // Toast config
+        var Toast = Swal.mixin({
+            toast: true,
+            position: 'bottom-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+            didOpen: function(toast) {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
         });
-      }
-    })();
+        
+        @if (!string.IsNullOrEmpty(success))
+        {
+            <text>Toast.fire({ icon: 'success', title: '@Html.Raw(success.Replace("'", "\\'"))' });</text>
+        }
+        
+        @if (!string.IsNullOrEmpty(warning))
+        {
+            <text>Toast.fire({ icon: 'warning', title: '@Html.Raw(warning.Replace("'", "\\'"))' });</text>
+        }
+        
+        @if (!string.IsNullOrEmpty(info))
+        {
+            <text>Toast.fire({ icon: 'info', title: '@Html.Raw(info.Replace("'", "\\'"))' });</text>
+        }
+        
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <text>
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops…',
+                html: '<div style="text-align:left;">@Html.Raw(error.Replace("'", "\\'").Replace("\n", "<br/>"))</div>',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d6efd'
+            });
+            </text>
+        }
+    }
+    
+    // Run immediately when script executes
+    tryShowAlert();
+})();
 </script>
+}
