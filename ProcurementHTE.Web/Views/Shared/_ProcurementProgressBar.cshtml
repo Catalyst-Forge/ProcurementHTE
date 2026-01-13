@@ -1,0 +1,235 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+@{
+    var steps = new List<(int Order, string Status, string Description, DateTime? CompletedAt, string? CompletedBy)>
+    {
+        (1, "OnCreateDP3", "On Create DP3 (APPO)", null, null),
+        (2, "WaitingApprovalAnalyst", "Waiting Approval Analyst HTE", null, Model.AnalystHteUserName),
+        (3, "WaitingApprovalAsstManager", "Waiting Approval Asst. Manager", null, Model.AssistantManagerUserName),
+        (4, "WaitingApprovalManager", "Waiting Approval Manager", null, Model.ManagerUserName),
+        (5, "OnSubmitISPA", "On Submit ISPA", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName),
+        (6, "OnSubmitHardcopy", "On Submit Hardcopy", Model.HardcopySubmittedAt, Model.HardcopySubmittedByUserName),
+        (7, "OnSubmitPO", "On Submit PO", Model.PoSubmittedAt, Model.PoSubmittedByUserName),
+        (8, "DonePO", "Done PO", null, null)
+    };
+
+    // Get status history for completed timestamps
+    var historyDict = Model.StatusHistory.ToDictionary(h => h.Status.ToString(), h => (h.ChangedAt, h.ChangedByUserName));
+
+    int currentStep = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected
+        ? 0
+        : (int)Model.CurrentStatus;
+    bool isRejected = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected;
+}
+
+<div class="procurement-progress-container">
+    @if (isRejected)
+    {
+        <div class="alert alert-danger mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-times-circle fa-2x me-3"></i>
+                <div>
+                    <h5 class="mb-1">Procurement Rejected</h5>
+                    <p class="mb-0">
+                        <strong>Rejected by:</strong> @Model.RejectedByUserName<br>
+                        <strong>Date:</strong> @Model.RejectedAt?.ToString("dd MMM yyyy HH:mm")<br>
+                        <strong>Reason:</strong> @Model.RejectionNote
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="progress-tracker">
+        @for (int i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
+            bool isCompleted = currentStep > step.Order || (currentStep == step.Order && currentStep == 8);
+            bool isCurrent = currentStep == step.Order && !isRejected;
+            bool isPending = currentStep < step.Order;
+
+            string statusClass = isCompleted ? "completed" : (isCurrent ? "current" : "pending");
+            string iconClass = isCompleted ? "fa-check-circle" : (isCurrent ? "fa-circle-dot" : "fa-circle");
+
+            // Get completion info from history
+            DateTime? completedAt = null;
+            string? completedBy = null;
+            if (historyDict.ContainsKey(step.Status))
+            {
+                completedAt = historyDict[step.Status].ChangedAt;
+                completedBy = historyDict[step.Status].ChangedByUserName;
+            }
+            else if (step.CompletedAt.HasValue)
+            {
+                completedAt = step.CompletedAt;
+                completedBy = step.CompletedBy;
+            }
+
+            <div class="progress-step @statusClass">
+                <div class="step-content">
+                    <div class="step-icon">
+                        <i class="fas @iconClass"></i>
+                    </div>
+                    <div class="step-details">
+                        <div class="step-number">Step @step.Order</div>
+                        <div class="step-title">@step.Description</div>
+                        @if (completedAt.HasValue)
+                        {
+                            <div class="step-timestamp">
+                                <i class="far fa-clock me-1"></i>
+                                @completedAt.Value.ToString("dd MMM yyyy HH:mm")
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(completedBy))
+                        {
+                            <div class="step-user">
+                                <i class="far fa-user me-1"></i>
+                                @completedBy
+                            </div>
+                        }
+                        @if (isCurrent)
+                        {
+                            <span class="badge bg-primary mt-1">Current</span>
+                        }
+                    </div>
+                </div>
+                @if (i < steps.Count - 1)
+                {
+                    <div class="step-line @(isCompleted ? "completed" : "")"></div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Progress percentage -->
+    <div class="progress mt-4" style="height: 25px;">
+        <div class="progress-bar @(isRejected ? "bg-danger" : "bg-success")"
+             role="progressbar"
+             style="width: @Model.ProgressPercentage%;"
+             aria-valuenow="@Model.ProgressPercentage"
+             aria-valuemin="0"
+             aria-valuemax="100">
+            @if (isRejected)
+            {
+                <span>Rejected</span>
+            }
+            else
+            {
+                <span>@Model.ProgressPercentage.ToString("F0")%</span>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .procurement-progress-container {
+        padding: 20px;
+    }
+
+    .progress-tracker {
+        position: relative;
+    }
+
+    .progress-step {
+        position: relative;
+        padding: 15px 0;
+    }
+
+    .step-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .step-icon {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .progress-step.completed .step-icon {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .progress-step.current .step-icon {
+        background-color: #007bff;
+        color: white;
+        animation: pulse 2s infinite;
+    }
+
+    .progress-step.pending .step-icon {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+
+    .step-details {
+        flex: 1;
+    }
+
+    .step-number {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .step-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #212529;
+        margin-top: 4px;
+    }
+
+    .step-timestamp, .step-user {
+        font-size: 13px;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+
+    .step-line {
+        position: absolute;
+        left: 19px;
+        top: 55px;
+        bottom: -15px;
+        width: 2px;
+        background-color: #e9ecef;
+        transition: background-color 0.3s ease;
+    }
+
+    .step-line.completed {
+        background-color: #28a745;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+        }
+
+        .step-title {
+            font-size: 14px;
+        }
+
+        .step-line {
+            left: 14px;
+        }
+    }
+</style>

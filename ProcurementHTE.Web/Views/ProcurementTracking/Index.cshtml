@@ -1,0 +1,91 @@
+@{
+    ViewData["Title"] = "Procurement Tracking";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Main Search Section -->
+            <div class="text-center mb-5">
+                <div class="mb-4">
+                    <span class="bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 small fw-medium">
+                        <i class="bi bi-search me-1"></i> Tracking
+                    </span>
+                </div>
+                <h2 class="fw-bold mb-3">Lacak Status Procurement</h2>
+                <p class="text-muted">
+                    Masukkan Nomor Procurement atau Nomor WO untuk melihat status terkini
+                </p>
+            </div>
+
+            <!-- Search Form -->
+            <form asp-action="Search" method="post">
+                @Html.AntiForgeryToken()
+                <div class="position-relative mb-4">
+                    <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border">
+                        <span class="input-group-text bg-white border-0 ps-4">
+                            <i class="bi bi-hash text-muted"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control border-0 py-3"
+                               name="procNum"
+                               placeholder="PROC000001 atau 116/DSI1135/2025"
+                               required
+                               autofocus
+                               style="font-size: 1rem;">
+                        <button class="btn btn-dark px-4 m-2 rounded-2" type="submit">
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Features -->
+            <div class="row g-3 mt-4">
+                <div class="col-4">
+                    <div class="text-center p-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                            <i class="bi bi-lightning text-dark"></i>
+                        </div>
+                        <p class="small text-muted mb-0">Real-time</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center p-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                            <i class="bi bi-qr-code text-dark"></i>
+                        </div>
+                        <p class="small text-muted mb-0">QR Approval</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center p-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                            <i class="bi bi-clock-history text-dark"></i>
+                        </div>
+                        <p class="small text-muted mb-0">History</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hint -->
+            <div class="text-center mt-5">
+                <p class="text-muted small">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    Tip: Pencarian bisa menggunakan <strong>No. Procurement</strong> atau <strong>No. WO</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.querySelector('input[name="procNum"]');
+            if (input) {
+                input.focus();
+            }
+        });
+    </script>
+}

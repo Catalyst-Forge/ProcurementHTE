@@ -1,0 +1,119 @@
+@model IEnumerable<ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto>
+
+@if (Model != null && Model.Any())
+{
+    <section class="card border mb-4">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+            <h5 class="card-title mb-0 fw-semibold">
+                <i class="bi bi-diagram-3 me-2"></i>Procurement Tracking Summary
+            </h5>
+            <span class="badge bg-secondary">@Model.Count() procurement(s)</span>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="small text-muted ps-4">Procurement</th>
+                            <th class="small text-muted">Job Name</th>
+                            <th class="small text-muted text-center">Status</th>
+                            <th class="small text-muted text-center">Progress</th>
+                            <th class="small text-muted text-center">Documents</th>
+                            <th class="small text-muted text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var proc in Model)
+                        {
+                            var statusColor = proc.CurrentStatus switch
+                            {
+                                ProcurementHTE.Core.Enums.ProcurementStatus.Rejected => "danger",
+                                ProcurementHTE.Core.Enums.ProcurementStatus.DonePO => "success",
+                                ProcurementHTE.Core.Enums.ProcurementStatus.OnCreateDP3 => "secondary",
+                                _ when proc.IsWaitingApproval => "warning",
+                                _ => "info"
+                            };
+
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-medium">@proc.ProcNum</div>
+                                    @if (!string.IsNullOrEmpty(proc.Wonum))
+                                    {
+                                        <small class="text-muted">WO: @proc.Wonum</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;" title="@proc.JobName">
+                                        @proc.JobName
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@statusColor">
+                                        @proc.CurrentStatusDescription
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="progress" style="height: 20px; min-width: 100px;">
+                                        <div class="progress-bar bg-@statusColor"
+                                             role="progressbar"
+                                             style="width: @proc.ProgressPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture)%"
+                                             aria-valuenow="@proc.ProgressPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                            @proc.ProgressPercentage.ToString("F0")%
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Step @proc.ProgressStep/@proc.TotalSteps</small>
+                                </td>
+                                <td class="text-center">
+                                    <span id="doc-count-@proc.ProcurementId" 
+                                          class="badge bg-@(proc.AllMandatoryDocsReady ? "success" : "warning")"
+                                          data-total="@proc.TotalMandatoryDocs"
+                                          data-uploaded="@proc.UploadedMandatoryDocs">
+                                        @proc.UploadedMandatoryDocs/@proc.TotalMandatoryDocs
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-controller="ProcurementTracking"
+                                           asp-action="Details"
+                                           asp-route-procurementId="@proc.ProcurementId"
+                                           class="btn btn-outline-primary btn-sm"
+                                           title="View Tracking">
+                                            <i class="bi bi-eye"></i> Track
+                                        </a>
+                                        @if (proc.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.OnCreateDP3)
+                                        {
+                                            <form asp-controller="PurchaseRequisitions"
+                                                  asp-action="SendApproval"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  id="send-approval-form-@proc.ProcurementId">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="procurementId" value="@proc.ProcurementId" />
+                                                <input type="hidden" name="prId" value="@ViewContext.RouteData.Values["id"]" />
+                                                <button type="submit"
+                                                        id="send-approval-btn-@proc.ProcurementId"
+                                                        class="btn btn-outline-success btn-sm"
+                                                        title="Send for Approval"
+                                                        @(proc.AllMandatoryDocsReady ? "" : "disabled")>
+                                                    <i class="bi bi-send"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer bg-light text-muted small">
+            <i class="bi bi-info-circle me-1"></i>
+            Click "Track" to view detailed procurement tracking including QR code, status history, and ISPA/PO submission.
+        </div>
+    </section>
+}
