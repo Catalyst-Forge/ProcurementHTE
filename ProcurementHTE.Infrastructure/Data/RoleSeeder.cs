@@ -20,7 +20,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Admin",
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
-                "Operator",
+                "Operation",
                 "Assistant Manager HTE",
                 "Vice President",
                 "Operation Director",
@@ -30,6 +30,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 "HSE",
                 "Supply Chain Management",
                 "AP-PO",
+                "AR",
+                "AP-Invoice",
             ];
 
             foreach (var roleName in roles) {
@@ -128,10 +130,11 @@ namespace ProcurementHTE.Infrastructure.Data
             );
 
             await AddPermissions(
-                "Operator",
+                "Operation",
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Create,
                 Permissions.Procurement.Edit,
+                Permissions.Procurement.Delete,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload
             );
@@ -139,8 +142,6 @@ namespace ProcurementHTE.Infrastructure.Data
             await AddPermissions(
                 "AP-PO",
                 Permissions.Procurement.Read,
-                Permissions.Procurement.Create,
-                Permissions.Procurement.Edit,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload
             );
@@ -148,6 +149,7 @@ namespace ProcurementHTE.Infrastructure.Data
             await AddPermissions(
                 "Analyst HTE & LTS",
                 Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
                 Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Edit,
@@ -169,6 +171,20 @@ namespace ProcurementHTE.Infrastructure.Data
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Create,
                 Permissions.Vendor.Edit,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                "AR",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                "AP-Invoice",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
                 Permissions.Doc.Read
             );
         }

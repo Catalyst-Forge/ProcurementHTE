@@ -35,12 +35,12 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Analyst HTE & LTS"
                 ),
                 (
-                    "operator",
+                    "operation",
                     "pro.operation@example.com",
-                    "Operator",
+                    "Operation",
                     "HTE",
                     "ProOperation123!",
-                    "Operator"
+                    "Operation"
                 ),
                 (
                     "assistantmanagerhte",
@@ -93,7 +93,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Supply Chain Management"
                 ),
                 ("naura", "khinsa.naura@pertamina-pdc.com", "Khinsa", "Naura", "Ura12345", "Admin"),
-                ("diah", "dyahayusekaragung@gmail.com", "Diah", "Ayu", "DiahAyu123", "Operator"),
+                ("diah", "dyahayusekaragung@gmail.com", "Diah", "Ayu", "DiahAyu123", "Operation"),
                 (
                     "heri",
                     "heriwibisono@gmail.con",
@@ -111,19 +111,19 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Analyst HTE & LTS"
                 ),
                 (
+                    "johanis",
+                    "johanis@example.com",
+                    "Johanis",
+                    "",
+                    "Johanis123",
+                    "Operation"
+                ),
+                (
                     "dopiyanto",
                     "dopiyanto@gmail.com",
                     "Dopiyanto",
                     "",
                     "Dopiyanto123",
-                    "Analyst HTE & LTS"
-                ),
-                (
-                    "johanis",
-                    "johanis@pertamina-pdc.com",
-                    "LB Johanis",
-                    "Hutabarat",
-                    "Johanis123",
                     "Analyst HTE & LTS"
                 ),
                 (
@@ -135,12 +135,28 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Assistant Manager HTE"
                 ),
                 (
-                    "bagus",
-                    "baguswidihartono@gmail.com",
-                    "Bagus",
-                    "Widihartono",
-                    "BagusWidihartono123",
+                    "kurniawan",
+                    "kurniawan@example.com",
+                    "Kurniawan",
+                    "",
+                    "Kurniawan123",
                     "Manager Transport & Logistic"
+                ),
+                (
+                    "ar",
+                    "ar@example.com",
+                    "AR",
+                    "",
+                    "Ar123456!",
+                    "AR"
+                ),
+                (
+                    "apinvoice",
+                    "apinvoice@example.com",
+                    "AP-Invoice",
+                    "",
+                    "ApInvoice123!",
+                    "AP-Invoice"
                 ),
             };
 
@@ -168,7 +184,13 @@ namespace ProcurementHTE.Infrastructure.Data
             string role
         )
         {
+            // Check if user already exists by email OR username
             var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = await userManager.FindByNameAsync(userName);
+            }
+            
             if (user == null)
             {
                 user = new User

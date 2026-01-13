@@ -12,6 +12,7 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<Procurement> Procurements { get; set; }
         public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }
         public DbSet<PurchaseRequisitionStatusHistory> PurchaseRequisitionStatusHistories { get; set; }
+        public DbSet<ProcurementStatusHistory> ProcurementStatusHistories { get; set; }
         public DbSet<JobTypes> JobTypes { get; set; }
         public DbSet<JobTypeDocuments> JobTypeDocuments { get; set; }
         public DbSet<ProcDetail> ProcDetails { get; set; }
@@ -51,6 +52,7 @@ namespace ProcurementHTE.Infrastructure.Data
             // ========================================
             ConfigurePurchaseRequisition(builder);
             ConfigureProcurement(builder);
+            ConfigureProcurementStatusHistory(builder);
             ConfigureJobType(builder);
             ConfigureProcDetail(builder);
             ConfigureVendors(builder);
@@ -165,11 +167,12 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(pr => pr.PrNumber).IsRequired().HasMaxLength(100);
                 entity.Property(pr => pr.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
-                // Indexes
+                // Indexes - Filtered unique index for soft delete pattern
                 entity
                     .HasIndex(pr => pr.PrNumber)
                     .IsUnique()
-                    .HasDatabaseName("AK_PurchaseRequisitions_PrNumber");
+                    .HasDatabaseName("AK_PurchaseRequisitions_PrNumber")
+                    .HasFilter("[IsDeleted] = 0");
 
                 // Relationships
                 entity
@@ -215,11 +218,18 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasConversion<string>()
                     .HasMaxLength(50);
 
-                // Indexes
+                // Procurement-level tracking status enum
+                entity
+                    .Property(procurement => procurement.ProcurementStatus)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
+
+                // Indexes - Filtered unique index for soft delete pattern
                 entity
                     .HasIndex(procurement => procurement.ProcNum)
                     .IsUnique()
-                    .HasDatabaseName("AK_Procurements_ProcNum");
+                    .HasDatabaseName("AK_Procurements_ProcNum")
+                    .HasFilter("[IsDeleted] = 0 AND [ProcNum] IS NOT NULL");
                 entity
                     .HasIndex(procurement => new { procurement.UserId, procurement.CreatedAt })
                     .HasDatabaseName("IX_Procurements_UserId_CreatedAt")
@@ -274,13 +284,111 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(profitLoss => profitLoss.ProcurementId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // DocumentApprovals navigation removed - approval per-document sudah dihapus
+                // AccrualFilledByUser relationship
+                entity
+                    .HasOne(procurement => procurement.AccrualFilledByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.AccrualFilledByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // AP-Invoice and AR pickup user relationships
+                // Using NoAction to avoid SQL Server cascade path errors
+                entity
+                    .HasOne(procurement => procurement.ApInvoiceUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.ApInvoiceUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.ArUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.ArUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Procurement-level tracking user relationships
+                // Using NoAction to avoid SQL Server cascade path errors
+                entity
+                    .HasOne(procurement => procurement.IspaSubmittedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.IspaSubmittedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.PoSubmittedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.PoSubmittedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.HardcopySubmittedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.HardcopySubmittedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.RejectedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.RejectedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.ApprovalSentByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.ApprovalSentByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Procurement status history relationship
+                entity
+                    .HasMany(procurement => procurement.StatusHistories)
+                    .WithOne(history => history.Procurement)
+                    .HasForeignKey(history => history.ProcurementId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // DocumentApprovals navigation removed - approval moved to procurement-level tracking
             });
 
             builder
                 .Entity<ProcOffer>()
                 .Property(procOffer => procOffer.ProcOfferId)
                 .ValueGeneratedNever();
+        }
+
+        #endregion
+
+        #region ProcurementStatusHistory
+
+        private static void ConfigureProcurementStatusHistory(ModelBuilder builder)
+        {
+            builder.Entity<ProcurementStatusHistory>(entity =>
+            {
+                // Primary key
+                entity.HasKey(history => history.Id);
+
+                // Properties
+                entity.Property(history => history.Id).ValueGeneratedNever();
+                entity.Property(history => history.ChangedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity
+                    .Property(history => history.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
+
+                // Indexes for common queries
+                entity.HasIndex(history => history.ProcurementId);
+                entity.HasIndex(history => new { history.ProcurementId, history.ChangedAt });
+
+                // Relationships
+                entity
+                    .HasOne(history => history.Procurement)
+                    .WithMany(procurement => procurement.StatusHistories)
+                    .HasForeignKey(history => history.ProcurementId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity
+                    .HasOne(history => history.ChangedByUser)
+                    .WithMany()
+                    .HasForeignKey(history => history.ChangedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
         }
 
         #endregion
@@ -349,8 +457,10 @@ namespace ProcurementHTE.Infrastructure.Data
                 entity.Property(vendor => vendor.VendorId).ValueGeneratedNever();
                 entity.Property(vendor => vendor.VendorCode).IsRequired();
 
-                // Indexes
-                entity.HasIndex(vendor => vendor.VendorCode).IsUnique();
+                // Indexes - Filtered unique index for soft delete pattern
+                entity.HasIndex(vendor => vendor.VendorCode)
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
 
                 // Relationships
                 entity
@@ -529,6 +639,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(x => x.VendorId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // Unique index (no soft delete filter - entity doesn't support soft delete)
                 entity
                     .HasIndex(x => new
                     {

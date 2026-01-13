@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<ILdpRepository, LdpRepository>();
         services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IDocumentGenerator, DocumentGenerator>();
+        services.AddSingleton<IQrCodeGenerator, QrCodeGeneratorService>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
         services.AddScoped<
