@@ -3,8 +3,11 @@ namespace ProcurementHTE.Core.Options
     public sealed class EmailSenderOptions
     {
         public bool UseDevelopmentMode { get; set; } = true;
+        public string? Provider { get; set; }
         public string FromName { get; set; } = "Procurement HTE";
         public string FromAddress { get; set; } = "noreply@procurementhte.local";
+        public string? ApiKey { get; set; }
+        public string? ApiUrl { get; set; }
 
         // Production SMTP settings
         public string? SmtpHost { get; set; }

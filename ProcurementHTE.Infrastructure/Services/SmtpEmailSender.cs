@@ -1,7 +1,7 @@
-using System.Net;
-using System.Net.Mail;
-using Microsoft.Extensions.Logging;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Options;
 
@@ -25,30 +25,39 @@ namespace ProcurementHTE.Infrastructure.Services
         {
             if (string.IsNullOrWhiteSpace(_options.SmtpHost))
                 throw new InvalidOperationException("SMTP host belum dikonfigurasi.");
+            if (string.IsNullOrWhiteSpace(_options.FromAddress))
+                throw new InvalidOperationException("Alamat pengirim email belum dikonfigurasi.");
 
-            using var message = new MailMessage
-            {
-                From = new MailAddress(_options.FromAddress, _options.FromName),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true,
-            };
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+            message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
 
-            message.To.Add(new MailAddress(toEmail));
+            var socketOptions = GetSocketOptions();
 
-            using var client = new SmtpClient(_options.SmtpHost, _options.SmtpPort)
-            {
-                EnableSsl = _options.EnableSsl,
-                DeliveryMethod = SmtpDeliveryMethod.Network,
-                UseDefaultCredentials = false,
-            };
-
+            using var client = new SmtpClient();
+            await client.ConnectAsync(_options.SmtpHost, _options.SmtpPort, socketOptions, ct);
             if (!string.IsNullOrWhiteSpace(_options.Username))
             {
-                client.Credentials = new NetworkCredential(_options.Username, _options.Password);
+                if (string.IsNullOrWhiteSpace(_options.Password))
+                    throw new InvalidOperationException("SMTP password belum dikonfigurasi.");
+
+                await client.AuthenticateAsync(_options.Username, _options.Password, ct);
             }
 
-            await client.SendMailAsync(message, ct);
+            await client.SendAsync(message, ct);
+            await client.DisconnectAsync(true, ct);
+        }
+
+        private SecureSocketOptions GetSocketOptions()
+        {
+            if (!_options.EnableSsl)
+                return SecureSocketOptions.None;
+
+            return _options.SmtpPort == 465
+                ? SecureSocketOptions.SslOnConnect
+                : SecureSocketOptions.StartTls;
         }
     }
 }
