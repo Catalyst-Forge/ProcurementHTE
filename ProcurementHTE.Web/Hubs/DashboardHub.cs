@@ -132,6 +132,18 @@ namespace ProcurementHTE.Web.Hubs
         {
             await Clients.Caller.SendAsync("DashboardUpdateRequested");
         }
+        
+        // Client calls this when entering Dashboard page to receive UserActivityChanged events
+        public async Task JoinDashboardViewers()
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "dashboard_viewers");
+        }
+        
+        // Client calls this when leaving Dashboard page
+        public async Task LeaveDashboardViewers()
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "dashboard_viewers");
+        }
 
         // Static method to check if specific user is online (called from repository)
         public static bool IsUserOnline(string userId)

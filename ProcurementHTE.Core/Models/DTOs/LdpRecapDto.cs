@@ -74,5 +74,21 @@ namespace ProcurementHTE.Core.Models.DTOs
         public DateTime? TanggalApprovalVp { get; set; }
         public DateTime? TanggalApprovalDirektur { get; set; }
         public DateTime? TanggalSubmitIspa { get; set; }
+
+        // Approval Timeline (Mulai/Selesai for each level)
+        public DateTime? ManagerApprovalMulai { get; set; }
+        public DateTime? ManagerApprovalSelesai { get; set; }
+        public DateTime? VpApprovalMulai { get; set; }
+        public DateTime? VpApprovalSelesai { get; set; }
+        public DateTime? OpDirApprovalMulai { get; set; }
+        public DateTime? OpDirApprovalSelesai { get; set; }
+        public DateTime? PresDirApprovalMulai { get; set; }
+        public DateTime? PresDirApprovalSelesai { get; set; }
+
+        // LDP Document Info
+        public bool HasLdpDocument { get; set; }
+        public string? LdpFileName { get; set; }
+        public long? LdpFileSize { get; set; }
+        public DateTime? LdpUploadedAt { get; set; }
     }
 }

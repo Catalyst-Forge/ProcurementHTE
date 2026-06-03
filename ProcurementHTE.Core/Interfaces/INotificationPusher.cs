@@ -8,5 +8,10 @@ namespace ProcurementHTE.Core.Interfaces
         Task PushToUsersAsync(IEnumerable<string> userIds, PushNotificationDto notification);
         Task BroadcastAsync(PushNotificationDto notification);
         Task UpdateBadgeCountAsync(string userId, int unreadCount);
+        
+        /// <summary>
+        /// Push pending approval badge count update to a specific user
+        /// </summary>
+        Task PushApprovalBadgeAsync(string userId, int pendingCount);
     }
 }

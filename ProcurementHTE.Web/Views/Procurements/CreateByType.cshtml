@@ -311,28 +311,72 @@
             <hr />
 
             <div class="row g-3">
-                <div class="col-md-6">
+                <!-- Analyst HTE -->
+                <div class="col-md-5">
                     <label asp-for="Procurement.AnalystHteUserId" class="form-label">Analyst HTE &amp; LTS</label>
                     <select asp-for="Procurement.AnalystHteUserId" class="form-select" asp-items="analystOptions">
                         <option value="">Select Analyst</option>
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.AnalystHteUserId"></span>
                 </div>
+                <div class="col-md-1 d-flex align-items-end pb-3">
+                    <div class="form-check">
+                        <input asp-for="Procurement.AnalystHtePjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="Procurement.AnalystHtePjs" class="form-check-label">Pjs</label>
+                    </div>
+                </div>
 
-                <div class="col-md-6">
+                <!-- Assistant Manager -->
+                <div class="col-md-5">
                     <label asp-for="Procurement.AssistantManagerUserId" class="form-label">Assistant Manager HTE</label>
                     <select asp-for="Procurement.AssistantManagerUserId" class="form-select" asp-items="assistantManagerOptions">
                         <option value="">Select Assistant Manager</option>
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.AssistantManagerUserId"></span>
                 </div>
+                <div class="col-md-1 d-flex align-items-end pb-3">
+                    <div class="form-check">
+                        <input asp-for="Procurement.AssistantManagerPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="Procurement.AssistantManagerPjs" class="form-check-label">Pjs</label>
+                    </div>
+                </div>
 
-                <div class="col-md-6">
+                <!-- Manager -->
+                <div class="col-md-5">
                     <label asp-for="Procurement.ManagerUserId" class="form-label">Manager Transport &amp; Logistic</label>
                     <select asp-for="Procurement.ManagerUserId" class="form-select" asp-items="managerOptions">
                         <option value="">Select Manager</option>
                     </select>
                     <span class="text-danger" asp-validation-for="Procurement.ManagerUserId"></span>
+                </div>
+                <div class="col-md-1 d-flex align-items-end pb-3">
+                    <div class="form-check">
+                        <input asp-for="Procurement.ManagerPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="Procurement.ManagerPjs" class="form-check-label">Pjs</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3" />
+            <p class="text-muted small mb-2">Pjs untuk Level Direksi (jika diperlukan)</p>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="Procurement.VicePresidentPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="Procurement.VicePresidentPjs" class="form-check-label">Pjs. Vice President</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="Procurement.OperationDirectorPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="Procurement.OperationDirectorPjs" class="form-check-label">Pjs. Operation Director</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="Procurement.PresidentDirectorPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="Procurement.PresidentDirectorPjs" class="form-check-label">Pjs. President Director</label>
+                    </div>
                 </div>
             </div>
         </fieldset>

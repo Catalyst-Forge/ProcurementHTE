@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
 
@@ -11,6 +12,14 @@ namespace ProcurementHTE.Infrastructure.Data
         {
             try
             {
+                // Clear existing rules first (as requested by user)
+                var existingRules = await context.DocumentApprovalRules.ToListAsync();
+                if (existingRules.Count > 0)
+                {
+                    context.DocumentApprovalRules.RemoveRange(existingRules);
+                    await context.SaveChangesAsync();
+                }
+
                 var targetDocs = new[]
                 {
                     "Owner Estimate (OE)",
@@ -33,37 +42,43 @@ namespace ProcurementHTE.Infrastructure.Data
                     return role?.Id;
                 }
 
-                var roleAssistant = await FindRoleId("Assistant Manager HTE");
+                // Find users by username for VP level and above
+                async Task<string?> FindUserId(string userName)
+                {
+                    var user = await context.Users.AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.UserName == userName);
+                    return user?.Id;
+                }
+
                 var roleManagerTnl = await FindRoleId("Manager Transport & Logistic");
                 var roleVp = await FindRoleId("Vice President");
                 var roleOpDir = await FindRoleId("Operation Director");
                 var rolePresDir = await FindRoleId("President Director");
-                var roleBoard =
-                    await FindRoleId("Dewan Direksi") ?? await FindRoleId("Dewan Komisaris");
 
-                var ranges = new (decimal Min, decimal Max, string? Submitter, string? Approver)[]
+                // User IDs for VP level and above
+                var userKurniawan = await FindUserId("kurniawan"); // Manager TNL
+                var userAgus = await FindUserId("agus");           // VP
+                var userApriandy = await FindUserId("apriandy");   // Ops Director
+                var userFaried = await FindUserId("faried");       // President Director
+
+                // CT Ranges based on ApprovalConstants thresholds (VP level and above):
+                // 500M - 5B: Manager TNL (Kurniawan) → VP (Agus)
+                // 5B - 10B: VP (Agus) → Ops Director (Apriandy)
+                // 10B - 15B: Ops Director (Apriandy) → President Director (Faried)
+                // > 15B: Ops Director (Apriandy) → President Director (Faried)
+                var ranges = new (decimal Min, decimal Max, string? SubmitterRole, string? SubmitterUser, string? ApproverRole, string? ApproverUser)[]
                 {
-                    (0m, 500_000_000m, roleAssistant ?? roleManagerTnl, roleManagerTnl),
-                    (500_000_000m, 5_000_000_000m, roleManagerTnl, roleVp),
-                    (5_000_000_000m, 10_000_000_000m, roleVp, roleOpDir),
-                    (10_000_000_000m, 15_000_000_000m, roleOpDir, rolePresDir),
-                    (15_000_000_000m, 99_000_000_000m, rolePresDir, roleBoard ?? rolePresDir),
+                    (ApprovalConstants.CT_THRESHOLD_VP, ApprovalConstants.CT_THRESHOLD_OP_DIR, roleManagerTnl, userKurniawan, roleVp, userAgus),
+                    (ApprovalConstants.CT_THRESHOLD_OP_DIR, ApprovalConstants.CT_THRESHOLD_PRES_DIR, roleVp, userAgus, roleOpDir, userApriandy),
+                    (ApprovalConstants.CT_THRESHOLD_PRES_DIR, 15_000_000_000m, roleOpDir, userApriandy, rolePresDir, userFaried),
+                    (15_000_000_000m, 99_000_000_000m, roleOpDir, userApriandy, rolePresDir, userFaried),
                 };
 
                 foreach (var docType in docTypes)
                 {
                     foreach (var range in ranges)
                     {
-                        if (string.IsNullOrWhiteSpace(range.Submitter))
-                            continue;
-
-                        bool exists = await context.DocumentApprovalRules.AnyAsync(r =>
-                            r.DocumentTypeId == docType.DocumentTypeId
-                            && r.MinAmount == range.Min
-                            && r.MaxAmount == range.Max
-                        );
-
-                        if (exists)
+                        if (string.IsNullOrWhiteSpace(range.SubmitterRole))
                             continue;
 
                         // Khusus RKS: batasi ke kategori Services
@@ -78,8 +93,10 @@ namespace ProcurementHTE.Infrastructure.Data
                                 DocumentTypeId = docType.DocumentTypeId,
                                 MinAmount = range.Min,
                                 MaxAmount = range.Max,
-                                SubmitterRoleId = range.Submitter!,
-                                ApproverRoleId = range.Approver,
+                                SubmitterRoleId = range.SubmitterRole!,
+                                SubmitterUserId = range.SubmitterUser,
+                                ApproverRoleId = range.ApproverRole,
+                                ApproverUserId = range.ApproverUser,
                                 ProcurementCategory = category,
                             }
                         );

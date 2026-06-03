@@ -133,6 +133,21 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "UpdatedAt", FormatDate(proc.UpdatedAt));
             html = ReplaceToken(html, "CompletedAt", FormatDate(proc.CompletedAt));
 
+            // Role labels with Pjs (Penanggung Jawab Sementara) prefix
+            var analystHteRole = proc.AnalystHtePjs ? "Pjs. Analyst HTE & LTS" : "Analyst HTE & LTS";
+            var asstMgrRole = proc.AssistantManagerPjs ? "Pjs. Assistant Manager HTE" : "Assistant Manager HTE";
+            var mgrRole = proc.ManagerPjs ? "Pjs. Manager Transport & Logistic" : "Manager Transport & Logistic";
+            var vpRole = proc.VicePresidentPjs ? "Pjs. Vice President" : "Vice President";
+            var opDirRole = proc.OperationDirectorPjs ? "Pjs. Operation Director" : "Operation Director";
+            var presDirRole = proc.PresidentDirectorPjs ? "Pjs. President Director" : "President Director";
+
+            html = ReplaceToken(html, "AnalystHteRole", analystHteRole);
+            html = ReplaceToken(html, "AsstManagerRole", asstMgrRole);
+            html = ReplaceToken(html, "ManagerRole", mgrRole);
+            html = ReplaceToken(html, "VicePresidentRole", vpRole);
+            html = ReplaceToken(html, "OperationDirectorRole", opDirRole);
+            html = ReplaceToken(html, "PresidentDirectorRole", presDirRole);
+
             var rksListHtml = GenerateRKSJangkaWaktuList(proc);
             html = ReplaceToken(html, "RKSList", rksListHtml);
 
@@ -196,41 +211,63 @@ namespace ProcurementHTE.Core.Services
 
             // Conditional approval roles based on CT (Grand Total PNL) and template/doc
             var docName = MapTemplateKeyToDocName(templateKey);
-            var (conditionalSubmit, conditionalApprove) = await ResolveConditionalRolesAsync(
+            var grandTotal = await GetCtAsync(proc.ProcurementId);
+            var (conditionalSubmit, conditionalApprove, conditionalSubmitUserId, conditionalApproveUserId) = await ResolveConditionalRolesAsync(
                 proc,
-                docName
+                docName,
+                grandTotal
             );
             html = ReplaceToken(html, "ConditionalSubmitRole", conditionalSubmit);
             html = ReplaceToken(html, "ConditionalApproveRole", conditionalApprove);
 
-            var conditionalSubmitName = await ResolveUserNameByRoleWithProcDataAsync(
-                conditionalSubmit,
-                analystHteName,
-                asstMgrName,
-                mgrName
-            );
-            var conditionalApproveName = await ResolveUserNameByRoleWithProcDataAsync(
-                conditionalApprove,
-                analystHteName,
-                asstMgrName,
-                mgrName
-            );
+            // Resolve names: prioritize UserId from config, fallback to role-based lookup
+            var conditionalSubmitName = !string.IsNullOrWhiteSpace(conditionalSubmitUserId)
+                ? await ResolveUserNameByIdAsync(conditionalSubmitUserId)
+                : await ResolveUserNameByRoleWithProcDataAsync(
+                    conditionalSubmit,
+                    analystHteName,
+                    asstMgrName,
+                    mgrName
+                );
+            var conditionalApproveName = !string.IsNullOrWhiteSpace(conditionalApproveUserId)
+                ? await ResolveUserNameByIdAsync(conditionalApproveUserId)
+                : await ResolveUserNameByRoleWithProcDataAsync(
+                    conditionalApprove,
+                    analystHteName,
+                    asstMgrName,
+                    mgrName
+                );
             html = ReplaceToken(html, "ConditionalSubmitName", conditionalSubmitName);
             html = ReplaceToken(html, "ConditionalApproveName", conditionalApproveName);
 
+            // For PNL document: only show 4th signature box if value >= 500 million
+            // Below 500 million, the 3 default boxes (Analyst, Asst Manager, Manager TNL) are sufficient
+            var isPnlDoc = docName == "Profit & Loss";
             var needExtraApprove =
-                !string.IsNullOrWhiteSpace(conditionalApprove) && conditionalApprove != "-";
+                !string.IsNullOrWhiteSpace(conditionalApprove) 
+                && conditionalApprove != "-"
+                && (!isPnlDoc || grandTotal >= 500_000_000m); // PNL needs >= 500M for 4th box
+            
+            // Apply Pjs prefix to conditional approve role if needed
+            var conditionalApproveRoleWithPjs = conditionalApprove switch
+            {
+                "Vice President" => vpRole,
+                "Operation Director" => opDirRole,
+                "President Director" => presDirRole,
+                _ => conditionalApprove
+            };
+                
             var extraHeader = needExtraApprove
                 ? "<td style=\"width: 25%\">Disetujui Oleh</td>"
                 : string.Empty;
             var extraBlank = needExtraApprove
                 ? "<td class=\"signature-content\"></td>"
                 : string.Empty;
-            var extraRoleCell = needExtraApprove ? $"<td>{conditionalApprove}</td>" : string.Empty;
+            var extraRoleCell = needExtraApprove ? $"<td>{conditionalApproveRoleWithPjs}</td>" : string.Empty;
             html = ReplaceToken(html, "ConditionalApproveHeaderCell", extraHeader);
             html = ReplaceToken(html, "ConditionalApproveBlankCell", extraBlank);
             html = ReplaceToken(html, "ConditionalApproveRoleCell", extraRoleCell);
-            var extraNameCell = needExtraApprove ? "<td>Agus Sudjatmoko</td>" : string.Empty;
+            var extraNameCell = needExtraApprove ? $"<td>{conditionalApproveName}</td>" : string.Empty;
             html = ReplaceToken(html, "ConditionalApproveNameCell", extraNameCell);
 
             // ProcDetails - Generate table rows
@@ -528,15 +565,17 @@ namespace ProcurementHTE.Core.Services
         }
 
         #region Helper Method
-        private async Task<(string Submit, string Approve)> ResolveConditionalRolesAsync(
+        /// <summary>
+        /// Returns (SubmitRole, ApproveRole, SubmitUserId, ApproveUserId)
+        /// </summary>
+        private async Task<(string SubmitRole, string ApproveRole, string? SubmitUserId, string? ApproveUserId)> ResolveConditionalRolesAsync(
             Procurement procurement,
-            string? docName
+            string? docName,
+            decimal ct
         )
         {
             if (string.IsNullOrWhiteSpace(docName))
-                return ("-", "-");
-
-            var ct = await GetCtAsync(procurement.ProcurementId);
+                return ("-", "-", null, null);
 
             var rules = await _ruleRepo.GetActiveByDocNameAsync(
                 docName,
@@ -546,11 +585,11 @@ namespace ProcurementHTE.Core.Services
 
             var hit = rules.FirstOrDefault(r => ct >= r.MinAmount && ct <= r.MaxAmount);
             if (hit == null)
-                return ("-", "-");
+                return ("-", "-", null, null);
 
             var submitName = await ResolveRoleNameAsync(hit.SubmitterRoleId);
             var approveName = await ResolveRoleNameAsync(hit.ApproverRoleId);
-            return (submitName, approveName);
+            return (submitName, approveName, hit.SubmitterUserId, hit.ApproverUserId);
         }
 
         private async Task<decimal> GetCtAsync(string procurementId)
@@ -619,6 +658,24 @@ namespace ProcurementHTE.Core.Services
             var users = await _userManager.GetUsersInRoleAsync(roleName);
             var user = users?.FirstOrDefault();
 
+            if (user == null)
+                return "-";
+
+            if (!string.IsNullOrWhiteSpace(user.FullName))
+                return user.FullName;
+
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+                return user.UserName;
+
+            return user.Email ?? "-";
+        }
+
+        private async Task<string> ResolveUserNameByIdAsync(string? userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return "-";
+
+            var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
                 return "-";
 

@@ -474,6 +474,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     AnalystHteUserId = procurement.AnalystHteUserId,
                     AssistantManagerUserId = procurement.AssistantManagerUserId,
                     ManagerUserId = procurement.ManagerUserId,
+                    // Pjs flags
+                    AnalystHtePjs = procurement.AnalystHtePjs,
+                    AssistantManagerPjs = procurement.AssistantManagerPjs,
+                    ManagerPjs = procurement.ManagerPjs,
+                    VicePresidentPjs = procurement.VicePresidentPjs,
+                    OperationDirectorPjs = procurement.OperationDirectorPjs,
+                    PresidentDirectorPjs = procurement.PresidentDirectorPjs,
                     Details = procurement.ProcDetails?.ToList() ?? [],
                     Offers = procurement.ProcOffers?.ToList() ?? [],
                 };
@@ -679,6 +686,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     AnalystHteUserId = editViewModel.AnalystHteUserId!,
                     AssistantManagerUserId = editViewModel.AssistantManagerUserId!,
                     ManagerUserId = editViewModel.ManagerUserId!,
+                    // Pjs flags
+                    AnalystHtePjs = editViewModel.AnalystHtePjs,
+                    AssistantManagerPjs = editViewModel.AssistantManagerPjs,
+                    ManagerPjs = editViewModel.ManagerPjs,
+                    VicePresidentPjs = editViewModel.VicePresidentPjs,
+                    OperationDirectorPjs = editViewModel.OperationDirectorPjs,
+                    PresidentDirectorPjs = editViewModel.PresidentDirectorPjs,
                     StatusId = editViewModel.StatusId,
                 };
 

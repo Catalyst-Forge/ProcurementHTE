@@ -38,6 +38,12 @@ namespace ProcurementHTE.Core.Interfaces
             string procurementId,
             string ispaNumber,
             string submittedByUserId,
+            DateTime ispaDate,
+            DateTime ispaSubmitDate,
+            string ispaFileName,
+            string ispaContentType,
+            long ispaFileSize,
+            Stream fileStream,
             CancellationToken ct = default
         );
 
@@ -74,7 +80,7 @@ namespace ProcurementHTE.Core.Interfaces
         );
 
         /// <summary>
-        /// Reject Procurement dengan note (status → Rejected)
+        /// Reject Procurement dengan note (status → Rejected) - LEGACY
         /// </summary>
         Task<ProcurementTrackingResponse> RejectProcurementAsync(
             string procurementId,
@@ -84,8 +90,44 @@ namespace ProcurementHTE.Core.Interfaces
         );
 
         /// <summary>
+        /// Return Procurement for revision dengan symptoms.
+        /// Status akan berubah ke NeedsRevisionData atau NeedsRevisionPR berdasarkan symptoms.
+        /// Jika ada multiple symptoms, akan menggunakan sequential revision (Data dulu, lalu PR).
+        /// </summary>
+        Task<ProcurementTrackingResponse> ReturnForRevisionAsync(
+            string procurementId,
+            RejectionSymptom symptoms,
+            string rejectionNote,
+            string rejectedByUserId,
+            CancellationToken ct = default
+        );
+
+        /// <summary>
+        /// Resubmit procurement setelah revision.
+        /// Akan melanjutkan ke stage berikutnya dalam sequential revision flow.
+        /// </summary>
+        Task<ProcurementTrackingResponse> ResubmitRevisionAsync(
+            string procurementId,
+            string submittedByUserId,
+            CancellationToken ct = default
+        );
+
+        /// <summary>
+        /// Unlink procurement dari PR dan reset status (untuk symptom PRCannotBeCombined)
+        /// </summary>
+        Task<ProcurementTrackingResponse> UnlinkAndResetProcurementAsync(
+            string procurementId,
+            string resetByUserId,
+            CancellationToken ct = default
+        );
+
+        /// <summary>
         /// Trigger status change dari approval (digunakan oleh ApprovalService)
-        /// Workflow: WaitingApprovalAnalyst → WaitingApprovalAsstManager → WaitingApprovalManager → OnSubmitISPA
+        /// Workflow (dynamic based on CT):
+        /// - Base: WaitingApprovalAnalyst → WaitingApprovalAsstManager → WaitingApprovalManager → OnSubmitISPA
+        /// - CT > 500M: ... → WaitingApprovalVP → OnSubmitISPA
+        /// - CT > 5B: ... → WaitingApprovalVP → WaitingApprovalOpDir → OnSubmitISPA
+        /// - CT > 10B: ... → WaitingApprovalVP → WaitingApprovalOpDir → WaitingApprovalPresDir → OnSubmitISPA
         /// </summary>
         Task<bool> HandleApprovalStatusChangeAsync(
             string procurementId,
@@ -110,5 +152,10 @@ namespace ProcurementHTE.Core.Interfaces
         /// Get presigned URL for hardcopy evidence from MinIO
         /// </summary>
         Task<string?> GetHardcopyEvidenceUrlAsync(string procurementId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get presigned URL for ISPA file from MinIO
+        /// </summary>
+        Task<string?> GetIspaFileUrlAsync(string procurementId, CancellationToken ct = default);
     }
 }

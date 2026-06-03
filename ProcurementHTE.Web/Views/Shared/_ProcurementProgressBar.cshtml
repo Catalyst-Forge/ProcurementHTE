@@ -1,25 +1,86 @@
 @model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+@using ProcurementHTE.Core.Constants
 
 @{
-    var steps = new List<(int Order, string Status, string Description, DateTime? CompletedAt, string? CompletedBy)>
+    // Build dynamic step list based on RequiredApprovalLevel
+    // Level 4 = Manager (default), 5 = VP, 6 = OpDir, 7 = PresDir
+    var steps = new List<(int Order, string Status, string Description, DateTime? CompletedAt, string? CompletedBy, bool IsPjs)>();
+    int stepOrder = 1;
+
+    // Helper function to get Pjs badge text
+    Func<string, bool, string> getPjsLabel = (name, isPjs) => isPjs ? $"Pjs. {name}" : name;
+
+    // Step 1: On Create DP3
+    steps.Add((stepOrder++, "OnCreateDP3", "On Create DP3 (APPO)", null, null, false));
+
+    // Step 2: Waiting Approval Analyst HTE
+    var analystLabel = getPjsLabel(Model.AnalystHteUserName ?? "Analyst HTE", Model.AnalystHtePjs);
+    steps.Add((stepOrder++, "WaitingApprovalAnalyst", $"Waiting Approval {(Model.AnalystHtePjs ? "Pjs. " : "")}Analyst HTE", null, analystLabel, Model.AnalystHtePjs));
+
+    // Step 3: Waiting Approval Asst. Manager
+    var asstMgrLabel = getPjsLabel(Model.AssistantManagerUserName ?? "Asst. Manager", Model.AssistantManagerPjs);
+    steps.Add((stepOrder++, "WaitingApprovalAsstManager", $"Waiting Approval {(Model.AssistantManagerPjs ? "Pjs. " : "")}Asst. Manager", null, asstMgrLabel, Model.AssistantManagerPjs));
+
+    // Step 4: Waiting Approval Manager
+    var mgrLabel = getPjsLabel(Model.ManagerUserName ?? "Manager", Model.ManagerPjs);
+    steps.Add((stepOrder++, "WaitingApprovalManager", $"Waiting Approval {(Model.ManagerPjs ? "Pjs. " : "")}Manager", null, mgrLabel, Model.ManagerPjs));
+
+    // Step 5 (if CT > 500M): Waiting Approval VP
+    if (Model.RequiredApprovalLevel >= 5)
     {
-        (1, "OnCreateDP3", "On Create DP3 (APPO)", null, null),
-        (2, "WaitingApprovalAnalyst", "Waiting Approval Analyst HTE", null, Model.AnalystHteUserName),
-        (3, "WaitingApprovalAsstManager", "Waiting Approval Asst. Manager", null, Model.AssistantManagerUserName),
-        (4, "WaitingApprovalManager", "Waiting Approval Manager", null, Model.ManagerUserName),
-        (5, "OnSubmitISPA", "On Submit ISPA", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName),
-        (6, "OnSubmitHardcopy", "On Submit Hardcopy", Model.HardcopySubmittedAt, Model.HardcopySubmittedByUserName),
-        (7, "OnSubmitPO", "On Submit PO", Model.PoSubmittedAt, Model.PoSubmittedByUserName),
-        (8, "DonePO", "Done PO", null, null)
-    };
+        var vpLabel = getPjsLabel(Model.VicePresidentUserName ?? "Vice President", Model.VicePresidentPjs);
+        steps.Add((stepOrder++, "WaitingApprovalVP", $"Waiting Approval {(Model.VicePresidentPjs ? "Pjs. " : "")}Vice President", null, vpLabel, Model.VicePresidentPjs));
+    }
+
+    // Step 6 (if CT > 5B): Waiting Approval Operation Director
+    if (Model.RequiredApprovalLevel >= 6)
+    {
+        var opDirLabel = getPjsLabel(Model.OperationDirectorUserName ?? "Operation Director", Model.OperationDirectorPjs);
+        steps.Add((stepOrder++, "WaitingApprovalOpDir", $"Waiting Approval {(Model.OperationDirectorPjs ? "Pjs. " : "")}Operation Director", null, opDirLabel, Model.OperationDirectorPjs));
+    }
+
+    // Step 7 (if CT > 10B): Waiting Approval President Director
+    if (Model.RequiredApprovalLevel >= 7)
+    {
+        var presDirLabel = getPjsLabel(Model.PresidentDirectorUserName ?? "President Director", Model.PresidentDirectorPjs);
+        steps.Add((stepOrder++, "WaitingApprovalPresDir", $"Waiting Approval {(Model.PresidentDirectorPjs ? "Pjs. " : "")}President Director", null, presDirLabel, Model.PresidentDirectorPjs));
+    }
+
+    // Post-approval steps (always present)
+    steps.Add((stepOrder++, "OnSubmitISPA", "On Submit ISPA", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName, false));
+    steps.Add((stepOrder++, "OnSubmitHardcopy", "On Submit Hardcopy", Model.HardcopySubmittedAt, Model.HardcopySubmittedByUserName, false));
+    steps.Add((stepOrder++, "OnSubmitPO", "On Submit PO", Model.PoSubmittedAt, Model.PoSubmittedByUserName, false));
+    steps.Add((stepOrder++, "DonePO", "Done PO", null, null, false));
 
     // Get status history for completed timestamps
     var historyDict = Model.StatusHistory.ToDictionary(h => h.Status.ToString(), h => (h.ChangedAt, h.ChangedByUserName));
 
-    int currentStep = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected
+    // Calculate current step position
+    // We need to map the status value to the visual step position
+    int statusValue = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected
         ? 0
         : (int)Model.CurrentStatus;
+    
+    // Map status value to step order
+    int currentStep = 0;
+    if (statusValue > 0)
+    {
+        // Find the step that matches the current status
+        var matchingStep = steps.FirstOrDefault(s => s.Status == Model.CurrentStatus.ToString());
+        if (matchingStep.Status != null)
+        {
+            currentStep = matchingStep.Order;
+        }
+        else
+        {
+            // For statuses beyond approval (ISPA=8, Hardcopy=9, PO=10, Done=11)
+            // Map to the correct visual step
+            currentStep = Model.ProgressStep;
+        }
+    }
+
     bool isRejected = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected;
+    int totalSteps = steps.Count;
 }
 
 <div class="procurement-progress-container">
@@ -44,7 +105,9 @@
         @for (int i = 0; i < steps.Count; i++)
         {
             var step = steps[i];
-            bool isCompleted = currentStep > step.Order || (currentStep == step.Order && currentStep == 8);
+            // DonePO is always the last step
+            bool isLastStep = step.Status == "DonePO";
+            bool isCompleted = currentStep > step.Order || (isLastStep && currentStep == step.Order);
             bool isCurrent = currentStep == step.Order && !isRejected;
             bool isPending = currentStep < step.Order;
 
@@ -72,7 +135,13 @@
                     </div>
                     <div class="step-details">
                         <div class="step-number">Step @step.Order</div>
-                        <div class="step-title">@step.Description</div>
+                        <div class="step-title">
+                            @step.Description
+                            @if (step.IsPjs)
+                            {
+                                <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                            }
+                        </div>
                         @if (completedAt.HasValue)
                         {
                             <div class="step-timestamp">
@@ -105,8 +174,8 @@
     <div class="progress mt-4" style="height: 25px;">
         <div class="progress-bar @(isRejected ? "bg-danger" : "bg-success")"
              role="progressbar"
-             style="width: @Model.ProgressPercentage%;"
-             aria-valuenow="@Model.ProgressPercentage"
+             style="width: @Model.ProgressPercentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%;"
+             aria-valuenow="@Model.ProgressPercentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
              aria-valuemin="0"
              aria-valuemax="100">
             @if (isRejected)

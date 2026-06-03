@@ -197,6 +197,22 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         TanggalApprovalVp = null,
                         TanggalApprovalDirektur = null,
                         TanggalSubmitIspa = pr?.IspaSubmittedAt,
+
+                        // Approval Timeline (Mulai/Selesai for each level)
+                        ManagerApprovalMulai = p.ManagerApprovalStartAt,
+                        ManagerApprovalSelesai = p.ManagerApprovalEndAt,
+                        VpApprovalMulai = p.VpApprovalStartAt,
+                        VpApprovalSelesai = p.VpApprovalEndAt,
+                        OpDirApprovalMulai = p.OpDirApprovalStartAt,
+                        OpDirApprovalSelesai = p.OpDirApprovalEndAt,
+                        PresDirApprovalMulai = p.PresDirApprovalStartAt,
+                        PresDirApprovalSelesai = p.PresDirApprovalEndAt,
+
+                        // LDP Document Info
+                        HasLdpDocument = !string.IsNullOrEmpty(p.LdpFileObjectKey),
+                        LdpFileName = p.LdpFileName,
+                        LdpFileSize = p.LdpFileSize,
+                        LdpUploadedAt = p.LdpUploadedAt,
                     };
                 })
                 .ToList();

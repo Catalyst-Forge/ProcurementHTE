@@ -403,17 +403,35 @@
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
-                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AnalystHteUserId)</dt>
+                            <dt class="fw-semibold text-secondary mb-2">
+                                @Html.DisplayNameFor(model => model.AnalystHteUserId)
+                                @if (Model?.AnalystHtePjs == true)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Pjs</span>
+                                }
+                            </dt>
                             <dd class="fw-medium text-secondary-emphasis">@analystName</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
-                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.AssistantManagerUserId)</dt>
+                            <dt class="fw-semibold text-secondary mb-2">
+                                @Html.DisplayNameFor(model => model.AssistantManagerUserId)
+                                @if (Model?.AssistantManagerPjs == true)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Pjs</span>
+                                }
+                            </dt>
                             <dd class="fw-medium text-secondary-emphasis">@assistantManagerName</dd>
                         </dl>
 
                         <dl class="text-bg-light p-3 rounded-4 mb-2">
-                            <dt class="fw-semibold text-secondary mb-2">@Html.DisplayNameFor(model => model.ManagerUserId)</dt>
+                            <dt class="fw-semibold text-secondary mb-2">
+                                @Html.DisplayNameFor(model => model.ManagerUserId)
+                                @if (Model?.ManagerPjs == true)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Pjs</span>
+                                }
+                            </dt>
                             <dd class="fw-medium text-secondary-emphasis">@managerName</dd>
                         </dl>
                     </div>

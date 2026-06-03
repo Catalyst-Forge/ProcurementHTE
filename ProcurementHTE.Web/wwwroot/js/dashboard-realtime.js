@@ -72,6 +72,10 @@
     isConnected = true;
     updateConnectionStatus("connected");
     startHeartbeat(); // Restart heartbeat after reconnection
+    // Rejoin dashboard_viewers group after reconnection
+    connection.invoke("JoinDashboardViewers")
+      .then(() => console.log("Rejoined dashboard_viewers group"))
+      .catch(err => console.error("Failed to rejoin dashboard_viewers group:", err));
     // Refresh dashboard data after reconnection
     refreshDashboardData();
   });
@@ -109,6 +113,11 @@
       isConnected = true;
       updateConnectionStatus("connected");
       startHeartbeat(); // Start sending heartbeats
+      
+      // Join dashboard_viewers group to receive UserActivityChanged events
+      connection.invoke("JoinDashboardViewers")
+        .then(() => console.log("Joined dashboard_viewers group"))
+        .catch(err => console.error("Failed to join dashboard_viewers group:", err));
     })
     .catch((error) => {
       console.error("Failed to connect to dashboard hub:", error);

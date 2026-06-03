@@ -14,6 +14,7 @@
   let notificationConnection = null;
   let isConnected = false;
   let unreadCount = 0;
+  let pendingApprovalCount = 0;
   let notifications = [];
 
   // Initialize SignalR connection for notifications
@@ -36,6 +37,17 @@
       updateBadgeCount(data.unreadCount);
     });
 
+    // Listen for approval badge updates
+    notificationConnection.on("UpdateApprovalBadge", function (data) {
+      console.log("🔔 Approval badge updated:", data.pendingCount);
+      // If pendingCount is -1, it means we need to refresh from API
+      if (data.pendingCount === -1) {
+        loadPendingApprovalCount();
+      } else {
+        updateApprovalBadge(data.pendingCount);
+      }
+    });
+
     // Start connection
     notificationConnection
       .start()
@@ -43,6 +55,7 @@
         console.log("✅ Notification SignalR connected");
         isConnected = true;
         loadNotifications();
+        loadPendingApprovalCount();
       })
       .catch((error) => {
         console.error("❌ Failed to connect to notification hub:", error);
@@ -55,6 +68,7 @@
       console.log("🔄 Notification SignalR reconnected");
       isConnected = true;
       loadNotifications();
+      loadPendingApprovalCount();
     });
 
     notificationConnection.onclose(() => {
@@ -86,8 +100,12 @@
     // Show toast notification
     showToastNotification(data);
 
-    // Play notification sound (optional)
-    playNotificationSound();
+    // Play notification sound for approval requests
+    if (data.notificationType === "ApprovalRequest") {
+      playNotificationSound();
+      // Refresh pending approval count
+      loadPendingApprovalCount();
+    }
 
     // Request browser notification permission and show
     showBrowserNotification(data);
@@ -171,8 +189,33 @@
       ApprovedByManager: '<i class="bi bi-check2-all text-success fs-5"></i>',
       PrRejected: '<i class="bi bi-x-circle text-danger fs-5"></i>',
       PrCompleted: '<i class="bi bi-trophy text-warning fs-5"></i>',
+      ApprovalRequest: '<i class="bi bi-hourglass-split text-warning fs-5"></i>',
+      ReadyForISPA: '<i class="bi bi-file-earmark-text text-info fs-5"></i>',
     };
     return icons[type] || '<i class="bi bi-bell text-primary fs-5"></i>';
+  }
+
+  // Load pending approval count from API
+  async function loadPendingApprovalCount() {
+    try {
+      const response = await fetch("/api/approvals/pending-count");
+      if (!response.ok) return;
+
+      const data = await response.json();
+      updateApprovalBadge(data.pendingCount || 0);
+    } catch (error) {
+      console.error("Failed to load pending approval count:", error);
+    }
+  }
+
+  // Update the approval badge count display in sidebar
+  function updateApprovalBadge(count) {
+    pendingApprovalCount = count;
+    const badge = document.querySelector(".pending-approval-badge");
+    if (badge) {
+      badge.textContent = count > 99 ? "99+" : count;
+      badge.style.display = count > 0 ? "inline-flex" : "none";
+    }
   }
 
   // Calculate time ago
@@ -332,6 +375,10 @@
 
   // Initialize on DOM ready
   document.addEventListener("DOMContentLoaded", function () {
+    // Load pending approval count immediately (don't wait for SignalR)
+    // This ensures badge shows up right away when navigating between pages
+    loadPendingApprovalCount();
+    
     initNotificationConnection();
 
     // Setup mark all as read button
@@ -347,6 +394,24 @@
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+
+    // Refresh badge when user returns to tab (Visibility API - better UX than polling)
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible" && isConnected) {
+        // Small delay to avoid rapid refreshes
+        setTimeout(function () {
+          loadPendingApprovalCount();
+          loadNotifications();
+        }, 500);
+      }
+    });
+
+    // Also refresh when window gains focus (fallback for some browsers)
+    window.addEventListener("focus", function () {
+      if (isConnected) {
+        loadPendingApprovalCount();
+      }
+    });
   });
 
   // Expose functions globally for inline onclick handlers
@@ -354,6 +419,8 @@
     markAsRead,
     markAllAsRead,
     loadNotifications,
+    loadPendingApprovalCount,
     getUnreadCount: () => unreadCount,
+    getPendingApprovalCount: () => pendingApprovalCount,
   };
 })();

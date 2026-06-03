@@ -112,5 +112,20 @@ namespace ProcurementHTE.Core.Services
         public async Task<List<RegionDistribution>> GetRegionDistributionAsync(
             CancellationToken ct = default
         ) => await _dashboardRepository.GetRegionDistributionAsync(ct);
+
+        // Pending Approvals per-user (based on assigned user)
+        public async Task<int> GetPendingApprovalCountByUserAsync(
+            string userId,
+            string[] userRoles,
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetPendingApprovalCountByUserAsync(userId, userRoles, ct);
+
+        public async Task<(List<PendingApprovalItem> Items, int TotalCount)> GetPendingApprovalsByUserAsync(
+            string userId,
+            string[] userRoles,
+            int skip = 0,
+            int take = 15,
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetPendingApprovalsByUserAsync(userId, userRoles, skip, take, ct);
     }
 }

@@ -89,7 +89,8 @@
 @if (ViewData["ProcurementTrackings"] != null)
 {
     var procurementTrackings = (List<ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto>)ViewData["ProcurementTrackings"]!;
-    @await Html.PartialAsync("_ProcurementTrackingList", procurementTrackings)
+    ViewData["CanPerformActions"] = canEditDelete;
+    @await Html.PartialAsync("_ProcurementTrackingList", procurementTrackings, ViewData)
 }
 
 <!-- Linked Procurements Section -->
@@ -417,7 +418,7 @@
 
                                                             <td class="pe-4" data-actions-row="@rowIndex">
                                                                 <div class="d-flex gap-2 justify-content-end flex-wrap">
-                                                                    @if (!doc.Uploaded && doc.IsUploadRequired && !doc.IsGenerated) {
+                                                                    @if (canEditDelete && !doc.Uploaded && doc.IsUploadRequired && !doc.IsGenerated) {
                                                                         <form class="d-inline-flex gap-2 align-items-center flex-nowrap upload-form"
                                                                               asp-controller="ProcurementDocuments"
                                                                               asp-action="Upload"
@@ -449,7 +450,7 @@
                                                                         </form>
                                                                     }
 
-                                                                    @if (doc.IsGenerated && !isUploaded) {
+                                                                    @if (canEditDelete && doc.IsGenerated && !isUploaded) {
                                                                         <div>
                                                                             <form asp-controller="PurchaseRequisitions"
                                                                                   asp-action="GenerateDocument"
@@ -491,18 +492,20 @@
                                                                                 <i class="bi bi-download"></i>
                                                                             </button>
 
-                                                                            <button type="button"
-                                                                                    class="btn btn-outline-danger btn-delete"
-                                                                                    data-doc-id="@doc.ProcDocumentId"
-                                                                                    data-doc-name="@doc.DocumentTypeName"
-                                                                                    data-file-name="@doc.FileName"
-                                                                                    data-procurement-id="@p.ProcurementId"
-                                                                                    data-document-type-id="@doc.DocumentTypeId"
-                                                                                    data-is-generated="@doc.IsGenerated.ToString().ToLower()"
-                                                                                    data-pr-id="@Model.PrId"
-                                                                                    title="Delete">
-                                                                                <i class="bi bi-trash"></i>
-                                                                            </button>
+                                                                            @if (canEditDelete) {
+                                                                                <button type="button"
+                                                                                        class="btn btn-outline-danger btn-delete"
+                                                                                        data-doc-id="@doc.ProcDocumentId"
+                                                                                        data-doc-name="@doc.DocumentTypeName"
+                                                                                        data-file-name="@doc.FileName"
+                                                                                        data-procurement-id="@p.ProcurementId"
+                                                                                        data-document-type-id="@doc.DocumentTypeId"
+                                                                                        data-is-generated="@doc.IsGenerated.ToString().ToLower()"
+                                                                                        data-pr-id="@Model.PrId"
+                                                                                        title="Delete">
+                                                                                    <i class="bi bi-trash"></i>
+                                                                                </button>
+                                                                            }
                                                                         </div>
                                                                     }
 

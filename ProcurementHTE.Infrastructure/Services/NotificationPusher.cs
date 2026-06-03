@@ -106,5 +106,23 @@ namespace ProcurementHTE.Infrastructure.Services
                 );
             }
         }
+
+        public async Task PushApprovalBadgeAsync(string userId, int pendingCount)
+        {
+            try
+            {
+                await _hubContext
+                    .Clients.Group($"user_{userId}")
+                    .SendAsync("UpdateApprovalBadge", new { pendingCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to update approval badge for user {UserId}",
+                    userId
+                );
+            }
+        }
     }
 }

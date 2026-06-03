@@ -1,9 +1,211 @@
 ﻿(function () {
   "use strict";
 
+  // Prevent duplicate initialization after HTMX navigation
+  if (window.__siteJsInitialized) {
+    console.log('[site.js] Already initialized, skipping');
+    return;
+  }
+  window.__siteJsInitialized = true;
+
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
   }
+
+  // Internal state tracking - completely independent from DOM/Bootstrap
+  const dropdownStates = new WeakMap();
+  const collapseStates = new WeakMap();
+
+  // Disable Bootstrap's data-api for dropdowns and collapses
+  // This prevents Bootstrap from interfering with our manual handling
+  function disableBootstrapDataApi() {
+    // Initialize dropdown states
+    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+      if (!el.hasAttribute('data-manual-handled')) {
+        el.setAttribute('data-manual-handled', 'dropdown');
+        // Initialize state as closed
+        dropdownStates.set(el, false);
+        // Reset DOM to match
+        el.classList.remove('show');
+        el.setAttribute('aria-expanded', 'false');
+        const menu = el.nextElementSibling?.classList.contains('dropdown-menu') 
+          ? el.nextElementSibling 
+          : el.closest('.dropdown, .nav-item, .btn-group')?.querySelector('.dropdown-menu');
+        if (menu) {
+          menu.classList.remove('show');
+        }
+      }
+    });
+    
+    // Initialize collapse states based on current DOM
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(el => {
+      if (!el.hasAttribute('data-manual-handled')) {
+        el.setAttribute('data-manual-handled', 'collapse');
+        const targetSelector = el.getAttribute('href') || el.getAttribute('data-bs-target');
+        if (targetSelector) {
+          const collapseElement = document.querySelector(targetSelector);
+          if (collapseElement) {
+            collapseElement.classList.remove('collapsing');
+            // Initialize state based on current DOM
+            const isShown = collapseElement.classList.contains('show');
+            collapseStates.set(collapseElement, isShown);
+          }
+        }
+      }
+    });
+  }
+
+  // Run on initial load
+  disableBootstrapDataApi();
+
+  // Re-run after HTMX swaps content
+  document.body.addEventListener('htmx:afterSwap', disableBootstrapDataApi);
+  document.body.addEventListener('htmx:afterSettle', disableBootstrapDataApi);
+
+  // Single click handler for both dropdown and collapse
+  // Using capture phase AND stopImmediatePropagation to beat Bootstrap
+  document.addEventListener('click', function(e) {
+    
+    // Handle dropdown toggle clicks
+    const dropdownToggle = e.target.closest('[data-bs-toggle="dropdown"]');
+    if (dropdownToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      // Find the dropdown menu
+      let dropdownMenu = dropdownToggle.nextElementSibling?.classList.contains('dropdown-menu') 
+        ? dropdownToggle.nextElementSibling 
+        : null;
+      
+      if (!dropdownMenu) {
+        const parent = dropdownToggle.closest('.dropdown, .nav-item, .btn-group');
+        if (parent) dropdownMenu = parent.querySelector('.dropdown-menu');
+      }
+      
+      if (!dropdownMenu && dropdownToggle.id) {
+        dropdownMenu = document.querySelector(`.dropdown-menu[aria-labelledby="${dropdownToggle.id}"]`);
+      }
+      
+      if (!dropdownMenu) {
+        return false;
+      }
+      
+      // Use WeakMap for state tracking - completely independent from DOM
+      let wasShown = dropdownStates.get(dropdownToggle);
+      if (wasShown === undefined) {
+        // First time seeing this toggle, initialize as closed
+        wasShown = false;
+        dropdownStates.set(dropdownToggle, false);
+      }
+      
+      // Close all other dropdowns first
+      document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        if (menu !== dropdownMenu) {
+          menu.classList.remove('show');
+          const menuParent = menu.closest('.dropdown, .nav-item, .btn-group');
+          const menuToggle = menuParent?.querySelector('[data-bs-toggle="dropdown"]') || menu.previousElementSibling;
+          if (menuToggle) {
+            menuToggle.classList.remove('show');
+            menuToggle.setAttribute('aria-expanded', 'false');
+            dropdownStates.set(menuToggle, false);
+          }
+        }
+      });
+      
+      if (!wasShown) {
+        dropdownToggle.classList.add('show');
+        dropdownToggle.setAttribute('aria-expanded', 'true');
+        dropdownMenu.classList.add('show');
+        dropdownMenu.setAttribute('data-bs-popper', 'static');
+        dropdownStates.set(dropdownToggle, true);
+      } else {
+        dropdownToggle.classList.remove('show');
+        dropdownToggle.setAttribute('aria-expanded', 'false');
+        dropdownMenu.classList.remove('show');
+        dropdownStates.set(dropdownToggle, false);
+      }
+      
+      return false;
+    }
+    
+    // Handle collapse toggle clicks  
+    const collapseToggle = e.target.closest('[data-bs-toggle="collapse"]');
+    if (collapseToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      const targetSelector = collapseToggle.getAttribute('href') || collapseToggle.getAttribute('data-bs-target');
+      if (!targetSelector) {
+        return false;
+      }
+      
+      const collapseElement = document.querySelector(targetSelector);
+      if (!collapseElement) {
+        return false;
+      }
+      
+      // Remove any stuck transitional state from Bootstrap
+      collapseElement.classList.remove('collapsing');
+      
+      // Use WeakMap for state tracking - completely independent from DOM
+      let wasShown = collapseStates.get(collapseElement);
+      if (wasShown === undefined) {
+        // First time seeing this element, check DOM for initial state
+        wasShown = collapseElement.classList.contains('show');
+        collapseStates.set(collapseElement, wasShown);
+      }
+      
+      // Find chevron
+      const chevron = collapseToggle.querySelector('i.bi-chevron-down, i.bi-chevron-up, .bi.bi-chevron-down, .bi.bi-chevron-up');
+      
+      if (!wasShown) {
+        // Show it
+        collapseElement.classList.remove('collapse');
+        collapseElement.classList.add('collapse', 'show');
+        collapseElement.style.height = 'auto';
+        collapseStates.set(collapseElement, true);
+        collapseToggle.setAttribute('aria-expanded', 'true');
+        collapseToggle.classList.remove('collapsed');
+        if (chevron) {
+          chevron.classList.remove('bi-chevron-down');
+          chevron.classList.add('bi-chevron-up', 'rotate');
+        }
+      } else {
+        // Hide it
+        collapseElement.classList.add('collapse');
+        collapseElement.classList.remove('show');
+        collapseElement.style.height = '';
+        collapseStates.set(collapseElement, false);
+        collapseToggle.setAttribute('aria-expanded', 'false');
+        collapseToggle.classList.add('collapsed');
+        if (chevron) {
+          chevron.classList.remove('bi-chevron-up', 'rotate');
+          chevron.classList.add('bi-chevron-down');
+        }
+      }
+      
+      return false;
+    }
+  }, true); // Capture phase - runs before Bootstrap's handler
+  
+  // Handle click outside to close dropdowns
+  document.addEventListener('click', function(e) {
+    // If click is not on a dropdown or btn-group or nav-item dropdown, close all open dropdowns
+    if (!e.target.closest('.dropdown, .nav-item.dropdown, .btn-group, [data-bs-toggle="dropdown"], .dropdown-menu')) {
+      document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        menu.classList.remove('show');
+        const menuParent = menu.closest('.dropdown, .nav-item, .btn-group');
+        const toggle = menuParent?.querySelector('[data-bs-toggle="dropdown"]') || menu.previousElementSibling;
+        if (toggle) {
+          toggle.classList.remove('show');
+          toggle.setAttribute('aria-expanded', 'false');
+          dropdownStates.set(toggle, false);
+        }
+      });
+    }
+  });
 
   const SELECTORS = {
     navLink: "[data-nav-controller]",
@@ -24,9 +226,16 @@
     const selector = [`[href="#${collapseId}"]`, `[data-bs-target="#${collapseId}"]`].join(", ");
     document.querySelectorAll(selector).forEach((toggle) => {
       toggle.setAttribute("aria-expanded", shouldShow ? "true" : "false");
-      const chevron = toggle.querySelector(".bi-chevron-down");
+      // Find chevron with both possible selector patterns
+      const chevron = toggle.querySelector("i.bi-chevron-down, i.bi-chevron-up, .bi.bi-chevron-down, .bi.bi-chevron-up");
       if (chevron) {
-        chevron.classList.toggle("rotate", shouldShow);
+        if (shouldShow) {
+          chevron.classList.remove("bi-chevron-down");
+          chevron.classList.add("bi-chevron-up", "rotate");
+        } else {
+          chevron.classList.remove("bi-chevron-up", "rotate");
+          chevron.classList.add("bi-chevron-down");
+        }
       }
     });
   }
@@ -152,6 +361,9 @@
     if (!target) {
       return;
     }
+    
+    // Normal HTMX navigation works fine with our handlers
+    
     const shouldSelfExecuteScripts = window.htmx && window.htmx.config && window.htmx.config.allowScriptTags === false;
     if (shouldSelfExecuteScripts) {
       executeScripts(target);
@@ -174,53 +386,107 @@
 
   // Function to reinitialize Bootstrap components after HTMX navigation
   function reinitializeBootstrapComponents() {
-    // Reinitialize all dropdowns (including navbar dropdowns)
-    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(dropdownToggle) {
-      // Dispose existing instance if any
-      const existingInstance = bootstrap.Dropdown.getInstance(dropdownToggle);
-      if (existingInstance) {
-        existingInstance.dispose();
+    // Check if bootstrap is available
+    if (typeof bootstrap === 'undefined') {
+      return;
+    }
+
+    // Fix any collapse elements stuck in 'collapsing' transitional state
+    document.querySelectorAll('.collapsing').forEach(function(el) {
+      el.classList.remove('collapsing');
+      // Determine intended state from aria-expanded of its toggle
+      const toggle = document.querySelector(`[href="#${el.id}"], [data-bs-target="#${el.id}"]`);
+      if (toggle && toggle.getAttribute('aria-expanded') === 'true') {
+        el.classList.add('collapse', 'show');
+      } else {
+        el.classList.add('collapse');
+        el.classList.remove('show');
       }
-      // Create new instance
-      new bootstrap.Dropdown(dropdownToggle);
+    });
+
+    // Remove any stuck modal-backdrop that might be blocking clicks
+    document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+      backdrop.remove();
+    });
+    
+    // Remove modal-open class from body if no modals are visible
+    const visibleModals = document.querySelectorAll('.modal.show');
+    if (visibleModals.length === 0) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+    
+    // Remove any element blocking clicks
+    const clickBlockers = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop, [style*="pointer-events: none"]');
+    if (clickBlockers.length > 0) {
+      clickBlockers.forEach(b => b.remove());
+    }
+    
+    // For dropdowns - DISPOSE and recreate to fix broken instances
+    const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+    dropdowns.forEach(function(dropdownToggle) {
+      try {
+        const existingInstance = bootstrap.Dropdown.getInstance(dropdownToggle);
+        if (existingInstance) {
+          existingInstance.dispose();
+        }
+        new bootstrap.Dropdown(dropdownToggle);
+      } catch (e) {}
     });
     
     // Reinitialize all tooltips
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(tooltipTrigger) {
-      const existingInstance = bootstrap.Tooltip.getInstance(tooltipTrigger);
-      if (existingInstance) {
-        existingInstance.dispose();
-      }
-      new bootstrap.Tooltip(tooltipTrigger);
+      try {
+        const existingInstance = bootstrap.Tooltip.getInstance(tooltipTrigger);
+        if (existingInstance) existingInstance.dispose();
+        new bootstrap.Tooltip(tooltipTrigger);
+      } catch (e) {}
     });
     
     // Reinitialize all popovers
     document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(popoverTrigger) {
-      const existingInstance = bootstrap.Popover.getInstance(popoverTrigger);
-      if (existingInstance) {
-        existingInstance.dispose();
-      }
-      new bootstrap.Popover(popoverTrigger);
+      try {
+        const existingInstance = bootstrap.Popover.getInstance(popoverTrigger);
+        if (existingInstance) existingInstance.dispose();
+        new bootstrap.Popover(popoverTrigger);
+      } catch (e) {}
     });
     
     // Reinitialize all tabs
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(tabTrigger) {
-      const existingInstance = bootstrap.Tab.getInstance(tabTrigger);
-      if (existingInstance) {
-        existingInstance.dispose();
-      }
-      new bootstrap.Tab(tabTrigger);
+      try {
+        const existingInstance = bootstrap.Tab.getInstance(tabTrigger);
+        if (existingInstance) existingInstance.dispose();
+        new bootstrap.Tab(tabTrigger);
+      } catch (e) {}
     });
     
-    // Reinitialize all collapses - fix for sidebar menu not expanding
-    // Note: Bootstrap Collapse should be initialized from the target element, not the trigger
-    document.querySelectorAll('.collapse').forEach(function(collapseElement) {
-      const existingInstance = bootstrap.Collapse.getInstance(collapseElement);
-      if (existingInstance) {
-        existingInstance.dispose();
-      }
-      // Initialize new collapse instance with toggle: false to preserve current state
-      new bootstrap.Collapse(collapseElement, { toggle: false });
+    // For collapses - DISPOSE and recreate
+    const collapseToggles = document.querySelectorAll('[data-bs-toggle="collapse"]');
+    collapseToggles.forEach(function(collapseTrigger) {
+      const targetSelector = collapseTrigger.getAttribute('href') || collapseTrigger.getAttribute('data-bs-target');
+      if (!targetSelector) return;
+      
+      const collapseElement = document.querySelector(targetSelector);
+      if (!collapseElement) return;
+      
+      try {
+        const existingInstance = bootstrap.Collapse.getInstance(collapseElement);
+        if (existingInstance) {
+          existingInstance.dispose();
+        }
+        new bootstrap.Collapse(collapseElement, { toggle: false });
+      } catch (e) {}
+    });
+    
+    // Also handle offcanvas (mobile sidebar)
+    document.querySelectorAll('.offcanvas').forEach(function(offcanvasElement) {
+      try {
+        const existingInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
+        if (existingInstance) existingInstance.dispose();
+        new bootstrap.Offcanvas(offcanvasElement);
+      } catch (e) {}
     });
   }
   
@@ -241,10 +507,24 @@
       const root = fragment.querySelector("[data-partial-root]");
       if (root) {
         syncFromPartialRoot(root, target);
-        return;
       }
     }
     scrollContentToTop(target);
+    
+    // Reinitialize after history restore - Bootstrap's data-api may be broken
+    
+    // Reinitialize Bootstrap components
+    setTimeout(() => {
+      reinitializeBootstrapComponents();
+    }, 100);
+  });
+
+  // Handle browser back-forward cache (bfcache) - reinit when page is restored from cache
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      // Page was restored from bfcache
+      reinitializeBootstrapComponents();
+    }
   });
 
   const DEFAULT_CONFIRM = {

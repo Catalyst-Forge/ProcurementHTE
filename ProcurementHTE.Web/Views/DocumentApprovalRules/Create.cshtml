@@ -5,6 +5,7 @@
     var docSelect = ViewBag.DocumentTypeSelect as SelectList;
     var jobSelect = ViewBag.JobTypeSelect as SelectList;
     var roleSelect = ViewBag.RoleSelect as SelectList;
+    var userSelect = ViewBag.UserSelect as SelectList;
     var categories = ViewBag.Categories as List<SelectListItem> ?? new();
 }
 
@@ -66,11 +67,27 @@
             </div>
 
             <div class="col-md-6">
+                <label class="form-label">Submitted By (User) <small class="text-muted">- untuk nama di dokumen</small></label>
+                <select asp-for="SubmitterUserId" class="form-select" asp-items="userSelect">
+                    <option value="">-- pilih user (optional) --</option>
+                </select>
+                <span asp-validation-for="SubmitterUserId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
                 <label class="form-label">Approved By (Role)</label>
                 <select asp-for="ApproverRoleId" class="form-select" asp-items="roleSelect">
                     <option value="">-- optional --</option>
                 </select>
                 <span asp-validation-for="ApproverRoleId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Approved By (User) <small class="text-muted">- untuk nama di dokumen</small></label>
+                <select asp-for="ApproverUserId" class="form-select" asp-items="userSelect">
+                    <option value="">-- pilih user (optional) --</option>
+                </select>
+                <span asp-validation-for="ApproverUserId" class="text-danger small"></span>
             </div>
 
             <div class="col-md-4">

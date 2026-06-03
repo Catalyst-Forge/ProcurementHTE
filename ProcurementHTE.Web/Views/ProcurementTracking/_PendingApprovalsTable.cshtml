@@ -1,0 +1,203 @@
+@using ProcurementHTE.Core.Interfaces
+@model List<PendingApprovalItem>
+@{
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var pageSize = ViewBag.PageSize as int? ?? 15;
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+}
+
+<div data-total-count="@totalCount" hx-boost="false">
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-3">Proc Number</th>
+                        <th>WO Number</th>
+                        <th>Job Name</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Tanggal Dokumen</th>
+                        <th class="text-center">Dikirim</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    <p class="mb-0">Tidak ada procurement yang menunggu approval Anda</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            var statusBadgeClass = item.CurrentStatus switch
+                            {
+                                "WaitingApprovalAnalyst" => "bg-info",
+                                "WaitingApprovalAsstManager" => "bg-warning text-dark",
+                                "WaitingApprovalManager" => "bg-primary",
+                                _ => "bg-secondary"
+                            };
+                            
+                            <tr>
+                                <td class="px-3">
+                                    <a asp-controller="ProcurementTracking" 
+                                       asp-action="Details" 
+                                       asp-route-procurementId="@item.ProcurementId"
+                                       class="fw-semibold text-decoration-none"
+                                       hx-boost="false">
+                                        @item.ProcNum
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="text-muted">@item.Wonum</span>
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@item.JobName">
+                                        @item.JobName
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @statusBadgeClass">
+                                        @item.CurrentStatusDescription
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="text-muted small">
+                                        @item.DocumentDate.ToString("dd MMM yyyy")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (item.SentForApprovalAt.HasValue)
+                                    {
+                                        <span class="text-muted small" title="@item.SentForApprovalAt.Value.ToString("dd MMM yyyy HH:mm")">
+                                            @GetTimeAgo(item.SentForApprovalAt.Value)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a asp-controller="Procurements" 
+                                           asp-action="Details" 
+                                           asp-route-id="@item.ProcurementId"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Lihat Detail Procurement"
+                                           hx-boost="false">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-controller="ProcurementTracking" 
+                                           asp-action="Details" 
+                                           asp-route-procurementId="@item.ProcurementId"
+                                           class="btn btn-sm btn-success"
+                                           title="Review Approval"
+                                           hx-boost="false">
+                                            <i class="bi bi-check2-circle me-1"></i>Review
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white border-top" hx-boost="false">
+                <nav aria-label="Pending approvals pagination">
+                    <ul class="pagination pagination-sm mb-0 justify-content-center">
+                        <!-- Previous -->
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <button type="button" class="page-link" 
+                                    hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { page = currentPage - 1, pageSize = pageSize, partial = true })"
+                                    hx-target="#pending-approvals-container"
+                                    hx-swap="innerHTML"
+                                    hx-indicator="#refresh-spinner">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                            </li>
+                        }
+
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            var isActive = i == currentPage;
+                            var pageNum = i;
+                            @if (isActive)
+                            {
+                                <li class="page-item active">
+                                    <span class="page-link">@pageNum</span>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item">
+                                    <button type="button" class="page-link" 
+                                        hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { page = pageNum, pageSize = pageSize, partial = true })"
+                                        hx-target="#pending-approvals-container"
+                                        hx-swap="innerHTML"
+                                        hx-indicator="#refresh-spinner">@pageNum</button>
+                                </li>
+                            }
+                        }
+
+                        <!-- Next -->
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <button type="button" class="page-link" 
+                                    hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { page = currentPage + 1, pageSize = pageSize, partial = true })"
+                                    hx-target="#pending-approvals-container"
+                                    hx-swap="innerHTML"
+                                    hx-indicator="#refresh-spinner">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+
+    <div class="text-muted small text-center mt-3">
+        Menampilkan @Model?.Count item dari @totalCount total
+    </div>
+</div>
+
+@functions {
+    string GetTimeAgo(DateTime dateTime)
+    {
+        var diff = DateTime.UtcNow - dateTime;
+        if (diff.TotalMinutes < 1) return "Baru saja";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} menit lalu";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} jam lalu";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} hari lalu";
+        return dateTime.ToString("dd MMM yyyy");
+    }
+}

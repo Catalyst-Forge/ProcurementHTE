@@ -1,5 +1,10 @@
 @model IEnumerable<ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto>
 
+@{
+    // Check if current user can perform actions (passed via ViewData or check ownership)
+    var canPerformActions = ViewData["CanPerformActions"] as bool? ?? false;
+}
+
 @if (Model != null && Model.Any())
 {
     <section class="card border mb-4">
@@ -83,7 +88,7 @@
                                            title="View Tracking">
                                             <i class="bi bi-eye"></i> Track
                                         </a>
-                                        @if (proc.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.OnCreateDP3)
+                                        @if (canPerformActions && proc.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.OnCreateDP3)
                                         {
                                             <form asp-controller="PurchaseRequisitions"
                                                   asp-action="SendApproval"

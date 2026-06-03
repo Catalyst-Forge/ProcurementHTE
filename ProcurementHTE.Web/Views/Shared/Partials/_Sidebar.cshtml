@@ -214,10 +214,27 @@
             </a>
         </li>
 
+        @* Pending Approvals - Only for approver roles *@
+        @if (User.IsInRole("Admin") || User.IsInRole("Analyst HTE & LTS") || User.IsInRole("Assistant Manager HTE") || User.IsInRole("Manager Transport & Logistic")) {
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 d-flex align-items-center @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }, actions: new[] { "PendingApprovals" }))"
+                data-nav-controller="ProcurementTracking"
+                data-nav-action="PendingApprovals"
+                asp-controller="ProcurementTracking"
+                asp-action="PendingApprovals"
+                data-page="Pending Approvals">
+                    <i class="bi bi-hourglass-split"></i>
+                    <span class="ms-1">Pending Approvals</span>
+                    <span class="badge bg-danger ms-auto pending-approval-badge" style="display: none;">0</span>
+                </a>
+            </li>
+        }
+
         @* Procurement Tracking - Accessible by all roles *@
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }))"
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }, actions: new[] { "Index", "Search", "Details", "TrackingResult" }))"
             data-nav-controller="ProcurementTracking"
+            data-nav-action="Index,Search,Details,TrackingResult"
             asp-controller="ProcurementTracking"
             asp-action="Index"
             data-page="Procurement Tracking">

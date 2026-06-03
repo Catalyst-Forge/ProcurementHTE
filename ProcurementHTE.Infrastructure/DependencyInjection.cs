@@ -33,6 +33,7 @@ public static class DependencyInjection
         // ------------- Storage & Utilities -------------
         services.AddSingleton<IObjectStorage, MinioStorage>();
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+        services.AddHttpClient("Resend");
         services.AddHttpClient("SmsProvider");
 
         // ------------- Repositories -------------
@@ -76,6 +77,8 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<EmailSenderOptions>>().Value;
             if (opts.UseDevelopmentMode)
                 return ActivatorUtilities.CreateInstance<ConsoleEmailSender>(sp);
+            if (string.Equals(opts.Provider, "Resend", StringComparison.OrdinalIgnoreCase))
+                return ActivatorUtilities.CreateInstance<ResendEmailSender>(sp);
             return ActivatorUtilities.CreateInstance<SmtpEmailSender>(sp);
         });
 

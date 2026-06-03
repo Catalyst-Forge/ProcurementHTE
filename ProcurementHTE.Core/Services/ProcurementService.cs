@@ -553,6 +553,13 @@ public class ProcurementService : IProcurementService
         existing.AnalystHteUserId = updated.AnalystHteUserId;
         existing.AssistantManagerUserId = updated.AssistantManagerUserId;
         existing.ManagerUserId = updated.ManagerUserId;
+        // Pjs flags
+        existing.AnalystHtePjs = updated.AnalystHtePjs;
+        existing.AssistantManagerPjs = updated.AssistantManagerPjs;
+        existing.ManagerPjs = updated.ManagerPjs;
+        existing.VicePresidentPjs = updated.VicePresidentPjs;
+        existing.OperationDirectorPjs = updated.OperationDirectorPjs;
+        existing.PresidentDirectorPjs = updated.PresidentDirectorPjs;
         existing.UpdatedAt = DateTime.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(updated.JobTypeId))

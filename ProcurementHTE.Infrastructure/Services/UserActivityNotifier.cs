@@ -37,8 +37,9 @@ namespace ProcurementHTE.Infrastructure.Services
 
             try
             {
-                // Notify ALL connected clients about user activity change
-                await _hubContext.Clients.All.SendAsync(
+                // Notify only clients in the "dashboard_viewers" group about user activity change
+                // This prevents unnecessary broadcasts to pages that don't need this info
+                await _hubContext.Clients.Group("dashboard_viewers").SendAsync(
                     "UserActivityChanged",
                     new
                     {

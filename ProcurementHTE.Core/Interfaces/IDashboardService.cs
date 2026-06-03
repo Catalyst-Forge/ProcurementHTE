@@ -54,6 +54,20 @@ namespace ProcurementHTE.Core.Interfaces
         // Admin Extended Metrics
         Task<AccrualStatistics> GetAccrualStatisticsAsync(CancellationToken ct = default);
         Task<List<RegionDistribution>> GetRegionDistributionAsync(CancellationToken ct = default);
+
+        // Pending Approvals per-user (based on assigned user)
+        Task<int> GetPendingApprovalCountByUserAsync(
+            string userId,
+            string[] userRoles,
+            CancellationToken ct = default
+        );
+        Task<(List<PendingApprovalItem> Items, int TotalCount)> GetPendingApprovalsByUserAsync(
+            string userId,
+            string[] userRoles,
+            int skip = 0,
+            int take = 15,
+            CancellationToken ct = default
+        );
     }
 
     // DTOs for Admin Extended Metrics

@@ -158,6 +158,31 @@ namespace ProcurementHTE.Infrastructure.Data
                     "ApInvoice123!",
                     "AP-Invoice"
                 ),
+                // Direksi dengan nama asli
+                (
+                    "faried",
+                    "faried.iskandar@pertamina-pdc.com",
+                    "Faried",
+                    "Iskandar Dozyn",
+                    "Faried123!",
+                    "President Director"
+                ),
+                (
+                    "apriandy",
+                    "apriandy.zainuddin@pertamina-pdc.com",
+                    "Apriandy",
+                    "Zainuddin",
+                    "Apriandy123!",
+                    "Operation Director"
+                ),
+                (
+                    "agus",
+                    "agus.sudjatmoko@pertamina-pdc.com",
+                    "Agus",
+                    "Sudjatmoko",
+                    "Agus1234!",
+                    "Vice President"
+                ),
             };
 
             foreach (var u in users)

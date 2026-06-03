@@ -91,6 +91,38 @@ public class Procurement : BaseEntity
     [DisplayName("Manager User")]
     public string? ManagerUserId { get; set; }
 
+    // Higher Level Approvers (assigned dynamically based on CT value)
+    [MaxLength(450)]
+    [DisplayName("Vice President User")]
+    public string? VicePresidentUserId { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("Operation Director User")]
+    public string? OperationDirectorUserId { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("President Director User")]
+    public string? PresidentDirectorUserId { get; set; }
+
+    // Pjs (Penanggung Jawab Sementara / Acting) flags
+    [DisplayName("Analyst HTE Pjs")]
+    public bool AnalystHtePjs { get; set; }
+
+    [DisplayName("Assistant Manager Pjs")]
+    public bool AssistantManagerPjs { get; set; }
+
+    [DisplayName("Manager Pjs")]
+    public bool ManagerPjs { get; set; }
+
+    [DisplayName("Vice President Pjs")]
+    public bool VicePresidentPjs { get; set; }
+
+    [DisplayName("Operation Director Pjs")]
+    public bool OperationDirectorPjs { get; set; }
+
+    [DisplayName("President Director Pjs")]
+    public bool PresidentDirectorPjs { get; set; }
+
     [MaxLength(450)]
     [DisplayName("AP-PO User")]
     public string? AppoUserId { get; set; }
@@ -184,6 +216,14 @@ public class Procurement : BaseEntity
     [DisplayName("ISPA Number")]
     public string? IspaNumber { get; set; }
 
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Tanggal ISPA")]
+    public DateTime? IspaDate { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Tanggal Submit ISPA")]
+    public DateTime? IspaSubmitDate { get; set; }
+
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
     [DisplayName("ISPA Submitted At")]
     public DateTime? IspaSubmittedAt { get; set; }
@@ -191,6 +231,22 @@ public class Procurement : BaseEntity
     [MaxLength(450)]
     [DisplayName("ISPA Submitted By")]
     public string? IspaSubmittedByUserId { get; set; }
+
+    // ISPA File Fields
+    [MaxLength(255)]
+    [DisplayName("ISPA File Name")]
+    public string? IspaFileName { get; set; }
+
+    [MaxLength(500)]
+    [DisplayName("ISPA File Path")]
+    public string? IspaFileObjectKey { get; set; }
+
+    [MaxLength(100)]
+    [DisplayName("ISPA File Content Type")]
+    public string? IspaFileContentType { get; set; }
+
+    [DisplayName("ISPA File Size")]
+    public long? IspaFileSize { get; set; }
 
     // PO Tracking Fields
     [MaxLength(100)]
@@ -242,6 +298,70 @@ public class Procurement : BaseEntity
     [DisplayName("Rejected By")]
     public string? RejectedByUserId { get; set; }
 
+    // ===== Revision Tracking Fields =====
+
+    /// <summary>
+    /// Selected symptoms during rejection (Flags enum)
+    /// </summary>
+    [DisplayName("Rejection Symptoms")]
+    public RejectionSymptom? RejectionSymptoms { get; set; }
+
+    /// <summary>
+    /// Symptoms that still need to be addressed (for sequential revision)
+    /// </summary>
+    [DisplayName("Pending Revision Symptoms")]
+    public RejectionSymptom? PendingRevisionSymptoms { get; set; }
+
+    /// <summary>
+    /// Status before rejection (to restore after revision if needed)
+    /// </summary>
+    [DisplayName("Status Before Rejection")]
+    public ProcurementStatus? StatusBeforeRejection { get; set; }
+
+    /// <summary>
+    /// Number of times this procurement has been revised
+    /// </summary>
+    [DisplayName("Revision Count")]
+    public int RevisionCount { get; set; } = 0;
+
+    /// <summary>
+    /// When the procurement was last resubmitted after revision
+    /// </summary>
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    [DisplayName("Resubmitted At")]
+    public DateTime? ResubmittedAt { get; set; }
+
+    /// <summary>
+    /// User who resubmitted after revision
+    /// </summary>
+    [MaxLength(450)]
+    [DisplayName("Resubmitted By")]
+    public string? ResubmittedByUserId { get; set; }
+
+    // LDP Document Fields (Rekapan Dokumen Procurement yang sudah ditanda tangan basah)
+    [MaxLength(255)]
+    [DisplayName("LDP File Name")]
+    public string? LdpFileName { get; set; }
+
+    [MaxLength(500)]
+    [DisplayName("LDP File Path")]
+    public string? LdpFileObjectKey { get; set; }
+
+    [MaxLength(100)]
+    [DisplayName("LDP File Content Type")]
+    public string? LdpFileContentType { get; set; }
+
+    [DisplayName("LDP File Size")]
+    public long? LdpFileSize { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    [DisplayName("LDP Uploaded At")]
+    public DateTime? LdpUploadedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("LDP Uploaded By")]
+    public string? LdpUploadedByUserId { get; set; }
+
     // Approval QR Code Token Fields
     [MaxLength(100)]
     [DisplayName("Approval Token")]
@@ -256,6 +376,46 @@ public class Procurement : BaseEntity
     public string? ApprovalSentByUserId { get; set; }
 
     // ===== End Procurement-Level Tracking Fields =====
+
+    // ===== Approval Timeline Tracking Fields (for LDP reporting) =====
+
+    // Manager Approval Timeline
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Manager Approval Start")]
+    public DateTime? ManagerApprovalStartAt { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Manager Approval End")]
+    public DateTime? ManagerApprovalEndAt { get; set; }
+
+    // VP Approval Timeline
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("VP Approval Start")]
+    public DateTime? VpApprovalStartAt { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("VP Approval End")]
+    public DateTime? VpApprovalEndAt { get; set; }
+
+    // Operation Director Approval Timeline
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Op Director Approval Start")]
+    public DateTime? OpDirApprovalStartAt { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("Op Director Approval End")]
+    public DateTime? OpDirApprovalEndAt { get; set; }
+
+    // President Director Approval Timeline
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("President Director Approval Start")]
+    public DateTime? PresDirApprovalStartAt { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+    [DisplayName("President Director Approval End")]
+    public DateTime? PresDirApprovalEndAt { get; set; }
+
+    // ===== End Approval Timeline Tracking Fields =====
 
     // Foreign Key
     public string? JobTypeId { get; set; }
@@ -278,8 +438,29 @@ public class Procurement : BaseEntity
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 
+    [ForeignKey(nameof(PicOpsUserId))]
+    public User? PicOpsUser { get; set; }
+
     [ForeignKey(nameof(AppoUserId))]
     public User? AppoUser { get; set; }
+
+    [ForeignKey(nameof(AnalystHteUserId))]
+    public User? AnalystHteUser { get; set; }
+
+    [ForeignKey(nameof(AssistantManagerUserId))]
+    public User? AssistantManagerUser { get; set; }
+
+    [ForeignKey(nameof(ManagerUserId))]
+    public User? ManagerUser { get; set; }
+
+    [ForeignKey(nameof(VicePresidentUserId))]
+    public User? VicePresidentUser { get; set; }
+
+    [ForeignKey(nameof(OperationDirectorUserId))]
+    public User? OperationDirectorUser { get; set; }
+
+    [ForeignKey(nameof(PresidentDirectorUserId))]
+    public User? PresidentDirectorUser { get; set; }
 
     [ForeignKey(nameof(AccrualFilledByUserId))]
     public User? AccrualFilledByUser { get; set; }
@@ -305,6 +486,9 @@ public class Procurement : BaseEntity
 
     [ForeignKey(nameof(RejectedByUserId))]
     public User? RejectedByUser { get; set; }
+
+    [ForeignKey(nameof(ResubmittedByUserId))]
+    public User? ResubmittedByUser { get; set; }
 
     [ForeignKey(nameof(ApprovalSentByUserId))]
     public User? ApprovalSentByUser { get; set; }
