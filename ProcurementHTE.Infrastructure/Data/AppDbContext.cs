@@ -211,7 +211,12 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasMaxLength(50);
                 entity
                     .Property(procurement => procurement.ProjectRegion)
-                    .HasConversion<string>()
+                    .HasConversion(
+                        region => region.ToString(),
+                        value => value == "SMRT"
+                            ? ProjectRegion.SMTR
+                            : Enum.Parse<ProjectRegion>(value)
+                    )
                     .HasMaxLength(50);
                 entity
                     .Property(procurement => procurement.ProcurementCategory)

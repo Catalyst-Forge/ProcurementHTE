@@ -12,9 +12,6 @@ namespace ProcurementHTE.Infrastructure.Data
             RoleManager<Role> roleManager
         )
         {
-            if (await roleManager.Roles.AnyAsync())
-                return;
-
             string[] roles =
             [
                 "Admin",
