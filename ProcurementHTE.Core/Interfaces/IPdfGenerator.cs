@@ -6,7 +6,7 @@ namespace ProcurementHTE.Core.Interfaces
     {
         Task<byte[]> GenerateProfitLossPdfAsync(
             ProfitLoss pnl,
-            Procurement wo,
+            Procurement procurement,
             Vendor? selectedVendor,
             IReadOnlyList<VendorOffer> offers
         );

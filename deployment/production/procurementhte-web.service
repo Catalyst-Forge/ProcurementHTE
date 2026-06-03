@@ -1,0 +1,25 @@
+[Unit]
+Description=Procurement HTE ASP.NET Core web app
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/srv/procurementhte/current
+ExecStart=/opt/dotnet/dotnet /srv/procurementhte/current/ProcurementHTE.Web.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=procurementhte-web
+User=procurementhte
+Group=procurementhte
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5100
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+EnvironmentFile=-/etc/procurementhte/procurementhte.env
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/srv/procurementhte /var/lib/procurementhte /tmp
+
+[Install]
+WantedBy=multi-user.target

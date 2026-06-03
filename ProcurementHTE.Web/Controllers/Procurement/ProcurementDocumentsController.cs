@@ -2,44 +2,55 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
-[Authorize]
+[Authorize(Roles = "Admin, AP-PO")]
 public class ProcurementDocumentsController : Controller
 {
+    private static readonly HashSet<string> _roundLetterDocNames = new(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        "Surat Penawaran Harga",
+        "Surat Negosiasi Harga",
+    };
+
     private readonly IProcurementDocumentQuery _query;
     private readonly IProcDocumentService _docSvc;
     private readonly IProcurementService _procurementService;
+    private readonly IVendorService _vendorService;
+    private readonly IVendorRoundLetterRepository _roundLetterRepo;
     private readonly IHttpClientFactory _http;
     private readonly IDocumentGenerator _docGenerator;
     private readonly IDocumentTypeRepository _docTypeRepo;
-    private readonly IApprovalService _approvalSvc;
-    private readonly ILogger<ProcurementDocumentsController> _logger;
+    private readonly IProcurementTrackingService _trackingService;
+    // IApprovalService removed - approval sekarang di level PR
 
     public ProcurementDocumentsController(
         IProcurementDocumentQuery query,
         IProcurementService procurementService,
         IProcDocumentService docSvc,
+        IVendorService vendorService,
+        IVendorRoundLetterRepository roundLetterRepo,
         IHttpClientFactory http,
         IDocumentGenerator docGenerator,
         IDocumentTypeRepository docTypeRepo,
-        IApprovalService approvalSvc,
-        ILogger<ProcurementDocumentsController> logger
+        IProcurementTrackingService trackingService
     )
     {
         _query = query;
         _docSvc = docSvc;
         _procurementService = procurementService;
+        _vendorService = vendorService;
+        _roundLetterRepo = roundLetterRepo;
         _http = http;
         _docGenerator = docGenerator;
         _docTypeRepo = docTypeRepo;
-        _approvalSvc = approvalSvc;
-        _logger = logger;
+        _trackingService = trackingService;
     }
 
     // GET: /ProcurementDocuments/Index/{procurementId}
@@ -61,13 +72,25 @@ public class ProcurementDocumentsController : Controller
 
             var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
             ViewBag.ProcNum = procurement?.ProcNum ?? "-";
+            ViewBag.Vendors = await _vendorService.GetAllVendorsAsync();
+            ViewBag.RoundLetters = await _roundLetterRepo.ListByProcurementAsync(procurementId);
+
+            var filteredDocItems = (dto.Items ?? Enumerable.Empty<RequiredDocItemDto>()).Where(
+                item =>
+                {
+                    var docName = item.DocumentTypeName?.Trim();
+                    return string.IsNullOrWhiteSpace(docName)
+                        || !_roundLetterDocNames.Contains(docName);
+                }
+            );
+
             var vm = new ProcurementRequiredDocsVm
             {
                 ProcurementId = dto.ProcurementId,
                 JobTypeId = dto.JobTypeId,
                 Items =
                 [
-                    .. dto.Items.Select(x => new RequiredDocItemDto
+                    .. filteredDocItems.Select(x => new RequiredDocItemDto
                     {
                         JobTypeDocumentId = x.JobTypeDocumentId,
                         Sequence = x.Sequence,
@@ -82,7 +105,7 @@ public class ProcurementDocumentsController : Controller
                         ProcDocumentId = x.ProcDocumentId,
                         FileName = x.FileName,
                         Size = x.Size,
-                        Status = x.Status,
+                        // Status removed - tracking sekarang di level PR
                     }),
                 ],
             };
@@ -90,8 +113,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load required docs for procurement {ProcurementId}", procurementId);
-            TempData["ErrorMessage"] = "Failed to load document list.";
+            TempData["ErrorMessage"] = $"Failed to load document list: {ex.Message}";
             return RedirectToAction("Index", "Error");
         }
     }
@@ -163,6 +185,9 @@ public class ProcurementDocumentsController : Controller
 
             if (IsAjaxRequest())
             {
+                // Get updated document count after upload
+                var (uploaded, total) = await _trackingService.GetDocumentCountAsync(ProcurementId);
+                
                 return Json(
                     new
                     {
@@ -170,6 +195,8 @@ public class ProcurementDocumentsController : Controller
                         message,
                         procurementId = ProcurementId,
                         documentTypeId = DocumentTypeId,
+                        uploadedDocs = uploaded,
+                        totalDocs = total,
                         document = new
                         {
                             id = result.ProcDocumentId,
@@ -184,18 +211,14 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to upload document type {DocumentTypeId} for procurement {ProcurementId}",
-                DocumentTypeId,
-                ProcurementId
-            );
             if (IsAjaxRequest())
             {
-                return BadRequest(new { ok = false, error = ex.Message });
+                return BadRequest(
+                    new { ok = false, error = $"Failed to upload document: {ex.Message}" }
+                );
             }
 
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["ErrorMessage"] = $"Failed to upload document: {ex.Message}";
         }
 
         return RedirectToAction(nameof(Index), new { procurementId = ProcurementId });
@@ -271,8 +294,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to download document {DocumentId} for procurement {ProcurementId}", id, procurementId);
-            TempData["ErrorMessage"] = "Failed to download document.";
+            TempData["ErrorMessage"] = $"Failed to download document: {ex.Message}";
             return RedirectToAction(nameof(Index), new { procurementId });
         }
     }
@@ -294,8 +316,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate preview URL for document {DocumentId}", id);
-            return Json(new { ok = false, error = "Failed to create preview link." });
+            return Json(new { ok = false, error = $"Failed to create preview link: {ex.Message}" });
         }
     }
 
@@ -309,16 +330,54 @@ public class ProcurementDocumentsController : Controller
 
         try
         {
-            var ok = await _docSvc.DeleteAsync(id);
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var ok = await _docSvc.DeleteAsync(id, currentUserId);
             TempData[ok ? "success" : "error"] = ok ? "Document deleted." : "Document not found.";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete document {DocumentId}", id);
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["ErrorMessage"] = $"Failed to delete document: {ex.Message}";
         }
 
         return RedirectToAction(nameof(Index), new { procurementId });
+    }
+
+    // POST: /ProcurementDocuments/DeleteAjax - AJAX version for dynamic UI update
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAjax([FromForm] string id, [FromForm] string procurementId, [FromForm] string documentTypeId)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest(new { ok = false, error = "Invalid document ID" });
+
+        try
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var ok = await _docSvc.DeleteAsync(id, currentUserId);
+            
+            if (ok)
+            {
+                // Get updated document count after deletion
+                var (uploaded, total) = await _trackingService.GetDocumentCountAsync(procurementId);
+                
+                return Json(new { 
+                    ok = true, 
+                    message = "Document deleted successfully.",
+                    procurementId,
+                    documentTypeId,
+                    uploadedDocs = uploaded,
+                    totalDocs = total
+                });
+            }
+            else
+            {
+                return Json(new { ok = false, error = "Document not found." });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, error = $"Failed to delete document: {ex.Message}" });
+        }
     }
 
     // POST: /ProcurementDocuments/SendApprovalPerDoc
@@ -343,8 +402,7 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send approval for document {ProcDocumentId}", procDocumentId);
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["ErrorMessage"] = $"Failed to send approval request: {ex.Message}";
         }
         return RedirectToAction(nameof(Index), new { procurementId });
     }
@@ -363,42 +421,18 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate QR URL for document {DocumentId}", id);
-            return Json(new { ok = false, error = "Failed to create QR link." });
+            return Json(new { ok = false, error = $"Failed to create QR link: {ex.Message}" });
         }
     }
 
+    /// <summary>
+    /// QR sekarang di level PR, bukan per document.
+    /// Method ini deprecated.
+    /// </summary>
     [HttpGet("ProcurementDocuments/DownloadQr/{id}")]
-    public async Task<IActionResult> DownloadQr(string id)
+    public IActionResult DownloadQr(string id)
     {
-        try
-        {
-            var doc = await _docSvc.GetByIdAsync(id);
-            if (doc is null || string.IsNullOrWhiteSpace(doc.QrObjectKey))
-                return NotFound();
-
-            var url = await _docSvc.GetPresignedQrUrlAsync(
-                id,
-                TimeSpan.FromMinutes(30),
-                HttpContext.RequestAborted
-            );
-
-            var client = _http.CreateClient("MinioProxy"); // sama seperti download file
-            var resp = await client.GetAsync(
-                url!,
-                HttpCompletionOption.ResponseHeadersRead,
-                HttpContext.RequestAborted
-            );
-            resp.EnsureSuccessStatusCode();
-
-            var stream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
-            return File(stream, "image/png", fileDownloadName: Path.GetFileName(doc.QrObjectKey));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to download QR for document {DocumentId}", id);
-            return BadRequest("Failed to download QR.");
-        }
+        return NotFound("QR code sekarang dikelola di level Purchase Requisition.");
     }
 
     [HttpPost]
@@ -457,6 +491,7 @@ public class ProcurementDocumentsController : Controller
                 ),
                 "Bill of Quantity (BOQ)" => await _docGenerator.GenerateBOQAsync(procurementEntity),
                 "Profit & Loss" => await _docGenerator.GenerateProfitLossAsync(procurementEntity),
+                "Justifikasi" => await _docGenerator.GenerateJustifikasiAsync(procurementEntity),
                 _ => throw new NotImplementedException(
                     $"Template untuk '{docType.Name}' belum tersedia"
                 ),
@@ -492,12 +527,6 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to generate document type {DocumentTypeId} for procurement {ProcurementId}",
-                documentTypeId,
-                procurementId
-            );
             TempData["ErrorMessage"] = $"Failed to generate documents: {ex.Message}";
 
             return RedirectToAction("Index", new { procurementId });
@@ -554,43 +583,14 @@ public class ProcurementDocumentsController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to preview generated document type {DocumentTypeId} for procurement {ProcurementId}",
-                documentTypeId,
-                procurementId
-            );
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    // ? NEW: GET /ProcurementDocuments/ApprovalTimeline/{procDocumentId}
-    [HttpGet("ProcurementDocuments/ApprovalTimeline/{procDocumentId}")]
-    public async Task<IActionResult> ApprovalTimeline(string procDocumentId)
-    {
-        if (string.IsNullOrWhiteSpace(procDocumentId))
-            return BadRequest(new { ok = false, message = "Invalid procDocumentId." });
-
-        try
-        {
-            var dto = await _approvalSvc.GetApprovalTimelineAsync(
-                procDocumentId,
-                HttpContext.RequestAborted
-            );
-            if (dto is null)
-                return NotFound(new { ok = false, message = "Document was not found." });
-
-            return Ok(new { ok = true, data = dto });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load approval timeline for document {ProcDocumentId}", procDocumentId);
-            return StatusCode(
-                500,
-                new { ok = false, message = "Failed to load approval timeline." }
+            return BadRequest(
+                new { error = $"Failed to preview generated document: {ex.Message}" }
             );
         }
     }
+
+    // ApprovalTimeline removed - approval per-document sudah dihapus
+    // Approval sekarang di level PR via PurchaseRequisition.Status
 
     private static string SanitizeFileNameBase(string? name)
     {

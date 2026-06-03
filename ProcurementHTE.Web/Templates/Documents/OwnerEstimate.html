@@ -14,7 +14,7 @@
         margin: 20px 25px;
         font-family: "Calibri", Arial, Helvetica, sans-serif;
         font-size: 11px;
-        line-height: 1.4;
+        line-height: 1.5;
       }
 
       th,
@@ -24,64 +24,80 @@
 
       @page {
         size: A4;
-        margin: 0;
+        margin: 2.5cm 1cm;
+      }
+
+      @media print {
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+          text-size-adjust: none;
+          -webkit-text-size-adjust: none;
+        }
       }
     </style>
   </head>
   <body>
-    <header class="text-center py-3 border border-black border-bottom-0">
-      <h2 class="fw-bold h6">OWNER ESTIMATE</h2>
+    <header class="text-center py-5 border border-black border-bottom-0 position-relative">
+      <h2 class="fw-bold h5">OWNER ESTIMATE</h2>
+
+      <img
+        src="{{LogoUrl}}"
+        alt="Pertamina PDC Logo"
+        class="position-absolute top-0 end-0"
+        style="width: 200px; margin-top: -1rem"
+      />
     </header>
 
     <div class="row g-0 pe-3 border border-black border-bottom-0" style="padding-left: 2.5rem">
-      <div class="col-8 row g-0 mb-1">
+      <div class="col-7 row g-0 mb-0">
         <div class="col-3">OE No.</div>
         <div class="col-1" style="width: 5% !important">:</div>
         <div class="col-8">{{ OeNumber }}</div>
       </div>
 
-      <div class="col-4 row g-0 mb-1">
+      <div class="col-5 row g-0 mb-0">
         <div class="col-6">Proyek</div>
         <div class="col-1" style="width: 5% !important">:</div>
         <div class="col-5">{{ JobTypeName }}</div>
       </div>
 
-      <div class="col-8 row g-0 mb-1">
+      <div class="col-7 row g-0 mb-0">
         <div class="col-3">Dari</div>
         <div class="col-1" style="width: 5% !important">:</div>
         <div class="col-8">Transport & Logistics Manager</div>
       </div>
 
-      <div class="col-4 row g-0 mb-1">
+      <div class="col-5 row g-0 mb-0">
         <div class="col-6">Tanggal</div>
         <div class="col-1" style="width: 5% !important">:</div>
-        <div class="col-5">{{ StartDate }}</div>
+        <div class="col-5">{{ DocumentDate }}</div>
       </div>
 
-      <div class="col-8 row g-0 mb-1">
+      <div class="col-7 row g-0 mb-0">
         <div class="col-3">Kepada</div>
         <div class="col-1" style="width: 5% !important">:</div>
         <div class="col-8">SCM Manager</div>
       </div>
 
-      <div class="col-4 row g-0 mb-1">
+      <div class="col-5 row g-0 mb-0">
         <div class="col-6">Lokasi</div>
         <div class="col-1" style="width: 5% !important">:</div>
         <div class="col-5">{{ ProjectRegion }}</div>
       </div>
 
-      <div class="col-8 mb-1"></div>
-      <div class="col-4 row g-0 mb-1">
+      <div class="col-7 mb-0"></div>
+      <div class="col-5 row g-0 mb-0">
         <div class="col-6">Pengiriman Tgl. diperlukan</div>
         <div class="col-1" style="width: 5% !important">:</div>
-        <div class="col-5">{{ EndDate }}</div>
+        <div class="col-5">{{ StartDate }}</div>
       </div>
 
-      <div class="col-8 row g-0 mb-1">Harap melaksanakan pekerjaan sebagai berikut:</div>
-      <div class="col-4 mb-1"></div>
+      <div class="col-7 row g-0 mb-1">Harap melaksanakan pekerjaan sebagai berikut:</div>
+      <div class="col-5 mb-1"></div>
 
       <div class="col-12">
-        <p>{{ JobName }}</p>
+        <p class="mb-0">{{ JobName }}</p>
       </div>
     </div>
 
@@ -104,14 +120,14 @@
       <tfoot>
         <tr>
           <td colspan="5" class="text-center fw-bold">TOTAL</td>
-          <td class="text-end fw-bold">{{ TotalRevenue }}</td>
+          <td class="text-end fw-bold">{{ SelectedVendorFinalOffer }}</td>
         </tr>
       </tfoot>
     </table>
 
     <div class="ps-5 border border-black border-top-0">
       Catatan: Reff Penawaran Harga {{ SelectedVendorName }} <br />
-      {{ NoLetter }}
+      {{ NoLetter }} pada tanggal <span style="text-transform: capitalize"></span>{{ RoundCreatedAt }}
     </div>
 
     <div class="ps-5 border border-black border-top-0">
@@ -137,13 +153,13 @@
     </div>
 
     <div class="border border-black border-top-0 text-center row g-0" style="height: 7rem">
-      <div class="col-6">Assistant Manager</div>
-      <div class="col-6">Transport & Logistic Manager</div>
+      <div class="col-6">{{ ConditionalSubmitRole }}</div>
+      <div class="col-6">{{ ConditionalApproveRole }}</div>
     </div>
 
     <div class="border border-black border-top-0 text-center row g-0">
-      <div class="col-6">{{ AsstManagerUserId }}</div>
-      <div class="col-6">{{ ManagerUserId }}</div>
+      <div class="col-6">{{ ConditionalSubmitName }}</div>
+      <div class="col-6">{{ ConditionalApproveName }}</div>
     </div>
   </body>
 </html>

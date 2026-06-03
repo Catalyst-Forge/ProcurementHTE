@@ -12,6 +12,9 @@ namespace ProcurementHTE.Web.Authorization
         public const string VicePresidentRole = "Vice President";
         public const string HseRole = "HSE";
         public const string SupplyChainManagementRole = "Supply Chain Management";
+        public const string AppoRole = "AP-PO";
+        public const string ArRole = "AR";
+        public const string ApInvoiceRole = "AP-Invoice";
 
         public static readonly string[] GeneralRoles =
         [
@@ -23,6 +26,9 @@ namespace ProcurementHTE.Web.Authorization
             VicePresidentRole,
             HseRole,
             SupplyChainManagementRole,
+            AppoRole,
+            ArRole,
+            ApInvoiceRole,
         ];
 
         public static string GeneralRolesCsv => string.Join(',', GeneralRoles);
@@ -39,6 +45,9 @@ namespace ProcurementHTE.Web.Authorization
             [VicePresidentRole] = "VicePresidentDashboard",
             [HseRole] = "HseDashboard",
             [SupplyChainManagementRole] = "SupplyChainManagementDashboard",
+            [AppoRole] = "AppoDashboard",
+            [ArRole] = "ArDashboard",
+            [ApInvoiceRole] = "ApInvoiceDashboard",
         };
 
         public static bool IsAdmin(string? role) =>

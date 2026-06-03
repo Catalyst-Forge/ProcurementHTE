@@ -43,6 +43,10 @@ namespace ProcurementHTE.Core.Interfaces
             Procurement procurement,
             CancellationToken ct = default
         );
+        Task<byte[]> GenerateJustifikasiAsync(
+            Procurement procurement,
+            CancellationToken ct = default
+        );
 
         // Generic method untuk custom templates
         Task<byte[]> GenerateFromTemplateAsync(

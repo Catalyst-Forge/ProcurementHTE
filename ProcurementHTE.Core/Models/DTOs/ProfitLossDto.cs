@@ -7,7 +7,17 @@ namespace ProcurementHTE.Core.Models.DTOs
         [Required, StringLength(450)]
         public string ProcOfferId { get; set; } = null!;
 
+        /// <summary>
+        /// For PENGANGKUTAN: This is UnitQty (number of trips)
+        /// For SEWA_UNIT/MOVING: This is Quantity/Durasi (duration/count)
+        /// </summary>
         public int Quantity { get; set; }
+
+        /// <summary>
+        /// Qty Items from ProcOffer (jumlah unit fisik)
+        /// Used by SEWA_UNIT and MOVING to store actual item quantity
+        /// </summary>
+        public int QtyItems { get; set; }
 
         [Range(
             typeof(decimal),
@@ -40,12 +50,24 @@ namespace ProcurementHTE.Core.Models.DTOs
             ErrorMessage = "The field {0} must be a valid non-negative number."
         )]
         public decimal OperatorCost { get; set; }
+
+        /// <summary>
+        /// Unit Revenue - satuan untuk perhitungan revenue (TRIP, HARI, JAM, LSP, KALI)
+        /// Will be saved to ProcOffer.UnitRevenue for persistence
+        /// </summary>
+        public string? UnitRevenue { get; set; }
     }
 
     public class VendorItemOffersDto
     {
         [Required, StringLength(450)]
         public string VendorId { get; set; } = null!;
+
+        [MinLength(0)]
+        public List<string> Letters { get; set; } = [];
+
+        [MinLength(0)]
+        public List<string?> LetterDocIds { get; set; } = [];
 
         [MinLength(1)]
         public List<VendorOfferPerItemDto> Items { get; set; } = [];
@@ -64,11 +86,14 @@ namespace ProcurementHTE.Core.Models.DTOs
         [MinLength(0)]
         public List<decimal> Prices { get; set; } = [];
 
-        [MinLength(0)]
-        public List<string> Letters { get; set; } = [];
-
         public int Quantity { get; set; }
-        public int Trip { get; set; }
+        public decimal Trip { get; set; }
+
+        /// <summary>
+        /// Indicates whether this item is included in the vendor offer.
+        /// Items with IsIncluded = false are excluded from the offer.
+        /// </summary>
+        public bool IsIncluded { get; set; } = true;
     }
 
     public class ProfitLossInputDto
@@ -93,7 +118,11 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal Distance { get; set; }
+        public decimal? Distance { get; set; }
+
+        public DateTime? TglMulaiSewa { get; set; }
+
+        public DateTime? TglMulaiMoving { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -128,7 +157,11 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal Distance { get; set; }
+        public decimal? Distance { get; set; }
+
+        public DateTime? TglMulaiSewa { get; set; }
+
+        public DateTime? TglMulaiMoving { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -178,7 +211,11 @@ namespace ProcurementHTE.Core.Models.DTOs
         public decimal? RealizationAmount { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal Distance { get; set; }
+        public decimal? Distance { get; set; }
+
+        public DateTime? TglMulaiSewa { get; set; }
+
+        public DateTime? TglMulaiMoving { get; set; }
 
         [MinLength(1)]
         public List<ProfitLossItemInputDto> Items { get; set; } = [];
@@ -224,12 +261,15 @@ namespace ProcurementHTE.Core.Models.DTOs
         public List<(
             string ProcOfferId,
             string ItemName,
-            int Quantity,
-            decimal TarifAwal,
-            decimal TarifAdd,
-            decimal KmPer25,
-            decimal OperatorCost,
-            decimal Revenue
+            int UnitQty,
+            decimal BasePrice,
+            decimal? TarifAdd,
+            decimal? KmPer25,
+            decimal? OperatorCost,
+            decimal Revenue,
+            int? Quantity,
+            string? UnitRevenue,
+            string? UnitItems
         )> Items { get; set; } = [];
 
         public List<string> SelectedVendorNames { get; set; } = [];

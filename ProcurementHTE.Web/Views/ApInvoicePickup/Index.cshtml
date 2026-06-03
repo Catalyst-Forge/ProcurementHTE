@@ -1,0 +1,219 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    ViewData["Title"] = "Invoice Processing";
+    var currentTab = ViewBag.CurrentTab as string ?? "waiting";
+    var isMyPickups = currentTab == "mypickups";
+    
+    Func<bool, string> PickupBadgeClass = picked => picked
+        ? "bg-success-subtle text-success-emphasis border border-success-subtle"
+        : "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
+    var currentSearch = ViewBag.Search as string ?? "";
+    var pageSize = Model.PageSize;
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Invoice Processing</h1>
+</header>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(currentTab == "waiting" ? "active" : "")" 
+           href="@Url.Action("Index", new { tab = "waiting" })">
+            <i class="bi bi-hourglass-split"></i> Waiting Pickup
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(currentTab == "mypickups" ? "active" : "")" 
+           href="@Url.Action("Index", new { tab = "mypickups" })">
+            <i class="bi bi-person-check"></i> My Pickups
+        </a>
+    </li>
+</ul>
+
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
+    <input type="hidden" name="tab" value="@currentTab" />
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
+    </div>
+
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@pageSize" />
+</form>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr class="align-middle">
+                <th class="border-end">Procurement No.</th>
+                <th class="border-end">Job Name</th>
+                <th class="border-end">WO Number</th>
+                <th class="border-end">Vendor</th>
+                <th class="border-end">Picked By APPO</th>
+                <th class="border-end">Status</th>
+                <th class="text-center width-15-rem">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any()) {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        @if (isMyPickups) {
+                            <text>Belum ada procurement yang Anda pickup</text>
+                        } else {
+                            <text>Tidak ada procurement yang menunggu untuk di-pickup</text>
+                        }
+                    </td>
+                </tr>
+            } else {
+                foreach (var item in Model.Items) {
+                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
+                    var vendorName = item.ProfitLosses?.FirstOrDefault()?.SelectedVendor?.VendorName ?? "-";
+
+                    <tr>
+                        <td data-label="Procurement No.">
+                            @item.ProcNum
+                        </td>
+                        <td data-label="Job Name">
+                            @item.JobName
+                        </td>
+                        <td data-label="WO Number">
+                            @wonum
+                        </td>
+                        <td data-label="Vendor">
+                            @vendorName
+                        </td>
+                        <td data-label="Picked By APPO">
+                            @if (item.AppoUser != null) {
+                                <small>
+                                    @item.AppoUser.FullName<br/>
+                                    <span class="text-muted">@item.PickedUpAt?.ToString("dd MMM yyyy HH:mm")</span>
+                                </small>
+                            } else {
+                                <text>-</text>
+                            }
+                        </td>
+                        <td data-label="Status">
+                            @if (isMyPickups) {
+                                var hasInvoiceData = !string.IsNullOrEmpty(item.SANo) || !string.IsNullOrEmpty(item.SP3No);
+                                <span class="badge @(hasInvoiceData ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")">
+                                    @(hasInvoiceData ? "Data Filled" : "Pending Input")
+                                </span>
+                            } else {
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                                    Waiting Pickup
+                                </span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (isMyPickups) {
+                                <a asp-action="Details" asp-route-id="@item.ProcurementId"
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-pencil"></i> Edit Invoice
+                                </a>
+                            } else {
+                                <a asp-action="Details" asp-route-id="@item.ProcurementId"
+                                   class="btn btn-outline-info btn-sm me-1" title="View Details">
+                                    <i class="bi bi-eye"></i> Details
+                                </a>
+                                <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                        <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model?.TotalPages > 1) {
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center">
+            @if (Model.Page > 1) {
+                <li class="page-item">
+                    <a class="page-link" href="?tab=@currentTab&page=@(Model.Page - 1)&pageSize=@pageSize&search=@currentSearch">
+                        Previous
+                    </a>
+                </li>
+            }
+
+            @for (var i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++) {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link" href="?tab=@currentTab&page=@i&pageSize=@pageSize&search=@currentSearch">
+                        @i
+                    </a>
+                </li>
+            }
+
+            @if (Model.Page < Model.TotalPages) {
+                <li class="page-item">
+                    <a class="page-link" href="?tab=@currentTab&page=@(Model.Page + 1)&pageSize=@pageSize&search=@currentSearch">
+                        Next
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <script>
+        (function() {
+            var btnRefresh = document.getElementById('btnRefresh');
+            if (btnRefresh) {
+                btnRefresh.addEventListener('click', function() {
+                    location.reload();
+                });
+            }
+
+            var searchBox = document.getElementById('searchBox');
+            if (searchBox) {
+                var timeout;
+                searchBox.addEventListener('input', function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(function() {
+                        document.getElementById('pageHidden').value = '1';
+                        document.getElementById('filterForm').submit();
+                    }, 500);
+                });
+            }
+
+            // SweetAlert2 for Pickup buttons
+            var pickupButtons = document.querySelectorAll('.btn-pickup');
+            pickupButtons.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var form = this.closest('form');
+                    var procNum = this.dataset.procnum;
+
+                    Swal.fire({
+                        title: 'Pickup Procurement?',
+                        html: 'Apakah Anda yakin ingin pickup procurement <strong>' + procNum + '</strong> untuk invoice processing?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-box-arrow-in-down"></i> Ya, Pickup',
+                        cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                        reverseButtons: true
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
+}

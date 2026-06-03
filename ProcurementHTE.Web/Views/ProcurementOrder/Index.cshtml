@@ -1,0 +1,203 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    ViewData["Title"] = "Procurement Order";
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "waiting pickup" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "in progress" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        "approved" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        _ => "bg-light text-body border"
+    };
+    var currentSearch = Context.Request.Query["search"].ToString();
+    var currentFields = (Context.Request.Query["fields"].ToString() ?? "ProcNum,JobName")
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var columns = new (string Key, string Label)[] {
+        ("ProcNum","Procurement No."),
+        ("Wonum","WO Number"),
+        ("JobName","Job Name"),
+        ("JobType","Job Type"),
+    };
+    var pageSize = Model.PageSize;
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Procurements</h1>
+</header>
+
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
+    </div>
+
+    <div class="dropdown ms-sm-auto d-none">
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-funnel"></i> Filter
+        </button>
+
+        <div class="dropdown-menu p-3">
+            <div class="mb-2 fw-semibold small text-muted">Search in columns</div>
+
+            @foreach (var col in columns) {
+                var checkedAttr = currentFields.Contains(col.Key) ? "Checked" : null;
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input filter-col" value="@col.Key" id="col_@col.Key" @checkedAttr />
+                    <label for="col_@col.Key" class="form-check-label">@col.Label</label>
+                </div>
+            }
+
+            <div class="d-grid mt-3">
+                <button type="button" class="btn btn-primary btn-sm" id="btnApplyFilter">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="fields" id="fieldsHidden" value="@string.Join(",", currentFields)" />
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@pageSize" />
+</form>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr class="align-middle">
+                <th class="border-end">Procurement No.</th>
+                <th class="border-end">Job Name</th>
+                <th class="border-end">WO Number</th>
+                <th class="border-end">Start Date</th>
+                <th class="border-end">Job Type</th>
+                <th class="border-end">Status</th>
+                <th class="text-center width-15-rem">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any()) {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Tidak ada procurement yang perlu di-pickup</td>
+                </tr>
+            } else {
+                foreach (var item in Model.Items) {
+                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
+
+                    <tr>
+                        <td data-label="Procurement No.">
+                            @item.ProcNum
+                        </td>
+                        <td data-label="Job Name">
+                            @item.JobName
+                        </td>
+                        <td data-label="WO Number">
+                            @wonum
+                        </td>
+                        <td data-label="Start Date">
+                            @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
+                        </td>
+                        <td data-label="Job Type">
+                            @(item.JobType?.TypeName ?? "-")
+                        </td>
+                        <td data-label="Status">
+                            <span class="badge @BadgeClass(item.Status?.StatusName ?? string.Empty)">
+                                @(item.Status?.StatusName ?? "-")
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@item.ProcurementId" 
+                               class="btn btn-outline-info btn-sm me-1" title="View Details">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                            <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                @Html.AntiForgeryToken()
+                                <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                    <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model?.TotalPages > 1) {
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center">
+            @if (Model.Page > 1) {
+                <li class="page-item">
+                    <a class="page-link" href="?page=@(Model.Page - 1)&pageSize=@pageSize&search=@currentSearch&fields=@string.Join(",", currentFields)">
+                        Previous
+                    </a>
+                </li>
+            }
+
+            @for (var i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++) {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link" href="?page=@i&pageSize=@pageSize&search=@currentSearch&fields=@string.Join(",", currentFields)">
+                        @i
+                    </a>
+                </li>
+            }
+
+            @if (Model.Page < Model.TotalPages) {
+                <li class="page-item">
+                    <a class="page-link" href="?page=@(Model.Page + 1)&pageSize=@pageSize&search=@currentSearch&fields=@string.Join(",", currentFields)">
+                        Next
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('btnRefresh')?.addEventListener('click', () => location.reload());
+
+        document.getElementById('btnApplyFilter')?.addEventListener('click', () => {
+            const selected = Array.from(document.querySelectorAll('.filter-col:checked'))
+                .map(el => el.value)
+                .join(',');
+            document.getElementById('fieldsHidden').value = selected || 'ProcNum,JobName';
+            document.getElementById('pageHidden').value = '1';
+            document.getElementById('filterForm').submit();
+        });
+
+        document.getElementById('searchBox')?.addEventListener('input', function() {
+            clearTimeout(this.timeout);
+            this.timeout = setTimeout(() => {
+                document.getElementById('pageHidden').value = '1';
+                document.getElementById('filterForm').submit();
+            }, 500);
+        });
+
+        // SweetAlert2 for Pickup buttons
+        document.querySelectorAll('.btn-pickup').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const form = this.closest('form');
+                const procNum = this.dataset.procnum;
+
+                Swal.fire({
+                    title: 'Pickup Procurement?',
+                    html: `Apakah Anda yakin ingin pickup procurement <strong>${procNum}</strong>?<br><small class="text-muted">Procurement akan masuk ke proses PR</small>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-box-arrow-in-down"></i> Ya, Pickup',
+                    cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

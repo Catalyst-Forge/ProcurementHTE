@@ -1,0 +1,10 @@
+[Unit]
+Description=Deploy Procurement HTE from master
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/srv/procurementhte/deploy.sh
+User=root
+Group=root

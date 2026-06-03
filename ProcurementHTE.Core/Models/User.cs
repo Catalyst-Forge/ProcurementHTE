@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
-using ProcurementHTE.Core.Models.Enums;
+using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Core.Models
 {

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProcurementHTE.Core.Models
 {
-    public class ProfitLoss
+    public class ProfitLoss : BaseEntity
     {
         [Key]
         public string ProfitLossId { get; set; } = Guid.NewGuid().ToString();
@@ -28,7 +28,20 @@ namespace ProcurementHTE.Core.Models
         public decimal? RealizationAmount { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal Distance { get; set; }
+        public decimal? Distance { get; set; }
+
+        // SEWA_UNIT specific fields
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+        [Display(Name = "Tanggal Mulai Sewa")]
+        public DateTime? TglMulaiSewa { get; set; }
+
+        [Display(Name = "Durasi Total")]
+        public int? DurasiTotal { get; set; }
+
+        // MOVING specific fields
+        [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
+        [Display(Name = "Tanggal Mulai Moving")]
+        public DateTime? TglMulaiMoving { get; set; }
 
         [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

@@ -1,214 +1,289 @@
 ﻿<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top" hx-boost="true" hx-target="#app-content" hx-push-url="true" hx-indicator="#content-loading">
     @{
-        // Map controllers → menu groups so Html.ActiveClass/CollapseState can highlight new entries consistently.
-        var procurementControllers = new[] { "Procurements", "ProcurementDocuments", "Vendors" };
-        var procurementMenuShowClass = Html.CollapseState(controllers: procurementControllers);
-        var procurementMenuOpen = !string.IsNullOrEmpty(procurementMenuShowClass);
-        var procurementMenuExpanded = procurementMenuOpen ? "true" : "false";
-        var procurementMenuChevronClass = procurementMenuOpen ? "rotate" : string.Empty;
+        // Dashboard controllers - include all role-specific dashboard controllers
+        var dashboardControllers = new[] { 
+            "Dashboard", 
+            "AdminDashboard", 
+            "OperationDashboard", 
+            "ManagerTransportDashboard", 
+            "AnalystHteDashboard", 
+            "HteDashboard", 
+            "AssistantManagerHteDashboard", 
+            "VicePresidentDashboard", 
+            "HseDashboard", 
+            "SupplyChainManagementDashboard" 
+        };
 
-        var procurementSettingsControllers = new[] { "JobType", "DocumentType", "DocumentApprovals", "JobTypeDocument" };
+        var procurementSettingsControllers = new[] { "Vendors", "JobType", "DocumentType", "DocumentApprovals", "JobTypeDocument", "DocumentApprovalRules" };
         var procurementSettingsShowClass = Html.CollapseState(controllers: procurementSettingsControllers);
         var procurementSettingsOpen = !string.IsNullOrEmpty(procurementSettingsShowClass);
         var procurementSettingsExpanded = procurementSettingsOpen ? "true" : "false";
         var procurementSettingsChevronClass = procurementSettingsOpen ? "rotate" : string.Empty;
 
-        var masterDataControllers = new[] { "JobType", "DocumentType", "JobTypeDocument", "DocumentApprovals" };
+        var masterDataControllers = new[] { "Vendors", "JobType", "DocumentType",  };
         var masterDataShowClass = Html.CollapseState(controllers: masterDataControllers);
         var masterDataOpen = !string.IsNullOrEmpty(masterDataShowClass);
         var masterDataExpanded = masterDataOpen ? "true" : "false";
         var masterDataChevronClass = masterDataOpen ? "rotate" : string.Empty;
+
+        var rulesAndMappingControllers = new [] { "JobTypeDocument", "DocumentApprovals", "DocumentApprovalRules" };
+        var rulesAndMappingShowClass = Html.CollapseState(controllers: rulesAndMappingControllers);
+        var rulesAndMappingOpen = !string.IsNullOrEmpty(rulesAndMappingShowClass);
+        var rulesAndMappingExpanded = rulesAndMappingOpen ? "true" : "false";
+        var rulesAndMappingChevronClass = rulesAndMappingOpen ? "rotate" : string.Empty;
     }
 
     <div class="d-flex w-100 justify-content-between">
         <a href="@(Url.Content("~/"))" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">HTE</a>
-        <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+        <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
     </div>
 
     <small class="text-muted opacity-75 ms-3 mb-2">Menu</small>
 
     <ul class="nav flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100">
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Dashboard" }, actions: new[] { "Index" }))"
-              
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: dashboardControllers))"
                data-nav-controller="Dashboard"
-               data-nav-action="Index"
                asp-controller="Dashboard"
                asp-action="Index"
-               data-page="Dashboard">
+               data-page="Dashboard"
+               hx-boost="false">
                 <i class="bi bi-grid"></i> <span class="ms-1">Dashboard</span>
             </a>
         </li>
 
-        @* Procurement Menu *@
-        <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 d-flex justify-content-between align-items-center menu"
-               data-bs-toggle="collapse"
-               href="#procurementSubmenu"
-               role="button"
-               aria-expanded="@procurementMenuExpanded"
-               aria-controls="procurementSubmenu">
-                <div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Operation") || User.IsInRole("Analyst HTE & LTS")) {
+            @* Procurement Menu *@
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Procurements" }))"
+                data-nav-controller="Procurements"
+                asp-controller="Procurements"
+                asp-action="Index"
+                data-page="Index Procurements">
                     <i class="bi bi-briefcase"></i>
                     <span class="ms-1">Procurements</span>
+                </a>
+            </li>
+        }
+
+        @if (User.IsInRole("Admin") || User.IsInRole("AP-PO")) {
+            @* AP-PO Pickup Menu *@
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ApPoPickup" }))"
+                data-nav-controller="ApPoPickup"
+                asp-controller="ApPoPickup"
+                asp-action="Index"
+                data-page="AP-PO Pickup">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span class="ms-1">AP-PO Pickup</span>
+                </a>
+            </li>
+
+            @* PR Service *@
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "PurchaseRequisitions" }))"
+                data-nav-controller="PurchaseRequisitions"
+                asp-controller="PurchaseRequisitions"
+                asp-action="Index"
+                data-page="Index PR Service">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span class="ms-1">PR Service</span>
+                </a>
+            </li>
+
+            @* Procurement Setting Menu *@
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 d-flex justify-content-between align-items-center menu"
+                data-bs-toggle="collapse"
+                href="#procurementSettingSubmenu"
+                role="button"
+                aria-expanded="@procurementSettingsExpanded"
+                aria-controls="procurementSettingSubmenu">
+                    <div>
+                        <i class="bi bi-gear-fill"></i>
+                        <span class="ms-1">Procurement Settings</span>
+                    </div>
+                    <i class="bi bi-chevron-down small @procurementSettingsChevronClass"></i>
+                </a>
+
+                <div class="collapse submenu @procurementSettingsShowClass" id="procurementSettingSubmenu" data-nav-collapse="Vendors,JobType,DocumentType,DocumentApprovals,JobTypeDocument,DocumentApprovalRules">
+                    <ul class="list-unstyled fw-normal pb-1 small ps-4">
+                        @* Master Data Menu *@
+                        <li>
+                            <a class="nav-link link-secondary rounded-1 d-flex align-items-center"
+                            data-bs-toggle="collapse"
+                            href="#masterDataSubmenu"
+                            role="button"
+                            aria-expanded="@masterDataExpanded"
+                            aria-controls="masterDataSubmenu">
+                                <span>Master Data</span>
+                                <i class="bi bi-chevron-down small ms-auto @masterDataChevronClass"></i>
+                            </a>
+
+                            <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="Vendors,JobType,DocumentType">
+                                <ul class="list-unstyled fw-normal pb-1 ps-4 small">
+                                    <li>
+                                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Vendors" }))"
+                                        data-nav-controller="Vendors"
+                                        asp-controller="Vendors"
+                                        asp-action="Index"
+                                        data-page="Vendors">
+                                            Vendors
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobType" }))"
+                                        data-nav-controller="JobType"
+                                        asp-controller="JobType"
+                                        asp-action="Index"
+                                        data-page="Index Procurement Types">
+                                            Procurement Types
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentType" }))"
+                                        data-nav-controller="DocumentType"
+                                        asp-controller="DocumentType"
+                                        asp-action="Index"
+                                        data-page="Index Document Types">
+                                            Document Types
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        @* Rules & Mapping Menu *@
+                        <li>
+                            <a class="nav-link link-secondary rounded-1 d-flex alignments-center"
+                            data-bs-toggle="collapse"
+                            href="#rulesAndMappingSubmenu"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="rulesAndMappingSubmenu">
+                                <span>Rules & Mapping</span>
+                                <i class="bi bi-chevron-down small ms-auto @rulesAndMappingChevronClass"></i>
+                            </a>
+
+                            <div class="collapse submenu @rulesAndMappingShowClass" id="rulesAndMappingSubmenu" data-nav-collapse="JobTypeDocument,DocumentApprovals,DocumentApprovalRules">
+                                <ul class="list-unstyled fw-normal pb-1 ps-4 small">
+                                    <li>
+                                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobTypeDocument" }))"
+                                        data-nav-controller="JobTypeDocument"
+                                        asp-controller="JobTypeDocument"
+                                        asp-action="Index"
+                                        data-page="Index Job Type Documents">
+                                            Job Type Documents
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentApprovals" }))"
+                                        data-nav-controller="DocumentApprovals"
+                                        asp-controller="DocumentApprovals"
+                                        asp-action="Index"
+                                        data-page="Index Document Approvals">
+                                            Document Approvals
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentApprovalRules" }))"
+                                        data-nav-controller="DocumentApprovalRules"
+                                        asp-controller="DocumentApprovalRules"
+                                        asp-action="Index"
+                                        data-page="Index Document Approval Rules">
+                                            Document Approval Rules
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
-                <i class="bi bi-chevron-down small @procurementMenuChevronClass"></i>
-            </a>
+            </li>
+        }
 
-            <div class="collapse submenu @procurementMenuShowClass" id="procurementSubmenu" data-nav-collapse="Procurements,ProcurementDocuments,Vendors">
-                <ul class="list-unstyled fw-normal pb-1 small ps-4">
-                    <li>
-                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Procurements" }))"
-                          
-                           data-nav-controller="Procurements"
-                           asp-controller="Procurements"
-                           asp-action="Index"
-                           data-page="Index Procurements">
-                            Procurements
-                        </a>
-                    </li>
-                    @* <li>
-            <a class="nav-link link-secondary rounded-1" asp-controller="Tenders" asp-action="Index" data-page="Tenders">
-              Tenders
-            </a>
-          </li> *@
-                    <li>
-                        <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Vendors" }))"
-                          
-                           data-nav-controller="Vendors"
-                           asp-controller="Vendors"
-                           asp-action="Index"
-                           data-page="Vendors">
-                            Vendors
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-
-        @* Procurement Setting Menu *@
+        @* LDP Menu - Accessible by all roles *@
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 d-flex justify-content-between align-items-center menu"
-               data-bs-toggle="collapse"
-               href="#procurementSettingSubmenu"
-               role="button"
-               aria-expanded="@procurementSettingsExpanded"
-               aria-controls="procurementSettingSubmenu">
-                <div>
-                    <i class="bi bi-gear-fill"></i>
-                    <span class="ms-1">Procurement Settings</span>
-                </div>
-                <i class="bi bi-chevron-down small @procurementSettingsChevronClass"></i>
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Ldp" }))"
+            data-nav-controller="Ldp"
+            asp-controller="Ldp"
+            asp-action="Index"
+            data-page="LDP Data">
+                <i class="bi bi-table"></i> <span class="ms-1">LDP</span>
             </a>
-
-            @* Master Data Menu *@
-            <div class="collapse submenu @procurementSettingsShowClass" id="procurementSettingSubmenu" data-nav-collapse="JobType,DocumentType,DocumentApprovals,JobTypeDocument">
-                <ul class="list-unstyled fw-normal pb-1 small ps-4">
-                    <li>
-                        <a class="nav-link link-secondary rounded-1 d-flex align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#masterDataSubmenu"
-                           role="button"
-                           aria-expanded="@masterDataExpanded"
-                           aria-controls="masterDataSubmenu">
-                            <span>Master Data</span>
-                            <i class="bi bi-chevron-down small ms-auto @masterDataChevronClass"></i>
-                        </a>
-
-                        <div class="collapse submenu @masterDataShowClass" id="masterDataSubmenu" data-nav-collapse="JobType,DocumentType,JobTypeDocument,DocumentApprovals">
-                            <ul class="list-unstyled fw-normal pb-1 ps-4 small">
-                                <li>
-                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobType" }))"
-                                      
-                                       data-nav-controller="JobType"
-                                       asp-controller="JobType"
-                                       asp-action="Index"
-                                       data-page="Index Procurement Types">
-                                        Procurement Types
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentType" }))"
-                                      
-                                       data-nav-controller="DocumentType"
-                                       asp-controller="DocumentType"
-                                       asp-action="Index"
-                                       data-page="Index Document Types">
-                                        Document Types
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "JobTypeDocument" }))"
-                                       
-                                       data-nav-controller="JobTypeDocument"
-                                       asp-controller="JobTypeDocument"
-                                       asp-action="Index"
-                                       data-page="Index Job Type Documents">
-                                        Job Type Documents
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "DocumentApprovals" }))"
-                                       
-                                       data-nav-controller="DocumentApprovals"
-                                       asp-controller="DocumentApprovals"
-                                       asp-action="Index"
-                                       data-page="Index Document Approvals">
-                                        Document Approvals
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-
-                    @* Rules & Mapping Menu *@
-                    @* <li>
-            <a class="nav-link link-secondary rounded-1 d-flex alignments-center"
-              data-bs-toggle="collapse"
-              href="#rulesAndMappingSubmenu"
-              role="button"
-              aria-expanded="false"
-              aria-controls="rulesAndMappingSubmenu">
-              <span>Rules & Mapping</span>
-              <i class="bi bi-chevron-down small ms-auto"></i>
-            </a>
-
-            <div class="collapse submenu" id="rulesAndMappingSubmenu">
-              <ul class="list-unstyled fw-normal pb-1 ps-4 small">
-                <li>
-                  <a class="nav-link link-secondary rounded-1" asp-controller="DocumentApprovals" asp-action="Index" data-page="Index Document Approvals">
-                    Document Approvals
-                  </a>
-                </li>
-                <li>
-                  <a class="nav-link link-secondary rounded-1" asp-controller="JobTypeDocument" asp-action="Index" data-page="Index Wo Type Documents">
-                    WO Type-Document Mapping
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </li> *@
-                </ul>
-            </div>
         </li>
 
+        @* Pending Approvals - Only for approver roles *@
+        @if (User.IsInRole("Admin") || User.IsInRole("Analyst HTE & LTS") || User.IsInRole("Assistant Manager HTE") || User.IsInRole("Manager Transport & Logistic")) {
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 d-flex align-items-center @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }, actions: new[] { "PendingApprovals" }))"
+                data-nav-controller="ProcurementTracking"
+                data-nav-action="PendingApprovals"
+                asp-controller="ProcurementTracking"
+                asp-action="PendingApprovals"
+                data-page="Pending Approvals">
+                    <i class="bi bi-hourglass-split"></i>
+                    <span class="ms-1">Pending Approvals</span>
+                    <span class="badge bg-danger ms-auto pending-approval-badge" style="display: none;">0</span>
+                </a>
+            </li>
+        }
+
+        @* Procurement Tracking - Accessible by all roles *@
         <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Approvals" }))"
-              
-               data-nav-controller="Approvals"
-               asp-controller="Approvals"
-               asp-action="Index"
-               data-page="Documents">
-                <i class="bi bi-file-earmark"></i> <span class="ms-1">Approval Documents</span>
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }, actions: new[] { "Index", "Search", "Details", "TrackingResult" }))"
+            data-nav-controller="ProcurementTracking"
+            data-nav-action="Index,Search,Details,TrackingResult"
+            asp-controller="ProcurementTracking"
+            asp-action="Index"
+            data-page="Procurement Tracking">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span class="ms-1">Procurement Tracking</span>
             </a>
         </li>
+
+        @* Data Accrual - Accessible by all roles (view-only, AR/Admin can edit) *@
+        <li class="nav-item w-100">
+            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Accrual" }))"
+            data-nav-controller="Accrual"
+            asp-controller="Accrual"
+            asp-action="Index"
+            data-page="Data Accrual">
+                <i class="bi bi-calculator"></i> <span class="ms-1">Data Accrual</span>
+            </a>
+        </li>
+
+        @* AP-Invoice Pickup Menu *@
+        @if (User.IsInRole("Admin") || User.IsInRole("AP-Invoice")) {
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ApInvoicePickup" }))"
+                data-nav-controller="ApInvoicePickup"
+                asp-controller="ApInvoicePickup"
+                asp-action="Index"
+                data-page="AP-Invoice Pickup">
+                    <i class="bi bi-receipt"></i> <span class="ms-1">AP-Invoice Pickup</span>
+                </a>
+            </li>
+        }
+
+        @* AR Pickup Menu *@
+        @if (User.IsInRole("Admin") || User.IsInRole("AR")) {
+            <li class="nav-item w-100">
+                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ArPickup" }))"
+                data-nav-controller="ArPickup"
+                asp-controller="ArPickup"
+                asp-action="Index"
+                data-page="AR Pickup">
+                    <i class="bi bi-box-arrow-in-down"></i> <span class="ms-1">AR Pickup</span>
+                </a>
+            </li>
+        }
 
         @* Hanya Admin yang lihat menu ini *@
-        @if (User.IsInRole("Admin"))
-        {
+        @if (User.IsInRole("Admin")) {
             <li class="nav-item w-100">
                 <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "UserManagement" }))"
-                  
                    data-nav-controller="UserManagement"
                    asp-controller="UserManagement"
                    asp-action="Index"
@@ -222,7 +297,6 @@
 
         <li class="nav-item w-100 pb-4">
             <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Account" }, actions: new[] { "Settings" }))"
-              
                data-nav-controller="Account"
                data-nav-action="Settings"
                asp-controller="Account"

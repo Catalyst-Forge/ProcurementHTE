@@ -9,40 +9,59 @@ namespace ProcurementHTE.Core.Services
         private readonly IProfitLossRepository _pnlRepository;
         private readonly IVendorOfferRepository _voRepository;
         private readonly IVendorRepository _vendorRepository;
+        private readonly IVendorRoundLetterRepository _roundLetterRepository;
+        private readonly IJobTypeCalculationService _jobTypeCalc;
 
         public ProfitLossService(
             IProfitLossRepository pnlRepository,
             IVendorOfferRepository voRepository,
-            IVendorRepository vendorRepository
+            IVendorRepository vendorRepository,
+            IVendorRoundLetterRepository roundLetterRepository,
+            IJobTypeCalculationService jobTypeCalculationService
         )
         {
             _pnlRepository = pnlRepository;
             _voRepository = voRepository;
             _vendorRepository = vendorRepository;
+            _roundLetterRepository = roundLetterRepository;
+            _jobTypeCalc = jobTypeCalculationService;
         }
 
-        public Task<ProfitLoss?> GetByProcurementAsync(string woId)
+        public async Task<bool> DeleteByProcurementAsync(string procurementId, string deletedByUserId)
         {
-            return _pnlRepository.GetByProcurementAsync(woId);
+            if (string.IsNullOrWhiteSpace(procurementId))
+                return false;
+                
+            var pnl = await _pnlRepository.GetByProcurementAsync(procurementId);
+            if (pnl == null)
+                return false;
+                
+            await _pnlRepository.DeleteAsync(pnl.ProfitLossId, deletedByUserId);
+            return true;
         }
 
-        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string woId)
+        public Task<ProfitLoss?> GetByProcurementAsync(string procurementId)
         {
-            return _pnlRepository.GetSelectedVendorsAsync(woId);
+            return _pnlRepository.GetByProcurementAsync(procurementId);
         }
 
-        public async Task<ProfitLossSummaryDto> GetSummaryByProcurementAsync(string woId)
+        public Task<List<ProfitLossSelectedVendor>> GetSelectedVendorsAsync(string procurementId)
         {
-            var pnl = await _pnlRepository.GetByProcurementAsync(woId);
+            return _pnlRepository.GetSelectedVendorsAsync(procurementId);
+        }
+
+        public async Task<ProfitLossSummaryDto> GetSummaryByProcurementAsync(string procurementId)
+        {
+            var pnl = await _pnlRepository.GetByProcurementAsync(procurementId);
             if (pnl == null)
                 return null!;
 
             var allVendors = await _vendorRepository.GetAllAsync();
-            var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(woId);
-            var offers = await _voRepository.GetByProcurementAsync(woId);
+            var selectedRows = await _pnlRepository.GetSelectedVendorsAsync(procurementId);
+            var offers = await _voRepository.GetByProcurementAsync(procurementId);
 
             var totalRevenue = SafeSum(pnl.Items.Select(item => item.Revenue));
-            var totalOperatorCost = SafeSum(pnl.Items.Select(item => item.OperatorCost));
+            var totalOperatorCost = SafeSum(pnl.Items.Select(item => item.OperatorCost ?? 0));
 
             var selectedVendorNames = selectedRows
                 .Select(row =>
@@ -51,99 +70,48 @@ namespace ProcurementHTE.Core.Services
                 )
                 .ToList();
 
-            // ⬇️ BAGIAN INI YANG DIUBAH: pakai harga TERENDAH per item (MIN), sesuai rumus Excel
-            var vendorTotals = offers
+            var requiredItemIds = pnl
+                .Items.Select(item => item.ProcOfferId)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var vendorComparisons = offers
                 .GroupBy(vendorOffer => vendorOffer.VendorId)
                 .Select(group =>
                 {
-                    // per item (ProcOfferId), ambil MIN harga dari semua ronde
-                    var finalPerItem = group
+                    var perItemCosts = group
                         .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
                         .ToDictionary(
                             g => g.Key,
-                            g => g.Min(vo => vo.Price) // ✅ MIN, bukan last round
+                            g =>
+                            {
+                                var ordered = g.OrderBy(vo => vo.Round).ToList();
+                                var last = ordered.Last();
+                                var minPrice = ordered.Min(vo => vo.Price);
+                                return ComputeVendorItemCost(minPrice, last.QuantityItem, last.QuantityOfUnit);
+                            },
+                            StringComparer.OrdinalIgnoreCase
                         );
 
-                    var qtyPerItem = group
-                        .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
-                        .ToDictionary(
-                            groupVendorOffer => groupVendorOffer.Key,
-                            groupVendorOffer =>
-                                groupVendorOffer
-                                    .OrderBy(VendorOffer => VendorOffer.Round)
-                                    .Last()
-                                    .Quantity
-                        );
+                    var requiredTotal = ComputeRequiredTotal(perItemCosts, requiredItemIds);
+                    var finalOffer =
+                        requiredTotal != decimal.MaxValue
+                            ? requiredTotal
+                            : SafeSum(perItemCosts.Values);
 
-                    var tripPerItem = group
-                        .GroupBy(vendorOffer => vendorOffer.ProcOfferId)
-                        .ToDictionary(
-                            groupVendorOffer => groupVendorOffer.Key,
-                            groupVendorOffer =>
-                                groupVendorOffer
-                                    .OrderBy(vendorOffer => vendorOffer.Round)
-                                    .Last()
-                                    .Trip
-                        );
-
-                    // Wajib quote semua item agar valid
-                    var requiredItemIds = pnl.Items.Select(item => item.ProcOfferId).ToList();
-                    var totalPriceOffer = ComputeRequiredTotal(finalPerItem, requiredItemIds);
-                    var qtyItemOffer = ComputeRequiredTotal(
-                        qtyPerItem.ToDictionary(kvp => kvp.Key, kvp => (decimal)kvp.Value),
-                        requiredItemIds
-                    );
-                    var tripItemOffer = ComputeRequiredTotal(
-                        tripPerItem.ToDictionary(kvp => kvp.Key, kvp => (decimal)kvp.Value),
-                        requiredItemIds
-                    );
-
-                    return new
-                    {
-                        group.Key,
-                        finalPerItem,
-                        totalPriceOffer,
-                        qtyItemOffer,
-                        tripItemOffer,
-                    };
-                })
-                .Where(x => x.totalPriceOffer < decimal.MaxValue)
-                .ToList();
-
-            var vendorComparisons = vendorTotals
-                .Select(x =>
-                {
-                    if (
-                        x.totalPriceOffer == decimal.MaxValue
-                        || x.qtyItemOffer == decimal.MaxValue
-                        || x.tripItemOffer == decimal.MaxValue
-                    )
-                    {
-                        return new VendorComparisonDto
-                        {
-                            VendorName =
-                                allVendors
-                                    .FirstOrDefault(vendor => vendor.VendorId == x.Key)
-                                    ?.VendorName ?? x.Key,
-                            FinalOffer = decimal.MaxValue,
-                            Profit = decimal.MinValue,
-                            ProfitPercent = decimal.MinValue,
-                            IsSelected = pnl.SelectedVendorId == x.Key,
-                        };
-                    }
-
-                    var final = SafeMultiply(x.totalPriceOffer, x.qtyItemOffer, x.tripItemOffer);
-                    var profit = totalRevenue - final;
-                    var profitPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100m : 0m;
                     var vendorName =
-                        allVendors.FirstOrDefault(vendor => vendor.VendorId == x.Key)?.VendorName
-                        ?? x.Key;
-                    var isSelected = pnl.SelectedVendorId == x.Key;
+                        allVendors
+                            .FirstOrDefault(vendor => vendor.VendorId == group.Key)
+                            ?.VendorName ?? group.Key;
+
+                    var profit = totalRevenue - finalOffer;
+                    var profitPercent = totalRevenue > 0 ? (profit / totalRevenue) * 100m : 0m;
+                    var isSelected = pnl.SelectedVendorId == group.Key;
 
                     return new VendorComparisonDto
                     {
                         VendorName = vendorName,
-                        FinalOffer = final,
+                        FinalOffer = finalOffer,
                         Profit = profit,
                         ProfitPercent = profitPercent,
                         IsSelected = isSelected,
@@ -155,21 +123,28 @@ namespace ProcurementHTE.Core.Services
             var itemBreakdown = pnl
                 .Items.Select(item =>
                 {
-                    var itemName =
-                        pnl.Items.Select(i => i.ProcOffer)
-                            .FirstOrDefault(i => i.ProcOfferId == item.ProcOfferId)
-                            ?.ItemPenawaran
-                        ?? item.ProcOfferId;
+                    var procOffer = pnl.Items.Select(i => i.ProcOffer)
+                            .FirstOrDefault(i => i.ProcOfferId == item.ProcOfferId);
+
+                    var itemName = procOffer?.ItemPenawaran ?? item.ProcOfferId;
+
+                    var unitRevenue = procOffer?.UnitRevenue
+                        ?? (string?)(item.UnitType?.Name ?? item.UnitTypeId);
+                    var unitItems = procOffer?.Unit;
+                    var quantity = item.Quantity.HasValue ? (int?)Convert.ToInt32(item.Quantity.Value) : null;
 
                     return (
                         item.ProcOfferId,
                         itemName,
-                        item.Quantity,
-                        item.TarifAwal,
+                        item.UnitQty,
+                        item.BasePrice,
                         item.TarifAdd,
                         item.KmPer25,
                         item.OperatorCost,
-                        item.Revenue
+                        item.Revenue,
+                        quantity,
+                        unitRevenue,
+                        unitItems
                     );
                 })
                 .ToList();
@@ -182,11 +157,14 @@ namespace ProcurementHTE.Core.Services
                 TotalRevenue = totalRevenue,
                 AccrualAmount = pnl.AccrualAmount ?? totalRevenue,
                 RealizationAmount = pnl.RealizationAmount ?? totalOperatorCost,
-                Distance = pnl.Distance,
+                Distance = pnl.Distance ?? 0,
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
-                SelectedVendorName = vendorComparisons
-                    .FirstOrDefault(vendor => vendor.IsSelected)
-                    ?.VendorName,
+                SelectedVendorName =
+                    vendorComparisons.FirstOrDefault(vendor => vendor.IsSelected)?.VendorName
+                    ?? allVendors
+                        .FirstOrDefault(vendor => vendor.VendorId == pnl.SelectedVendorId)
+                        ?.VendorName
+                    ?? pnl.SelectedVendorId,
                 SelectedFinalOffer = pnl.SelectedVendorFinalOffer,
                 Profit = pnl.Profit,
                 ProfitPercent = pnl.ProfitPercent,
@@ -204,6 +182,9 @@ namespace ProcurementHTE.Core.Services
                 ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
 
             var offers = await _voRepository.GetByProcurementAsync(pnl.ProcurementId);
+            var roundLetters = await _roundLetterRepository.ListByProcurementAsync(
+                pnl.ProcurementId
+            );
 
             // Vendor → Items (per ProcOfferId) → Prices
             var vendors = offers
@@ -211,6 +192,17 @@ namespace ProcurementHTE.Core.Services
                 .Select(group => new VendorItemOffersDto
                 {
                     VendorId = group.Key,
+                    Letters = group
+                        .Where(x => !string.IsNullOrWhiteSpace(x.NoLetter))
+                        .GroupBy(x => x.Round)
+                        .OrderBy(g => g.Key)
+                        .Select(g => g.Last().NoLetter ?? string.Empty)
+                        .ToList(),
+                    LetterDocIds = roundLetters
+                        .Where(r => r.VendorId == group.Key)
+                        .OrderBy(r => r.Round)
+                        .Select(r => (string?)r.ProcDocumentId)
+                        .ToList(),
                     Items = group
                         .GroupBy(offer => offer.ProcOfferId)
                         .Select(gg =>
@@ -223,9 +215,10 @@ namespace ProcurementHTE.Core.Services
                                 VendorId = group.Key,
                                 ProcOfferId = gg.Key,
                                 Prices = ordered.Select(x => x.Price).ToList(),
-                                Letters = ordered.Select(x => x.NoLetter ?? string.Empty).ToList(),
-                                Quantity = last.Quantity,
-                                Trip = last.Trip,
+                                Quantity = last.QuantityItem,
+                                Trip = last.QuantityOfUnit,
+                                // If item exists in database, it means it was included when saved
+                                IsIncluded = true,
                             };
                         })
                         .ToList(),
@@ -238,15 +231,20 @@ namespace ProcurementHTE.Core.Services
                     ? storedSelections.Select(x => x.VendorId).Distinct().ToList()
                     : vendors.Select(v => v.VendorId).Distinct().ToList();
 
+            // For Moving/StandBy: UnitQty = QtyItems, Quantity = Quantity/Durasi
+            // For Angkutan: UnitQty = Quantity (trips), Quantity = null
             var items = pnl
                 .Items.Select(item => new ProfitLossItemInputDto
                 {
                     ProcOfferId = item.ProcOfferId,
-                    Quantity = item.Quantity,
-                    TarifAwal = item.TarifAwal,
-                    TarifAdd = item.TarifAdd,
-                    KmPer25 = item.KmPer25,
-                    OperatorCost = item.OperatorCost,
+                    // For edit, Quantity field represents Quantity/Durasi for SEWA_UNIT/MOVING
+                    // and UnitQty (trips) for PENGANGKUTAN
+                    Quantity = item.Quantity.HasValue ? (int)item.Quantity.Value : item.UnitQty,
+                    QtyItems = item.UnitQty, // For Moving/StandBy, this is the unit count
+                    TarifAwal = item.BasePrice,
+                    TarifAdd = item.TarifAdd ?? 0,
+                    KmPer25 = item.KmPer25 ?? 0,
+                    OperatorCost = item.OperatorCost ?? 0,
                 })
                 .ToList();
 
@@ -256,7 +254,9 @@ namespace ProcurementHTE.Core.Services
                 ProcurementId = pnl.ProcurementId,
                 AccrualAmount = pnl.AccrualAmount,
                 RealizationAmount = pnl.RealizationAmount,
-                Distance = pnl.Distance,
+                Distance = pnl.Distance ?? 0,
+                TglMulaiSewa = pnl.TglMulaiSewa,
+                TglMulaiMoving = pnl.TglMulaiMoving,
                 Items = items,
                 SelectedVendorId = pnl.SelectedVendorId,
                 SelectedVendorFinalOffer = pnl.SelectedVendorFinalOffer,
@@ -279,12 +279,30 @@ namespace ProcurementHTE.Core.Services
             if (dto.SelectedVendorIds == null || dto.SelectedVendorIds.Count == 0)
                 throw new InvalidOperationException("Minimal 1 vendor harus dipilih.");
 
-            var (opTotal, revTotal, items) = ComputeItems(dto.Items);
+            // Get Procurement with JobType for calculation
+            var procurement = await _pnlRepository.GetProcurementWithJobTypeAsync(dto.ProcurementId);
+            if (procurement == null)
+                throw new KeyNotFoundException($"Procurement {dto.ProcurementId} tidak ditemukan.");
+
+            var jobTypeName = procurement.JobType?.TypeName
+                ?? throw new InvalidOperationException("JobType tidak ditemukan untuk Procurement ini.");
+
+            // Validate required fields berdasarkan JobType
+            var tempPnl = new ProfitLoss
+            {
+                Distance = dto.Distance,
+                ProcurementId = dto.ProcurementId,
+                TglMulaiSewa = dto.TglMulaiSewa,
+                TglMulaiMoving = dto.TglMulaiMoving,
+            };
+            _jobTypeCalc.ValidateRequiredFields(tempPnl, jobTypeName);
+
+            var (opTotal, revTotal, items) = ComputeItems(dto.Items, jobTypeName, dto.Distance);
             if (items.Count == 0)
                 throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
 
             // Build vendor offers
-            var offers = BuildVendorOffersMulti(dto.Vendors, dto.ProcurementId);
+            var offers = BuildVendorOffersMulti(dto.Vendors, dto.ProcurementId, jobTypeName);
 
             // VALIDASI KETAT: Harus ada minimal 1 vendor dengan penawaran lengkap
             if (offers.Count == 0)
@@ -296,7 +314,7 @@ namespace ProcurementHTE.Core.Services
             var invalidOffers = offers
                 .Where(o =>
                     o.Price <= 0
-                    || o.Quantity <= 0
+                    || o.QuantityItem <= 0
                     || string.IsNullOrWhiteSpace(o.ProcOfferId)
                     || string.IsNullOrWhiteSpace(o.VendorId)
                 )
@@ -335,13 +353,20 @@ namespace ProcurementHTE.Core.Services
                 AccrualAmount = dto.AccrualAmount,
                 Distance = dto.Distance,
                 RealizationAmount = dto.RealizationAmount,
+                TglMulaiSewa = dto.TglMulaiSewa,
+                TglMulaiMoving = dto.TglMulaiMoving,
                 Items = items,
             };
 
             StampItemsWithProfitLossId(items, pnl.ProfitLossId);
 
             StampOffersWithProfitLossId(offers, pnl.ProfitLossId);
+
+            // Update ProcOffer.UnitRevenue from items
+            await UpdateProcOfferUnitRevenueAsync(dto.Items);
+
             await _pnlRepository.StoreProfitLossAggregateAsync(pnl, dto.SelectedVendorIds, offers);
+            await UpdateRoundLettersAsync(dto.ProcurementId, pnl.ProfitLossId, dto.Vendors);
             return pnl;
         }
 
@@ -355,7 +380,25 @@ namespace ProcurementHTE.Core.Services
                 await _pnlRepository.GetByIdAsync(dto.ProfitLossId)
                 ?? throw new KeyNotFoundException("Profit & Loss tidak ditemukan");
 
-            var newOffers = BuildVendorOffersMulti(dto.Vendors, dto.ProcurementId);
+            // Get Procurement with JobType for calculation
+            var procurement = await _pnlRepository.GetProcurementWithJobTypeAsync(dto.ProcurementId);
+            if (procurement == null)
+                throw new KeyNotFoundException($"Procurement {dto.ProcurementId} tidak ditemukan.");
+
+            var jobTypeName = procurement.JobType?.TypeName
+                ?? throw new InvalidOperationException("JobType tidak ditemukan untuk Procurement ini.");
+
+            // Validate required fields berdasarkan JobType
+            var tempPnl = new ProfitLoss
+            {
+                Distance = dto.Distance,
+                ProcurementId = dto.ProcurementId,
+                TglMulaiSewa = dto.TglMulaiSewa,
+                TglMulaiMoving = dto.TglMulaiMoving,
+            };
+            _jobTypeCalc.ValidateRequiredFields(tempPnl, jobTypeName);
+
+            var newOffers = BuildVendorOffersMulti(dto.Vendors, dto.ProcurementId, jobTypeName);
 
             // VALIDASI KETAT: Harus ada minimal 1 vendor dengan penawaran lengkap
             if (newOffers.Count == 0)
@@ -367,7 +410,7 @@ namespace ProcurementHTE.Core.Services
             var invalidOffers = newOffers
                 .Where(o =>
                     o.Price <= 0
-                    || o.Quantity <= 0
+                    || o.QuantityItem <= 0
                     || string.IsNullOrWhiteSpace(o.ProcOfferId)
                     || string.IsNullOrWhiteSpace(o.VendorId)
                 )
@@ -395,19 +438,62 @@ namespace ProcurementHTE.Core.Services
                     {
                         ProfitLossId = pnl.ProfitLossId,
                         ProcOfferId = it.ProcOfferId,
+                        ItemName = "",
                     };
                     pnl.Items.Add(entity);
                     itemsByOffer[it.ProcOfferId] = entity;
                 }
 
-                var operatorCost = it.TarifAdd * it.KmPer25;
-                var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
+                // Determine if this JobType uses Quantity for calculation (SEWA_UNIT, MOVING)
+                var usesQuantityForCalc = !_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName);
 
-                entity.Quantity = it.Quantity;
-                entity.TarifAwal = it.TarifAwal;
-                entity.TarifAdd = it.TarifAdd;
-                entity.KmPer25 = it.KmPer25;
-                entity.OperatorCost = operatorCost;
+                // For SEWA_UNIT/MOVING:
+                //   - UnitQty = QtyItems (jumlah unit fisik dari ProcOffer)
+                //   - Quantity = Quantity/Durasi (durasi sewa)
+                // For PENGANGKUTAN:
+                //   - UnitQty = Quantity (number of trips)
+                //   - Quantity = null (not used)
+                var unitQty = usesQuantityForCalc ? it.QtyItems : it.Quantity;
+                var quantityDurasi = usesQuantityForCalc ? it.Quantity : (decimal?)null;
+
+                // Create temp item for calculation
+                var tempItem = new ProfitLossItem
+                {
+                    UnitQty = unitQty,
+                    BasePrice = it.TarifAwal,
+                    TarifAdd = it.TarifAdd,
+                    KmPer25 = it.KmPer25,
+                    Quantity = quantityDurasi,
+                };
+
+                var revenue = _jobTypeCalc.CalculateItemRevenue(tempItem, jobTypeName, dto.Distance);
+
+                decimal operatorCost;
+                if (_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName))
+                {
+                    // PENGANGKUTAN mode
+                    var kmPer25 = _jobTypeCalc.CalculateKmPer25(dto.Distance ?? 0);
+                    operatorCost = _jobTypeCalc.CalculateOperatorCost(it.TarifAdd, kmPer25);
+
+                    entity.UnitQty = it.Quantity;
+                    entity.BasePrice = it.TarifAwal;
+                    entity.TarifAdd = it.TarifAdd;
+                    entity.KmPer25 = kmPer25;
+                    entity.OperatorCost = operatorCost;
+                    entity.Quantity = null;
+                }
+                else
+                {
+                    // SEWA_UNIT or MOVING mode
+                    operatorCost = 0m;
+                    entity.UnitQty = it.QtyItems;  // QtyItems = jumlah unit fisik
+                    entity.BasePrice = it.TarifAwal;
+                    entity.TarifAdd = null;
+                    entity.KmPer25 = null;
+                    entity.OperatorCost = null;
+                    entity.Quantity = it.Quantity; // Quantity = durasi sewa
+                }
+
                 entity.Revenue = revenue;
 
                 opTotal += operatorCost;
@@ -439,14 +525,21 @@ namespace ProcurementHTE.Core.Services
             pnl.AccrualAmount = accrualAmount;
             pnl.RealizationAmount = realizationAmount;
             pnl.Distance = dto.Distance;
+            pnl.TglMulaiSewa = dto.TglMulaiSewa;
+            pnl.TglMulaiMoving = dto.TglMulaiMoving;
             pnl.UpdatedAt = DateTime.Now;
 
             StampOffersWithProfitLossId(newOffers, pnl.ProfitLossId);
+
+            // Update ProcOffer.UnitRevenue from items
+            await UpdateProcOfferUnitRevenueAsync(dto.Items);
+
             await _pnlRepository.UpdateProfitLossAggregateAsync(
                 pnl,
                 dto.SelectedVendorIds,
                 newOffers
             );
+            await UpdateRoundLettersAsync(dto.ProcurementId, pnl.ProfitLossId, dto.Vendors);
             return pnl;
         }
 
@@ -461,9 +554,10 @@ namespace ProcurementHTE.Core.Services
             return await _pnlRepository.GetLatestByProcurementIdAsync(procurementId);
         }
 
-        private static List<VendorOffer> BuildVendorOffersMulti(
+        private List<VendorOffer> BuildVendorOffersMulti(
             List<VendorItemOffersDto> input,
-            string procurementId
+            string procurementId,
+            string jobTypeName
         )
         {
             var offers = new List<VendorOffer>();
@@ -473,18 +567,22 @@ namespace ProcurementHTE.Core.Services
                 if (string.IsNullOrWhiteSpace(vendor.VendorId))
                     continue;
 
+                var letters = vendor.Letters ?? [];
+
                 foreach (var item in vendor.Items)
                 {
                     if (string.IsNullOrWhiteSpace(item.ProcOfferId))
                         continue;
 
-                    var letters = item.Letters ?? [];
-                    var quantity = item.Quantity;
-                    var trip = item.Trip;
+                    var quantityItem = item.Quantity;
+                    var quantityOfUnit = item.Trip;
 
                     // Skip jika quantity tidak valid
-                    if (quantity <= 0)
+                    if (quantityItem <= 0)
                         continue;
+
+                    // Determine UnitTypeId based on JobType
+                    var unitTypeId = _jobTypeCalc.GetVendorOfferUnitTypeId(jobTypeName, null);
 
                     for (int i = 0; i < (item.Prices?.Count ?? 0); i++)
                     {
@@ -507,8 +605,9 @@ namespace ProcurementHTE.Core.Services
                                 NoLetter = string.IsNullOrWhiteSpace(noLetter)
                                     ? string.Empty
                                     : noLetter!,
-                                Quantity = quantity,
-                                Trip = trip,
+                                QuantityItem = quantityItem,
+                                QuantityOfUnit = quantityOfUnit,
+                                UnitTypeId = unitTypeId,
                             }
                         );
                     }
@@ -540,11 +639,11 @@ namespace ProcurementHTE.Core.Services
             }
         }
 
-        private static (
+        private (
             decimal operatorCostTotal,
             decimal revenueTotal,
             List<ProfitLossItem> item
-        ) ComputeItems(List<ProfitLossItemInputDto> input)
+        ) ComputeItems(List<ProfitLossItemInputDto> input, string jobTypeName, decimal? distance)
         {
             var items = new List<ProfitLossItem>();
             decimal opTotal = 0m,
@@ -552,21 +651,59 @@ namespace ProcurementHTE.Core.Services
 
             foreach (var it in input)
             {
-                var operatorCost = it.TarifAdd * it.KmPer25;
-                var revenue = (it.TarifAwal + operatorCost) * it.Quantity;
+                // Determine if this JobType uses Quantity for calculation (SEWA_UNIT, MOVING)
+                var usesQuantityForCalc = !_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName);
 
-                items.Add(
-                    new ProfitLossItem
-                    {
-                        ProcOfferId = it.ProcOfferId,
-                        Quantity = it.Quantity,
-                        TarifAwal = it.TarifAwal,
-                        TarifAdd = it.TarifAdd,
-                        KmPer25 = it.KmPer25,
-                        OperatorCost = operatorCost,
-                        Revenue = revenue,
-                    }
-                );
+                // For SEWA_UNIT/MOVING:
+                //   - UnitQty = QtyItems (jumlah unit fisik dari ProcOffer)
+                //   - Quantity = Quantity/Durasi (durasi sewa)
+                // For PENGANGKUTAN:
+                //   - UnitQty = Quantity (number of trips)
+                //   - Quantity = null (not used)
+                var unitQty = usesQuantityForCalc ? it.QtyItems : it.Quantity;
+                var quantityDurasi = usesQuantityForCalc ? it.Quantity : (decimal?)null;
+
+                // Create temporary item for calculation
+                var tempItem = new ProfitLossItem
+                {
+                    ProcOfferId = it.ProcOfferId,
+                    UnitQty = unitQty,
+                    BasePrice = it.TarifAwal,
+                    TarifAdd = it.TarifAdd,
+                    KmPer25 = it.KmPer25,
+                    // Set Quantity BEFORE CalculateItemRevenue for SEWA_UNIT/MOVING
+                    Quantity = quantityDurasi,
+                    ItemName = "", // Will be populated from ProcOffer
+                };
+
+                // Calculate using JobTypeCalculationService
+                var revenue = _jobTypeCalc.CalculateItemRevenue(tempItem, jobTypeName, distance);
+
+                // For PENGANGKUTAN, recalculate OperatorCost
+                decimal operatorCost;
+                if (_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName))
+                {
+                    // PENGANGKUTAN mode
+                    var kmPer25 = _jobTypeCalc.CalculateKmPer25(distance ?? 0);
+                    operatorCost = _jobTypeCalc.CalculateOperatorCost(it.TarifAdd, kmPer25);
+
+                    tempItem.KmPer25 = kmPer25;
+                    tempItem.OperatorCost = operatorCost;
+                    tempItem.Quantity = null; // Not used in PENGANGKUTAN
+                }
+                else
+                {
+                    // SEWA_UNIT or MOVING mode
+                    operatorCost = 0m;
+                    tempItem.TarifAdd = null;
+                    tempItem.KmPer25 = null;
+                    tempItem.OperatorCost = null;
+                    // Quantity already set above
+                }
+
+                tempItem.Revenue = revenue;
+
+                items.Add(tempItem);
 
                 opTotal += operatorCost;
                 revTotal += revenue;
@@ -600,8 +737,10 @@ namespace ProcurementHTE.Core.Services
                             gg => gg.Key,
                             gg =>
                             {
-                                var last = gg.OrderBy(x => x.Round).Last();
-                                return ComputeVendorItemCost(last.Price, last.Quantity, last.Trip);
+                                var ordered = gg.OrderBy(x => x.Round).ToList();
+                                var last = ordered.Last();
+                                var minPrice = ordered.Min(x => x.Price);
+                                return ComputeVendorItemCost(minPrice, last.QuantityItem, last.QuantityOfUnit);
                             }
                         ),
                 })
@@ -636,11 +775,13 @@ namespace ProcurementHTE.Core.Services
                                 gg => gg.Key,
                                 gg =>
                                 {
-                                    var last = gg.OrderBy(x => x.Round).Last();
+                                    var ordered = gg.OrderBy(x => x.Round).ToList();
+                                    var last = ordered.Last();
+                                    var minPrice = ordered.Min(x => x.Price);
                                     return ComputeVendorItemCost(
-                                        last.Price,
-                                        last.Quantity,
-                                        last.Trip
+                                        minPrice,
+                                        last.QuantityItem,
+                                        last.QuantityOfUnit
                                     );
                                 }
                             ),
@@ -758,5 +899,57 @@ namespace ProcurementHTE.Core.Services
 
             return best?.NoLetter;
         }
+
+        /// <summary>
+        /// Updates ProcOffer.UnitRevenue from ProfitLoss items
+        /// This ensures the UnitRevenue selection is persisted to the ProcOffer table
+        /// </summary>
+        private async Task UpdateProcOfferUnitRevenueAsync(List<ProfitLossItemInputDto> items)
+        {
+            if (items == null || items.Count == 0)
+                return;
+
+            foreach (var item in items)
+            {
+                if (string.IsNullOrWhiteSpace(item.ProcOfferId) || string.IsNullOrWhiteSpace(item.UnitRevenue))
+                    continue;
+
+                await _pnlRepository.UpdateProcOfferUnitRevenueAsync(item.ProcOfferId, item.UnitRevenue);
+            }
+        }
+
+        private async Task UpdateRoundLettersAsync(
+            string procurementId,
+            string profitLossId,
+            List<VendorItemOffersDto> vendors
+        )
+        {
+            if (vendors == null || vendors.Count == 0)
+                return;
+
+            foreach (var vendor in vendors)
+            {
+                if (vendor == null || string.IsNullOrWhiteSpace(vendor.VendorId))
+                    continue;
+
+                var letters = vendor.Letters ?? [];
+                for (int i = 0; i < letters.Count; i++)
+                {
+                    var letter = letters[i];
+                    var round = i + 1;
+                    await _roundLetterRepository.UpdateProfitLossLinkAsync(
+                        procurementId,
+                        vendor.VendorId,
+                        round,
+                        profitLossId,
+                        letter
+                    );
+                }
+            }
+
+            await _roundLetterRepository.SaveChangesAsync();
+        }
+
+        // Coverage check dihapus agar penawaran parsial tetap diproses; PickBestVendor sudah meng-handle fallback.
     }
 }

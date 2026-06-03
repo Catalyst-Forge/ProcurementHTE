@@ -1,8 +1,8 @@
 (() => {
-  const root = document.getElementById("wo-new");
+  const root = document.getElementById("procurement-new");
   const createFormUrl = root?.dataset.createFormUrl;
-  const grid = document.getElementById("wo-type-grid");
-  const host = document.getElementById("wo-form-host");
+  const grid = document.getElementById("procurement-type-grid");
+  const host = document.getElementById("procurement-form-host");
   if (!root || !createFormUrl || !grid || !host) return;
 
   const fetchAny = async (url, options = {}) => {
@@ -64,7 +64,7 @@
 
   // submit AJAX
   host.addEventListener("submit", async (e) => {
-    const form = e.target.closest("#wo-form");
+    const form = e.target.closest("#procurement-form");
     if (!form) return;
     e.preventDefault();
 

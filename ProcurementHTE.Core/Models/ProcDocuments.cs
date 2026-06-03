@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ProcurementHTE.Core.Models;
 
 [Table("ProcDocuments")]
-public class ProcDocuments
+public class ProcDocuments : BaseEntity
 {
     [Key]
     public string ProcDocumentId { get; set; } = Guid.NewGuid().ToString();
@@ -27,15 +27,6 @@ public class ProcDocuments
     [Required]
     public long Size { get; set; }
 
-    [Required, MaxLength(16)]
-    public string Status { get; set; } = "Upload";
-
-    [MaxLength(512)]
-    public string? QrText { get; set; }
-
-    [MaxLength(600)]
-    public string? QrObjectKey { get; set; }
-
     [MaxLength(200)]
     public string? Description { get; set; }
 
@@ -44,18 +35,11 @@ public class ProcDocuments
     [MaxLength(450)]
     public string? CreatedByUserId { get; set; }
 
-    public bool? IsApproved { get; set; }
-
-    public DateTime? ApprovedAt { get; set; }
-
-    [MaxLength(450)]
-    public string? ApprovedByUserId { get; set; }
-
     [ForeignKey(nameof(ProcurementId))]
     public Procurement Procurement { get; set; } = default!;
 
     [ForeignKey(nameof(DocumentTypeId))]
     public DocumentType DocumentType { get; set; } = default!;
 
-    public ICollection<ProcDocumentApprovals> Approvals { get; set; } = new List<ProcDocumentApprovals>();
+    // Approvals collection removed - approval sekarang di level PR
 }

@@ -1,23 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
 [Authorize]
 public class DocumentApprovalsController : Controller
 {
-    private readonly AppDbContext _db;
-    private readonly RoleManager<Role> _roleManager;
+    private readonly IDocumentApprovalsService _service;
     private const string ActivePageName = "Index Document Approvals";
 
-    public DocumentApprovalsController(AppDbContext db, RoleManager<Role> roleManager)
+    public DocumentApprovalsController(IDocumentApprovalsService service)
     {
-        _db = db;
-        _roleManager = roleManager;
+        _service = service;
     }
 
     public override void OnActionExecuting(
@@ -31,27 +27,16 @@ public class DocumentApprovalsController : Controller
     // GET: DocumentApprovals
     public async Task<IActionResult> Index(string? jobTypeId = null, CancellationToken ct = default)
     {
-        var approvals = _db
-            .DocumentApprovals.Include(x => x.JobTypeDocument)
-            .ThenInclude(j => j.JobType)
-            .Include(x => x.JobTypeDocument)
-            .ThenInclude(j => j.DocumentType)
-            .Include(x => x.Role)
-            .AsQueryable();
+        var list = await _service.GetAllAsync(jobTypeId, ct);
 
-        if (!string.IsNullOrWhiteSpace(jobTypeId))
-        {
-            approvals = approvals.Where(x => x.JobTypeDocument.JobTypeId == jobTypeId);
-        }
-
-        var list = await approvals
-            .OrderBy(x => x.JobTypeDocument.JobType.TypeName)
-            .ThenBy(x => x.JobTypeDocument.DocumentType.Name)
-            .ThenBy(x => x.Level)
-            .ThenBy(x => x.SequenceOrder)
-            .ToListAsync(ct);
-
-        ViewBag.JobTypes = await _db.JobTypes.OrderBy(x => x.TypeName).ToListAsync(ct);
+        var jobTypeDocs = await _service.GetJobTypeDocumentsAsync(ct);
+        ViewBag.JobTypes = jobTypeDocs
+            .Select(j => j.JobType)
+            .Where(j => j != null)
+            .GroupBy(j => j!.JobTypeId)
+            .Select(g => g.First()!)
+            .OrderBy(j => j.TypeName)
+            .ToList();
         return View(list);
     }
 
@@ -59,7 +44,7 @@ public class DocumentApprovalsController : Controller
     public async Task<IActionResult> Create(CancellationToken ct = default)
     {
         await PopulateSelections(ct);
-        return View(new DocumentApprovals { Level = 1, SequenceOrder = 1 });
+        return View(new DocumentApprovals { Level = 1 });
     }
 
     // POST: DocumentApprovals/Create
@@ -67,14 +52,20 @@ public class DocumentApprovalsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(DocumentApprovals model, CancellationToken ct = default)
     {
+        if (model.Level <= 0)
+        {
+            ModelState.Remove(nameof(model.Level));
+            model.Level = 1;
+        }
+
         if (!ModelState.IsValid)
         {
+            LogModelErrors("Create");
             await PopulateSelections(ct);
             return View(model);
         }
 
-        _db.DocumentApprovals.Add(model);
-        await _db.SaveChangesAsync(ct);
+        await _service.CreateAsync(model, ct);
         TempData["SuccessMessage"] = "Approval step created.";
         return RedirectToAction(nameof(Index));
     }
@@ -82,7 +73,7 @@ public class DocumentApprovalsController : Controller
     // GET: DocumentApprovals/Edit/5
     public async Task<IActionResult> Edit(string id, CancellationToken ct = default)
     {
-        var entity = await _db.DocumentApprovals.FindAsync(new object?[] { id }, ct);
+        var entity = await _service.GetByIdAsync(id, ct);
         if (entity is null)
             return NotFound();
         await PopulateSelections(ct);
@@ -98,17 +89,23 @@ public class DocumentApprovalsController : Controller
         CancellationToken ct = default
     )
     {
+        if (model.Level <= 0)
+        {
+            ModelState.Remove(nameof(model.Level));
+            model.Level = 1;
+        }
+
         if (id != model.DocumentApprovalId)
             return BadRequest();
 
         if (!ModelState.IsValid)
         {
+            LogModelErrors("Edit");
             await PopulateSelections(ct);
             return View(model);
         }
 
-        _db.Entry(model).State = EntityState.Modified;
-        await _db.SaveChangesAsync(ct);
+        await _service.UpdateAsync(model, ct);
         TempData["SuccessMessage"] = "Approval step updated.";
         return RedirectToAction(nameof(Index));
     }
@@ -118,26 +115,15 @@ public class DocumentApprovalsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(string id, CancellationToken ct = default)
     {
-        var entity = await _db.DocumentApprovals.FindAsync(new object?[] { id }, ct);
-        if (entity is null)
-            return NotFound();
-
-        _db.DocumentApprovals.Remove(entity);
-        await _db.SaveChangesAsync(ct);
+        await _service.DeleteAsync(id, ct);
         TempData["SuccessMessage"] = "Approval step deleted.";
         return RedirectToAction(nameof(Index));
     }
 
     private async Task PopulateSelections(CancellationToken ct)
     {
-        var jobTypeDocs = await _db
-            .JobTypeDocuments.Include(x => x.JobType)
-            .Include(x => x.DocumentType)
-            .OrderBy(x => x.JobType.TypeName)
-            .ThenBy(x => x.DocumentType.Name)
-            .ToListAsync(ct);
-
-        var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync(ct);
+        var jobTypeDocs = await _service.GetJobTypeDocumentsAsync(ct);
+        var roles = await _service.GetRolesAsync(ct);
 
         ViewBag.JobTypeDocuments = jobTypeDocs;
         ViewBag.JobTypeDocumentSelect = jobTypeDocs
@@ -148,5 +134,25 @@ public class DocumentApprovalsController : Controller
             })
             .ToList();
         ViewBag.Roles = roles;
+    }
+
+    private void LogModelErrors(string actionName)
+    {
+        if (ModelState.IsValid)
+            return;
+
+        var errors = ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .Select(kvp =>
+                $"{kvp.Key}: {string.Join(" | ", kvp.Value?.Errors.Select(e => e.ErrorMessage ?? e.Exception?.Message ?? "<no message>") ?? Enumerable.Empty<string>())}"
+            )
+            .ToArray();
+
+        if (errors.Length > 0)
+        {
+            Console.WriteLine(
+                $"[DocumentApprovalsController:{actionName}] ModelState invalid ({HttpContext.TraceIdentifier}): {string.Join("; ", errors)}"
+            );
+        }
     }
 }

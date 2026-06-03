@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll master and deploy Procurement HTE
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=30s
+Persistent=true
+Unit=procurementhte-deploy.service
+
+[Install]
+WantedBy=timers.target

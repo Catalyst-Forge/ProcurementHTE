@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Web.Options;
+using ProcurementHTE.Core.Options;
 
 namespace ProcurementHTE.Web.Middleware
 {

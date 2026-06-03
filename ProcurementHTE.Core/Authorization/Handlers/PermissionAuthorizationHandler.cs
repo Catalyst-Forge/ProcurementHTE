@@ -27,6 +27,22 @@ namespace ProcurementHTE.Core.Authorization.Handlers
             if (context.User.Identity?.IsAuthenticated != true)
                 return;
 
+            if (context.User.IsInRole("Admin"))
+            {
+                context.Succeed(requirement);
+                return;
+            }
+
+            var hasPermission = context.User.Claims.Any(c =>
+                c.Type == "Permission" && c.Value == requirement.Permission
+            );
+
+            if (hasPermission)
+            {
+                context.Succeed(requirement);
+                return;
+            }
+
             var user = await _userManager.GetUserAsync(context.User);
             if (user == null)
                 return;
