@@ -3,7 +3,7 @@
     public enum ProjectRegion
     {
         JWKT = 0,
-        SMRT = 1,
+        SMTR = 1,
         AKOMODASI = 2,
     }
 }

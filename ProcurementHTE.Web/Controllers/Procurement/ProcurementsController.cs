@@ -1,11 +1,15 @@
 using System.Security.Claims;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -19,6 +23,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         #region Construct
 
         private const string ActivePageName = "Index Procurements";
+        private static readonly Regex LetterFileFieldRegex = new(
+            "^Vendors\\[(\\d+)\\]\\.LetterFiles\\[(\\d+)\\]$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
+        );
         private readonly IProcurementService _procurementService;
         private readonly IVendorService _vendorService;
         private readonly IProfitLossService _pnlService;
@@ -26,7 +34,12 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         private readonly IDocumentGenerator _documentGenerator;
         private readonly IDocumentTypeService _docTypeService;
         private readonly IProcDocumentService _procDocService;
+        private readonly IVendorRoundLetterRepository _roundLetterRepository;
         private readonly UserManager<User> _userManager;
+        private readonly IUnitTypeRepository _unitTypeRepository;
+        private readonly INotificationService _notificationService;
+        private readonly IProcurementTrackingService _trackingService;
+        private readonly IQrCodeGenerator _qrCodeGenerator;
 
         public ProcurementsController(
             IProcurementService procurementService,
@@ -36,7 +49,12 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             IDocumentGenerator documentGenerator,
             IDocumentTypeService docTypeService,
             IProcDocumentService procDocService,
-            UserManager<User> userManager
+            IVendorRoundLetterRepository roundLetterRepository,
+            UserManager<User> userManager,
+            IUnitTypeRepository unitTypeRepository,
+            INotificationService notificationService,
+            IProcurementTrackingService trackingService,
+            IQrCodeGenerator qrCodeGenerator
         )
         {
             _procurementService = procurementService;
@@ -46,7 +64,12 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             _documentGenerator = documentGenerator;
             _docTypeService = docTypeService;
             _procDocService = procDocService;
+            _roundLetterRepository = roundLetterRepository;
             _userManager = userManager;
+            _unitTypeRepository = unitTypeRepository;
+            _notificationService = notificationService;
+            _trackingService = trackingService;
+            _qrCodeGenerator = qrCodeGenerator;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -139,104 +162,143 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
         }
 
-        // GET: Procurements/SelectType
-        [Authorize(Policy = Permissions.Procurement.Create)]
-        public async Task<IActionResult> SelectType()
-        {
-            var related = await _procurementService.GetRelatedEntitiesForProcurementAsync();
-            return View(related.JobTypes);
-        }
-
-        // POST: Procurements/SelectType
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Policy = Permissions.Procurement.Create)]
-        public IActionResult SelectType(string jobTypeId)
-        {
-            return RedirectToAction(nameof(CreateByType), new { jobTypeId });
-        }
-
-        // GET: Procurements/CreateByType?jobTypeId/1
         [HttpGet]
-        //[Authorize(Policy = Permissions.Procurement.Create)]
-        public async Task<IActionResult> CreateByType(string jobTypeId)
+        [Authorize(Policy = Permissions.Procurement.Create)]
+        public IActionResult RenderRaNumberField(ProcurementCategory category, string? raNumber)
         {
-            var jobType = await _procurementService.GetJobTypeByIdAsync(jobTypeId);
-            if (jobType is null)
-            {
-                TempData["ErrorMessage"] = "Tipe Procurement tidak ditemukan";
-                return RedirectToAction(nameof(SelectType));
-            }
+            if (category != ProcurementCategory.Jasa)
+                return Content(string.Empty);
 
-            ViewBag.SelectedJobTypeName = jobType.TypeName;
-
-            var createWoVM = new ProcurementCreateViewModel
-            {
-                Procurement = new Procurement { JobTypeId = jobTypeId },
-                Details = [],
-                Offers = [],
-            };
-            await PopulateCreateUserSelectListsAsync(createWoVM);
-            ViewBag.CreatePartial = ResolveCreatePartialByName(jobType.TypeName);
-            return View("CreateByType", createWoVM);
+            ViewBag.RaNumberValue = raNumber;
+            return PartialView("_RaNumberField");
         }
 
-        // POST: Procurements/CreateByType?jobTypeId/1
+        // GET: Procurements/Create
+        [HttpGet]
+        [Authorize(Policy = Permissions.Procurement.Create)]
+        public async Task<IActionResult> Create(
+            string? jobTypeId = null,
+            ProcurementCategory? category = null
+        )
+        {
+            var viewModel = await BuildCreateViewModelAsync(jobTypeId, category);
+            return View("CreateByType", viewModel);
+        }
+
+        // POST: Procurements/Create
         // Post form Procurement
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Policy = Permissions.Procurement.Create)]
         public async Task<IActionResult> Create(
-            [FromForm] ProcurementCreateViewModel woViewModel,
+            [FromForm] ProcurementCreateViewModel procurementViewModel,
             string submitAction
         )
         {
+            Console.WriteLine($"=== DEBUG: Create POST received ===");
+            Console.WriteLine($"DEBUG: submitAction = '{submitAction}'");
+            
+            // Remove auto-generated validation errors (we handle validation manually)
             RemoveAutoGeneratedProcurementValidation();
             RemoveDetailsValidation();
             RemoveOffersValidation();
-
-            //woViewModel ??= new ProcurementCreateViewModel();
-            //woViewModel.Details ??= new List<ProcDetail>();
-            //woViewModel.Offers ??= new List<ProcOffer>();
-            woViewModel.Procurement.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (!string.IsNullOrWhiteSpace(submitAction))
-            {
-                var status = await _procurementService.GetStatusByNameAsync(submitAction);
-                if (status == null)
-                {
-                    ModelState.AddModelError(
-                        "",
-                        $"Status '{submitAction}' tidak ditemukan. Pastikan entries di table Statuses ada."
-                    );
-                }
-                else
-                {
-                    woViewModel.Procurement.StatusId = status.StatusId;
-                }
-            }
-            else
-            {
-                ModelState.AddModelError("", "Aksi submit tidak dikenali");
-            }
-
+            
+            Console.WriteLine($"DEBUG: ModelState.IsValid after removing auto-validation = {ModelState.IsValid}");
             if (!ModelState.IsValid)
             {
-                await RepopulateCreateViewModel(woViewModel);
-                return View("CreateByType", woViewModel);
+                foreach (var key in ModelState.Keys.Where(k => ModelState[k]?.Errors.Count > 0))
+                {
+                    Console.WriteLine($"DEBUG: ModelState error key='{key}', errors={string.Join("; ", ModelState[key]?.Errors.Select(e => e.ErrorMessage) ?? Enumerable.Empty<string>())}");
+                }
             }
 
+            // Initialize defaults
+            procurementViewModel.Procurement ??= new Procurement();
+            procurementViewModel.Details ??= new List<ProcDetail>();
+            procurementViewModel.Offers ??= new List<ProcOffer>();
+
+            // Set current user as creator and PIC
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new InvalidOperationException("User tidak terautentikasi");
+            
+            var proc = procurementViewModel.Procurement;
+            proc.UserId = currentUserId;
+            proc.PicOpsUserId = currentUserId;
+
+            // Determine if this is a draft save
+            bool isDraft = submitAction?.Equals("Draft", StringComparison.OrdinalIgnoreCase) == true;
+            Console.WriteLine($"DEBUG: isDraft = {isDraft}");
+
+            // === STEP 1: Validate and set Status ===
+            var status = await _procurementService.GetStatusByNameAsync(submitAction ?? "");
+            if (status == null)
+            {
+                Console.WriteLine($"DEBUG: Status '{submitAction}' not found!");
+                ModelState.AddModelError("", $"Status '{submitAction}' tidak ditemukan di database. Pastikan ada entry 'Draft' dan 'Created' di tabel Statuses.");
+                await RepopulateCreateViewModel(procurementViewModel);
+                return View("CreateByType", procurementViewModel);
+            }
+            proc.StatusId = status.StatusId;
+            Console.WriteLine($"DEBUG: StatusId set to = {proc.StatusId}");
+
+            // === STEP 2: Run validations based on mode ===
+            ValidateProcurementForm(procurementViewModel, isDraft);
+            Console.WriteLine($"DEBUG: After ValidateProcurementForm, ModelState.IsValid = {ModelState.IsValid}");
+            if (!ModelState.IsValid)
+            {
+                foreach (var key in ModelState.Keys.Where(k => ModelState[k]?.Errors.Count > 0))
+                {
+                    Console.WriteLine($"DEBUG: Validation error key='{key}', errors={string.Join("; ", ModelState[key]?.Errors.Select(e => e.ErrorMessage) ?? Enumerable.Empty<string>())}");
+                }
+            }
+
+            // === STEP 3: Check ModelState and return if invalid ===
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine("DEBUG: Returning view due to validation errors");
+                await RepopulateCreateViewModel(procurementViewModel);
+                return View("CreateByType", procurementViewModel);
+            }
+
+            Console.WriteLine("DEBUG: Validation passed, proceeding to save...");
+
+            // === STEP 4: Set default values for required DB fields ===
+            // Only after validation passes, set defaults for fields not filled in form
+            if (string.IsNullOrWhiteSpace(proc.AnalystHteUserId))
+                proc.AnalystHteUserId = currentUserId;
+            if (string.IsNullOrWhiteSpace(proc.AssistantManagerUserId))
+                proc.AssistantManagerUserId = currentUserId;
+            if (string.IsNullOrWhiteSpace(proc.ManagerUserId))
+                proc.ManagerUserId = currentUserId;
+            if (string.IsNullOrWhiteSpace(proc.JobName))
+                proc.JobName = isDraft ? "(Draft)" : proc.JobName;
+
+            // === STEP 5: Save to database ===
             try
             {
+                Console.WriteLine("=== DEBUG: STEP 5 - Saving to database ===");
+                Console.WriteLine($"DEBUG: JobTypeId = {proc.JobTypeId}");
+                Console.WriteLine($"DEBUG: StatusId = {proc.StatusId}");
+                Console.WriteLine($"DEBUG: JobName = {proc.JobName}");
+                Console.WriteLine($"DEBUG: UserId = {proc.UserId}");
+                Console.WriteLine($"DEBUG: PicOpsUserId = {proc.PicOpsUserId}");
+                Console.WriteLine($"DEBUG: AnalystHteUserId = {proc.AnalystHteUserId}");
+                Console.WriteLine($"DEBUG: Offers count = {procurementViewModel.Offers?.Count ?? 0}");
+                Console.WriteLine($"DEBUG: Details count = {procurementViewModel.Details?.Count ?? 0}");
+
+                // Append suffix to SpmpNumber and OeNumber
+                proc.SpmpNumber = AppendSuffixIfNeeded(proc.SpmpNumber);
+                proc.OeNumber = AppendSuffixIfNeeded(proc.OeNumber);
+
                 await _procurementService.AddProcurementWithDetailsAsync(
-                    woViewModel.Procurement,
-                    woViewModel.Details!,
-                    woViewModel.Offers
+                    procurementViewModel.Procurement,
+                    procurementViewModel.Details ?? new List<ProcDetail>(),
+                    procurementViewModel.Offers ?? new List<ProcOffer>()
                 );
-                TempData["SuccessMessage"] = submitAction.Equals(
-                    "Draft",
-                    StringComparison.OrdinalIgnoreCase
-                )
+
+                Console.WriteLine("=== DEBUG: Successfully saved to database ===");
+
+                TempData["SuccessMessage"] = isDraft
                     ? "Procurement saved as draft successfully"
                     : "Procurement created successfully";
 
@@ -244,18 +306,120 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
             catch (ArgumentException ex)
             {
-                ModelState.AddModelError("", ex.Message);
+                Console.WriteLine($"=== DEBUG ERROR (ArgumentException): {ex.Message} ===");
+                ModelState.AddModelError("", $"Validasi gagal: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"=== DEBUG ERROR (DbUpdateException): {ex.InnerException?.Message ?? ex.Message} ===");
+                ModelState.AddModelError("", $"Gagal menyimpan data ke database: {ex.InnerException?.Message ?? ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"=== DEBUG ERROR (InvalidOperationException): {ex.Message} ===");
+                ModelState.AddModelError("", $"Operasi tidak valid: {ex.Message}");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(
-                    "",
-                    "An error occurred while saving the data: " + ex.Message
-                );
+                Console.WriteLine($"=== DEBUG ERROR (Exception): {ex.Message} ===");
+                Console.WriteLine($"=== DEBUG ERROR Stack: {ex.StackTrace} ===");
+                ModelState.AddModelError("", $"Terjadi kesalahan saat menyimpan data: {ex.Message}");
             }
-            await RepopulateCreateViewModel(woViewModel);
 
-            return View("CreateByType", woViewModel);
+            await RepopulateCreateViewModel(procurementViewModel);
+            return View("CreateByType", procurementViewModel);
+        }
+
+        /// <summary>
+        /// Validates the procurement form based on whether it's a draft or full create.
+        /// Draft mode: Only JobType is required
+        /// Create mode: All required fields are validated
+        /// </summary>
+        private void ValidateProcurementForm(ProcurementCreateViewModel vm, bool isDraft)
+        {
+            var proc = vm.Procurement;
+            var prefix = $"{nameof(vm.Procurement)}";
+
+            // === Always required (even for Draft) ===
+            if (string.IsNullOrWhiteSpace(proc.JobTypeId))
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.JobTypeId)}", "Pilih job type terlebih dahulu");
+            }
+
+            // === Skip remaining validations for Draft ===
+            if (isDraft) return;
+
+            // === Required for Create only ===
+            if (proc.ContractType == 0)
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.ContractType)}", "Contract type wajib dipilih");
+            }
+
+            if (proc.ProcurementCategory == 0)
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.ProcurementCategory)}", "Jenis pengadaan wajib dipilih");
+            }
+
+            if (string.IsNullOrWhiteSpace(proc.JobName))
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.JobName)}", "Nama pekerjaan wajib diisi");
+            }
+
+            if (proc.DocumentDate == default)
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.DocumentDate)}", "Tanggal dokumen wajib diisi");
+            }
+
+            if (proc.StartDate == default)
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.StartDate)}", "Tanggal mulai wajib diisi");
+            }
+
+            if (proc.EndDate == default)
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.EndDate)}", "Tanggal selesai wajib diisi");
+            }
+
+            // Date range validation
+            if (proc.StartDate != default && proc.EndDate != default && proc.EndDate < proc.StartDate)
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.EndDate)}", "Tanggal selesai harus setelah tanggal mulai");
+            }
+
+            // RA Number required for Jasa
+            if (proc.ProcurementCategory == ProcurementCategory.Jasa && string.IsNullOrWhiteSpace(proc.RaNumber))
+            {
+                ModelState.AddModelError($"{prefix}.{nameof(proc.RaNumber)}", "RA Number wajib diisi untuk jenis pengadaan jasa");
+            }
+
+            // === Offer Items validation (Create only) ===
+            if (vm.Offers == null || vm.Offers.Count == 0)
+            {
+                ModelState.AddModelError(nameof(vm.Offers), "Minimal harus ada 1 item penawaran untuk membuat procurement");
+                return;
+            }
+
+            // Validate each offer item
+            var offerIndexes = Request.Form["Offers.Index"].ToArray();
+            for (int i = 0; i < offerIndexes.Length; i++)
+            {
+                var idx = offerIndexes[i];
+                var offer = vm.Offers.ElementAtOrDefault(i);
+                if (offer == null) continue;
+
+                if (string.IsNullOrWhiteSpace(offer.ItemPenawaran))
+                {
+                    ModelState.AddModelError($"Offers[{idx}].ItemPenawaran", "Item penawaran wajib diisi");
+                }
+                if (offer.Qty <= 0)
+                {
+                    ModelState.AddModelError($"Offers[{idx}].Qty", "Qty harus lebih dari 0");
+                }
+                if (string.IsNullOrWhiteSpace(offer.Unit))
+                {
+                    ModelState.AddModelError($"Offers[{idx}].Unit", "Unit wajib diisi");
+                }
+            }
         }
 
         // GET: Procurements/Edit/5
@@ -269,6 +433,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             if (procurement == null)
                 return NotFound();
 
+            // Check status-based authorization
+            if (!CanUserEditProcurementByStatus(procurement))
+            {
+                TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk mengedit procurement dengan status ini.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             try
             {
                 var (jobTypes, statuses) =
@@ -277,19 +448,23 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 var viewModel = new ProcurementEditViewModel
                 {
                     ProcurementId = procurement.ProcurementId,
-                    ProcNum = procurement.ProcNum,
+                    ProcNum = procurement.ProcNum ?? string.Empty,
                     JobTypeId = procurement.JobTypeId,
                     ContractType = procurement.ContractType,
+                    ProcurementCategory = procurement.ProcurementCategory,
                     JobName = procurement.JobName,
                     SpkNumber = procurement.SpkNumber,
+                    DocumentDate = procurement.DocumentDate,
                     StartDate = procurement.StartDate,
                     EndDate = procurement.EndDate,
                     ProjectRegion = procurement.ProjectRegion,
                     PotentialAccrualDate = procurement.PotentialAccrualDate,
-                    SpmpNumber = procurement.SpmpNumber,
+                    SpmpNumber = RemoveSuffixIfNeeded(procurement.SpmpNumber), // Hapus suffix untuk edit
                     MemoNumber = procurement.MemoNumber,
-                    OeNumber = procurement.OeNumber,
+                    OeNumber = RemoveSuffixIfNeeded(procurement.OeNumber), // Hapus suffix untuk edit
                     RaNumber = procurement.RaNumber,
+                    NoRig = procurement.NoRig,
+                    NoHte = procurement.NoHte,
                     ProjectCode = procurement.ProjectCode,
                     Wonum = procurement.Wonum,
                     LtcName = procurement.LtcName,
@@ -299,6 +474,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     AnalystHteUserId = procurement.AnalystHteUserId,
                     AssistantManagerUserId = procurement.AssistantManagerUserId,
                     ManagerUserId = procurement.ManagerUserId,
+                    // Pjs flags
+                    AnalystHtePjs = procurement.AnalystHtePjs,
+                    AssistantManagerPjs = procurement.AssistantManagerPjs,
+                    ManagerPjs = procurement.ManagerPjs,
+                    VicePresidentPjs = procurement.VicePresidentPjs,
+                    OperationDirectorPjs = procurement.OperationDirectorPjs,
+                    PresidentDirectorPjs = procurement.PresidentDirectorPjs,
                     Details = procurement.ProcDetails?.ToList() ?? [],
                     Offers = procurement.ProcOffers?.ToList() ?? [],
                 };
@@ -306,9 +488,10 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 viewModel.Statuses = statuses;
                 await PopulateEditUserSelectListsAsync(viewModel);
 
+                var unitTypes = await _unitTypeRepository.GetActiveAsync();
                 var jobTypeName = procurement.JobType?.TypeName ?? "Other";
+                ViewBag.UnitTypes = unitTypes;
                 ViewBag.SelectedJobTypeName = jobTypeName;
-                ViewBag.CreatePartial = ResolveCreatePartialByName(jobTypeName);
 
                 return View(viewModel);
             }
@@ -323,15 +506,141 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Policy = Permissions.Procurement.Edit)]
-        public async Task<IActionResult> Edit(string id, ProcurementEditViewModel editViewModel)
+        public async Task<IActionResult> Edit(
+            string id,
+            ProcurementEditViewModel editViewModel,
+            string? submitAction = "Created"
+        )
         {
-            //ModelState.Remove(nameof(Procurement.User));
-
             if (id != editViewModel.ProcurementId)
+            {
+                ModelState.AddModelError("", "ID Procurement tidak sesuai");
                 return NotFound();
+            }
+
+            // Check status-based authorization
+            var procForAuthCheck = await _procurementService.GetProcurementByIdAsync(id);
+            if (procForAuthCheck == null)
+                return NotFound();
+                
+            if (!CanUserEditProcurementByStatus(procForAuthCheck))
+            {
+                TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk mengedit procurement dengan status ini.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
 
             RemoveDetailsValidation();
             RemoveOffersValidation();
+
+            // Validasi JobTypeId
+            if (string.IsNullOrWhiteSpace(editViewModel.JobTypeId))
+            {
+                ModelState.AddModelError(nameof(editViewModel.JobTypeId), "Job type wajib dipilih");
+            }
+
+            // Validasi ContractType
+            if (editViewModel.ContractType == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.ContractType),
+                    "Contract type wajib dipilih"
+                );
+            }
+
+            // Validasi ProcurementCategory
+            if (editViewModel.ProcurementCategory == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.ProcurementCategory),
+                    "Jenis pengadaan wajib dipilih"
+                );
+            }
+
+            // Validasi JobName
+            if (string.IsNullOrWhiteSpace(editViewModel.JobName))
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.JobName),
+                    "Nama pekerjaan wajib diisi"
+                );
+            }
+
+            // Validasi StartDate dan EndDate
+            if (editViewModel.StartDate == default)
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.StartDate),
+                    "Tanggal mulai wajib diisi"
+                );
+            }
+
+            if (editViewModel.EndDate == default)
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.EndDate),
+                    "Tanggal selesai wajib diisi"
+                );
+            }
+
+            if (
+                editViewModel.StartDate != default
+                && editViewModel.EndDate != default
+                && editViewModel.EndDate < editViewModel.StartDate
+            )
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.EndDate),
+                    "Tanggal selesai harus setelah tanggal mulai"
+                );
+            }
+
+            // Validasi RaNumber untuk Jasa
+            if (
+                editViewModel.ProcurementCategory == ProcurementCategory.Jasa
+                && string.IsNullOrWhiteSpace(editViewModel.RaNumber)
+            )
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.RaNumber),
+                    "RA Number wajib diisi untuk jenis pengadaan jasa"
+                );
+            }
+
+            // Validasi User IDs
+            if (string.IsNullOrWhiteSpace(editViewModel.AnalystHteUserId))
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.AnalystHteUserId),
+                    "Analyst HTE & LTS wajib dipilih"
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(editViewModel.AssistantManagerUserId))
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.AssistantManagerUserId),
+                    "Assistant Manager HTE wajib dipilih"
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(editViewModel.ManagerUserId))
+            {
+                ModelState.AddModelError(
+                    nameof(editViewModel.ManagerUserId),
+                    "Manager Transport & Logistic wajib dipilih"
+                );
+            }
+
+            // Determine status based on submitAction
+            var status = await _procurementService.GetStatusByNameAsync(submitAction ?? "Created");
+            if (status == null)
+            {
+                ModelState.AddModelError("", $"Status '{submitAction}' tidak ditemukan.");
+            }
+            else
+            {
+                editViewModel.StatusId = status.StatusId;
+            }
 
             if (!ModelState.IsValid)
             {
@@ -341,30 +650,49 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             try
             {
+                // Ambil PicOpsUserId dari procurement existing (tidak boleh diubah)
+                var existingProcurement = await _procurementService.GetProcurementByIdAsync(id);
+                if (existingProcurement == null)
+                {
+                    TempData["ErrorMessage"] = "Procurement tidak ditemukan";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var procurement = new Procurement
                 {
                     ProcurementId = editViewModel.ProcurementId,
                     ProcNum = editViewModel.ProcNum,
-                    JobTypeId = editViewModel.JobTypeId,
+                    JobTypeId = editViewModel.JobTypeId!,
                     ContractType = editViewModel.ContractType,
                     JobName = editViewModel.JobName!,
+                    DocumentDate = editViewModel.DocumentDate,
                     StartDate = editViewModel.StartDate,
                     EndDate = editViewModel.EndDate,
                     ProjectRegion = editViewModel.ProjectRegion,
                     PotentialAccrualDate = editViewModel.PotentialAccrualDate,
                     SpkNumber = editViewModel.SpkNumber,
-                    SpmpNumber = editViewModel.SpmpNumber,
+                    SpmpNumber = AppendSuffixIfNeeded(editViewModel.SpmpNumber), // Tambahkan suffix
                     MemoNumber = editViewModel.MemoNumber,
-                    OeNumber = editViewModel.OeNumber,
+                    OeNumber = AppendSuffixIfNeeded(editViewModel.OeNumber), // Tambahkan suffix
                     RaNumber = editViewModel.RaNumber,
+                    NoRig = editViewModel.NoRig,
+                    NoHte = editViewModel.NoHte,
                     ProjectCode = editViewModel.ProjectCode,
                     Wonum = editViewModel.Wonum,
                     LtcName = editViewModel.LtcName,
                     Note = editViewModel.Note,
-                    PicOpsUserId = editViewModel.PicOpsUserId!,
+                    ProcurementCategory = editViewModel.ProcurementCategory,
+                    PicOpsUserId = existingProcurement.PicOpsUserId, // Tetap gunakan nilai asli
                     AnalystHteUserId = editViewModel.AnalystHteUserId!,
                     AssistantManagerUserId = editViewModel.AssistantManagerUserId!,
                     ManagerUserId = editViewModel.ManagerUserId!,
+                    // Pjs flags
+                    AnalystHtePjs = editViewModel.AnalystHtePjs,
+                    AssistantManagerPjs = editViewModel.AssistantManagerPjs,
+                    ManagerPjs = editViewModel.ManagerPjs,
+                    VicePresidentPjs = editViewModel.VicePresidentPjs,
+                    OperationDirectorPjs = editViewModel.OperationDirectorPjs,
+                    PresidentDirectorPjs = editViewModel.PresidentDirectorPjs,
                     StatusId = editViewModel.StatusId,
                 };
 
@@ -381,18 +709,39 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             catch (KeyNotFoundException ex)
             {
                 TempData["ErrorMessage"] = ex.Message;
-                ModelState.AddModelError("", ex.Message);
+                ModelState.AddModelError("", $"Data tidak ditemukan: {ex.Message}");
                 return NotFound();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Data telah diubah oleh pengguna lain. Silakan refresh halaman dan coba lagi."
+                );
+                TempData["ErrorMessage"] =
+                    $"Conflict: Data telah diubah oleh pengguna lain ({ex.InnerException?.Message ?? ex.Message})";
+            }
+            catch (DbUpdateException ex)
+            {
+                ModelState.AddModelError(
+                    "",
+                    $"Gagal mengupdate data ke database: {ex.InnerException?.Message ?? ex.Message}"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("", $"Operasi tidak valid: {ex.Message}");
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError(
                     "",
-                    $"An error occurred while updating the data: {ex.Message}"
+                    $"Terjadi kesalahan saat mengupdate data: {ex.Message}"
                 );
-                await RepopulateEditViewModel(editViewModel);
-                return View(editViewModel);
             }
+
+            await RepopulateEditViewModel(editViewModel);
+            return View(editViewModel);
         }
 
         // GET: Procurements/Delete/5
@@ -424,21 +773,162 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [Authorize(Policy = Permissions.Procurement.Delete)]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["ErrorMessage"] = "ID Procurement tidak valid";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
                 var procurement = await _procurementService.GetProcurementByIdAsync(id);
                 if (procurement == null)
+                {
+                    TempData["ErrorMessage"] = "Procurement tidak ditemukan";
                     return NotFound();
+                }
 
-                await _procurementService.DeleteProcurementAsync(procurement);
-                TempData["SuccessMessage"] = "Procurement deleted successfully!";
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                
+                // Get PrId before deleting procurement to recalculate PR status
+                var prId = procurement.PrId;
+                
+                // Soft delete all related documents
+                var deletedDocsCount = await _procDocService.DeleteAllByProcurementAsync(id, currentUserId);
+                
+                // Soft delete profit loss if exists
+                await _pnlService.DeleteByProcurementAsync(id, currentUserId);
+                
+                // Soft delete procurement
+                await _procurementService.DeleteProcurementAsync(procurement, currentUserId);
+                
+                // Recalculate PR status if procurement was linked to a PR
+                if (!string.IsNullOrEmpty(prId))
+                {
+                    await _trackingService.RecalculatePrStatusAsync(prId);
+                }
+                
+                var message = deletedDocsCount > 0
+                    ? $"Procurement beserta {deletedDocsCount} dokumen terkait berhasil dihapus!"
+                    : "Procurement berhasil dihapus!";
+                TempData["SuccessMessage"] = message;
                 return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Gagal menghapus procurement. Data ini mungkin masih digunakan di tempat lain: {ex.InnerException?.Message ?? ex.Message}";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = $"Operasi tidak valid: {ex.Message}";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Failed to delete procurement: {ex.Message}";
+                TempData["ErrorMessage"] =
+                    $"Terjadi kesalahan saat menghapus procurement: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Procurements/Publish/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Procurement.Edit)]
+        public async Task<IActionResult> Publish(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["ErrorMessage"] = "ID Procurement tidak valid";
                 return RedirectToAction(nameof(Index));
             }
+
+            try
+            {
+                // Cek apakah procurement memiliki Profit & Loss
+                var profitLoss = await _pnlService.GetByProcurementAsync(id);
+                if (profitLoss == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "Tidak dapat publish procurement. Buat Profit & Loss terlebih dahulu.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                // Get procurement details before publishing for notification
+                var procurement = await _procurementService.GetProcurementByIdAsync(id);
+
+                await _procurementService.PublishAsync(id);
+
+                // Send notification to all AP-PO users
+                if (procurement != null)
+                {
+                    var currentUser = await _userManager.GetUserAsync(User);
+                    var publisherName =
+                        currentUser?.FullName ?? currentUser?.UserName ?? "Operator";
+
+                    await _notificationService.NotifyProcurementPublishedAsync(
+                        id,
+                        procurement.ProcNum ?? "-",
+                        currentUser?.Id ?? "",
+                        publisherName,
+                        HttpContext.RequestAborted
+                    );
+                }
+
+                TempData["SuccessMessage"] =
+                    "Procurement berhasil dipublish dan status berubah menjadi 'Waiting Pickup'.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Terjadi kesalahan saat publish procurement: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // POST: Procurements/Unpublish/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.Procurement.Edit)]
+        public async Task<IActionResult> Unpublish(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["ErrorMessage"] = "ID Procurement tidak valid";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                await _procurementService.UnpublishAsync(id);
+                TempData["SuccessMessage"] =
+                    "Publish procurement berhasil dibatalkan. Status kembali menjadi 'Created'.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] =
+                    $"Terjadi kesalahan saat membatalkan publish procurement: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         //GET: Procurements/5/CreatePnl
@@ -454,16 +944,36 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             try
             {
                 var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
-                if (string.IsNullOrWhiteSpace(procurementId) || procurement == null)
+                if (procurement == null)
                 {
                     TempData["ErrorMessage"] = "Procurement tidak ditemukan";
-                    return RedirectToAction("Index", "Procurement");
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Validasi apakah procurement sudah memiliki profit loss
+                var existingPnl = await _pnlService.GetByProcurementAsync(procurementId);
+                if (existingPnl != null)
+                {
+                    TempData["WarningMessage"] =
+                        "Procurement ini sudah memiliki Profit & Loss. Anda akan mengedit data yang sudah ada.";
+                    return RedirectToAction(
+                        nameof(EditProfitLoss),
+                        new { id = existingPnl.ProfitLossId }
+                    );
                 }
 
                 var vendors = await _vendorService.GetAllVendorsAsync();
+                if (vendors == null || !vendors.Any())
+                {
+                    TempData["ErrorMessage"] =
+                        "Tidak ada vendor yang tersedia. Tambahkan vendor terlebih dahulu.";
+                    return RedirectToAction(nameof(Details), new { id = procurementId });
+                }
+
                 var viewModel = new ProfitLossInputViewModel
                 {
                     ProcurementId = procurementId,
+                    JobTypeName = procurement.JobType?.TypeName,
                     VendorChoices = vendors
                         .Select(vendor => new VendorChoiceViewModel
                         {
@@ -477,6 +987,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                             ProcOfferId = o.ProcOfferId,
                             ItemPenawaran = o.ItemPenawaran,
                             Quantity = o.Qty,
+                            Unit = o.Unit,
+                            UnitRevenue = o.UnitRevenue,
                         })
                         .ToList(),
                 };
@@ -485,19 +997,24 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     .OfferItems.Select(o => new ItemTariffInputVm
                     {
                         ProcOfferId = o.ProcOfferId,
-                        TarifAwal = 0,
-                        TarifAdd = 0,
-                        KmPer25 = 0,
-                        OperatorCost = 0m,
+                        Quantity = (int)Math.Round(o.Quantity),
+                        TarifAwal = null,
+                        TarifAdd = null,
+                        KmPer25 = null,
+                        OperatorCost = null,
                     })
                     .ToList();
 
                 ViewBag.ProcNum = procurement.ProcNum;
                 ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
+                ViewBag.JobTypeName = procurement.JobType?.TypeName ?? "Unknown";
+                ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();
 
                 if (viewModel.OfferItems.Count == 0)
+                {
                     TempData["WarningMessage"] =
-                        "No offer items (ProcOffer) exist. Add them on the Edit Procurement page to input prices per item.";
+                        "Tidak ada item penawaran (ProcOffer). Tambahkan item penawaran di halaman Edit Procurement terlebih dahulu untuk dapat menginput harga per item.";
+                }
 
                 return View(viewModel);
             }
@@ -520,10 +1037,108 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 ModelState.Remove($"Items[{key}].ProcOfferId");
             }
 
+            // Backfill OfferItems and quantities early so validation uses default values when user didn't enter them
+            if (!string.IsNullOrWhiteSpace(viewModel.ProcurementId))
+            {
+                await RepopulateVendorChoices(viewModel);
+            }
+
+            // Validasi ProcurementId
+            if (string.IsNullOrWhiteSpace(viewModel.ProcurementId))
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.ProcurementId),
+                    "Procurement ID tidak valid"
+                );
+            }
+
+            // Validasi Items
+            if (viewModel.Items == null || viewModel.Items.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.Items),
+                    "Minimal harus ada 1 item tarif untuk membuat Profit & Loss"
+                );
+            }
+            else
+            {
+                // Validasi setiap item
+                for (int i = 0; i < viewModel.Items.Count; i++)
+                {
+                    var item = viewModel.Items[i];
+
+                    if (string.IsNullOrWhiteSpace(item.ProcOfferId))
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].ProcOfferId",
+                            "Proc Offer ID tidak boleh kosong"
+                        );
+                    }
+
+                    if (item.Quantity <= 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].Quantity",
+                            "Quantity harus lebih dari 0"
+                        );
+                    }
+
+                    if (item.TarifAwal < 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].TarifAwal",
+                            "Tarif Awal tidak boleh negatif"
+                        );
+                    }
+
+                    if (item.TarifAdd < 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].TarifAdd",
+                            "Tarif Add tidak boleh negatif"
+                        );
+                    }
+
+                    if (item.OperatorCost < 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].OperatorCost",
+                            "Operator Cost tidak boleh negatif"
+                        );
+                    }
+                }
+            }
+
+            // Validasi AccrualAmount
+            if (viewModel.AccrualAmount.HasValue && viewModel.AccrualAmount.Value < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.AccrualAmount),
+                    "Accrual Amount tidak boleh negatif"
+                );
+            }
+
+            // Validasi RealizationAmount
+            if (viewModel.RealizationAmount.HasValue && viewModel.RealizationAmount.Value < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.RealizationAmount),
+                    "Realization Amount tidak boleh negatif"
+                );
+            }
+
+            // Validasi Distance
+            if (viewModel.Distance < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.Distance),
+                    "Distance tidak boleh negatif"
+                );
+            }
+
             if (!ModelState.IsValid)
             {
                 await RepopulateVendorChoices(viewModel);
-
                 return View("CreateProfitLoss", viewModel);
             }
 
@@ -532,10 +1147,39 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             {
                 ModelState.AddModelError(
                     nameof(viewModel.SelectedVendorIds),
-                    "Pilih minimal 1 vendor"
+                    "Pilih minimal 1 vendor untuk membuat Profit & Loss"
                 );
                 await RepopulateVendorChoices(viewModel);
+                return View(viewModel);
+            }
 
+            // Validasi Vendor Offers
+            if (viewModel.Vendors != null)
+            {
+                foreach (var vendor in viewModel.Vendors)
+                {
+                    if (string.IsNullOrWhiteSpace(vendor.VendorId))
+                    {
+                        ModelState.AddModelError(
+                            nameof(viewModel.Vendors),
+                            "Vendor ID tidak boleh kosong"
+                        );
+                        continue;
+                    }
+
+                    if (vendor.Items == null || vendor.Items.Count == 0)
+                    {
+                        ModelState.AddModelError(
+                            nameof(viewModel.Vendors),
+                            $"Vendor harus memiliki minimal 1 item penawaran"
+                        );
+                    }
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await RepopulateVendorChoices(viewModel);
                 return View(viewModel);
             }
 
@@ -544,11 +1188,20 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 var dto = MapToDto(viewModel, selectedVendors);
                 var pnl = await _pnlService.SaveInputAndCalculateAsync(dto);
 
-                var wo =
+                if (pnl == null)
+                {
+                    ModelState.AddModelError("", "Gagal menyimpan Profit & Loss. Result is null.");
+                    await RepopulateVendorChoices(viewModel);
+                    return View("CreateProfitLoss", viewModel);
+                }
+
+                await UploadRoundLettersAsync(viewModel, pnl?.ProfitLossId);
+
+                var procurement =
                     await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
                     ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
-                var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(wo);
+                var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(procurement);
 
                 var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
                     page: 1,
@@ -572,9 +1225,9 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 {
                     ProcurementId = dto.ProcurementId,
                     DocumentTypeId = pnlDocTypeId,
-                    FileName = $"Profit_Loss_{wo.ProcNum}.pdf",
+                    Bytes = pdfBytes, // FIX: Tambahkan bytes yang sudah digenerate
+                    FileName = $"Profit_Loss_{procurement.ProcNum}.pdf",
                     ContentType = "application/pdf",
-                    Bytes = pdfBytes,
                     Description = "Profit & Loss auto-generated",
                     GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
                     CreatedAt = DateTime.Now,
@@ -582,14 +1235,58 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
                 var saveResult = await _procDocService.SaveGeneratedAsync(generateReq);
 
+                // Auto-generate Surat Perintah Mulai Pekerjaan (SPMP)
+                var spmpDocTypeId =
+                    docTypes
+                        .Items.FirstOrDefault(doc =>
+                            doc.Name.Equals("Surat Perintah Mulai Pekerjaan (SPMP)", StringComparison.OrdinalIgnoreCase)
+                        )
+                        ?.DocumentTypeId;
+
+                if (!string.IsNullOrEmpty(spmpDocTypeId))
+                {
+                    var spmpPdfBytes = await _documentGenerator.GenerateSPMPAsync(procurement);
+                    var spmpGenerateReq = new GeneratedProcDocumentRequest
+                    {
+                        ProcurementId = dto.ProcurementId,
+                        DocumentTypeId = spmpDocTypeId,
+                        Bytes = spmpPdfBytes,
+                        FileName = $"SPMP_{procurement.ProcNum}.pdf",
+                        ContentType = "application/pdf",
+                        Description = "Surat Perintah Mulai Pekerjaan (SPMP) auto-generated from P&L calculation",
+                        GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                        CreatedAt = DateTime.Now,
+                    };
+                    await _procDocService.SaveGeneratedAsync(spmpGenerateReq);
+                }
+
                 TempData["SuccessMessage"] =
-                    "Profit & Loss created successfully and documents were generated.";
+                    "Profit & Loss created successfully and documents (including SPMP) were generated.";
 
                 return RedirectToAction(nameof(Details), new { id = dto.ProcurementId });
             }
+            catch (KeyNotFoundException ex)
+            {
+                ModelState.AddModelError("", $"Data tidak ditemukan: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("", $"Operasi tidak valid: {ex.Message}");
+            }
+            catch (DbUpdateException ex)
+            {
+                ModelState.AddModelError(
+                    "",
+                    $"Gagal menyimpan data ke database: {ex.InnerException?.Message ?? ex.Message}"
+                );
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError("", $"Validasi gagal: {ex.Message}");
+            }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", $"Error: {ex.Message}");
+                ModelState.AddModelError("", $"Terjadi kesalahan: {ex.Message}");
             }
 
             await RepopulateVendorChoices(viewModel);
@@ -635,32 +1332,126 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     .GroupBy(v => v.VendorId, StringComparer.OrdinalIgnoreCase)
                     .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
+                // Get all current ProcOffers to ensure vendor items include new offers
+                var allProcOfferIds = (procurement.ProcOffers ?? [])
+                    .Select(x => x.ProcOfferId)
+                    .ToList();
+
                 var vendorModels = vendorLookup
                     .Select(kvp =>
                     {
                         var vendorEntries = kvp.Value;
-                        var aggregatedItems = vendorEntries
+
+                        // Get existing vendor items
+                        var existingVendorItems = vendorEntries
                             .SelectMany(v => v.Items ?? [])
                             .GroupBy(it => it.ProcOfferId, StringComparer.OrdinalIgnoreCase)
-                            .Select(group =>
+                            .ToDictionary(
+                                g => g.Key,
+                                g => g.Last(),
+                                StringComparer.OrdinalIgnoreCase
+                            );
+
+                        // Build items list including both existing and new ProcOffers
+                        var aggregatedItems = allProcOfferIds
+                            .Select(procOfferId =>
                             {
-                                var representative = group.Last();
-                                return new VendorOfferPerItemInputVm
+                                if (existingVendorItems.TryGetValue(procOfferId, out var existing))
                                 {
-                                    ProcOfferId = representative.ProcOfferId,
-                                    Prices = representative.Prices?.ToList() ?? [],
-                                    Letters = representative.Letters?.ToList() ?? [],
-                                    Quantity = representative.Quantity,
-                                    Trip = representative.Trip,
-                                };
+                                    // Use existing vendor item data (preserves IsIncluded state)
+                                    return new VendorOfferPerItemInputVm
+                                    {
+                                        ProcOfferId = existing.ProcOfferId,
+                                        Prices = existing.Prices?.ToList() ?? [],
+                                        Quantity = existing.Quantity,
+                                        Trip = existing.Trip,
+                                        IsIncluded = existing.IsIncluded, // ✅ Preserve checked/unchecked state
+                                    };
+                                }
+                                else
+                                {
+                                    // Create empty entry for new ProcOffer
+                                    // IsIncluded = true ensures JavaScript calculation works properly
+                                    // User can uncheck items they don't want to include
+                                    return new VendorOfferPerItemInputVm
+                                    {
+                                        ProcOfferId = procOfferId,
+                                        Prices = [],
+                                        Quantity = 0,
+                                        Trip = 0,
+                                        IsIncluded = true, // ✅ Checked by default for proper calculation
+                                    };
+                                }
                             })
+                            .ToList();
+
+                        var letters = vendorEntries.First().Letters?.ToList() ?? [];
+                        var letterDocs = (vendorEntries.First().LetterDocIds ?? [])
+                            .Select(x => x ?? string.Empty)
                             .ToList();
 
                         return new VendorItemOfferInputVm
                         {
                             VendorId = vendorEntries.First().VendorId,
+                            Letters = letters,
+                            LetterDocIds = letterDocs,
                             Items = aggregatedItems,
                         };
+                    })
+                    .ToList();
+
+                // Build OfferItems from all current ProcOffers
+                var offerItems = (procurement.ProcOffers ?? [])
+                    .Select(x => new ProcOfferLiteVm
+                    {
+                        ProcOfferId = x.ProcOfferId,
+                        ItemPenawaran = x.ItemPenawaran,
+                        Quantity = x.Qty,
+                        Unit = x.Unit,
+                        UnitRevenue = x.UnitRevenue,
+                    })
+                    .ToList();
+
+                // Create a map of existing ProfitLossItems by ProcOfferId
+                var existingItemsMap = dtoItems.ToDictionary(
+                    x => x.ProcOfferId,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                // Build Items list: include existing items AND create empty entries for new ProcOffers
+                var items = offerItems
+                    .Select(offer =>
+                    {
+                        // If item already exists in ProfitLoss, use existing data
+                        if (existingItemsMap.TryGetValue(offer.ProcOfferId, out var existingItem))
+                        {
+                            return new ItemTariffInputVm
+                            {
+                                ProcOfferId = existingItem.ProcOfferId,
+                                Quantity = existingItem.Quantity,
+                                QtyItems = existingItem.QtyItems,
+                                TarifAwal = existingItem.TarifAwal,
+                                TarifAdd = existingItem.TarifAdd,
+                                KmPer25 = existingItem.KmPer25,
+                                OperatorCost = existingItem.OperatorCost,
+                                UnitRevenue = offer.UnitRevenue,
+                            };
+                        }
+                        // Otherwise, create new empty item for the new ProcOffer
+                        else
+                        {
+                            return new ItemTariffInputVm
+                            {
+                                ProcOfferId = offer.ProcOfferId,
+                                Quantity = (int)offer.Quantity,
+                                QtyItems = (int)offer.Quantity,
+                                TarifAwal = 0m,
+                                TarifAdd = 0m,
+                                KmPer25 = 0m,
+                                OperatorCost = 0m,
+                                UnitRevenue = offer.UnitRevenue,
+                            };
+                        }
                     })
                     .ToList();
 
@@ -668,20 +1459,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 {
                     ProfitLossId = dto.ProfitLossId,
                     ProcurementId = dto.ProcurementId,
+                    JobTypeName = procurement.JobType?.TypeName,
                     AccrualAmount = dto.AccrualAmount,
                     RealizationAmount = dto.RealizationAmount,
                     Distance = dto.Distance,
-                    Items = dtoItems
-                        .Select(x => new ItemTariffInputVm
-                        {
-                            ProcOfferId = x.ProcOfferId,
-                            Quantity = x.Quantity,
-                            TarifAwal = x.TarifAwal,
-                            TarifAdd = x.TarifAdd,
-                            KmPer25 = x.KmPer25,
-                            OperatorCost = x.OperatorCost,
-                        })
-                        .ToList(),
+                    TglMulaiSewa = dto.TglMulaiSewa,
+                    TglMulaiMoving = dto.TglMulaiMoving,
+                    Items = items,
                     Vendors = vendorModels,
                     SelectedVendorIds = selectedVendorIds,
                     VendorChoices = vendors
@@ -691,17 +1475,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                             Name = v.VendorName,
                         })
                         .ToList(),
-                    OfferItems = (procurement.ProcOffers ?? [])
-                        .Select(x => new ProcOfferLiteVm
-                        {
-                            ProcOfferId = x.ProcOfferId,
-                            ItemPenawaran = x.ItemPenawaran,
-                        })
-                        .ToList(),
+                    OfferItems = offerItems,
                 };
 
                 ViewBag.ProcNum = procurement.ProcNum;
                 ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
+                ViewBag.JobTypeName = procurement.JobType?.TypeName ?? "Unknown";
+                ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
                 return View("CreateProfitLoss", vm);
             }
@@ -716,6 +1496,114 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProfitLoss(ProfitLossEditViewModel viewModel)
         {
+            // Validasi ProfitLossId
+            if (string.IsNullOrWhiteSpace(viewModel.ProfitLossId))
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.ProfitLossId),
+                    "Profit Loss ID tidak valid"
+                );
+            }
+
+            // Validasi ProcurementId
+            if (string.IsNullOrWhiteSpace(viewModel.ProcurementId))
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.ProcurementId),
+                    "Procurement ID tidak valid"
+                );
+            }
+
+            // Validasi Items
+            if (viewModel.Items == null || viewModel.Items.Count == 0)
+            {
+                ModelState.AddModelError(nameof(viewModel.Items), "Minimal harus ada 1 item tarif");
+            }
+            else
+            {
+                // Validasi setiap item
+                for (int i = 0; i < viewModel.Items.Count; i++)
+                {
+                    var item = viewModel.Items[i];
+
+                    if (string.IsNullOrWhiteSpace(item.ProcOfferId))
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].ProcOfferId",
+                            "Proc Offer ID tidak boleh kosong"
+                        );
+                    }
+
+                    if (item.Quantity <= 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].Quantity",
+                            "Quantity harus lebih dari 0"
+                        );
+                    }
+
+                    if (item.TarifAwal < 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].TarifAwal",
+                            "Tarif Awal tidak boleh negatif"
+                        );
+                    }
+
+                    if (item.TarifAdd < 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].TarifAdd",
+                            "Tarif Add tidak boleh negatif"
+                        );
+                    }
+
+                    if (item.OperatorCost < 0)
+                    {
+                        ModelState.AddModelError(
+                            $"Items[{i}].OperatorCost",
+                            "Operator Cost tidak boleh negatif"
+                        );
+                    }
+                }
+            }
+
+            // Validasi AccrualAmount
+            if (viewModel.AccrualAmount.HasValue && viewModel.AccrualAmount.Value < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.AccrualAmount),
+                    "Accrual Amount tidak boleh negatif"
+                );
+            }
+
+            // Validasi RealizationAmount
+            if (viewModel.RealizationAmount.HasValue && viewModel.RealizationAmount.Value < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.RealizationAmount),
+                    "Realization Amount tidak boleh negatif"
+                );
+            }
+
+            // Validasi Distance
+            if (viewModel.Distance < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.Distance),
+                    "Distance tidak boleh negatif"
+                );
+            }
+
+            // Validasi SelectedVendorIds
+            if (viewModel.SelectedVendorIds == null || viewModel.SelectedVendorIds.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(viewModel.SelectedVendorIds),
+                    "Pilih minimal 1 vendor"
+                );
+            }
+
             if (!ModelState.IsValid)
             {
                 await RepopulateVendorChoices(viewModel);
@@ -736,65 +1624,245 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var update = new ProfitLossUpdateDto
+            if (distinctSelectedVendors.Count == 0)
             {
-                ProfitLossId = viewModel.ProfitLossId,
-                ProcurementId = viewModel.ProcurementId,
-                AccrualAmount = viewModel.AccrualAmount,
-                RealizationAmount = viewModel.RealizationAmount,
-                Distance = viewModel.Distance,
-                Items = (viewModel.Items ?? [])
-                    .Select(x => new ProfitLossItemInputDto
+                ModelState.AddModelError(
+                    nameof(viewModel.SelectedVendorIds),
+                    "Tidak ada vendor valid yang dipilih"
+                );
+                await RepopulateVendorChoices(viewModel);
+                return View("CreateProfitLoss", viewModel);
+            }
+
+            try
+            {
+                var update = new ProfitLossUpdateDto
+                {
+                    ProfitLossId = viewModel.ProfitLossId,
+                    ProcurementId = viewModel.ProcurementId,
+                    AccrualAmount = viewModel.AccrualAmount,
+                    RealizationAmount = viewModel.RealizationAmount,
+                    Distance = viewModel.Distance,
+                    TglMulaiSewa = viewModel.TglMulaiSewa,
+                    TglMulaiMoving = viewModel.TglMulaiMoving,
+                    Items = (viewModel.Items ?? [])
+                        .Select(x => new ProfitLossItemInputDto
+                        {
+                            ProcOfferId = x.ProcOfferId,
+                            Quantity = x.Quantity,
+                            QtyItems = x.QtyItems,
+                            TarifAwal = x.TarifAwal ?? 0m,
+                            TarifAdd = x.TarifAdd ?? 0m,
+                            KmPer25 = x.KmPer25 ?? 0m,
+                            OperatorCost = x.OperatorCost ?? 0m,
+                            UnitRevenue = x.UnitRevenue,
+                        })
+                        .ToList(),
+                    SelectedVendorIds = distinctSelectedVendors,
+                };
+
+                var allowedVendorSet = new HashSet<string>(
+                    distinctSelectedVendors,
+                    StringComparer.OrdinalIgnoreCase
+                );
+                update.Vendors = BuildVendorOfferDtos(viewModel.Vendors, allowedVendorSet);
+
+                var pnlUpdated = await _pnlService.EditProfitLossAsync(update);
+                await UploadRoundLettersAsync(viewModel, pnlUpdated.ProfitLossId);
+
+                // Auto-generate Surat Perintah Mulai Pekerjaan (SPMP) after P&L update
+                var procurement = await _procurementService.GetProcurementByIdAsync(viewModel.ProcurementId)
+                    ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
+
+                var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
+                    page: 1,
+                    pageSize: 200,
+                    search: null,
+                    fields: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name" },
+                    ct: default
+                );
+
+                var spmpDocTypeId =
+                    docTypes
+                        .Items.FirstOrDefault(doc =>
+                            doc.Name.Equals("Surat Perintah Mulai Pekerjaan (SPMP)", StringComparison.OrdinalIgnoreCase)
+                        )
+                        ?.DocumentTypeId;
+
+                if (!string.IsNullOrEmpty(spmpDocTypeId))
+                {
+                    var spmpPdfBytes = await _documentGenerator.GenerateSPMPAsync(procurement);
+                    var spmpGenerateReq = new GeneratedProcDocumentRequest
                     {
-                        ProcOfferId = x.ProcOfferId,
-                        Quantity = x.Quantity,
-                        TarifAwal = x.TarifAwal,
-                        TarifAdd = x.TarifAdd,
-                        KmPer25 = x.KmPer25,
-                        OperatorCost = x.OperatorCost,
-                    })
-                    .ToList(),
-                SelectedVendorIds = distinctSelectedVendors,
-            };
+                        ProcurementId = viewModel.ProcurementId,
+                        DocumentTypeId = spmpDocTypeId,
+                        Bytes = spmpPdfBytes,
+                        FileName = $"SPMP_{procurement.ProcNum}.pdf",
+                        ContentType = "application/pdf",
+                        Description = "Surat Perintah Mulai Pekerjaan (SPMP) auto-generated from P&L update",
+                        GeneratedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                        CreatedAt = DateTime.Now,
+                    };
+                    await _procDocService.SaveGeneratedAsync(spmpGenerateReq);
+                }
 
-            var allowedVendorSet = new HashSet<string>(
-                distinctSelectedVendors,
-                StringComparer.OrdinalIgnoreCase
-            );
-            update.Vendors = BuildVendorOfferDtos(viewModel.Vendors, allowedVendorSet);
+                TempData["SuccessMessage"] = "Profit & Loss updated successfully and SPMP document was generated.";
+                return RedirectToAction(nameof(Details), new { id = viewModel.ProcurementId });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                ModelState.AddModelError("", $"Data tidak ditemukan: {ex.Message}");
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Data telah diubah oleh pengguna lain. Silakan refresh halaman dan coba lagi."
+                );
+                TempData["ErrorMessage"] =
+                    $"Conflict: Data telah diubah ({ex.InnerException?.Message ?? ex.Message})";
+            }
+            catch (DbUpdateException ex)
+            {
+                ModelState.AddModelError(
+                    "",
+                    $"Gagal mengupdate data ke database: {ex.InnerException?.Message ?? ex.Message}"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("", $"Operasi tidak valid: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError("", $"Validasi gagal: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Terjadi kesalahan: {ex.Message}");
+            }
 
-            await _pnlService.EditProfitLossAsync(update);
-            TempData["SuccessMessage"] = "Profit & Loss updated successfully";
-            return RedirectToAction(nameof(Details), new { id = viewModel.ProcurementId });
+            await RepopulateVendorChoices(viewModel);
+            var proc = await _procurementService.GetProcurementByIdAsync(viewModel.ProcurementId);
+            if (proc != null)
+            {
+                ViewBag.ProcNum = proc.ProcNum;
+                ViewBag.IssueDate = proc.CreatedAt.ToString("d MMMM yyyy");
+            }
+            return View("CreateProfitLoss", viewModel);
+        }
+
+        #endregion
+
+        #region Procurement Tracking Operations
+
+        // POST: Procurements/SendApproval/{procurementId}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendApproval(string procurementId, CancellationToken ct)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["Error"] = "User tidak teridentifikasi.";
+                return RedirectToAction(nameof(Details), new { id = procurementId });
+            }
+
+            var result = await _trackingService.SendForApprovalAsync(procurementId, userId, ct);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Details), new { id = procurementId });
+        }
+
+        // GET: Procurements/GenerateQrCode/{procurementId}
+        [HttpGet]
+        public async Task<IActionResult> GenerateQrCode(string procurementId, CancellationToken ct)
+        {
+            var tracking = await _trackingService.GetTrackingByProcurementIdAsync(procurementId, ct);
+
+            if (tracking == null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrEmpty(tracking.ApprovalToken))
+            {
+                return BadRequest("Approval token tidak tersedia.");
+            }
+
+            // Generate QR code using local library (no external API)
+            var deepLink = $"procurehte://approve/{tracking.ApprovalToken}";
+            var pngBytes = _qrCodeGenerator.GenerateAsPng(deepLink, 10);
+
+            return File(pngBytes, "image/png", "approval-qr.png");
         }
 
         #endregion
 
         #region Helper Methods
 
-        private static string ResolveCreatePartialByName(string? typeName)
+        private const string REFERENCE_NUMBER_PREFIX = "/PDC-1110/";
+        private const string REFERENCE_NUMBER_SUFFIX_END = "-S0";
+
+        private static string GetCurrentYearSuffix() => 
+            $"{REFERENCE_NUMBER_PREFIX}{DateTime.Now.Year}{REFERENCE_NUMBER_SUFFIX_END}";
+
+        private static string? AppendSuffixIfNeeded(string? value)
         {
-            var key = (typeName ?? "Other").Trim().ToLowerInvariant();
-            return key switch
-            {
-                "standby" or "stand by" or "stand_by" => "_CreateStandBy",
-                "movingmobilization"
-                or "moving mobilization"
-                or "moving_mobilization"
-                or "moving & mobilization"
-                or "moving and mobilization"
-                or "moving dan mobilization" => "_CreateMovingMobilization",
-                "spotangkutan"
-                or "spot angkutan"
-                or "spot_angkutan"
-                or "spot & angkutan"
-                or "spot and angkutan"
-                or "spot dan angkutan" => "_CreateSpotAngkutan",
-                _ => "_CreateOther",
-            };
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var trimmed = value.Trim();
+
+            // Jika sudah ada suffix pattern (any year), return as is
+            if (HasReferenceNumberSuffix(trimmed))
+                return trimmed;
+
+            // Tambahkan suffix dengan tahun saat ini
+            return trimmed + GetCurrentYearSuffix();
         }
 
-        // ProcurementsController.cs
+        private static bool HasReferenceNumberSuffix(string value)
+        {
+            // Pattern: /PDC-1110/YYYY-S0 dimana YYYY adalah 4 digit tahun
+            var pattern = $"{REFERENCE_NUMBER_PREFIX}\\d{{4}}{REFERENCE_NUMBER_SUFFIX_END}$";
+            return System.Text.RegularExpressions.Regex.IsMatch(value, pattern);
+        }
+
+        private static string? RemoveSuffixIfNeeded(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var trimmed = value.Trim();
+
+            // Remove suffix pattern /PDC-1110/YYYY-S0 untuk tahun apapun
+            var pattern = $"{REFERENCE_NUMBER_PREFIX}\\d{{4}}{REFERENCE_NUMBER_SUFFIX_END}$";
+            return System.Text.RegularExpressions.Regex.Replace(trimmed, pattern, "");
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return "file";
+            var invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder();
+            foreach (var ch in fileName.Trim())
+            {
+                sb.Append(invalid.Contains(ch) ? '_' : ch);
+            }
+            return sb.ToString();
+        }
+
         private static ProfitLossSummaryViewModel MapToViewModel(ProfitLossSummaryDto dto)
         {
             return new ProfitLossSummaryViewModel
@@ -832,15 +1900,32 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             List<string> selectedVendors
         )
         {
+            // Backfill Quantity from OfferItems when user didn't provide Quantity/Durasi
+            var qtyMap = (vm.OfferItems ?? [])
+                .Where(o => !string.IsNullOrWhiteSpace(o.ProcOfferId))
+                .ToDictionary(
+                    o => o.ProcOfferId,
+                    o => o.Quantity,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
             var items = (vm.Items ?? [])
                 .Select(x => new ProfitLossItemInputDto
                 {
                     ProcOfferId = x.ProcOfferId,
-                    Quantity = x.Quantity,
-                    TarifAwal = x.TarifAwal,
-                    TarifAdd = x.TarifAdd,
-                    KmPer25 = x.KmPer25,
-                    OperatorCost = x.OperatorCost,
+                    Quantity =
+                        x.Quantity > 0
+                            ? x.Quantity
+                            : (qtyMap.TryGetValue(x.ProcOfferId, out var q) ? (int)q : x.Quantity),
+                    QtyItems =
+                        x.QtyItems > 0
+                            ? x.QtyItems
+                            : (qtyMap.TryGetValue(x.ProcOfferId, out var qi) ? (int)qi : 1),
+                    TarifAwal = x.TarifAwal ?? 0m,
+                    TarifAdd = x.TarifAdd ?? 0m,
+                    KmPer25 = x.KmPer25 ?? 0m,
+                    OperatorCost = x.OperatorCost ?? 0m,
+                    UnitRevenue = x.UnitRevenue,
                 })
                 .ToList();
 
@@ -857,6 +1942,8 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 AccrualAmount = vm.AccrualAmount,
                 RealizationAmount = vm.RealizationAmount,
                 Distance = vm.Distance,
+                TglMulaiSewa = vm.TglMulaiSewa,
+                TglMulaiMoving = vm.TglMulaiMoving,
                 Items = items,
                 SelectedVendorIds = selectedVendors,
                 Vendors = vendorItemOffers,
@@ -888,19 +1975,21 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                     if (string.IsNullOrWhiteSpace(item.ProcOfferId))
                         continue;
 
+                    // Skip items that are explicitly excluded from the offer
+                    if (!item.IsIncluded)
+                        continue;
+
                     var dto = new VendorOfferPerItemDto
                     {
                         VendorId = vendorId,
                         ProcOfferId = item.ProcOfferId!,
                         Round = item.Round,
                         Prices = [],
-                        Letters = [],
                         Quantity = item.Quantity,
                         Trip = item.Trip,
                     };
 
                     var prices = item.Prices ?? [];
-                    var letters = item.Letters ?? [];
 
                     for (int idx = 0; idx < prices.Count; idx++)
                     {
@@ -908,11 +1997,6 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                         if (price <= 0m)
                             continue;
                         dto.Prices.Add(price);
-                        dto.Letters.Add(
-                            idx < letters.Count
-                                ? letters[idx]?.Trim() ?? string.Empty
-                                : string.Empty
-                        );
                     }
 
                     if (dto.Prices.Count > 0)
@@ -921,11 +2005,237 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
                 if (dtoItems.Count > 0)
                 {
-                    result.Add(new VendorItemOffersDto { VendorId = vendorId, Items = dtoItems });
+                    result.Add(
+                        new VendorItemOffersDto
+                        {
+                            VendorId = vendorId,
+                            Items = dtoItems,
+                            Letters = (vendor.Letters ?? [])
+                                .Select(l => l?.Trim() ?? string.Empty)
+                                .ToList(),
+                            LetterDocIds = (vendor.LetterDocIds ?? [])
+                                .Where(x => x != null)
+                                .ToList()!,
+                        }
+                    );
                 }
             }
 
             return result;
+        }
+
+        private async Task UploadRoundLettersAsync(
+            ProfitLossInputViewModel vm,
+            string? profitLossId
+        )
+        {
+            if (vm?.Vendors == null || vm.Vendors.Count == 0)
+                return;
+
+            var docTypes = await _docTypeService.GetAllDocumentTypesAsync(
+                page: 1,
+                pageSize: 200,
+                search: null,
+                fields: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Name" },
+                ct: default
+            );
+
+            var sphDocTypeId =
+                docTypes
+                    .Items.FirstOrDefault(d =>
+                        d.Name.Equals("Surat Penawaran Harga", StringComparison.OrdinalIgnoreCase)
+                    )
+                    ?.DocumentTypeId
+                ?? throw new InvalidOperationException(
+                    "DocumentType 'Surat Penawaran Harga' tidak ditemukan."
+                );
+
+            var snhDocTypeId =
+                docTypes
+                    .Items.FirstOrDefault(d =>
+                        d.Name.Equals("Surat Negosiasi Harga", StringComparison.OrdinalIgnoreCase)
+                    )
+                    ?.DocumentTypeId
+                ?? throw new InvalidOperationException(
+                    "DocumentType 'Surat Negosiasi Harga' tidak ditemukan."
+                );
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var vendorFileLookup = BuildLetterFileLookup();
+
+            for (var vendorIndex = 0; vendorIndex < vm.Vendors.Count; vendorIndex++)
+            {
+                var vendor = vm.Vendors[vendorIndex];
+                if (vendor == null || string.IsNullOrWhiteSpace(vendor.VendorId))
+                    continue;
+
+                var letters = vendor.Letters ?? [];
+                var docIds = vendor.LetterDocIds ?? [];
+                var deletes = vendor.LetterDeletes ?? [];
+                var files = MergeLetterFiles(vendor.LetterFiles, vendorFileLookup, vendorIndex);
+
+                var maxLength = Math.Max(
+                    Math.Max(letters.Count, files.Count),
+                    Math.Max(docIds.Count, deletes.Count)
+                );
+
+                for (int i = 0; i < maxLength; i++)
+                {
+                    var letter = i < letters.Count ? letters[i] : null;
+                    var file = i < files.Count ? files[i] : null;
+                    var docId = i < docIds.Count ? docIds[i] : null;
+                    var deleteFlag = i < deletes.Count && deletes[i];
+
+                    var round = i + 1;
+                    var docTypeId = round == 1 ? sphDocTypeId : snhDocTypeId;
+                    var docLabel = round == 1 ? "Surat Penawaran Harga" : "Surat Negosiasi Harga";
+                    var prefix = round == 1 ? "SPH" : "SNH";
+
+                    var hasExistingDoc = !string.IsNullOrWhiteSpace(docId);
+                    var hasNewFile = file != null && file.Length > 0;
+
+                    if (hasExistingDoc && (deleteFlag || hasNewFile))
+                    {
+                        try
+                        {
+                            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                            await _procDocService.DeleteAsync(docId!, currentUserId);
+                        }
+                        catch (Exception ex)
+                        {
+                            ModelState.AddModelError(
+                                "",
+                                $"Gagal menghapus dokumen SPH/SNH {docId ?? "-"}: {ex.Message}"
+                            );
+                        }
+                        await _roundLetterRepository.DeleteByProcDocumentIdAsync(
+                            docId!,
+                            HttpContext.RequestAborted
+                        );
+                        if (deleteFlag && !hasNewFile)
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (!hasNewFile)
+                        continue; // skip jika tidak ada file baru
+
+                    var baseName = SanitizeFileName($"{prefix}_R{round}_{vendor.VendorId}");
+
+                    await using var stream = file!.OpenReadStream();
+                    var uploadResult = await _procDocService.UploadAsync(
+                        new UploadProcDocumentRequest
+                        {
+                            ProcurementId = vm.ProcurementId,
+                            DocumentTypeId = docTypeId,
+                            Content = stream,
+                            Size = file.Length,
+                            FileName = $"{baseName}.pdf",
+                            ContentType = "application/pdf",
+                            Description = $"{docLabel} Ronde {round} - Vendor {vendor.VendorId}",
+                            UploadedByUserId = userId,
+                            NowUtc = DateTime.UtcNow,
+                        },
+                        HttpContext.RequestAborted
+                    );
+
+                    var entity = new VendorRoundLetter
+                    {
+                        ProcurementId = vm.ProcurementId,
+                        VendorId = vendor.VendorId,
+                        Round = round,
+                        LetterNumber = string.IsNullOrWhiteSpace(letter) ? null : letter.Trim(),
+                        ProcDocumentId = uploadResult.ProcDocumentId,
+                        ProfitLossId = profitLossId,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedByUserId = userId,
+                    };
+                    await _roundLetterRepository.AddOrUpdateAsync(entity);
+                }
+            }
+
+            await _roundLetterRepository.SaveChangesAsync(HttpContext.RequestAborted);
+        }
+
+        private Dictionary<int, Dictionary<int, IFormFile>> BuildLetterFileLookup()
+        {
+            var lookup = new Dictionary<int, Dictionary<int, IFormFile>>();
+            var files = Request?.Form?.Files;
+            if (files == null || files.Count == 0)
+                return lookup;
+
+            foreach (var formFile in files)
+            {
+                if (formFile == null || string.IsNullOrWhiteSpace(formFile.Name))
+                    continue;
+
+                var match = LetterFileFieldRegex.Match(formFile.Name);
+                if (!match.Success)
+                    continue;
+
+                if (!int.TryParse(match.Groups[1].Value, out var vendorIndex))
+                    continue;
+
+                if (!int.TryParse(match.Groups[2].Value, out var roundIndex))
+                    continue;
+
+                if (!lookup.TryGetValue(vendorIndex, out var roundMap))
+                {
+                    roundMap = new Dictionary<int, IFormFile>();
+                    lookup[vendorIndex] = roundMap;
+                }
+
+                roundMap[roundIndex] = formFile;
+            }
+
+            return lookup;
+        }
+
+        private static List<IFormFile?> MergeLetterFiles(
+            List<IFormFile?>? boundFiles,
+            Dictionary<int, Dictionary<int, IFormFile>> lookup,
+            int vendorIndex
+        )
+        {
+            var files = boundFiles is { Count: > 0 }
+                ? new List<IFormFile?>(boundFiles)
+                : new List<IFormFile?>();
+
+            if (!lookup.TryGetValue(vendorIndex, out var roundFiles) || roundFiles.Count == 0)
+            {
+                return files;
+            }
+
+            var requiredLength =
+                roundFiles.Keys.Count > 0
+                    ? Math.Max(files.Count, roundFiles.Keys.Max() + 1)
+                    : files.Count;
+
+            while (files.Count < requiredLength)
+            {
+                files.Add(null);
+            }
+
+            foreach (var kvp in roundFiles)
+            {
+                var roundIndex = kvp.Key;
+                if (roundIndex < 0)
+                    continue;
+
+                if (roundIndex >= files.Count)
+                {
+                    while (files.Count <= roundIndex)
+                    {
+                        files.Add(null);
+                    }
+                }
+
+                files[roundIndex] = kvp.Value;
+            }
+
+            return files;
         }
 
         private async Task RepopulateVendorChoices(ProfitLossInputViewModel viewModel)
@@ -935,21 +2245,109 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 .Select(v => new VendorChoiceViewModel { Id = v.VendorId, Name = v.VendorName })
                 .ToList();
 
-            var wo = await _procurementService.GetProcurementByIdAsync(viewModel.ProcurementId);
-            viewModel.OfferItems = (wo?.ProcOffers ?? [])
-                .Select(o => new ProcOfferLiteVm
+            var procurement = await _procurementService.GetProcurementByIdAsync(
+                viewModel.ProcurementId
+            );
+
+            // Build a lookup for existing Items to preserve Unit/UnitRevenue from form submission
+            var existingItemsLookup =
+                viewModel
+                    .Items?.Where(i => !string.IsNullOrEmpty(i.ProcOfferId))
+                    .ToDictionary(
+                        i => i.ProcOfferId,
+                        i => (Unit: i.UnitItems, UnitRevenue: i.UnitRevenue),
+                        StringComparer.OrdinalIgnoreCase
+                    ) ?? new Dictionary<string, (string? Unit, string? UnitRevenue)>();
+
+            viewModel.OfferItems = (procurement?.ProcOffers ?? [])
+                .Select(o =>
                 {
-                    ProcOfferId = o.ProcOfferId,
-                    ItemPenawaran = o.ItemPenawaran,
+                    // Try to get Unit/UnitRevenue from submitted form data first
+                    existingItemsLookup.TryGetValue(o.ProcOfferId, out var existing);
+
+                    return new ProcOfferLiteVm
+                    {
+                        ProcOfferId = o.ProcOfferId,
+                        ItemPenawaran = o.ItemPenawaran,
+                        Quantity = o.Qty,
+                        Unit = existing.Unit ?? o.Unit,
+                        UnitRevenue = existing.UnitRevenue ?? o.UnitRevenue,
+                    };
                 })
                 .ToList();
+
+            // Set ViewBag properties for the view
+            ViewBag.ProcNum = procurement?.ProcNum;
+            ViewBag.IssueDate = procurement?.CreatedAt.ToString("d MMMM yyyy");
+            ViewBag.JobTypeName = procurement?.JobType?.TypeName ?? "Unknown";
+            ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();
+
+            // Backfill quantity ke Items (Billing) jika hilang
+            if (viewModel.Items != null && viewModel.Items.Count > 0)
+            {
+                var qtyMap = viewModel.OfferItems.ToDictionary(
+                    o => o.ProcOfferId,
+                    o => o.Quantity,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                foreach (var item in viewModel.Items)
+                {
+                    if (item.Quantity <= 0 && qtyMap.TryGetValue(item.ProcOfferId, out var q))
+                    {
+                        item.Quantity = (int)q;
+                    }
+                }
+            }
         }
 
         private void RemoveAutoGeneratedProcurementValidation()
         {
             var prefix = $"{nameof(ProcurementCreateViewModel.Procurement)}.";
-            ModelState.Remove($"{prefix}{nameof(Procurement.ProcNum)}");
-            ModelState.Remove($"{prefix}{nameof(Procurement.ProcurementId)}");
+            
+            // Remove all auto-generated validation errors for Procurement model
+            // We handle validation manually in ValidateProcurementForm()
+            var fieldsToRemove = new[]
+            {
+                // Generated fields (auto-filled by system)
+                nameof(Procurement.ProcNum),
+                nameof(Procurement.ProcurementId),
+                nameof(Procurement.PicOpsUserId),
+                nameof(Procurement.UserId),
+                nameof(Procurement.CreatedAt),
+                nameof(Procurement.ProcurementStatus),
+                
+                // Date fields (handle with custom validation)
+                nameof(Procurement.DocumentDate),
+                nameof(Procurement.StartDate),
+                nameof(Procurement.EndDate),
+                
+                // Enum fields (handle with custom validation)
+                nameof(Procurement.ContractType),
+                nameof(Procurement.ProcurementCategory),
+                nameof(Procurement.ProjectRegion),
+                
+                // Required text fields (handle with custom validation)
+                nameof(Procurement.JobName),
+                nameof(Procurement.JobTypeId),
+                
+                // Approval user fields (optional for Draft, required for Create - handle manually)
+                nameof(Procurement.AnalystHteUserId),
+                nameof(Procurement.AssistantManagerUserId),
+                nameof(Procurement.ManagerUserId),
+                
+                // Navigation properties (never from form)
+                nameof(Procurement.Status),
+                nameof(Procurement.JobType),
+            };
+            
+            foreach (var field in fieldsToRemove)
+            {
+                ModelState.Remove($"{prefix}{field}");
+            }
+            
+            // Also remove the base Procurement key if exists
+            ModelState.Remove(nameof(ProcurementCreateViewModel.Procurement));
         }
 
         private void RemoveDetailsValidation()
@@ -971,7 +2369,43 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 ModelState.Remove($"Offers[{key}].ProcurementId");
                 ModelState.Remove($"Offers[{key}].Procurement");
                 ModelState.Remove($"Offers[{key}].ProcOfferId");
+                // Remove auto-generated "The value '' is invalid" for numeric fields
+                ModelState.Remove($"Offers[{key}].Qty");
+                ModelState.Remove($"Offers[{key}].ItemPenawaran");
+                ModelState.Remove($"Offers[{key}].Unit");
             }
+        }
+
+        private async Task<ProcurementCreateViewModel> BuildCreateViewModelAsync(
+            string? jobTypeId,
+            ProcurementCategory? category
+        )
+        {
+            var (jobTypes, _) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+            var selectedJobType =
+                jobTypes.FirstOrDefault(j => j.JobTypeId == jobTypeId) ?? jobTypes.FirstOrDefault();
+
+            var unitTypes = await _unitTypeRepository.GetActiveAsync();
+
+            var viewModel = new ProcurementCreateViewModel
+            {
+                Procurement = new Procurement
+                {
+                    JobTypeId = selectedJobType?.JobTypeId!,
+                    ProcurementCategory = category ?? ProcurementCategory.Barang,
+                },
+                Details = [],
+                Offers = [],
+                JobTypes = jobTypes,
+                SelectedJobTypeName = selectedJobType?.TypeName ?? "Other",
+            };
+
+            await PopulateCreateUserSelectListsAsync(viewModel);
+
+            ViewBag.UnitTypes = unitTypes;
+            ViewBag.SelectedJobTypeName = selectedJobType?.TypeName ?? "Other";
+
+            return viewModel;
         }
 
         private async Task RepopulateCreateViewModel(ProcurementCreateViewModel createViewModel)
@@ -981,20 +2415,27 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
 
             await PopulateCreateUserSelectListsAsync(createViewModel);
 
-            var jobTypeName = (
-                await _procurementService.GetJobTypeByIdAsync(
-                    createViewModel.Procurement.JobTypeId ?? string.Empty
-                )
-            )?.TypeName;
+            var (jobTypes, _) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+            createViewModel.JobTypes = jobTypes;
 
-            ViewBag.CreatePartial = ResolveCreatePartialByName(jobTypeName);
-            ViewBag.SelectedJobTypeName = jobTypeName ?? "Other";
+            if (string.IsNullOrWhiteSpace(createViewModel.Procurement.JobTypeId))
+                createViewModel.Procurement.JobTypeId = jobTypes.FirstOrDefault()?.JobTypeId!;
+
+            var jobTypeName = jobTypes
+                .FirstOrDefault(w => w.JobTypeId == createViewModel.Procurement.JobTypeId)
+                ?.TypeName;
+
+            createViewModel.SelectedJobTypeName = jobTypeName ?? "Other";
+
+            var unitTypes = await _unitTypeRepository.GetActiveAsync();
+            ViewBag.UnitTypes = unitTypes;
+            ViewBag.SelectedJobTypeName = createViewModel.SelectedJobTypeName;
         }
 
         private async Task PopulateCreateUserSelectListsAsync(ProcurementCreateViewModel viewModel)
         {
             viewModel.PicOpsUsers = await BuildUserSelectListAsync(
-                "Operation",
+                "Operator",
                 viewModel.Procurement.PicOpsUserId
             );
             viewModel.AnalystUsers = await BuildUserSelectListAsync(
@@ -1055,14 +2496,13 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             var jobTypeName = jobTypes
                 .FirstOrDefault(w => w.JobTypeId == viewModel.JobTypeId)
                 ?.TypeName;
-            ViewBag.CreatePartial = ResolveCreatePartialByName(jobTypeName);
             ViewBag.SelectedJobTypeName = jobTypeName ?? "Other";
         }
 
         private async Task PopulateEditUserSelectListsAsync(ProcurementEditViewModel viewModel)
         {
             viewModel.PicOpsUsers = await BuildUserSelectListAsync(
-                "Operation",
+                "Operator",
                 viewModel.PicOpsUserId
             );
             viewModel.AnalystUsers = await BuildUserSelectListAsync(
@@ -1091,7 +2531,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
                 }
             );
 
-            string Resolve(string id) => map.TryGetValue(id, out var name) ? name : id;
+            string Resolve(string? id) => !string.IsNullOrEmpty(id) && map.TryGetValue(id, out var name) ? name : id ?? "-";
 
             ViewBag.PicOpsName = Resolve(procurement.PicOpsUserId);
             ViewBag.AnalystName = Resolve(procurement.AnalystHteUserId);
@@ -1158,6 +2598,46 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule
             }
 
             return map;
+        }
+
+        /// <summary>
+        /// Check if current user can edit procurement based on their role and procurement status.
+        /// - Roles that can edit before pickup (Draft, Created): Admin, Operation, Assistant Manager HTE
+        /// - Roles that can only edit after In Progress: AR, AP-Invoice, Analyst HTE & LTS, Supply Chain Management
+        /// </summary>
+        private bool CanUserEditProcurementByStatus(Procurement procurement)
+        {
+            var statusName = procurement.Status?.StatusName ?? "";
+            
+            // Status yang dianggap "sebelum pickup" - hanya Operation/Admin yang boleh edit
+            var prePickupStatuses = new[] { "Draft", "Created", "Waiting Pickup" };
+            var isPrePickup = prePickupStatuses.Contains(statusName, StringComparer.OrdinalIgnoreCase);
+            
+            // Roles yang boleh edit di tahap awal (sebelum/saat pickup)
+            var earlyEditRoles = new[] { "Admin", "Operation", "Assistant Manager HTE" };
+            
+            // Roles yang hanya boleh edit setelah In Progress
+            var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS", "Supply Chain Management" };
+            
+            // Check user roles
+            var userRoles = User.Claims
+                .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+            
+            bool hasEarlyEditRole = userRoles.Any(r => earlyEditRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
+            bool hasLateEditRole = userRoles.Any(r => lateEditRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
+            
+            // Admin dan earlyEditRoles bisa edit kapan saja
+            if (hasEarlyEditRole)
+                return true;
+            
+            // lateEditRoles hanya bisa edit jika status sudah melewati pickup (In Progress atau setelahnya)
+            if (hasLateEditRole && isPrePickup)
+                return false;
+            
+            // Default: allow jika punya permission Edit
+            return true;
         }
 
         #endregion

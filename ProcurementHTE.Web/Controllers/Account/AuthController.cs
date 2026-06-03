@@ -4,15 +4,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Core.Models.Enums;
 using ProcurementHTE.Core.Models.ViewModels;
 using ProcurementHTE.Core.Options;
+using ProcurementHTE.Core.Utils;
 using ProcurementHTE.Web.Constants;
-using ProcurementHTE.Web.Helpers;
+using ProcurementHTE.Web.Hubs;
 using ProcurementHTE.Web.Models.Auth;
-using ProcurementHTE.Web.Options;
+using ProcurementHTE.Web.Utils;
 using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace ProcurementHTE.Web.Controllers.Account
@@ -23,7 +24,8 @@ namespace ProcurementHTE.Web.Controllers.Account
         IAccountService accountService,
         IOptions<EmailSenderOptions> emailOptions,
         IOptions<SmsSenderOptions> smsOptions,
-        IOptions<SecurityBypassOptions> bypassOptions
+        IOptions<SecurityBypassOptions> bypassOptions,
+        IUserActivityNotifier userActivityNotifier
     ) : Controller
     {
         private const string RecoveryResetSessionKey = "Auth.RequireRecoveryReset";
@@ -35,6 +37,7 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly SmsSenderOptions _smsOptions = smsOptions.Value;
         private readonly SecurityBypassOptions _securityBypassOptions =
             bypassOptions.Value ?? new SecurityBypassOptions();
+        private readonly IUserActivityNotifier _userActivityNotifier = userActivityNotifier;
 
         private const int CodeCooldownSeconds = 60;
         private const string ForgotEmailCooldownKey = "forgot.email";
@@ -211,7 +214,8 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Auto2faError = ex.Message;
+                    ViewBag.Auto2faError =
+                        $"Gagal mengirim verifikasi email otomatis: {ex.Message}";
                 }
             }
             else if (requiresPhoneVerification)
@@ -235,7 +239,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Auto2faError = ex.Message;
+                    ViewBag.Auto2faError = $"Gagal mengirim OTP otomatis: {ex.Message}";
                 }
             }
             else if (user.TwoFactorMethod is TwoFactorMethod.Email or TwoFactorMethod.Sms)
@@ -273,7 +277,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Auto2faError = ex.Message;
+                    ViewBag.Auto2faError = $"Gagal mengirim kode verifikasi otomatis: {ex.Message}";
                 }
 
                 var loginCooldownKey =
@@ -351,7 +355,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim ulang magic link: {ex.Message}";
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -398,7 +402,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim ulang OTP SMS: {ex.Message}";
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -430,7 +434,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memverifikasi OTP: {ex.Message}";
             }
 
             return RedirectToAction(nameof(LoginWith2fa), new { rememberMe, returnUrl });
@@ -523,7 +527,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] =
+                    $"Gagal mengirim magic link verifikasi email: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -568,7 +573,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal mengirim OTP verifikasi kontak: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -668,7 +673,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] =
+                    $"Gagal mengaktifkan two-factor authentication: {ex.Message}";
                 TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
@@ -753,7 +759,13 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = $"Gagal mengirim kode verifikasi: {ex.Message}",
+                    }
+                );
             }
         }
 
@@ -779,7 +791,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
+                TempData["ErrorMessage"] = $"Gagal memverifikasi nomor HP: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ContactVerification), new { returnUrl });
@@ -964,7 +976,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Recovery.RecoveryCode", ex.Message);
+                ModelState.AddModelError(
+                    "Recovery.RecoveryCode",
+                    $"Gagal mereset password dengan recovery code: {ex.Message}"
+                );
                 return ForgotPasswordView("recovery", recovery: model);
             }
         }
@@ -1068,7 +1083,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("EmailReset.Code", ex.Message);
+                ModelState.AddModelError(
+                    "EmailReset.Code",
+                    $"Gagal mereset password via email: {ex.Message}"
+                );
                 return ForgotPasswordView("email", emailReset: model);
             }
         }
@@ -1182,7 +1200,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("SmsReset.Code", ex.Message);
+                ModelState.AddModelError(
+                    "SmsReset.Code",
+                    $"Gagal mereset password via SMS: {ex.Message}"
+                );
                 return ForgotPasswordView("sms", smsReset: model);
             }
         }
@@ -1229,7 +1250,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Gagal memperbarui password dengan recovery reset: {ex.Message}"
+                );
                 return View(model);
             }
         }
@@ -1312,6 +1336,13 @@ namespace ProcurementHTE.Web.Controllers.Account
                     GetRemoteIp(),
                     GetUserAgent(),
                     HttpContext.RequestAborted
+                );
+
+                // Notify dashboard about user logout (offline status)
+                await _userActivityNotifier.NotifyUserActivityAsync(
+                    userId,
+                    user.FullName ?? user.UserName ?? "Unknown",
+                    isOnline: false
                 );
             }
 
@@ -1514,6 +1545,13 @@ namespace ProcurementHTE.Web.Controllers.Account
             user.LastLoginAt = DateTime.Now;
             user.UpdatedAt = DateTime.Now;
             await _userManager.UpdateAsync(user);
+
+            // Notify dashboard about user login (online status)
+            await _userActivityNotifier.NotifyUserActivityAsync(
+                user.Id,
+                user.FullName ?? user.UserName ?? "Unknown",
+                isOnline: true
+            );
 
             var userAgent = GetUserAgent();
             var ip = GetRemoteIp();

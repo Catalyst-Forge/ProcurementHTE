@@ -1,6 +1,6 @@
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using ProcurementHTE.Core.Models.Enums;
 
 namespace ProcurementHTE.Core.Interfaces
 {

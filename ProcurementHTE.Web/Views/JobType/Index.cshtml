@@ -2,7 +2,7 @@
 @using ProcurementHTE.Core.Models
 @model PagedResult<JobTypes>
 @{
-    ViewData["Title"] = "Workorder Type Data";
+    ViewData["Title"] = "Job Type Data";
     ViewData["DisableHxBoost"] = true;
     var currentSearch = Context.Request.Query["search"].ToString();
     var currentFields = (Context.Request.Query["fields"].ToString() ?? "WoNum,Description")

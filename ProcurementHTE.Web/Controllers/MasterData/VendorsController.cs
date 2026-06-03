@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -195,7 +196,9 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 {
                     return RedirectToAction(nameof(Index));
                 }
-                await _vendorService.DeleteVendorAsync(vendor);
+                
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+                await _vendorService.DeleteVendorAsync(vendor, currentUserId);
 
                 TempData["SuccessMessage"] = "Vendor deleted successfully.";
             }

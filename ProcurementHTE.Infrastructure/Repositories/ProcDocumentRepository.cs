@@ -33,11 +33,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
             string documentTypeId
         )
         {
+            // Tidak ada soft delete lagi, semua document aktif
             return await _context
                 .ProcDocuments.Where(doc =>
                     doc.ProcurementId == procurementId
                     && doc.DocumentTypeId == documentTypeId
-                    && doc.Status != "Deleted"
                 )
                 .OrderByDescending(doc => doc.CreatedAt)
                 .FirstOrDefaultAsync();
@@ -54,14 +54,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await Task.CompletedTask;
         }
 
-        public async Task DeleteAsync(string id)
+        public async Task DeleteAsync(string id, string deletedByUserId)
         {
             var entity = await _context.ProcDocuments.FirstOrDefaultAsync(d =>
                 d.ProcDocumentId == id
             );
             if (entity != null)
             {
-                _context.ProcDocuments.Remove(entity);
+                entity.IsDeleted = true;
+                entity.DeletedAt = DateTime.UtcNow;
+                entity.DeletedBy = deletedByUserId;
             }
         }
 
@@ -94,16 +96,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     .FirstOrDefaultAsync(ct);
             }
 
-            // Fallback: berdasarkan QrText penuh + status 'Pending Approval'
-            if (string.IsNullOrEmpty(procurementId))
-            {
-                procurementId = await _context
-                    .ProcDocuments.AsNoTracking()
-                    .Where(d => d.QrText == qrText && d.Status == "Pending Approval")
-                    .Select(d => d.ProcurementId)
-                    .FirstOrDefaultAsync(ct);
-            }
-
+            // Fallback search by document ID only - QrText dan Status sudah dihapus
             if (string.IsNullOrEmpty(procurementId))
                 return new PagedResult<ProcDocumentLiteDto>(Array.Empty<ProcDocumentLiteDto>(), 0);
 
@@ -122,8 +115,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     wd.ProcDocumentId,
                     wd.ProcurementId,
                     wd.FileName,
-                    wd.Status,
-                    wd.QrText!,
                     wd.ObjectKey,
                     wd.Description,
                     wd.CreatedByUserId,
@@ -136,7 +127,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return new PagedResult<ProcDocumentLiteDto>(items, total);
         }
 
-        public async Task<ProcDocumentLiteDto?> UpdateStatusAsync(
+        /// <summary>
+        /// Status sekarang di level PR, method ini deprecated.
+        /// Selalu return null - tidak ada update status per document.
+        /// </summary>
+        public Task<ProcDocumentLiteDto?> UpdateStatusAsync(
             string procDocumentId,
             string newStatus,
             string? reason,
@@ -144,121 +139,21 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            var entity = await _context.ProcDocuments.FirstOrDefaultAsync(
-                d => d.ProcDocumentId == procDocumentId,
-                ct
-            );
-            if (entity is null)
-                return null;
-
-            if (!DocStatuses.All.Contains(newStatus))
-                throw new ArgumentException($"Unknown status '{newStatus}'", nameof(newStatus));
-
-            // (Opsional) rule transisi sederhana
-            var from = entity.Status ?? DocStatuses.Uploaded;
-            bool allowed = from switch
-            {
-                var s
-                    when s.Equals(
-                        DocStatuses.PendingApproval,
-                        StringComparison.OrdinalIgnoreCase
-                    ) => newStatus
-                    is DocStatuses.Approved
-                        or DocStatuses.Rejected
-                        or DocStatuses.Replaced,
-                var s when s.Equals(DocStatuses.Uploaded, StringComparison.OrdinalIgnoreCase) =>
-                    newStatus
-                        is DocStatuses.PendingApproval
-                            or DocStatuses.Deleted
-                            or DocStatuses.Replaced,
-                _ => true,
-            };
-            if (!allowed)
-                throw new InvalidOperationException(
-                    $"Transition {from} -> {newStatus} is not allowed."
-                );
-
-            // Update status & kolom approval ringkas
-            entity.Status = newStatus;
-            if (DocStatuses.IsFinal(newStatus))
-            {
-                entity.IsApproved = newStatus.Equals(
-                    DocStatuses.Approved,
-                    StringComparison.OrdinalIgnoreCase
-                );
-                entity.ApprovedAt = DateTime.UtcNow;
-                entity.ApprovedByUserId = approvedByUserId;
-            }
-            else
-            {
-                entity.IsApproved = null;
-                entity.ApprovedAt = null;
-                entity.ApprovedByUserId = null;
-            }
-
-            if (!string.IsNullOrWhiteSpace(reason))
-                entity.Description = reason;
-
-            try
-            {
-                await _context.SaveChangesAsync(ct);
-            }
-            catch (DbUpdateException ex)
-                when (ex.InnerException is SqlException sqlEx && (sqlEx.Number is 2601 or 2627))
-            {
-                // kalau kamu punya unique index (ProcurementId, DocumentTypeId, Status)
-                throw new InvalidOperationException("Status conflict with unique constraint.", ex);
-            }
-
-            // map balik ke DTO ringan (sesuaikan dengan DTO-mu)
-            var createdByName = await _context
-                .Users.AsNoTracking()
-                .Where(u => u.Id == entity.CreatedByUserId)
-                .Select(u => u.FullName)
-                .FirstOrDefaultAsync(ct);
-
-            return new ProcDocumentLiteDto(
-                entity.ProcDocumentId,
-                entity.ProcurementId,
-                entity.FileName,
-                entity.Status,
-                entity.QrText!,
-                entity.ObjectKey,
-                entity.Description,
-                entity.CreatedByUserId,
-                createdByName,
-                entity.CreatedAt
-            );
+            // No-op: Status tracking moved to PurchaseRequisition level
+            return Task.FromResult<ProcDocumentLiteDto?>(null);
         }
 
-        public async Task<ProcDocumentLiteDto?> GetProcDocumentByQrCode(
+        /// <summary>
+        /// QrText sekarang di level PR, method ini deprecated.
+        /// Selalu return null.
+        /// </summary>
+        public Task<ProcDocumentLiteDto?> GetProcDocumentByQrCode(
             string QrText,
             CancellationToken ct = default
         )
         {
-            var entity = await _context
-                .ProcDocuments.AsNoTracking()
-                .FirstOrDefaultAsync(d => d.QrText == QrText, ct);
-            if (entity is null)
-                return null;
-            var createdByName = await _context
-                .Users.AsNoTracking()
-                .Where(u => u.Id == entity.CreatedByUserId)
-                .Select(u => u.FullName)
-                .FirstOrDefaultAsync(ct);
-
-            return new ProcDocumentLiteDto(
-                entity.ProcDocumentId,
-                entity.ProcurementId,
-                entity.FileName,
-                entity.Status,
-                entity.QrText!,
-                entity.ObjectKey,
-                entity.Description,
-                entity.CreatedByUserId,
-                createdByName,
-                entity.CreatedAt
-            );
+            // No-op: QR code moved to PurchaseRequisition level
+            return Task.FromResult<ProcDocumentLiteDto?>(null);
         }
     }
 }

@@ -12,10 +12,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public VendorOfferRepository(AppDbContext context) =>
             _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string woId)
+        public async Task<IReadOnlyList<VendorOffer>> GetByProcurementAsync(string procurementId)
         {
             return await _context
-                .VendorOffers.Where(offer => offer.ProcurementId == woId)
+                .VendorOffers.Where(offer => offer.ProcurementId == procurementId)
                 .OrderBy(offer => offer.VendorId)
                 .ThenBy(offer => offer.Round)
                 .AsNoTracking()
@@ -28,13 +28,22 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveByProcurementAsync(string woId)
+        public async Task RemoveByProcurementAsync(string procurementId)
         {
+            // Soft delete: mark all vendor offers for this procurement as deleted
             var olds = await _context
-                .VendorOffers.Where(offer => offer.ProcurementId == woId)
+                .VendorOffers.Where(offer => offer.ProcurementId == procurementId)
                 .ToListAsync();
             if (olds.Count > 0)
-                _context.RemoveRange(olds);
+            {
+                foreach (var offer in olds)
+                {
+                    offer.IsDeleted = true;
+                    offer.DeletedAt = DateTime.UtcNow;
+                    // Note: DeletedBy should be set by the service layer with current user ID
+                }
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

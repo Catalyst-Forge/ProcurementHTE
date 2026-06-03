@@ -13,6 +13,7 @@
     var jobTypeName = ViewBag.SelectedJobTypeName as string ?? "Other";
 
     var contractTypeOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ContractType>();
+    var categoryOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProcurementCategory>();
     var projectRegionOptions = Html.GetEnumSelectList<ProcurementHTE.Core.Enums.ProjectRegion>();
 
     var picOpsOptions = (Model.PicOpsUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
@@ -20,7 +21,22 @@
     var assistantManagerOptions = (Model.AssistantManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
     var managerOptions = (Model.ManagerUsers ?? Enumerable.Empty<SelectListItem>()).ToList();
 
+    var unitTypes = ViewBag.UnitTypes as List<UnitType> ?? new List<UnitType>();
     var emptyOfferKey = Guid.NewGuid().ToString("N");
+}
+
+@functions {
+    // Helper function to format date for input type="date"
+    // Returns empty string if date is default (01/01/0001)
+    string FormatDateValue(DateTime date)
+    {
+        return date == default ? "" : date.ToString("yyyy-MM-dd");
+    }
+
+    string FormatNullableDateValue(DateTime? date)
+    {
+        return date.HasValue && date.Value != default ? date.Value.ToString("yyyy-MM-dd") : "";
+    }
 }
 
 <header class="hstack justify-content-between mb-3">
@@ -32,12 +48,12 @@
             Type: <span class="fw-semibold">@jobTypeName</span>
         </p>
     </div>
-    <a class="btn btn-outline-secondary" asp-action="Index" role="button">
+    <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.ProcurementId" role="button">
         <i class="bi bi-arrow-left"></i> Back to list
     </a>
 </header>
 
-<form asp-action="Edit" method="post" enctype="multipart/form-data" class="js-loading-form">
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="js-loading-form" hx-boost="false">
     @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="ProcurementId" />
@@ -56,6 +72,12 @@
                         <option value="">Select contract type</option>
                     </select>
                     <span asp-validation-for="ContractType" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ProcurementCategory" class="form-label">Jenis Pengadaan</label>
+                    <select asp-for="ProcurementCategory" class="form-select" asp-items="categoryOptions">
+                    </select>
+                    <span asp-validation-for="ProcurementCategory" class="text-danger"></span>
                 </div>
             </div>
 
@@ -94,19 +116,24 @@
             <legend class="card-title fw-semibold">Schedule &amp; Etc</legend>
             <hr />
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label asp-for="DocumentDate" class="form-label"></label>
+                    <input asp-for="DocumentDate" type="date" class="form-control" value="@FormatDateValue(Model.DocumentDate)" />
+                    <span asp-validation-for="DocumentDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
                     <label asp-for="StartDate" class="form-label"></label>
-                    <input asp-for="StartDate" type="date" class="form-control" />
+                    <input asp-for="StartDate" type="date" class="form-control" value="@FormatDateValue(Model.StartDate)" />
                     <span asp-validation-for="StartDate" class="text-danger"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="EndDate" class="form-label"></label>
-                    <input asp-for="EndDate" type="date" class="form-control" />
+                    <input asp-for="EndDate" type="date" class="form-control" value="@FormatDateValue(Model.EndDate)" />
                     <span asp-validation-for="EndDate" class="text-danger"></span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="PotentialAccrualDate" class="form-label"></label>
-                    <input asp-for="PotentialAccrualDate" type="date" class="form-control" />
+                    <input asp-for="PotentialAccrualDate" type="date" class="form-control" value="@FormatNullableDateValue(Model.PotentialAccrualDate)" />
                     <span asp-validation-for="PotentialAccrualDate" class="text-danger"></span>
                 </div>
             </div>
@@ -139,7 +166,11 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="SpmpNumber" class="form-label"></label>
-                    <input asp-for="SpmpNumber" class="form-control" maxlength="100" />
+                    <div class="input-group">
+                        <input asp-for="SpmpNumber" class="form-control" maxlength="50" placeholder="e.g., 4514" />
+                        <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
+                    </div>
+                    <small class="form-text text-muted">Masukkan angka/kode saja (contoh: 4514)</small>
                     <span asp-validation-for="SpmpNumber" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
@@ -152,13 +183,30 @@
             <div class="row g-3 mt-0">
                 <div class="col-md-6">
                     <label asp-for="OeNumber" class="form-label"></label>
-                    <input asp-for="OeNumber" class="form-control" maxlength="100" />
+                    <div class="input-group">
+                        <input asp-for="OeNumber" class="form-control" maxlength="50" placeholder="e.g., OE-TRS" />
+                        <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
+                    </div>
+                    <small class="form-text text-muted">Masukkan prefix saja (contoh: OE-TRS)</small>
                     <span asp-validation-for="OeNumber" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="RaNumber" class="form-label"></label>
                     <input asp-for="RaNumber" class="form-control" maxlength="100" />
                     <span asp-validation-for="RaNumber" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <label asp-for="NoRig" class="form-label"></label>
+                    <input asp-for="NoRig" class="form-control" maxlength="100" placeholder="Masukkan No. Rig" />
+                    <span asp-validation-for="NoRig" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="NoHte" class="form-label"></label>
+                    <input asp-for="NoHte" class="form-control" maxlength="100" placeholder="Masukkan No. HTE" />
+                    <span asp-validation-for="NoHte" class="text-danger"></span>
                 </div>
             </div>
         </fieldset>
@@ -184,19 +232,19 @@
                             <div class="row g-3 align-items-end">
                                 <div class="col-lg-10">
                                     <div class="row g-3">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
                                             <input asp-for="Offers[i].ItemPenawaran" class="form-control" />
                                             <span class="text-danger" asp-validation-for="Offers[i].ItemPenawaran"></span>
                                         </div>
                                         <div class="col-md-3">
-                                            <label class="form-label">Qty</label>
+                                            <label class="form-label">Qty Items</label>
                                             <input asp-for="Offers[i].Qty" type="number" min="1" step="1" class="form-control text-end" />
                                             <span class="text-danger" asp-validation-for="Offers[i].Qty"></span>
                                         </div>
                                         <div class="col-md-3">
-                                            <label class="form-label">Unit</label>
-                                            <input asp-for="Offers[i].Unit" class="form-control" />
+                                            <label class="form-label">Unit Items</label>
+                                            <input asp-for="Offers[i].Unit" class="form-control" placeholder="Pcs, Unit, Set..." />
                                             <span class="text-danger" asp-validation-for="Offers[i].Unit"></span>
                                         </div>
                                     </div>
@@ -217,17 +265,17 @@
                         <div class="row g-3 align-items-end">
                             <div class="col-lg-10">
                                 <div class="row g-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
                                         <input class="form-control" name="Offers[@emptyOfferKey].ItemPenawaran" />
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label">Qty</label>
+                                        <label class="form-label">Qty Items</label>
                                         <input class="form-control text-end" type="number" min="1" step="1" name="Offers[@emptyOfferKey].Qty" />
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label">Unit</label>
-                                        <input class="form-control" name="Offers[@emptyOfferKey].Unit" />
+                                        <label class="form-label">Unit Items</label>
+                                        <input class="form-control" name="Offers[@emptyOfferKey].Unit" placeholder="Pcs, Unit, Set..." />
                                     </div>
                                 </div>
                             </div>
@@ -248,41 +296,86 @@
             <legend class="card-title fw-semibold">Approvals &amp; PIC</legend>
             <hr />
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="PicOpsUserId" class="form-label">PIC Operations</label>
-                    <select asp-for="PicOpsUserId" class="form-select" asp-items="picOpsOptions">
-                        <option value="">Select PIC Operations</option>
-                    </select>
-                    <span asp-validation-for="PicOpsUserId" class="text-danger"></span>
-                </div>
-                <div class="col-md-6">
+                <!-- Analyst HTE -->
+                <div class="col-md-5">
                     <label asp-for="AnalystHteUserId" class="form-label">Analyst HTE &amp; LTS</label>
                     <select asp-for="AnalystHteUserId" class="form-select" asp-items="analystOptions">
                         <option value="">Select Analyst</option>
                     </select>
                     <span asp-validation-for="AnalystHteUserId" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-1 d-flex align-items-end pb-3">
+                    <div class="form-check">
+                        <input asp-for="AnalystHtePjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="AnalystHtePjs" class="form-check-label">Pjs</label>
+                    </div>
+                </div>
+
+                <!-- Assistant Manager -->
+                <div class="col-md-5">
                     <label asp-for="AssistantManagerUserId" class="form-label">Assistant Manager HTE</label>
                     <select asp-for="AssistantManagerUserId" class="form-select" asp-items="assistantManagerOptions">
                         <option value="">Select Assistant Manager</option>
                     </select>
                     <span asp-validation-for="AssistantManagerUserId" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-1 d-flex align-items-end pb-3">
+                    <div class="form-check">
+                        <input asp-for="AssistantManagerPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="AssistantManagerPjs" class="form-check-label">Pjs</label>
+                    </div>
+                </div>
+
+                <!-- Manager -->
+                <div class="col-md-5">
                     <label asp-for="ManagerUserId" class="form-label">Manager Transport &amp; Logistic</label>
                     <select asp-for="ManagerUserId" class="form-select" asp-items="managerOptions">
                         <option value="">Select Manager</option>
                     </select>
                     <span asp-validation-for="ManagerUserId" class="text-danger"></span>
                 </div>
+                <div class="col-md-1 d-flex align-items-end pb-3">
+                    <div class="form-check">
+                        <input asp-for="ManagerPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="ManagerPjs" class="form-check-label">Pjs</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3" />
+            <p class="text-muted small mb-2">Pjs untuk Level Direksi (jika diperlukan)</p>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="VicePresidentPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="VicePresidentPjs" class="form-check-label">Pjs. Vice President</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="OperationDirectorPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="OperationDirectorPjs" class="form-check-label">Pjs. Operation Director</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input asp-for="PresidentDirectorPjs" class="form-check-input" type="checkbox" />
+                        <label asp-for="PresidentDirectorPjs" class="form-check-label">Pjs. President Director</label>
+                    </div>
+                </div>
             </div>
         </fieldset>
     </section>
 
-    <div class="mb-3 d-flex w-100 justify-content-end">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check2-circle"></i> Save Changes
+    <div class="mb-3 d-flex w-100 justify-content-end gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+
+        <button type="submit" class="btn btn-outline-secondary" name="submitAction" value="Draft">
+            <i class="bi bi-save"></i> Save as Draft
+        </button>
+
+        <button type="submit" class="btn btn-success" name="submitAction" value="Created">
+            <i class="bi bi-check2-circle"></i> Save & Create
         </button>
     </div>
 </form>
@@ -290,9 +383,15 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        (function initEditProcurement() {
             const offersContainer = document.getElementById('offers-container');
             const btnAddOffer = document.getElementById('btn-add-offer');
+
+            // Debug log
+            console.log('Edit Procurement Script Loaded', {
+                offersContainer: !!offersContainer,
+                btnAddOffer: !!btnAddOffer
+            });
 
             const newKey = () => Math.random().toString(36).slice(2, 10);
 
@@ -302,17 +401,17 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-lg-10">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
                                     <input class="form-control" name="Offers[${key}].ItemPenawaran" />
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">Qty</label>
+                                    <label class="form-label">Qty Items</label>
                                     <input class="form-control text-end" type="number" min="1" step="1" name="Offers[${key}].Qty" />
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">Unit</label>
-                                    <input class="form-control" name="Offers[${key}].Unit" />
+                                    <label class="form-label">Unit Items</label>
+                                    <input class="form-control" name="Offers[${key}].Unit" placeholder="Pcs, Unit, Set..." />
                                 </div>
                             </div>
                         </div>
@@ -326,24 +425,39 @@
             `;
 
             if (btnAddOffer && offersContainer) {
-                btnAddOffer.addEventListener('click', () => {
+                // Remove any existing listeners to prevent duplicates
+                const newBtnAddOffer = btnAddOffer.cloneNode(true);
+                btnAddOffer.parentNode.replaceChild(newBtnAddOffer, btnAddOffer);
+
+                newBtnAddOffer.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Add offer clicked');
                     const key = newKey();
                     offersContainer.insertAdjacentHTML('beforeend', offerRowMarkup(key));
+
                     if (window.jQuery && $.validator && $.validator.unobtrusive) {
                         $.validator.unobtrusive.parse(offersContainer);
                     }
                 });
+            } else {
+                console.error('Required elements not found:', {
+                    offersContainer: !!offersContainer,
+                    btnAddOffer: !!btnAddOffer
+                });
             }
 
-            document.addEventListener('click', (event) => {
+            // Use event delegation for remove buttons
+            document.body.addEventListener('click', (event) => {
                 const btnOffer = event.target.closest('.js-remove-offer');
                 if (btnOffer) {
+                    event.preventDefault();
+                    console.log('Remove offer clicked');
                     const row = btnOffer.closest('.offer-row');
                     if (row) {
                         row.remove();
                     }
                 }
             });
-        });
+        })();
     </script>
 }

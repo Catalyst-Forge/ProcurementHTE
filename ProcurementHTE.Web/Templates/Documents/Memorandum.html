@@ -10,11 +10,14 @@
       crossorigin="anonymous"
     />
     <style>
+      :root {
+        font-size: 12pt;
+      }
+
       body {
         margin: 20px 25px;
         font-family: Calibri, Arial, Helvetica, sans-serif;
-        font-size: 11px;
-        line-height: 1.4;
+        line-height: 1.5;
       }
 
       .page {
@@ -39,20 +42,35 @@
         size: A4;
         margin: 0;
       }
+
+      @media print {
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+          text-size-adjust: none;
+          -webkit-text-size-adjust: none;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="page">
       <header class="mt-5">
-        <h1 class="fw-semibold text-uppercase h4">MEMORANDUM</h1>
-        <p>Jakarta, {{ StartDate }}</p>
+        <h1 class="text-uppercase" style="font-size: 16pt">MEMORANDUM</h1>
+        <p>Jakarta, {{ DocumentDate }}</p>
+
+        <img
+          src="{{LogoUrl}}"
+          alt="Pertamina PDC Logo"
+          style="width: 200px; position: absolute; top: 1rem; right: 1rem"
+        />
       </header>
 
       <table>
         <tr>
           <td style="width: 5rem">No.</td>
           <td>:</td>
-          <td>2416/PDC-1110/2025-S0</td>
+          <td>{{ MemoNumber }}/PDC-1110/<span class="current-year"></span>-S0</td>
         </tr>
         <tr>
           <td>Kepada</td>
@@ -72,18 +90,19 @@
       </table>
 
       <div class="memobody">
-        <p class="mb-0">
+        <p>
           Sehubungan dengan rencana pelaksanaan pekerjaan {{ JobName }}, bersama ini kami sampaikan dokumen-dokumen
           pengadaan untuk dapat dipertimbangkan proses pengadaannya dengan rincian sebagai berikut:
         </p>
 
-        <ol class="mb-0">
+        <ol>
           <li>Owner Estimate (OE)</li>
           <li>Bill of Quantity (BoQ)</li>
           <li>Purchase Requisition (PR)</li>
           <li>Penilaian Risiko Pekerjaan/Risk Assessment (RA)</li>
           <li>Rencana Kerja &amp; Syarat-syarat (RKS)</li>
           <li>Referensi Penawaran Harga</li>
+          {{ JustifikasiListItem }}
         </ol>
 
         <p>
@@ -101,7 +120,7 @@
         <br />
         <br />
         <br />
-        <div class="fw-bold">Arfinal Diputra</div>
+        <div class="fw-bold">{{ ManagerUserId }}</div>
         <div>Tembusan</div>
         <ol>
           <li>VP Operasi &amp; Support</li>
@@ -111,15 +130,21 @@
 
     <div class="page">
       <header class="mt-5">
-        <h1 class="fw-semibold text-uppercase h4">MEMORANDUM</h1>
-        <p>Jakarta,</p>
+        <h1 class="text-uppercase h4">MEMORANDUM</h1>
+        <p>Jakarta, {{ DocumentDate }}</p>
+
+        <img
+          src="{{LogoUrl}}"
+          alt="Pertamina PDC Logo"
+          style="width: 200px; position: absolute; top: 1rem; right: 1rem"
+        />
       </header>
 
       <table>
         <tr>
           <td style="width: 5rem">Nomor</td>
           <td>:</td>
-          <td><span class="invisible">9999999</span>/PDC-1110/2025-S0</td>
+          <td>{{ MemoNumberPage2 }}/PDC-1110/<span class="current-year"></span>-S0</td>
         </tr>
         <tr>
           <td>Kepada</td>
@@ -144,8 +169,9 @@
           seluruh unit bisnis diwajibkan untuk melampirkan <strong>Purchase Requisition (PR)</strong> sebagai salah satu
           dokumen pendukung dalam proses pengadaan. <br /><br />
           Sehubungan dengan hal tersebut, kami lampirkan <strong>dokumen PR</strong> guna melengkapi dokumen pengadaan
-          sebagaimana dimaksud dalam <strong>Memo No. <span class="invisible">99999</span>/PDC-1110/2025-S0</strong>,
-          serta turut kami lampirkan <strong>justifikasi keterlambatan PR</strong> yang bersangkutan.
+          sebagaimana dimaksud dalam
+          <strong>Memo No. {{ MemoNumber }}/PDC-1110/<span class="current-year"></span>-S0</strong>, serta turut kami
+          lampirkan <strong>justifikasi keterlambatan PR</strong> yang bersangkutan.
         </p>
 
         <p>Demikian disampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
@@ -158,12 +184,21 @@
         <br />
         <br />
         <br />
-        <div class="fw-bold">Arfinal Diputra</div>
+        <div class="fw-bold">{{ ManagerUserId }}</div>
         <div>Tembusan</div>
         <ol>
           <li>VP Operasi &amp; Support</li>
         </ol>
       </div>
     </div>
+
+    <script>
+      const year = new Date().getFullYear(); // otomatis format lokal
+      const currentYearElement = document.querySelectorAll(".current-year");
+
+      currentYearElement.forEach((yearEl) => {
+        yearEl.textContent = year;
+      });
+    </script>
   </body>
 </html>

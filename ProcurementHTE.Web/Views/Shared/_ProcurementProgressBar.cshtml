@@ -1,0 +1,304 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+@using ProcurementHTE.Core.Constants
+
+@{
+    // Build dynamic step list based on RequiredApprovalLevel
+    // Level 4 = Manager (default), 5 = VP, 6 = OpDir, 7 = PresDir
+    var steps = new List<(int Order, string Status, string Description, DateTime? CompletedAt, string? CompletedBy, bool IsPjs)>();
+    int stepOrder = 1;
+
+    // Helper function to get Pjs badge text
+    Func<string, bool, string> getPjsLabel = (name, isPjs) => isPjs ? $"Pjs. {name}" : name;
+
+    // Step 1: On Create DP3
+    steps.Add((stepOrder++, "OnCreateDP3", "On Create DP3 (APPO)", null, null, false));
+
+    // Step 2: Waiting Approval Analyst HTE
+    var analystLabel = getPjsLabel(Model.AnalystHteUserName ?? "Analyst HTE", Model.AnalystHtePjs);
+    steps.Add((stepOrder++, "WaitingApprovalAnalyst", $"Waiting Approval {(Model.AnalystHtePjs ? "Pjs. " : "")}Analyst HTE", null, analystLabel, Model.AnalystHtePjs));
+
+    // Step 3: Waiting Approval Asst. Manager
+    var asstMgrLabel = getPjsLabel(Model.AssistantManagerUserName ?? "Asst. Manager", Model.AssistantManagerPjs);
+    steps.Add((stepOrder++, "WaitingApprovalAsstManager", $"Waiting Approval {(Model.AssistantManagerPjs ? "Pjs. " : "")}Asst. Manager", null, asstMgrLabel, Model.AssistantManagerPjs));
+
+    // Step 4: Waiting Approval Manager
+    var mgrLabel = getPjsLabel(Model.ManagerUserName ?? "Manager", Model.ManagerPjs);
+    steps.Add((stepOrder++, "WaitingApprovalManager", $"Waiting Approval {(Model.ManagerPjs ? "Pjs. " : "")}Manager", null, mgrLabel, Model.ManagerPjs));
+
+    // Step 5 (if CT > 500M): Waiting Approval VP
+    if (Model.RequiredApprovalLevel >= 5)
+    {
+        var vpLabel = getPjsLabel(Model.VicePresidentUserName ?? "Vice President", Model.VicePresidentPjs);
+        steps.Add((stepOrder++, "WaitingApprovalVP", $"Waiting Approval {(Model.VicePresidentPjs ? "Pjs. " : "")}Vice President", null, vpLabel, Model.VicePresidentPjs));
+    }
+
+    // Step 6 (if CT > 5B): Waiting Approval Operation Director
+    if (Model.RequiredApprovalLevel >= 6)
+    {
+        var opDirLabel = getPjsLabel(Model.OperationDirectorUserName ?? "Operation Director", Model.OperationDirectorPjs);
+        steps.Add((stepOrder++, "WaitingApprovalOpDir", $"Waiting Approval {(Model.OperationDirectorPjs ? "Pjs. " : "")}Operation Director", null, opDirLabel, Model.OperationDirectorPjs));
+    }
+
+    // Step 7 (if CT > 10B): Waiting Approval President Director
+    if (Model.RequiredApprovalLevel >= 7)
+    {
+        var presDirLabel = getPjsLabel(Model.PresidentDirectorUserName ?? "President Director", Model.PresidentDirectorPjs);
+        steps.Add((stepOrder++, "WaitingApprovalPresDir", $"Waiting Approval {(Model.PresidentDirectorPjs ? "Pjs. " : "")}President Director", null, presDirLabel, Model.PresidentDirectorPjs));
+    }
+
+    // Post-approval steps (always present)
+    steps.Add((stepOrder++, "OnSubmitISPA", "On Submit ISPA", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName, false));
+    steps.Add((stepOrder++, "OnSubmitHardcopy", "On Submit Hardcopy", Model.HardcopySubmittedAt, Model.HardcopySubmittedByUserName, false));
+    steps.Add((stepOrder++, "OnSubmitPO", "On Submit PO", Model.PoSubmittedAt, Model.PoSubmittedByUserName, false));
+    steps.Add((stepOrder++, "DonePO", "Done PO", null, null, false));
+
+    // Get status history for completed timestamps
+    var historyDict = Model.StatusHistory.ToDictionary(h => h.Status.ToString(), h => (h.ChangedAt, h.ChangedByUserName));
+
+    // Calculate current step position
+    // We need to map the status value to the visual step position
+    int statusValue = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected
+        ? 0
+        : (int)Model.CurrentStatus;
+    
+    // Map status value to step order
+    int currentStep = 0;
+    if (statusValue > 0)
+    {
+        // Find the step that matches the current status
+        var matchingStep = steps.FirstOrDefault(s => s.Status == Model.CurrentStatus.ToString());
+        if (matchingStep.Status != null)
+        {
+            currentStep = matchingStep.Order;
+        }
+        else
+        {
+            // For statuses beyond approval (ISPA=8, Hardcopy=9, PO=10, Done=11)
+            // Map to the correct visual step
+            currentStep = Model.ProgressStep;
+        }
+    }
+
+    bool isRejected = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected;
+    int totalSteps = steps.Count;
+}
+
+<div class="procurement-progress-container">
+    @if (isRejected)
+    {
+        <div class="alert alert-danger mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-times-circle fa-2x me-3"></i>
+                <div>
+                    <h5 class="mb-1">Procurement Rejected</h5>
+                    <p class="mb-0">
+                        <strong>Rejected by:</strong> @Model.RejectedByUserName<br>
+                        <strong>Date:</strong> @Model.RejectedAt?.ToString("dd MMM yyyy HH:mm")<br>
+                        <strong>Reason:</strong> @Model.RejectionNote
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="progress-tracker">
+        @for (int i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
+            // DonePO is always the last step
+            bool isLastStep = step.Status == "DonePO";
+            bool isCompleted = currentStep > step.Order || (isLastStep && currentStep == step.Order);
+            bool isCurrent = currentStep == step.Order && !isRejected;
+            bool isPending = currentStep < step.Order;
+
+            string statusClass = isCompleted ? "completed" : (isCurrent ? "current" : "pending");
+            string iconClass = isCompleted ? "fa-check-circle" : (isCurrent ? "fa-circle-dot" : "fa-circle");
+
+            // Get completion info from history
+            DateTime? completedAt = null;
+            string? completedBy = null;
+            if (historyDict.ContainsKey(step.Status))
+            {
+                completedAt = historyDict[step.Status].ChangedAt;
+                completedBy = historyDict[step.Status].ChangedByUserName;
+            }
+            else if (step.CompletedAt.HasValue)
+            {
+                completedAt = step.CompletedAt;
+                completedBy = step.CompletedBy;
+            }
+
+            <div class="progress-step @statusClass">
+                <div class="step-content">
+                    <div class="step-icon">
+                        <i class="fas @iconClass"></i>
+                    </div>
+                    <div class="step-details">
+                        <div class="step-number">Step @step.Order</div>
+                        <div class="step-title">
+                            @step.Description
+                            @if (step.IsPjs)
+                            {
+                                <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                            }
+                        </div>
+                        @if (completedAt.HasValue)
+                        {
+                            <div class="step-timestamp">
+                                <i class="far fa-clock me-1"></i>
+                                @completedAt.Value.ToString("dd MMM yyyy HH:mm")
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(completedBy))
+                        {
+                            <div class="step-user">
+                                <i class="far fa-user me-1"></i>
+                                @completedBy
+                            </div>
+                        }
+                        @if (isCurrent)
+                        {
+                            <span class="badge bg-primary mt-1">Current</span>
+                        }
+                    </div>
+                </div>
+                @if (i < steps.Count - 1)
+                {
+                    <div class="step-line @(isCompleted ? "completed" : "")"></div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Progress percentage -->
+    <div class="progress mt-4" style="height: 25px;">
+        <div class="progress-bar @(isRejected ? "bg-danger" : "bg-success")"
+             role="progressbar"
+             style="width: @Model.ProgressPercentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%;"
+             aria-valuenow="@Model.ProgressPercentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
+             aria-valuemin="0"
+             aria-valuemax="100">
+            @if (isRejected)
+            {
+                <span>Rejected</span>
+            }
+            else
+            {
+                <span>@Model.ProgressPercentage.ToString("F0")%</span>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .procurement-progress-container {
+        padding: 20px;
+    }
+
+    .progress-tracker {
+        position: relative;
+    }
+
+    .progress-step {
+        position: relative;
+        padding: 15px 0;
+    }
+
+    .step-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .step-icon {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .progress-step.completed .step-icon {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .progress-step.current .step-icon {
+        background-color: #007bff;
+        color: white;
+        animation: pulse 2s infinite;
+    }
+
+    .progress-step.pending .step-icon {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+
+    .step-details {
+        flex: 1;
+    }
+
+    .step-number {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .step-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #212529;
+        margin-top: 4px;
+    }
+
+    .step-timestamp, .step-user {
+        font-size: 13px;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+
+    .step-line {
+        position: absolute;
+        left: 19px;
+        top: 55px;
+        bottom: -15px;
+        width: 2px;
+        background-color: #e9ecef;
+        transition: background-color 0.3s ease;
+    }
+
+    .step-line.completed {
+        background-color: #28a745;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+        }
+
+        .step-title {
+            font-size: 14px;
+        }
+
+        .step-line {
+            left: 14px;
+        }
+    }
+</style>

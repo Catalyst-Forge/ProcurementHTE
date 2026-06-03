@@ -11,7 +11,7 @@
         bodyClass = $"{bodyClass} {customBodyClass}".Trim();
     }
     var layoutRowClass = hideSidebar ? "row g-0 w-100" : "row g-0 flex-nowrap";
-    var contentColumnClass = hideSidebar ? "col-12" : "col";
+    var contentColumnClass = hideSidebar ? "col-12" : "col col-lg-9 col-xl-10";
     var hxBoostValue = disableHxBoost ? "false" : "true";
 }
 <!DOCTYPE html>
@@ -26,13 +26,14 @@
     <link rel="stylesheet" href="~/ProcurementHTE.Web.styles.css" asp-append-version="true" />
     @* (Opsional) kalau butuh section khusus di <head> *@
     @RenderSection("HeadScripts", required: false)
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body class="@bodyClass" data-active-page="@ViewBag.ActivePage" data-active-controller="@currentController" data-active-action="@currentAction">
     <div class="@layoutRowClass">
         @if (!hideSidebar)
         {
-            <div class="col-9 col-md-3 col-xl-2 offcanvas-md offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
+            <div class="col-9 col-lg-3 col-xl-2 offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
                 <partial name="Partials/_Sidebar" />
             </div>
         }
@@ -58,6 +59,19 @@
                       hx-target="#app-content"
                       hx-indicator="#content-loading"
                       hx-push-url="true">
+
+                    @await Html.PartialAsync("_SweetAlerts")
+
+                    @if (ViewData["Breadcrumb"] != null) {
+                        <div class="container-fluid mt-3">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    @Html.Raw(ViewData["Breadcrumb"])
+                                </ol>
+                            </nav>
+                        </div>
+                    }
+
                     @RenderBody()
                 </main>
             </div>
@@ -82,13 +96,18 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    @await Html.PartialAsync("_SweetAlerts")
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;"></div>
 
     @* Render section Scripts HANYA SEKALI di akhir body *@
     @await RenderSectionAsync("Scripts", required: false)

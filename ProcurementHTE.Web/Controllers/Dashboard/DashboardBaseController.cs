@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Web.Mappers;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.Dashboard
@@ -28,13 +29,14 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             DashboardService = dashboardService;
         }
 
-        protected async Task<DashboardSummaryViewModel> BuildDashboardAsync(
+        protected async Task<DashboardViewModel> BuildDashboardAsync(
             User user,
             string roleName,
             CancellationToken ct = default
         )
         {
             var userId = user.Id;
+            var isAdmin = roleName.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
             var totalUsers = UserManager.Users.Count();
             var activeUsers = UserManager.Users.Count(u => u.IsActive);
@@ -45,19 +47,36 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 ct
             );
             var totalRevenueThisMonth = await ProfitLossService.GetTotalRevenueThisMonthAsync();
-            var activities = await DashboardService.GetRecentActivitiesAsync(5);
             var procurementsByStatus = await DashboardService.GetProcurementStatusCountsAsync();
             var revenuePerMonth = await DashboardService.GetRevenuePerMonthAsync(DateTime.Now.Year);
-            var approvalStatus = await DashboardService.GetApprovalStatusCountsAsync();
+            // approvalStatus removed - approval per-document sudah dihapus
 
-            return new DashboardSummaryViewModel
+            // Fetch DTOs from service layer
+            var recentProcsDto = await DashboardService.GetRecentProcurementsAsync(10, ct);
+            var pendingApprovalsDto = await DashboardService.GetPendingApprovalsDetailAsync(10, ct);
+            var jobTypeDistDto = await DashboardService.GetJobTypeDistributionAsync(ct);
+            var topVendorsDto = await DashboardService.GetTopVendorsAsync(10, ct);
+            var monthlyTrendDto = await DashboardService.GetMonthlyProcurementTrendAsync(ct);
+            var monthlyPrTrendDto = await DashboardService.GetMonthlyPurchaseRequisitionTrendAsync(
+                ct
+            );
+            var procsByStatusDto = await DashboardService.GetProcurementsByStatusAsync(ct);
+            var docApprovalStatsDto = await DashboardService.GetDocumentApprovalStatsAsync(ct);
+            var recentPurchaseReqsDto = await DashboardService.GetRecentPurchaseRequisitionsAsync(
+                10,
+                ct
+            );
+
+            var model = new DashboardViewModel
             {
                 RoleName = roleName,
                 TotalUsers = totalUsers,
                 ActiveUsers = activeUsers,
                 TotalRevenueThisMonth = totalRevenueThisMonth,
                 TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
-                RecentProcurements = recentProcurements
+
+                // Recent Procurements - using unified list
+                RecentProcurementsList = recentProcurements
                     .Select(item => new DashboardProcurementViewModel
                     {
                         ProcNum = item.ProcNum ?? "-",
@@ -67,11 +86,103 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                         CreatedAt = item.CreatedAt,
                     })
                     .ToList(),
-                RecentActivities = activities,
-                ProcurementsByStatus = procurementsByStatus,
+
+                // Status Counts - DTOs only for chart data
+                ProcurementStatusCounts = procurementsByStatus,
                 RevenuePerMonth = revenuePerMonth,
-                ApprovalStatus = approvalStatus,
+                // ApprovalStatus removed - approval per-document sudah dihapus
+
+                // Core Metrics
+                ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
+                PendingApprovals = await DashboardService.GetPendingApprovalsCountAsync(ct),
+                TotalVendors = await DashboardService.GetTotalVendorsCountAsync(ct),
+
+                // Financial Data
+                TotalRevenue = await DashboardService.GetTotalRevenueAsync(ct),
+                TotalCost = await DashboardService.GetTotalCostAsync(ct),
+                TotalProfit = await DashboardService.GetTotalProfitAsync(ct),
+
+                // Trends and Lists - Convert DTOs to ViewModels using Mapper
+                MonthlyProcurementTrend = monthlyTrendDto.ToViewModelList(),
+                MonthlyPurchaseRequisitionTrend = monthlyPrTrendDto.ToViewModelList(),
+                RecentProcurements = recentProcsDto.ToViewModelList(),
+                PendingApprovalsDetail = pendingApprovalsDto.ToViewModelList(),
+                JobTypeDistribution = jobTypeDistDto.ToViewModelList(),
+                TopVendors = topVendorsDto.ToViewModelList(),
+                ProcurementsByStatus = procsByStatusDto.ToViewModelList(),
+                DocumentApprovalStats = docApprovalStatsDto.ToViewModelList(),
+                RecentPurchaseRequisitions = recentPurchaseReqsDto.ToViewModelList(),
+                TotalPurchaseRequisitions =
+                    await DashboardService.GetTotalPurchaseRequisitionsCountAsync(ct),
             };
+
+            // Admin-only: Add Recent Activities and User Activity Status
+            if (isAdmin)
+            {
+                var activitiesDto = await DashboardService.GetRecentActivitiesAsync(10);
+                model.RecentActivities = activitiesDto.ToViewModelList();
+
+                var userActivityDto = await DashboardService.GetUserActivityStatusAsync(30, ct);
+                model.UserActivities = userActivityDto.ToViewModelList();
+                model.OnlineUsersCount = userActivityDto.Count(u => u.IsOnline);
+
+                // Accrual Statistics
+                var accrualStats = await DashboardService.GetAccrualStatisticsAsync(ct);
+                model.PendingAccrualCount = accrualStats.PendingCount;
+                model.FilledAccrualCount = accrualStats.FilledCount;
+                model.TotalPotensiAccrual = accrualStats.TotalPotensiAccrual;
+
+                // Role Distribution
+                var roleDistribution = await GetRoleDistributionAsync();
+                model.RoleDistribution = roleDistribution;
+
+                // Region Distribution
+                var regionDistribution = await DashboardService.GetRegionDistributionAsync(ct);
+                model.RegionDistribution = regionDistribution
+                    .Select(r => new RegionDistributionViewModel
+                    {
+                        RegionName = r.RegionName,
+                        Count = r.Count,
+                        TotalValue = r.TotalValue
+                    })
+                    .ToList();
+            }
+
+            return model;
+        }
+
+        protected async Task<List<RoleDistributionViewModel>> GetRoleDistributionAsync()
+        {
+            var roles = new List<(string Name, string Color)>
+            {
+                ("Admin", "#dc3545"),
+                ("Operation", "#0d6efd"),
+                ("Analyst HTE & LTS", "#198754"),
+                ("Assistant Manager HTE", "#ffc107"),
+                ("Manager Transport & Logistic", "#0dcaf0"),
+                ("Vice President", "#6f42c1"),
+                ("AP-PO", "#fd7e14"),
+                ("AR", "#20c997"),
+                ("AP-Invoice", "#e83e8c"),
+                ("HSE", "#6c757d"),
+                ("Supply Chain Management", "#343a40")
+            };
+
+            var result = new List<RoleDistributionViewModel>();
+            foreach (var role in roles)
+            {
+                var usersInRole = await UserManager.GetUsersInRoleAsync(role.Name);
+                if (usersInRole.Count > 0)
+                {
+                    result.Add(new RoleDistributionViewModel
+                    {
+                        RoleName = role.Name,
+                        UserCount = usersInRole.Count,
+                        Color = role.Color
+                    });
+                }
+            }
+            return result.OrderByDescending(r => r.UserCount).ToList();
         }
 
         protected async Task<IActionResult> RenderDashboardAsync(
@@ -88,6 +199,52 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
 
             var model = await BuildDashboardAsync(user, roleName, ct);
             return View(viewPath, model);
+        }
+
+        protected async Task<DashboardViewModel> BuildFullDashboardAsync(
+            CancellationToken ct = default
+        )
+        {
+            // Fetch DTOs from service layer
+            var procsByStatusDto = await DashboardService.GetProcurementsByStatusAsync(ct);
+            var monthlyTrendDto = await DashboardService.GetMonthlyProcurementTrendAsync(ct);
+            var monthlyPrTrendDto = await DashboardService.GetMonthlyPurchaseRequisitionTrendAsync(
+                ct
+            );
+            var recentProcsDto = await DashboardService.GetRecentProcurementsAsync(10, ct);
+            var pendingApprovalsDto = await DashboardService.GetPendingApprovalsDetailAsync(10, ct);
+            var jobTypeDistDto = await DashboardService.GetJobTypeDistributionAsync(ct);
+            var topVendorsDto = await DashboardService.GetTopVendorsAsync(10, ct);
+            var docApprovalStatsDto = await DashboardService.GetDocumentApprovalStatsAsync(ct);
+            var recentPurchaseReqsDto = await DashboardService.GetRecentPurchaseRequisitionsAsync(
+                10,
+                ct
+            );
+
+            return new DashboardViewModel
+            {
+                TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
+                ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
+                PendingApprovals = await DashboardService.GetPendingApprovalsCountAsync(ct),
+                TotalVendors = await DashboardService.GetTotalVendorsCountAsync(ct),
+
+                TotalRevenue = await DashboardService.GetTotalRevenueAsync(ct),
+                TotalCost = await DashboardService.GetTotalCostAsync(ct),
+                TotalProfit = await DashboardService.GetTotalProfitAsync(ct),
+
+                // Convert DTOs to ViewModels using Mapper
+                ProcurementsByStatus = procsByStatusDto.ToViewModelList(),
+                MonthlyProcurementTrend = monthlyTrendDto.ToViewModelList(),
+                MonthlyPurchaseRequisitionTrend = monthlyPrTrendDto.ToViewModelList(),
+                RecentProcurements = recentProcsDto.ToViewModelList(),
+                PendingApprovalsDetail = pendingApprovalsDto.ToViewModelList(),
+                JobTypeDistribution = jobTypeDistDto.ToViewModelList(),
+                TopVendors = topVendorsDto.ToViewModelList(),
+                DocumentApprovalStats = docApprovalStatsDto.ToViewModelList(),
+                RecentPurchaseRequisitions = recentPurchaseReqsDto.ToViewModelList(),
+                TotalPurchaseRequisitions =
+                    await DashboardService.GetTotalPurchaseRequisitionsCountAsync(ct),
+            };
         }
     }
 }

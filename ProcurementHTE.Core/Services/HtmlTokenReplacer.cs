@@ -18,18 +18,24 @@ namespace ProcurementHTE.Core.Services
         private readonly IProfitLossRepository _pnlRepo;
         private readonly IVendorRepository _vendorRepo;
         private readonly UserManager<User> _userManager;
+        private readonly IDocumentApprovalRuleRepository _ruleRepo;
+        private readonly RoleManager<Role> _roleManager;
 
         public HtmlTokenReplacer(
             IProcurementRepository procurementRepository,
             IProfitLossRepository pnlRepo,
             IVendorRepository vendorRepo,
-            UserManager<User> userManager
+            UserManager<User> userManager,
+            IDocumentApprovalRuleRepository ruleRepo,
+            RoleManager<Role> roleManager
         )
         {
             _procRepo = procurementRepository;
             _pnlRepo = pnlRepo;
             _vendorRepo = vendorRepo;
             _userManager = userManager;
+            _ruleRepo = ruleRepo;
+            _roleManager = roleManager;
         }
 
         #endregion
@@ -77,18 +83,46 @@ namespace ProcurementHTE.Core.Services
 
             var jobTypeName = proc.JobType?.TypeName;
             var picOpsName = await ResolveUserNameAsync(proc.PicOpsUserId);
+            var analystHteName = await ResolveUserNameAsync(proc.AnalystHteUserId);
             var asstMgrName = await ResolveUserNameAsync(proc.AssistantManagerUserId);
             var mgrName = await ResolveUserNameAsync(proc.ManagerUserId);
+
+            // Get Contract Total untuk approval logic
+            var contractTotal = await GetCtAsync(proc.ProcurementId);
+
+            // Approval logic based on amount
+            string submitterName;
+            string approver1Name;
+            string approver2Name;
+
+            if (contractTotal < 500_000_000m)
+            {
+                submitterName = analystHteName;
+                approver1Name = asstMgrName;
+                approver2Name = mgrName;
+            }
+            else
+            {
+                submitterName = asstMgrName;
+                approver1Name = mgrName;
+                approver2Name = await ResolveFirstUserNameByRoleAsync("Vice President");
+            }
+
+            // Replace tokens untuk approval workflow
+            html = ReplaceToken(html, "SubmitterName", submitterName);
+            html = ReplaceToken(html, "Approver1Name", approver1Name);
+            html = ReplaceToken(html, "Approver2Name", approver2Name);
 
             // Basic Procurement fields (reuse legacy token names for compatibility)
             html = ReplaceToken(html, "ProcNum", proc.ProcNum);
             html = ReplaceToken(html, "JobName", proc.JobName);
             html = ReplaceToken(html, "Note", proc.Note);
-            html = ReplaceToken(html, "SpkNumber", proc.SpkNumber);
             html = ReplaceToken(html, "Wonum", proc.Wonum);
+            html = ReplaceToken(html, "DocumentDate", FormatDate(proc.DocumentDate));
             html = ReplaceToken(html, "StartDate", FormatDate(proc.StartDate));
             html = ReplaceToken(html, "EndDate", FormatDate(proc.EndDate));
             html = ReplaceToken(html, "PicOpsUserId", picOpsName);
+            html = ReplaceToken(html, "AnalystHteUser", analystHteName);
             html = ReplaceToken(html, "AsstManagerUserId", asstMgrName);
             html = ReplaceToken(html, "ManagerUserId", mgrName);
             html = ReplaceToken(html, "LtcName", proc.LtcName);
@@ -99,6 +133,39 @@ namespace ProcurementHTE.Core.Services
             html = ReplaceToken(html, "UpdatedAt", FormatDate(proc.UpdatedAt));
             html = ReplaceToken(html, "CompletedAt", FormatDate(proc.CompletedAt));
 
+            // Role labels with Pjs (Penanggung Jawab Sementara) prefix
+            var analystHteRole = proc.AnalystHtePjs ? "Pjs. Analyst HTE & LTS" : "Analyst HTE & LTS";
+            var asstMgrRole = proc.AssistantManagerPjs ? "Pjs. Assistant Manager HTE" : "Assistant Manager HTE";
+            var mgrRole = proc.ManagerPjs ? "Pjs. Manager Transport & Logistic" : "Manager Transport & Logistic";
+            var vpRole = proc.VicePresidentPjs ? "Pjs. Vice President" : "Vice President";
+            var opDirRole = proc.OperationDirectorPjs ? "Pjs. Operation Director" : "Operation Director";
+            var presDirRole = proc.PresidentDirectorPjs ? "Pjs. President Director" : "President Director";
+
+            html = ReplaceToken(html, "AnalystHteRole", analystHteRole);
+            html = ReplaceToken(html, "AsstManagerRole", asstMgrRole);
+            html = ReplaceToken(html, "ManagerRole", mgrRole);
+            html = ReplaceToken(html, "VicePresidentRole", vpRole);
+            html = ReplaceToken(html, "OperationDirectorRole", opDirRole);
+            html = ReplaceToken(html, "PresidentDirectorRole", presDirRole);
+
+            var rksListHtml = GenerateRKSJangkaWaktuList(proc);
+            html = ReplaceToken(html, "RKSList", rksListHtml);
+
+            var rksSyaratHtml = GenerateRKSSyaratList(proc);
+            html = ReplaceToken(html, "RKSSyaratList", rksSyaratHtml);
+
+            html = ReplaceToken(html, "ProcurementCategory", proc.ProcurementCategory.ToString());
+
+            if (jobTypeName == "Moving" || jobTypeName == "Angkutan")
+            {
+                html = ReplaceToken(html, "ProcurementType", "PEKERJAAN");
+            }
+
+            if (jobTypeName == "StandBy")
+            {
+                html = ReplaceToken(html, "ProcurementType", "SEWA");
+            }
+
             // Additional new fields dari Procurement
             html = ReplaceToken(html, "ProjectRegion", proc.ProjectRegion.ToString());
             html = ReplaceToken(
@@ -106,16 +173,102 @@ namespace ProcurementHTE.Core.Services
                 "PotentialAccrualDate",
                 FormatDate(proc.PotentialAccrualDate)
             );
+            html = ReplaceToken(
+                html,
+                "TerbilangHari",
+                proc.StartDate.ToTerbilangHari(proc.EndDate, includeUnitWord: true)
+            );
+            html = ReplaceToken(
+                html,
+                "TerbilangHariKata",
+                proc.StartDate.ToTerbilangHari(proc.EndDate, includeUnitWord: false)
+            );
+
+            // Hitung jumlah hari (angka) antara StartDate dan EndDate
+            var jumlahHari = (int)(proc.EndDate.Date - proc.StartDate.Date).TotalDays;
+            html = ReplaceToken(html, "JumlahHari", jumlahHari.ToString());
+
             html = ReplaceToken(html, "SpmpNumber", proc.SpmpNumber);
             html = ReplaceToken(html, "MemoNumber", proc.MemoNumber);
+            if (int.TryParse(proc.MemoNumber, out var memoNumberInt))
+            {
+                html = ReplaceToken(html, "MemoNumberPage2", (memoNumberInt + 1).ToString());
+            }
+            else
+            {
+                html = ReplaceToken(html, "MemoNumberPage2", "-");
+            }
             html = ReplaceToken(html, "OeNumber", proc.OeNumber);
             html = ReplaceToken(html, "RaNumber", proc.RaNumber);
             html = ReplaceToken(html, "LtcName", proc.LtcName);
+            html = ReplaceToken(html, "SpkNumber", proc.SpkNumber);
+            //html = ReplaceToken(html, "PrNumber", proc.PrNumber);
 
             // Relations
             html = ReplaceToken(html, "JobTypeName", jobTypeName);
             html = ReplaceToken(html, "StatusName", proc.Status?.StatusName);
             html = ReplaceToken(html, "UserName", proc.User?.UserName);
+
+            // Conditional approval roles based on CT (Grand Total PNL) and template/doc
+            var docName = MapTemplateKeyToDocName(templateKey);
+            var grandTotal = await GetCtAsync(proc.ProcurementId);
+            var (conditionalSubmit, conditionalApprove, conditionalSubmitUserId, conditionalApproveUserId) = await ResolveConditionalRolesAsync(
+                proc,
+                docName,
+                grandTotal
+            );
+            html = ReplaceToken(html, "ConditionalSubmitRole", conditionalSubmit);
+            html = ReplaceToken(html, "ConditionalApproveRole", conditionalApprove);
+
+            // Resolve names: prioritize UserId from config, fallback to role-based lookup
+            var conditionalSubmitName = !string.IsNullOrWhiteSpace(conditionalSubmitUserId)
+                ? await ResolveUserNameByIdAsync(conditionalSubmitUserId)
+                : await ResolveUserNameByRoleWithProcDataAsync(
+                    conditionalSubmit,
+                    analystHteName,
+                    asstMgrName,
+                    mgrName
+                );
+            var conditionalApproveName = !string.IsNullOrWhiteSpace(conditionalApproveUserId)
+                ? await ResolveUserNameByIdAsync(conditionalApproveUserId)
+                : await ResolveUserNameByRoleWithProcDataAsync(
+                    conditionalApprove,
+                    analystHteName,
+                    asstMgrName,
+                    mgrName
+                );
+            html = ReplaceToken(html, "ConditionalSubmitName", conditionalSubmitName);
+            html = ReplaceToken(html, "ConditionalApproveName", conditionalApproveName);
+
+            // For PNL document: only show 4th signature box if value >= 500 million
+            // Below 500 million, the 3 default boxes (Analyst, Asst Manager, Manager TNL) are sufficient
+            var isPnlDoc = docName == "Profit & Loss";
+            var needExtraApprove =
+                !string.IsNullOrWhiteSpace(conditionalApprove) 
+                && conditionalApprove != "-"
+                && (!isPnlDoc || grandTotal >= 500_000_000m); // PNL needs >= 500M for 4th box
+            
+            // Apply Pjs prefix to conditional approve role if needed
+            var conditionalApproveRoleWithPjs = conditionalApprove switch
+            {
+                "Vice President" => vpRole,
+                "Operation Director" => opDirRole,
+                "President Director" => presDirRole,
+                _ => conditionalApprove
+            };
+                
+            var extraHeader = needExtraApprove
+                ? "<td style=\"width: 25%\">Disetujui Oleh</td>"
+                : string.Empty;
+            var extraBlank = needExtraApprove
+                ? "<td class=\"signature-content\"></td>"
+                : string.Empty;
+            var extraRoleCell = needExtraApprove ? $"<td>{conditionalApproveRoleWithPjs}</td>" : string.Empty;
+            html = ReplaceToken(html, "ConditionalApproveHeaderCell", extraHeader);
+            html = ReplaceToken(html, "ConditionalApproveBlankCell", extraBlank);
+            html = ReplaceToken(html, "ConditionalApproveRoleCell", extraRoleCell);
+            var extraNameCell = needExtraApprove ? $"<td>{conditionalApproveName}</td>" : string.Empty;
+            html = ReplaceToken(html, "ConditionalApproveNameCell", extraNameCell);
 
             // ProcDetails - Generate table rows
             if (proc.ProcDetails != null && proc.ProcDetails.Count != 0)
@@ -177,6 +330,11 @@ namespace ProcurementHTE.Core.Services
                     "SelectedVendorFinalOffer",
                     FormatDecimal(pnl.SelectedVendorFinalOffer)
                 );
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorFinalOfferTerbilang",
+                    pnl.SelectedVendorFinalOffer.ToTerbilangRupiah()
+                );
                 html = ReplaceToken(html, "Profit", FormatDecimal(pnl.Profit));
                 html = ReplaceToken(html, "ProfitPercent", pnl.ProfitPercent.ToString("N2", Id));
                 html = ReplaceToken(html, "Distance", FormatDecimal(pnl.Distance));
@@ -185,19 +343,73 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "TotalRevenue", FormatCurrency(revenueTotal));
                 html = ReplaceToken(html, "RevenueTerbilang", revenueTotal.ToTerbilangRupiah());
                 html = ReplaceToken(html, "NoLetter", pnl.NoLetterSelectedVendor);
+                var justifikasiItem =
+                    pnl.SelectedVendorFinalOffer > 300_000_000m
+                        ? "<li>Justifikasi</li>"
+                        : string.Empty;
+                html = ReplaceToken(html, "JustifikasiListItem", justifikasiItem);
+
+                // Token untuk tanggal terima WO (bisa di-extend sesuai kebutuhan)
+                html = ReplaceToken(html, "TglTerimaWO", FormatDate(proc.StartDate));
+
+                // Conditional sidebar rows based on JobType
+                var sidebarRows = GenerateSidebarAdditionalRows(jobTypeName, pnl, FormatDate, FormatDecimal);
+                html = ReplaceToken(html, "SidebarAdditionalRows", sidebarRows);
+
+                // Token TglMulaiSewa dan TglMulaiMoving
+                html = ReplaceToken(html, "TglMulaiSewa", FormatDate(pnl.TglMulaiSewa));
+                html = ReplaceToken(html, "TglMulaiMoving", FormatDate(pnl.TglMulaiMoving));
+
+                // Generate table header based on JobType
+                var itemsTableHeader = GenerateItemsTableHeader(jobTypeName);
+                html = ReplaceToken(html, "PnlItemsTableHeader", itemsTableHeader);
+
+                // Generate colspan for Total Tagihan row
+                var itemsTableColspan = GetItemsTableColspan(jobTypeName);
+                html = ReplaceToken(html, "PnlItemsTableColspan", itemsTableColspan.ToString());
+
+                var rincianSanksiRKS =
+                    pnl.SelectedVendorFinalOffer < 300_000_000m
+                        ? "Jumlah denda sebesar 1‰ (satu mil) dari total Nilai Kontrak untuk setiap hari keterlambatan dengan maksimum denda sebesar 5% (lima persen)"
+                        : "Jumlah denda sebesar 1% (satu persen) dari total Nilai Kontrak untuk setiap hari keterlambatan dengan maksimum denda sebesar 5% (lima persen)";
+                html = ReplaceToken(html, "RincianSanksiRKS", rincianSanksiRKS);
 
                 // Aggregat berdasarkan ProfitLossItem
                 if (pnl.Items != null && pnl.Items.Count != 0)
                 {
-                    var itemsHtml = GenerateItemsTable(pnl.Items, templateKey);
+                    var itemsHtml = GenerateItemsTable(pnl.Items, templateKey, jobTypeName);
                     html = ReplaceToken(html, "PnlItemsTable", itemsHtml);
                 }
 
                 // Tabel penawaran vendor
                 if (pnl.VendorOffers != null && pnl.VendorOffers.Count != 0)
                 {
-                    var vendorOfferHtml = GenerateOfferTable(pnl, proc);
+                    var vendorOfferHtml = GenerateOfferTable(pnl, proc, jobTypeName);
                     html = ReplaceToken(html, "VendorOfferTable", vendorOfferHtml);
+
+                    var vendorNegotiationHtml = GenerateVendorNegotiationTable(
+                        pnl,
+                        proc,
+                        revenueTotal
+                    );
+                    html = ReplaceToken(html, "VendorNegotiationTable", vendorNegotiationHtml);
+
+                    var highestRound = pnl.VendorOffers.Max(vo => vo.Round);
+                    var highestRoundDate = pnl
+                        .VendorOffers.Where(vo => vo.Round == highestRound)
+                        .OrderByDescending(vo => vo.CreatedAt)
+                        .FirstOrDefault()
+                        ?.CreatedAt;
+                    html = ReplaceToken(
+                        html,
+                        "Round",
+                        highestRound > 0 ? highestRound.ToString("N0", Id) : "-"
+                    );
+                    html = ReplaceToken(
+                        html,
+                        "RoundCreatedAt",
+                        highestRoundDate.HasValue ? FormatDate(highestRoundDate) : "-"
+                    );
                 }
                 else
                 {
@@ -206,6 +418,13 @@ namespace ProcurementHTE.Core.Services
                         "VendorOfferTable",
                         "<p class='text-center'>Tidak ada penawaran vendor</p>"
                     );
+                    html = ReplaceToken(
+                        html,
+                        "VendorNegotiationTable",
+                        "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>"
+                    );
+                    html = ReplaceToken(html, "Round", "-");
+                    html = ReplaceToken(html, "RoundCreatedAt", "-");
                 }
 
                 // Data vendor terpilih (dari SelectedVendorId di ProfitLoss)
@@ -259,7 +478,7 @@ namespace ProcurementHTE.Core.Services
                 }
 
                 // ====== Tabel Profit & Loss Estimate (summary hijau) ======
-                var pnlEstimateHtml = GeneratePnlEstimateTable(pnl, proc);
+                var pnlEstimateHtml = GeneratePnlEstimateTable(pnl, proc, jobTypeName);
                 html = ReplaceToken(html, "PnlEstimateTable", pnlEstimateHtml);
             }
             else
@@ -283,6 +502,48 @@ namespace ProcurementHTE.Core.Services
                 html = ReplaceToken(html, "SelectedVendorCity", "-");
                 html = ReplaceToken(html, "SelectedVendorProvince", "-");
                 html = ReplaceToken(html, "SelectedVendorEmail", "-");
+                html = ReplaceToken(html, "JustifikasiListItem", string.Empty);
+                html = ReplaceToken(html, "Round", "-");
+                html = ReplaceToken(html, "RoundCreatedAt", "-");
+                html = ReplaceToken(
+                    html,
+                    "VendorNegotiationTable",
+                    "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>"
+                );
+            }
+
+            // Detail tabel penawaran (harga & total per item) untuk vendor terpilih (round tertinggi)
+            if (pnl != null)
+            {
+                decimal selectedVendorOfferTotal;
+                var offerDetailTable = GenerateOfferDetailTable(
+                    pnl,
+                    proc,
+                    out selectedVendorOfferTotal
+                );
+                html = ReplaceToken(html, "OfferDetailTable", offerDetailTable);
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorOfferTotal",
+                    selectedVendorOfferTotal > 0 ? selectedVendorOfferTotal.ToString("C0", Id) : "-"
+                );
+                html = ReplaceToken(
+                    html,
+                    "SelectedVendorOfferTotalTerbilang",
+                    selectedVendorOfferTotal > 0
+                        ? selectedVendorOfferTotal.ToTerbilangRupiah()
+                        : "-"
+                );
+            }
+            else
+            {
+                html = ReplaceToken(
+                    html,
+                    "OfferDetailTable",
+                    "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>"
+                );
+                html = ReplaceToken(html, "SelectedVendorOfferTotal", "-");
+                html = ReplaceToken(html, "SelectedVendorOfferTotalTerbilang", "-");
             }
 
             //Accrual & realization amount (pakai fallback ke total Revenue / OperatorCost)
@@ -304,6 +565,78 @@ namespace ProcurementHTE.Core.Services
         }
 
         #region Helper Method
+        /// <summary>
+        /// Returns (SubmitRole, ApproveRole, SubmitUserId, ApproveUserId)
+        /// </summary>
+        private async Task<(string SubmitRole, string ApproveRole, string? SubmitUserId, string? ApproveUserId)> ResolveConditionalRolesAsync(
+            Procurement procurement,
+            string? docName,
+            decimal ct
+        )
+        {
+            if (string.IsNullOrWhiteSpace(docName))
+                return ("-", "-", null, null);
+
+            var rules = await _ruleRepo.GetActiveByDocNameAsync(
+                docName,
+                procurement.JobTypeId,
+                procurement.ProcurementCategory
+            );
+
+            var hit = rules.FirstOrDefault(r => ct >= r.MinAmount && ct <= r.MaxAmount);
+            if (hit == null)
+                return ("-", "-", null, null);
+
+            var submitName = await ResolveRoleNameAsync(hit.SubmitterRoleId);
+            var approveName = await ResolveRoleNameAsync(hit.ApproverRoleId);
+            return (submitName, approveName, hit.SubmitterUserId, hit.ApproverUserId);
+        }
+
+        private async Task<decimal> GetCtAsync(string procurementId)
+        {
+            var pnl = await _pnlRepo.GetLatestByProcurementIdAsync(procurementId);
+            if (pnl == null)
+                return 0m;
+
+            if (pnl.SelectedVendorFinalOffer > 0m)
+                return pnl.SelectedVendorFinalOffer;
+
+            if (pnl.AccrualAmount.HasValue && pnl.AccrualAmount.Value > 0m)
+                return pnl.AccrualAmount.Value;
+
+            var revenueTotal = pnl.Items?.Sum(i => i.Revenue) ?? 0m;
+            if (revenueTotal > 0m)
+                return revenueTotal;
+
+            return 0m;
+        }
+
+        private async Task<string> ResolveRoleNameAsync(string? roleId)
+        {
+            if (string.IsNullOrWhiteSpace(roleId))
+                return "-";
+
+            var role = await _roleManager.FindByIdAsync(roleId);
+            if (role == null)
+                return roleId;
+
+            return !string.IsNullOrWhiteSpace(role.Name) ? role.Name! : roleId;
+        }
+
+        private static string? MapTemplateKeyToDocName(string? templateKey)
+        {
+            if (string.IsNullOrWhiteSpace(templateKey))
+                return null;
+
+            return templateKey switch
+            {
+                "ProfitLoss" => "Profit & Loss",
+                "OwnerEstimate" => "Owner Estimate (OE)",
+                "RKS" => "Rencana Kerja dan Syarat-Syarat (RKS)",
+                "Justifikasi" => "Justifikasi",
+                _ => templateKey, // fallback: gunakan templateKey apa adanya
+            };
+        }
 
         private static string ReplaceToken(string html, string tokenName, string? value)
         {
@@ -315,6 +648,81 @@ namespace ProcurementHTE.Core.Services
                 _ => replacement,
                 RegexOptions.CultureInvariant | RegexOptions.Multiline
             );
+        }
+
+        private async Task<string> ResolveFirstUserNameByRoleAsync(string? roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName) || roleName == "-")
+                return "-";
+
+            var users = await _userManager.GetUsersInRoleAsync(roleName);
+            var user = users?.FirstOrDefault();
+
+            if (user == null)
+                return "-";
+
+            if (!string.IsNullOrWhiteSpace(user.FullName))
+                return user.FullName;
+
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+                return user.UserName;
+
+            return user.Email ?? "-";
+        }
+
+        private async Task<string> ResolveUserNameByIdAsync(string? userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return "-";
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return "-";
+
+            if (!string.IsNullOrWhiteSpace(user.FullName))
+                return user.FullName;
+
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+                return user.UserName;
+
+            return user.Email ?? "-";
+        }
+
+        private async Task<string> ResolveUserNameByRoleWithProcDataAsync(
+            string? roleName,
+            string? analystHteName,
+            string? asstMgrName,
+            string? mgrName
+        )
+        {
+            if (string.IsNullOrWhiteSpace(roleName) || roleName == "-")
+                return "-";
+
+            if (roleName.Equals("Analyst HTE & LTS", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(analystHteName))
+                    return analystHteName;
+
+                return await ResolveFirstUserNameByRoleAsync(roleName);
+            }
+
+            if (roleName.Equals("Assistant Manager HTE", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(asstMgrName))
+                    return asstMgrName;
+
+                return await ResolveFirstUserNameByRoleAsync(roleName);
+            }
+
+            if (roleName.Equals("Manager Transport & Logistic", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(mgrName))
+                    return mgrName;
+
+                return await ResolveFirstUserNameByRoleAsync(roleName);
+            }
+
+            return await ResolveFirstUserNameByRoleAsync(roleName);
         }
 
         #endregion
@@ -361,6 +769,85 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
+        private static string GenerateOfferDetailTable(
+            ProfitLoss pnl,
+            Procurement proc,
+            out decimal selectedVendorTotal
+        )
+        {
+            selectedVendorTotal = 0m;
+
+            if (pnl.VendorOffers == null || pnl.VendorOffers.Count == 0)
+                return "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
+            var selectedVendorId = !string.IsNullOrWhiteSpace(pnl.SelectedVendorId)
+                ? pnl.SelectedVendorId
+                : pnl.VendorOffers.GroupBy(o => o.VendorId).OrderBy(g => g.Key).First().Key;
+
+            var offersForSelectedVendor = pnl
+                .VendorOffers.Where(o => o.VendorId == selectedVendorId)
+                .ToList();
+
+            if (offersForSelectedVendor.Count == 0)
+                return "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
+            var sb = new StringBuilder();
+            var no = 1;
+
+            // Peta ProcOffer buat ambil deskripsi/unit
+            var procOffers =
+                proc.ProcOffers?.ToDictionary(o => o.ProcOfferId, o => o)
+                ?? new Dictionary<string, ProcOffer>();
+
+            // Peta PNL Items untuk quantity jika ada
+            var pnlItems =
+                pnl.Items?.ToDictionary(i => i.ProcOfferId, i => i)
+                ?? new Dictionary<string, ProfitLossItem>();
+
+            // Kelompokkan per item
+            var itemGroups = offersForSelectedVendor
+                .GroupBy(o => o.ProcOfferId)
+                .OrderBy(g => g.First().ProcOffer.ItemPenawaran);
+
+            foreach (var group in itemGroups)
+            {
+                var highestRound = group.Max(o => o.Round);
+                var offer = group
+                    .Where(o => o.Round == highestRound && o.Price > 0)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .FirstOrDefault();
+
+                if (offer == null)
+                    continue;
+
+                procOffers.TryGetValue(group.Key, out var procOffer);
+                pnlItems.TryGetValue(group.Key, out var pnlItem);
+
+                var desc = procOffer?.ItemPenawaran ?? "-";
+                var unit = procOffer?.Unit ?? offer.ProcOffer?.Unit ?? "-";
+                var qty = pnlItem?.UnitQty ?? offer.QuantityItem;
+                var trip = offer.QuantityOfUnit > 0 ? offer.QuantityOfUnit : 1;
+                var price = offer.Price;
+                var total = price * qty * trip;
+
+                selectedVendorTotal += total;
+
+                sb.AppendLine("<tr>");
+                sb.AppendLine($"  <td class='text-center'>{no++}</td>");
+                sb.AppendLine($"  <td>{desc}</td>");
+                sb.AppendLine($"  <td class='text-center'>{qty}</td>");
+                sb.AppendLine($"  <td class='text-center'>{unit}</td>");
+                sb.AppendLine($"  <td class='text-end'>{price.ToString("C0", Id)}</td>");
+                sb.AppendLine($"  <td class='text-end'>{total.ToString("C0", Id)}</td>");
+                sb.AppendLine("</tr>");
+            }
+
+            if (selectedVendorTotal == 0m && sb.Length == 0)
+                return "<tr><td colspan='6' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
+            return sb.ToString();
+        }
+
         private static string GenerateOffersList(ICollection<ProcOffer> offers)
         {
             var sb = new StringBuilder();
@@ -377,38 +864,185 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GenerateItemsTable(ICollection<ProfitLossItem> items, string? docType)
+        private static string GenerateItemsTable(ICollection<ProfitLossItem> items, string? docType, string? jobTypeName = null)
         {
             var sb = new StringBuilder();
             var no = 1;
 
             foreach (var item in items)
             {
-                var price = item.TarifAwal + (item.TarifAdd * item.KmPer25);
-                var revenue = price * item.Quantity;
                 sb.AppendLine("<tr>");
                 sb.AppendLine($"  <td class='text-center'>{no++}</td>");
-                sb.AppendLine($"  <td>{item.ProcOffer.ItemPenawaran}</td>");
-                sb.AppendLine($"  <td class='text-center'>{item.Quantity}</td>");
+                sb.AppendLine($"  <td>{item.ProcOffer?.ItemPenawaran ?? "-"}</td>");
+                sb.AppendLine($"  <td class='text-center'>{item.UnitQty}</td>");
+                sb.AppendLine($"  <td class='text-center'>{item.ProcOffer?.Unit ?? "-"}</td>");
+
                 if (docType == "OwnerEstimate")
                 {
-                    sb.AppendLine($"  <td class='text-center'>{item.ProcOffer.Unit}</td>");
+                    var price = item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0));
                     sb.AppendLine($"  <td class='text-end'>{price.ToString("C0", Id)}</td>");
+                    var revenue = price * item.UnitQty;
+                    sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
                 }
-                if (docType == "ProfitLoss")
+                else if (docType == "ProfitLoss")
                 {
-                    sb.AppendLine(
-                        $"  <td class='text-end'>{item.TarifAwal.ToString("N0", Id)}</td>"
-                    );
-                    sb.AppendLine(
-                        $"  <td class='text-end'>{item.TarifAdd.ToString("N0", Id)}</td>"
-                    );
-                    sb.AppendLine($"  <td class='text-center'>{item.KmPer25}</td>");
-                    sb.AppendLine(
-                        $"  <td class='text-end'>{item.OperatorCost.ToString("N0", Id)}</td>"
-                    );
+                    // Conditional rendering based on JobType
+                    if (jobTypeName == "Angkutan")
+                    {
+                        // Angkutan: Tarif 400km, Tarif Add, KM/25, Operator Cost, Revenue
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.TarifAdd ?? 0).ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{item.KmPer25 ?? 0}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.OperatorCost ?? 0).ToString("N0", Id)}</td>");
+                        var revenue = (item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0))) * item.UnitQty;
+                        sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+                    }
+                    else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                    {
+                        // Sewa Unit: Durasi, Unit Revenue, Base Price, Revenue
+                        var durasi = item.Quantity ?? 1;
+                        var unitRevenue = item.ProcOffer?.UnitRevenue ?? "-";
+                        sb.AppendLine($"  <td class='text-center'>{durasi.ToString("0.##", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{unitRevenue}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
+                    }
+                    else if (jobTypeName == "Moving")
+                    {
+                        // Moving: Qty Revenue, Unit Revenue, Base Price, Revenue
+                        var quantity = item.Quantity ?? 1;
+                        var unitRevenue = item.ProcOffer?.UnitRevenue ?? "-";
+                        sb.AppendLine($"  <td class='text-center'>{quantity.ToString("0.##", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{unitRevenue}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
+                    }
+                    else
+                    {
+                        // Default/fallback: use original Angkutan logic
+                        sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.TarifAdd ?? 0).ToString("N0", Id)}</td>");
+                        sb.AppendLine($"  <td class='text-center'>{item.KmPer25 ?? 0}</td>");
+                        sb.AppendLine($"  <td class='text-end'>{(item.OperatorCost ?? 0).ToString("N0", Id)}</td>");
+                        var revenue = (item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0))) * item.UnitQty;
+                        sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+                    }
                 }
-                sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+
+                sb.AppendLine("</tr>");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GenerateItemsTableHeader(string? jobTypeName)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<tr class='text-center'>");
+            sb.AppendLine("  <th scope='col' style='width: 1.5rem'>No</th>");
+            sb.AppendLine("  <th class='text-start' scope='col' style='width: 14rem'>Item</th>");
+            sb.AppendLine("  <th scope='col' style='width: 3rem'>Qty Items</th>");
+            sb.AppendLine("  <th scope='col' style='width: 4rem'>Unit Items</th>");
+
+            if (jobTypeName == "Angkutan")
+            {
+                // Angkutan: Tarif 400km, Tarif Add, KM/25, Operator Cost, Jumlah
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Tarif 400 km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 6rem'>Tarif Add</th>");
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>KM / 25 Km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Operator Cost</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+            else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+            {
+                // Sewa Unit: Durasi, Unit Revenue, Base Price, Jumlah
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>Durasi</th>");
+                sb.AppendLine("  <th scope='col' style='width: 5rem'>Unit Revenue</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Base Price</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+            else if (jobTypeName == "Moving")
+            {
+                // Moving: Qty Revenue, Unit Revenue, Base Price, Jumlah
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>Qty Revenue</th>");
+                sb.AppendLine("  <th scope='col' style='width: 5rem'>Unit Revenue</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Base Price</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+            else
+            {
+                // Default/fallback: Angkutan layout
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Tarif 400 km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 6rem'>Tarif Add</th>");
+                sb.AppendLine("  <th scope='col' style='width: 4rem'>KM / 25 Km</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Operator Cost</th>");
+                sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
+            }
+
+            sb.AppendLine("</tr>");
+            return sb.ToString();
+        }
+
+        private static int GetItemsTableColspan(string? jobTypeName)
+        {
+            // Calculate colspan for "Total Tagihan" row based on JobType
+            // Base columns: No, Item, Qty Items, Unit Items = 4
+            if (jobTypeName == "Angkutan")
+            {
+                // + Tarif 400km, Tarif Add, KM/25, Operator Cost = 4 more = 8 total
+                return 8;
+            }
+            else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit" || jobTypeName == "Moving")
+            {
+                // + Durasi/Quantity, Unit Revenue, Base Price = 3 more = 7 total
+                return 7;
+            }
+            // Default: Angkutan layout
+            return 8;
+        }
+
+        private static string GenerateSidebarAdditionalRows(
+            string? jobTypeName,
+            ProfitLoss pnl,
+            Func<DateTime?, string> formatDate,
+            Func<decimal?, string, string> formatDecimal)
+        {
+            var sb = new StringBuilder();
+
+            if (jobTypeName == "Angkutan")
+            {
+                // Angkutan: Tampilkan Jarak (untuk perhitungan KM/25)
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Jarak</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} KM</td>");
+                sb.AppendLine("</tr>");
+            }
+            else if (jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+            {
+                // Sewa Unit: Tampilkan Tanggal Mulai Sewa (tanpa Jarak)
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Tanggal Mulai Sewa</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDate(pnl.TglMulaiSewa)}</td>");
+                sb.AppendLine("</tr>");
+            }
+            else if (jobTypeName == "Moving")
+            {
+                // Moving: Tampilkan BOTH Tanggal Mulai Moving DAN Jarak (info only)
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Tgl Mulai Moving</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDate(pnl.TglMulaiMoving)}</td>");
+                sb.AppendLine("</tr>");
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Jarak</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} Km</td>");
+                sb.AppendLine("</tr>");
+            }
+            else
+            {
+                // Default: Tampilkan Jarak seperti Angkutan
+                sb.AppendLine("<tr>");
+                sb.AppendLine("  <td>Jarak</td>");
+                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} KM</td>");
                 sb.AppendLine("</tr>");
             }
 
@@ -443,7 +1077,7 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GenerateOfferTable(ProfitLoss pnl, Procurement proc)
+        private static string GenerateOfferTable(ProfitLoss pnl, Procurement proc, string? jobTypeName = null)
         {
             if (pnl.VendorOffers == null || pnl.VendorOffers.Count == 0)
             {
@@ -456,6 +1090,14 @@ namespace ProcurementHTE.Core.Services
             var procOffersById = procOffers.ToDictionary(o => o.ProcOfferId, o => o);
 
             var sb = new StringBuilder();
+
+            // Determine column labels based on JobType
+            var tripLabel = jobTypeName switch
+            {
+                "StandBy" or "Sewa Unit" => "Durasi",
+                "Moving" => "Qty Revenue",
+                _ => "Trip"
+            };
 
             // Group berdasarkan vendor
             var vendorGroups = pnl
@@ -496,13 +1138,21 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine(
                     "        <th class='blue-header text-center' style='width: 1rem'>No</th>"
                 );
-                sb.AppendLine("        <th class='blue-header' style='width: 15rem'>Item</th>");
+                sb.AppendLine("        <th class='blue-header' style='width: 12rem'>Item</th>");
                 sb.AppendLine(
-                    "        <th class='blue-header text-center' style='width: 2rem'>Unit</th>"
+                    "        <th class='blue-header text-center' style='width: 3rem'>Qty Items</th>"
                 );
                 sb.AppendLine(
-                    "        <th class='blue-header text-center' style='width: 5rem'>Trip</th>"
+                    "        <th class='blue-header text-center' style='width: 4rem'>Unit Items</th>"
                 );
+                sb.AppendLine(
+                    $"        <th class='blue-header text-center' style='width: 4rem'>{tripLabel}</th>"
+                );
+                // Tambah kolom Unit Revenue untuk Moving/Sewa Unit
+                if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                {
+                    sb.AppendLine("        <th class='blue-header text-center' style='width: 4rem'>Unit Revenue</th>");
+                }
                 sb.AppendLine("        <th class='blue-header text-center'>Harga awal</th>");
 
                 // Kolom Harga Nego #1..#n (dinamis dari round)
@@ -532,13 +1182,24 @@ namespace ProcurementHTE.Core.Services
                     var itemName =
                         baseOffer?.ItemPenawaran ?? pnlItem?.ProcOffer?.ItemPenawaran ?? "-";
 
-                    var qty = pnlItem?.Quantity ?? baseOffer?.Qty ?? 0;
+                    var qty = pnlItem?.UnitQty ?? baseOffer?.Qty ?? 0;
 
                     // Trip & unit diambil dari penawaran vendor (asumsi: sama untuk semua round)
                     var firstOfferForItem = itemGroup.OrderBy(vo => vo.Round).First();
 
                     var unit = baseOffer?.Unit ?? "-";
-                    var trip = firstOfferForItem.Trip; // property Trip di VendorOffer
+                    
+                    // Untuk Moving/Sewa Unit, Quantity/Durasi diambil dari ProfitLossItem.Quantity
+                    // Untuk Angkutan, tetap pakai QuantityOfUnit dari VendorOffer
+                    decimal trip;
+                    if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                    {
+                        trip = pnlItem?.Quantity ?? firstOfferForItem.QuantityOfUnit;
+                    }
+                    else
+                    {
+                        trip = firstOfferForItem.QuantityOfUnit;
+                    }
 
                     // List harga per round (nullable), indeks 0 = round minRound (Harga awal)
                     var pricesPerRound = new decimal?[totalRoundCount];
@@ -586,11 +1247,20 @@ namespace ProcurementHTE.Core.Services
                     }
 
                     // RENDER BARIS ITEM
+                    // Ambil Unit Revenue dari baseOffer
+                    var unitRevenue = baseOffer?.UnitRevenue ?? pnlItem?.ProcOffer?.UnitRevenue ?? "-";
+
                     sb.AppendLine("      <tr>");
                     sb.AppendLine($"        <td class='text-center'>{no++}</td>");
                     sb.AppendLine($"        <td>{itemName}</td>");
                     sb.AppendLine($"        <td class='text-center'>{qty.ToString("N0", Id)}</td>");
-                    sb.AppendLine($"        <td class='text-center'>{trip}</td>");
+                    sb.AppendLine($"        <td class='text-center'>{unit}</td>");
+                    sb.AppendLine($"        <td class='text-center'>{trip.ToString("0.##", Id)}</td>");
+                    // Tambah Unit Revenue untuk Moving/Sewa Unit
+                    if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                    {
+                        sb.AppendLine($"        <td class='text-center'>{unitRevenue}</td>");
+                    }
 
                     for (var idx = 0; idx < totalRoundCount; idx++)
                     {
@@ -617,7 +1287,12 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine("    <tfoot>");
                 sb.AppendLine("      <tr>");
 
-                var colspan = 4 + totalRoundCount; // No + Uraian + Unit + Trip + semua harga
+                // No + Item + Qty Items + Unit Items + Trip/Durasi + (Unit Revenue jika Moving/Sewa) + semua harga
+                var colspan = 5 + totalRoundCount;
+                if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                {
+                    colspan += 1; // tambah 1 untuk kolom Unit Revenue
+                }
                 sb.AppendLine($"        <th colspan='{colspan}'>Tagihan</th>");
                 sb.AppendLine($"        <th class='text-end'>{grandTotal.ToString("N0", Id)}</th>");
                 sb.AppendLine("      </tr>");
@@ -629,7 +1304,7 @@ namespace ProcurementHTE.Core.Services
             return sb.ToString();
         }
 
-        private static string GeneratePnlEstimateTable(ProfitLoss pnl, Procurement proc)
+        private static string GeneratePnlEstimateTable(ProfitLoss pnl, Procurement proc, string? jobTypeName = null)
         {
             var sb = new StringBuilder();
 
@@ -696,8 +1371,18 @@ namespace ProcurementHTE.Core.Services
 
                         // qty pakai PNL kalau ada, kalau tidak pakai qty dari penawaran vendor
                         pnlItemsByOfferId.TryGetValue(itemGroup.Key, out var pnlItem);
-                        var qty = pnlItem?.Quantity ?? offerForRound.Quantity;
-                        var trip = offerForRound.Trip;
+                        var qty = pnlItem?.UnitQty ?? offerForRound.QuantityItem;
+                        
+                        // Untuk Moving/Sewa Unit, trip diambil dari ProfitLossItem.Quantity
+                        decimal trip;
+                        if (jobTypeName == "Moving" || jobTypeName == "StandBy" || jobTypeName == "Sewa Unit")
+                        {
+                            trip = pnlItem?.Quantity ?? offerForRound.QuantityOfUnit;
+                        }
+                        else
+                        {
+                            trip = offerForRound.QuantityOfUnit;
+                        }
 
                         if (qty <= 0)
                             continue;
@@ -761,7 +1446,7 @@ namespace ProcurementHTE.Core.Services
             // --- 3. Bangun HTML tabel (layout mirip contoh) ---
 
             sb.AppendLine(
-                "<table class='table table-bordered table-sm align-middle mb-5 border-black'>"
+                "<table class='table table-bordered table-sm align-middle mb-3 border-black'>"
             );
             sb.AppendLine("  <thead>");
             sb.AppendLine("    <tr>");
@@ -875,6 +1560,165 @@ namespace ProcurementHTE.Core.Services
 
             sb.AppendLine("  </tbody>");
             sb.AppendLine("</table>");
+
+            return sb.ToString();
+        }
+
+        private static string GenerateVendorNegotiationTable(
+            ProfitLoss pnl,
+            Procurement proc,
+            decimal revenueTotal
+        )
+        {
+            _ = proc; // currently tidak dipakai, disimpan untuk kemungkinan kebutuhan data lain
+
+            if (pnl.VendorOffers == null || pnl.VendorOffers.Count == 0)
+                return "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+
+            var pnlItems = pnl.Items ?? new List<ProfitLossItem>();
+            var pnlItemsByOfferId = pnlItems.ToDictionary(i => i.ProcOfferId, i => i);
+
+            decimal CalcTotalForRound(IEnumerable<VendorOffer> offers, int round)
+            {
+                decimal total = 0m;
+                var hasRow = false;
+
+                foreach (var group in offers.GroupBy(o => o.ProcOfferId))
+                {
+                    var offer = group.FirstOrDefault(o => o.Round == round);
+                    if (offer == null || offer.Price <= 0)
+                        continue;
+
+                    pnlItemsByOfferId.TryGetValue(group.Key, out var pnlItem);
+                    var qty = pnlItem?.UnitQty ?? offer.QuantityItem;
+                    if (qty <= 0)
+                        continue;
+
+                    var trip = offer.QuantityOfUnit > 0 ? offer.QuantityOfUnit : 1;
+                    total += offer.Price * qty * trip;
+                    hasRow = true;
+                }
+
+                return hasRow ? total : 0m;
+            }
+
+            var rows = new StringBuilder();
+
+            var vendorGroups = pnl
+                .VendorOffers.GroupBy(o => o.VendorId)
+                .OrderBy(g => g.First().Vendor.VendorName);
+
+            foreach (var vendorGroup in vendorGroups)
+            {
+                var minRound = vendorGroup.Min(o => o.Round);
+                var maxRound = vendorGroup.Max(o => o.Round);
+
+                var firstOfferTotal = CalcTotalForRound(vendorGroup, minRound);
+                var negoTotal = CalcTotalForRound(vendorGroup, maxRound);
+
+                if (firstOfferTotal == 0 && negoTotal == 0)
+                    continue;
+
+                var vendorName = vendorGroup.First().Vendor?.VendorName ?? "-";
+
+                string remark;
+                if (revenueTotal > 0 && negoTotal > 0)
+                {
+                    var profitPercent = Math.Round(
+                        ((revenueTotal - negoTotal) / revenueTotal) * 100m,
+                        2
+                    );
+                    remark = $"PROFIT {profitPercent.ToString("N2", Id)}%";
+                }
+                else
+                {
+                    remark = "-";
+                }
+
+                rows.AppendLine("<tr>");
+                rows.AppendLine($"  <td>{vendorName}</td>");
+                rows.AppendLine(
+                    $"  <td class='text-end'>{firstOfferTotal.ToString("C0", Id)}</td>"
+                );
+                rows.AppendLine($"  <td class='text-end'>{negoTotal.ToString("C0", Id)}</td>");
+                rows.AppendLine($"  <td>{remark}</td>");
+                rows.AppendLine("</tr>");
+            }
+
+            return rows.Length > 0
+                ? rows.ToString()
+                : "<tr><td colspan='4' class='text-center'>Tidak ada penawaran vendor</td></tr>";
+        }
+
+        private static string GenerateRKSJangkaWaktuList(Procurement proc)
+        {
+            var sb = new StringBuilder();
+            var jumlahHari = (int)(proc.EndDate.Date - proc.StartDate.Date).TotalDays;
+            var terbilangHari = jumlahHari.ToTerbilang();
+
+            var jobTypeName = proc.JobType!.TypeName;
+            if (jobTypeName == "Moving")
+            {
+                sb.AppendLine(
+                    $"<li>Jangka Waktu Pelaksanaan Pekerjaan adalah selama {jumlahHari} ({terbilangHari}) Hari Kalender, mulai tanggal {proc.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))} sampai dengan tanggal {proc.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))}, terhitung sejak Surat Perintah Melaksanakan Pekerjaan (SPMP) sampai dengan diterbitkannya Berita Acara Penyelesaian Pekerjaan dan/atau Berita Acara Serah Terima Pekerjaan dan telah ditandatangani oleh <strong>PERUSAHAAN</strong> dan <strong>MITRA KERJA</strong>.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Apabila dianggap perlu, <strong>PERUSAHAAN</strong> berhak memperpanjang Jangka Waktu Pelaksanaan Pekerjaan menurut Kontrak untuk jangka waktu tertentu terhitung dari tanggal berakhirnya Jangka Waktu Pelaksanaan Pekerjaan.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Permohonan perpanjangan Jangka Waktu Pelaksanaan Pekerjaan dan Jangka Waktu Kontrak harus diajukan tertulis oleh salah satu <strong>PIHAK</strong> kepada <strong>PIHAK</strong> lainnya yang dilengkapi dengan justifikasi dan data pendukungnya yang selanjutnya akan dituangkan ke dalam Addendum <strong>KONTRAK</strong> dan disetujui oleh <strong>PARA PIHAK</strong>.</li>"
+                );
+            }
+
+            if (jobTypeName == "Angkutan")
+            {
+                sb.AppendLine(
+                    $"<li>Jangka Waktu Pelaksanaan Pekerjaan adalah selama {jumlahHari} ({terbilangHari}) Hari Kalender, mulai tanggal {proc.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))} sampai dengan tanggal {proc.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))}, terhitung sejak Surat Perintah Melaksanakan Pekerjaan (SPMP) sampai dengan diterbitkannya Berita Acara Penyelesaian Pekerjaan dan/atau Berita Acara Serah Terima Pekerjaan dan telah ditandatangani oleh <strong>PERUSAHAAN</strong> dan <strong>MITRA KERJA</strong>.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Apabila dianggap perlu, <strong>PERUSAHAAN</strong> berhak memperpanjang Jangka Waktu Pelaksanaan Pekerjaan menurut Kontrak untuk jangka waktu tertentu terhitung dari tanggal berakhirnya Jangka Waktu Pelaksanaan Pekerjaan.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Permohonan perpanjangan Jangka Waktu Pelaksanaan Pekerjaan dan Jangka Waktu Kontrak harus diajukan tertulis oleh salah satu PIHAK kepada </strong>PIHAK</strong> lainnya yang dilengkapi dengan justifikasi dan data pendukungnya yang selanjutnya akan dituangkan ke dalam Addendum <strong>KONTRAK</strong> dan disetujui oleh <strong>PARA PIHAK</strong></li>"
+                );
+            }
+
+            if (jobTypeName == "StandBy")
+            {
+                sb.AppendLine(
+                    $"<li>Masa sewa adalah selama {jumlahHari} ({terbilangHari}) Hari Kalender, terhitung sejak tanggal {proc.StartDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))} sampai dengan tanggal {proc.EndDate.ToString("d MMMM yyyy", new CultureInfo("id-ID"))}.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Apabila dianggap perlu, <strong>PERUSAHAAN</strong> berhak memperpanjang Masa Sewa menurut Kontrak Kerja untuk jangka waktu tertentu terhitung dari tanggal berakhirnya Masa Sewa.</li>"
+                );
+                sb.AppendLine(
+                    "<li>Permohonan perpanjangan Masa Sewa harus diajukan tertulis oleh salah satu <strong>PIHAK</strong> kepada <strong>PIHAK</strong> lainnya yang dilengkapi dengan justifikasi dan data pendukungnya yang selanjutnya akan dituangkan ke dalam Addendum <strong>KONTRAK</strong> dan disetujui oleh <strong>PERUSAHAAN</strong> dan <strong>MITRA KERJA</strong>.</li>"
+                );
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GenerateRKSSyaratList(Procurement proc)
+        {
+            var sb = new StringBuilder();
+
+            var jobTypeName = proc.JobType!.TypeName;
+            if (jobTypeName == "Moving")
+            {
+                sb.AppendLine("<li>");
+                sb.AppendLine("  Kelengkapan Alat Berat");
+                sb.AppendLine(
+                    "  <p class='mb-0'>MITRA KERJA harus menyediakan alat berat yang terdiri sebagai berikut:</p>"
+                );
+                sb.AppendLine("  <ol class='sub-list'>");
+                sb.AppendLine("    <li>Operator dan Helper wajib memiliki CSMS</li>");
+                sb.AppendLine(
+                    "    <li>Peralatan penunjang termasuk di dalamnya tetapi tidak terbatas pada rantai-rantai pengikat/<em>chain binder</em></li>"
+                );
+                sb.AppendLine("  </ol>");
+                sb.AppendLine("</li>");
+            }
 
             return sb.ToString();
         }

@@ -15,6 +15,7 @@ namespace ProcurementHTE.Core.Interfaces
         );
         Task<IReadOnlyList<JobTypeDocuments>> ListByJobTypeAsync(
             string jobTypeId,
+            ProcurementHTE.Core.Enums.ProcurementCategory? category = null,
             CancellationToken ct = default
         );
     }

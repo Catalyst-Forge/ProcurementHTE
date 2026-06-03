@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Core.Models.Enums;
 
 namespace ProcurementHTE.Infrastructure.Data
 {
@@ -10,12 +10,16 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
+        public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }
+        public DbSet<PurchaseRequisitionStatusHistory> PurchaseRequisitionStatusHistories { get; set; }
+        public DbSet<ProcurementStatusHistory> ProcurementStatusHistories { get; set; }
         public DbSet<JobTypes> JobTypes { get; set; }
         public DbSet<JobTypeDocuments> JobTypeDocuments { get; set; }
         public DbSet<ProcDetail> ProcDetails { get; set; }
         public DbSet<ProcOffer> ProcOffers { get; set; }
         public DbSet<ProcDocuments> ProcDocuments { get; set; }
-        public DbSet<ProcDocumentApprovals> ProcDocumentApprovals { get; set; }
+
+        // ProcDocumentApprovals removed - approval sekarang di level PR
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<VendorOffer> VendorOffers { get; set; }
         public DbSet<ProfitLoss> ProfitLosses { get; set; }
@@ -23,10 +27,13 @@ namespace ProcurementHTE.Infrastructure.Data
         public DbSet<ProfitLossSelectedVendor> ProfitLossSelectedVendors { get; set; }
         public DbSet<DocumentApprovals> DocumentApprovals { get; set; }
         public DbSet<DocumentType> DocumentTypes { get; set; }
-        public DbSet<Tender> Tenders { get; set; }
+        public DbSet<VendorRoundLetter> VendorRoundLetters { get; set; }
+        public DbSet<DocumentApprovalRule> DocumentApprovalRules { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<UserSecurityLog> UserSecurityLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        public DbSet<UnitType> UnitTypes { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -43,18 +50,47 @@ namespace ProcurementHTE.Infrastructure.Data
             // ========================================
             // ENTITY CONFIGURATIONS
             // ========================================
+            ConfigurePurchaseRequisition(builder);
             ConfigureProcurement(builder);
+            ConfigureProcurementStatusHistory(builder);
             ConfigureJobType(builder);
             ConfigureProcDetail(builder);
             ConfigureVendors(builder);
             ConfigureVendorOffer(builder);
             ConfigureDocumentType(builder);
             ConfigureProcDocuments(builder);
-            ConfigureProcDocumentApprovals(builder);
+            // ConfigureProcDocumentApprovals removed - approval sekarang di level PR
             ConfigureProfitLoss(builder);
             ConfigureProfitLossItem(builder);
             ConfigureJobTypeDocuments(builder);
             ConfigureDocumentApprovals(builder);
+            ConfigureVendorRoundLetters(builder);
+            ConfigureDocumentApprovalRules(builder);
+            ConfigureUnitType(builder);
+            ConfigureNotification(builder);
+
+            // ========================================
+            // SEED DATA
+            // ========================================
+            UnitTypeSeeder.SeedUnitTypes(builder);
+
+            // ========================================
+            // GLOBAL QUERY FILTERS (SOFT DELETE)
+            // ========================================
+            ConfigureGlobalQueryFilters(builder);
+        }
+
+        private static void ConfigureGlobalQueryFilters(ModelBuilder builder)
+        {
+            // Apply soft delete filter for all entities inheriting from BaseEntity
+            // Note: Child entities (ProcDetail, ProcOffer, etc.) don't have IsDeleted
+            // They are cascade deleted when parent is deleted, so this is expected behavior
+            builder.Entity<Procurement>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<ProfitLoss>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<VendorOffer>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<ProcDocuments>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<PurchaseRequisition>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<Vendor>().HasQueryFilter(e => !e.IsDeleted);
         }
 
         #region Identity & User
@@ -117,7 +153,46 @@ namespace ProcurementHTE.Infrastructure.Data
 
         #endregion
 
+        #region PurchaseRequisition
+
+        private static void ConfigurePurchaseRequisition(ModelBuilder builder)
+        {
+            builder.Entity<PurchaseRequisition>(entity =>
+            {
+                // Primary key
+                entity.HasKey(pr => pr.PrId);
+
+                // Properties
+                entity.Property(pr => pr.PrId).ValueGeneratedNever();
+                entity.Property(pr => pr.PrNumber).IsRequired().HasMaxLength(100);
+                entity.Property(pr => pr.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Indexes - Filtered unique index for soft delete pattern
+                entity
+                    .HasIndex(pr => pr.PrNumber)
+                    .IsUnique()
+                    .HasDatabaseName("AK_PurchaseRequisitions_PrNumber")
+                    .HasFilter("[IsDeleted] = 0");
+
+                // Relationships
+                entity
+                    .HasOne(pr => pr.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(pr => pr.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity
+                    .HasMany(pr => pr.Procurements)
+                    .WithOne(p => p.PurchaseRequisition)
+                    .HasForeignKey(p => p.PrId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+        }
+
+        #endregion
+
         #region Procurement
+
         private static void ConfigureProcurement(ModelBuilder builder)
         {
             builder.Entity<Procurement>(entity =>
@@ -125,7 +200,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Primary key
                 entity.HasKey(procurement => procurement.ProcurementId);
                 // Properties
-                entity.Property(procurement => procurement.ProcurementId).ValueGeneratedOnAdd();
+                entity.Property(procurement => procurement.ProcurementId).ValueGeneratedNever();
                 entity.Property(procurement => procurement.ProcNum).IsRequired();
                 entity
                     .Property(procurement => procurement.CreatedAt)
@@ -138,12 +213,23 @@ namespace ProcurementHTE.Infrastructure.Data
                     .Property(procurement => procurement.ProjectRegion)
                     .HasConversion<string>()
                     .HasMaxLength(50);
+                entity
+                    .Property(procurement => procurement.ProcurementCategory)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
 
-                // Indexes
+                // Procurement-level tracking status enum
+                entity
+                    .Property(procurement => procurement.ProcurementStatus)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
+
+                // Indexes - Filtered unique index for soft delete pattern
                 entity
                     .HasIndex(procurement => procurement.ProcNum)
                     .IsUnique()
-                    .HasDatabaseName("AK_Procurements_ProcNum");
+                    .HasDatabaseName("AK_Procurements_ProcNum")
+                    .HasFilter("[IsDeleted] = 0 AND [ProcNum] IS NOT NULL");
                 entity
                     .HasIndex(procurement => new { procurement.UserId, procurement.CreatedAt })
                     .HasDatabaseName("IX_Procurements_UserId_CreatedAt")
@@ -198,17 +284,111 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(profitLoss => profitLoss.ProcurementId)
                     .OnDelete(DeleteBehavior.Cascade);
 
+                // AccrualFilledByUser relationship
                 entity
-                    .HasMany(procurement => procurement.DocumentApprovals)
-                    .WithOne(documentApproval => documentApproval.Procurement)
-                    .HasForeignKey(documentApproval => documentApproval.ProcurementId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .HasOne(procurement => procurement.AccrualFilledByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.AccrualFilledByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // AP-Invoice and AR pickup user relationships
+                // Using NoAction to avoid SQL Server cascade path errors
+                entity
+                    .HasOne(procurement => procurement.ApInvoiceUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.ApInvoiceUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.ArUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.ArUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Procurement-level tracking user relationships
+                // Using NoAction to avoid SQL Server cascade path errors
+                entity
+                    .HasOne(procurement => procurement.IspaSubmittedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.IspaSubmittedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.PoSubmittedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.PoSubmittedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.HardcopySubmittedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.HardcopySubmittedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.RejectedByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.RejectedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity
+                    .HasOne(procurement => procurement.ApprovalSentByUser)
+                    .WithMany()
+                    .HasForeignKey(procurement => procurement.ApprovalSentByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Procurement status history relationship
+                entity
+                    .HasMany(procurement => procurement.StatusHistories)
+                    .WithOne(history => history.Procurement)
+                    .HasForeignKey(history => history.ProcurementId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // DocumentApprovals navigation removed - approval moved to procurement-level tracking
             });
 
             builder
                 .Entity<ProcOffer>()
-                .Property(procOffere => procOffere.ProcOfferId)
-                .ValueGeneratedOnAdd();
+                .Property(procOffer => procOffer.ProcOfferId)
+                .ValueGeneratedNever();
+        }
+
+        #endregion
+
+        #region ProcurementStatusHistory
+
+        private static void ConfigureProcurementStatusHistory(ModelBuilder builder)
+        {
+            builder.Entity<ProcurementStatusHistory>(entity =>
+            {
+                // Primary key
+                entity.HasKey(history => history.Id);
+
+                // Properties
+                entity.Property(history => history.Id).ValueGeneratedNever();
+                entity.Property(history => history.ChangedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity
+                    .Property(history => history.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(50);
+
+                // Indexes for common queries
+                entity.HasIndex(history => history.ProcurementId);
+                entity.HasIndex(history => new { history.ProcurementId, history.ChangedAt });
+
+                // Relationships
+                entity
+                    .HasOne(history => history.Procurement)
+                    .WithMany(procurement => procurement.StatusHistories)
+                    .HasForeignKey(history => history.ProcurementId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity
+                    .HasOne(history => history.ChangedByUser)
+                    .WithMany()
+                    .HasForeignKey(history => history.ChangedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
         }
 
         #endregion
@@ -220,7 +400,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<JobTypes>(entity =>
             {
                 // Properties
-                entity.Property(job => job.JobTypeId).ValueGeneratedOnAdd();
+                entity.Property(job => job.JobTypeId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -246,7 +426,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProcDetail>(entity =>
             {
                 // Properties
-                entity.Property(detail => detail.ProcDetailId).ValueGeneratedOnAdd();
+                entity.Property(detail => detail.ProcDetailId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -274,11 +454,13 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Primary Key
                 entity.HasKey(vendor => vendor.VendorId);
                 // Properties
-                entity.Property(vendor => vendor.VendorId).ValueGeneratedOnAdd();
+                entity.Property(vendor => vendor.VendorId).ValueGeneratedNever();
                 entity.Property(vendor => vendor.VendorCode).IsRequired();
 
-                // Indexes
-                entity.HasIndex(vendor => vendor.VendorCode).IsUnique();
+                // Indexes - Filtered unique index for soft delete pattern
+                entity.HasIndex(vendor => vendor.VendorCode)
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
 
                 // Relationships
                 entity
@@ -298,7 +480,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<VendorOffer>(entity =>
             {
                 // Properties
-                entity.Property(vendorOffer => vendorOffer.VendorOfferId).ValueGeneratedOnAdd();
+                entity.Property(vendorOffer => vendorOffer.VendorOfferId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -330,7 +512,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<DocumentType>(entity =>
             {
                 // Properties
-                entity.Property(documentType => documentType.DocumentTypeId).ValueGeneratedOnAdd();
+                entity.Property(documentType => documentType.DocumentTypeId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -356,7 +538,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProcDocuments>(entity =>
             {
                 // Properties
-                entity.Property(document => document.ProcDocumentId).ValueGeneratedOnAdd();
+                entity.Property(document => document.ProcDocumentId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -371,61 +553,14 @@ namespace ProcurementHTE.Infrastructure.Data
                     .HasForeignKey(document => document.DocumentTypeId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity
-                    .HasMany(document => document.Approvals)
-                    .WithOne(approval => approval.ProcDocument)
-                    .HasForeignKey(approval => approval.ProcDocumentId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                // Approvals navigation removed - approval per-document sudah dihapus
             });
         }
 
         #endregion
 
-        #region ProcDocumentApprovals
-
-        private static void ConfigureProcDocumentApprovals(ModelBuilder builder)
-        {
-            builder.Entity<ProcDocumentApprovals>(entity =>
-            {
-                // Properties
-                entity
-                    .Property(documentApproval => documentApproval.ProcDocumentApprovalId)
-                    .ValueGeneratedOnAdd();
-
-                // Relationships
-                entity
-                    .HasOne(documentApproval => documentApproval.Procurement)
-                    .WithMany(procurement => procurement.DocumentApprovals)
-                    .HasForeignKey(documentApproval => documentApproval.ProcurementId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.ProcDocument)
-                    .WithMany(document => document.Approvals)
-                    .HasForeignKey(documentApproval => documentApproval.ProcDocumentId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.Role)
-                    .WithMany()
-                    .HasForeignKey(documentApproval => documentApproval.RoleId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.AssignedApprover)
-                    .WithMany()
-                    .HasForeignKey(documentApproval => documentApproval.AssignedApproverId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity
-                    .HasOne(documentApproval => documentApproval.Approver)
-                    .WithMany()
-                    .HasForeignKey(documentApproval => documentApproval.ApproverId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
-        #endregion
+        // #region ProcDocumentApprovals - REMOVED
+        // Approval per document sudah dihapus, approval sekarang di level PR
 
         #region ProfitLoss
 
@@ -434,7 +569,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProfitLoss>(entity =>
             {
                 // Properties
-                entity.Property(profitLoss => profitLoss.ProfitLossId).ValueGeneratedOnAdd();
+                entity.Property(profitLoss => profitLoss.ProfitLossId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -466,7 +601,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProfitLossItem>(entity =>
             {
                 // Properties
-                entity.Property(item => item.ProfitLossItemId).ValueGeneratedOnAdd();
+                entity.Property(item => item.ProfitLossItemId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -485,6 +620,38 @@ namespace ProcurementHTE.Infrastructure.Data
 
         #endregion
 
+        #region VendorRoundLetters
+        private static void ConfigureVendorRoundLetters(ModelBuilder builder)
+        {
+            builder.Entity<VendorRoundLetter>(entity =>
+            {
+                entity.Property(x => x.VendorRoundLetterId).ValueGeneratedNever();
+
+                entity
+                    .HasOne(x => x.ProcDocument)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProcDocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity
+                    .HasOne(x => x.Vendor)
+                    .WithMany()
+                    .HasForeignKey(x => x.VendorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Unique index (no soft delete filter - entity doesn't support soft delete)
+                entity
+                    .HasIndex(x => new
+                    {
+                        x.ProcurementId,
+                        x.VendorId,
+                        x.Round,
+                    })
+                    .IsUnique();
+            });
+        }
+        #endregion
+
         #region JobTypeDocuments
 
         private static void ConfigureJobTypeDocuments(ModelBuilder builder)
@@ -492,7 +659,8 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<JobTypeDocuments>(entity =>
             {
                 // Properties
-                entity.Property(jobTypeDoc => jobTypeDoc.JobTypeDocumentId).ValueGeneratedOnAdd();
+                // Use client-generated GUIDs; do not expect the database to generate the key.
+                entity.Property(jobTypeDoc => jobTypeDoc.JobTypeDocumentId).ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -526,7 +694,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 // Properties
                 entity
                     .Property(documentApproval => documentApproval.DocumentApprovalId)
-                    .ValueGeneratedOnAdd();
+                    .ValueGeneratedNever();
 
                 // Relationships
                 entity
@@ -540,6 +708,123 @@ namespace ProcurementHTE.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(documentApproval => documentApproval.RoleId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+
+        #endregion
+
+        #region UnitType
+
+        private static void ConfigureUnitType(ModelBuilder builder)
+        {
+            builder.Entity<UnitType>(entity =>
+            {
+                // Properties
+                entity.Property(unitType => unitType.UnitTypeId).ValueGeneratedNever();
+                entity.Property(unitType => unitType.Code).IsRequired().HasMaxLength(20);
+                entity.Property(unitType => unitType.Name).IsRequired().HasMaxLength(50);
+                entity.Property(unitType => unitType.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Indexes
+                entity.HasIndex(unitType => unitType.Code).IsUnique();
+
+                // Relationships
+                entity
+                    .HasMany(unitType => unitType.ProfitLossItems)
+                    .WithOne(item => item.UnitType)
+                    .HasForeignKey(item => item.UnitTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity
+                    .HasMany(unitType => unitType.VendorOffers)
+                    .WithOne(offer => offer.UnitType)
+                    .HasForeignKey(offer => offer.UnitTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        #endregion
+
+        #region DocumentApprovalRules
+
+        private static void ConfigureDocumentApprovalRules(ModelBuilder builder)
+        {
+            builder.Entity<DocumentApprovalRule>(entity =>
+            {
+                entity.HasKey(r => r.DocumentApprovalRuleId);
+                entity.Property(r => r.MinAmount).HasPrecision(18, 2);
+                entity.Property(r => r.MaxAmount).HasPrecision(18, 2);
+                entity.Property(r => r.Sequence).HasDefaultValue(1);
+                entity.Property(r => r.IsActive).HasDefaultValue(true);
+                entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                entity
+                    .HasOne(r => r.DocumentType)
+                    .WithMany()
+                    .HasForeignKey(r => r.DocumentTypeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity
+                    .HasOne(r => r.JobType)
+                    .WithMany()
+                    .HasForeignKey(r => r.JobTypeId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(r => new
+                {
+                    r.DocumentTypeId,
+                    r.JobTypeId,
+                    r.ProcurementCategory,
+                    r.MinAmount,
+                    r.MaxAmount,
+                    r.IsActive,
+                });
+            });
+        }
+
+        #endregion
+
+        #region Notification
+
+        private static void ConfigureNotification(ModelBuilder builder)
+        {
+            builder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(n => n.NotificationId);
+
+                entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
+
+                entity.Property(n => n.Message).IsRequired().HasMaxLength(1000);
+
+                entity.Property(n => n.NotificationType).IsRequired().HasMaxLength(50);
+
+                entity.Property(n => n.ActionUrl).HasMaxLength(500);
+
+                entity.Property(n => n.ReferenceId).HasMaxLength(450);
+
+                entity.Property(n => n.IsRead).HasDefaultValue(false);
+
+                entity.Property(n => n.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Relationship with User (recipient)
+                entity
+                    .HasOne(n => n.User)
+                    .WithMany()
+                    .HasForeignKey(n => n.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with Creator (optional)
+                entity
+                    .HasOne(n => n.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(n => n.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                // Indexes for common queries
+                entity.HasIndex(n => n.UserId);
+                entity.HasIndex(n => new { n.UserId, n.IsRead });
+                entity.HasIndex(n => n.CreatedAt);
+                entity.HasIndex(n => n.NotificationType);
             });
         }
 

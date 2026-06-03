@@ -25,11 +25,11 @@ public interface IProcDocumentRepository
     Task<ProcDocuments?> GetByIdAsync(string id);
     Task<IReadOnlyList<ProcDocuments>> GetByProcurementAsync(string procurementId);
     Task<ProcDocuments?> GetLatestActiveByProcurementAndDocTypeAsync(
-        string woId,
+        string procurementId,
         string documentTypeId
     );
     Task AddAsync(ProcDocuments doc);
     Task UpdateAsync(ProcDocuments doc);
-    Task DeleteAsync(string id);
+    Task DeleteAsync(string id, string deletedByUserId);
     Task SaveAsync();
 }

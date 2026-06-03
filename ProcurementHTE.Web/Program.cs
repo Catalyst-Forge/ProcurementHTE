@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Options;
 using ProcurementHTE.Infrastructure.Data;
 using ProcurementHTE.Web.Extensions;
 using ProcurementHTE.Web.Middleware;
-using ProcurementHTE.Web.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,12 +17,25 @@ builder
 
 // MVC + app services
 builder.Services.AddControllersWithViews();
-builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationLayer();
+builder.Services.AddIdentityAndAuth(builder.Configuration);
+builder.Services.AddPresentationLayer();
 builder.Services.AddHttpClient("MinioProxy");
-builder.Services.AddHttpClient("SmsProvider");
 builder.Services.Configure<SecurityBypassOptions>(
     builder.Configuration.GetSection("SecurityBypass")
 );
+
+// SignalR for real-time updates
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<
+    ProcurementHTE.Core.Interfaces.IUserActivityNotifier,
+    ProcurementHTE.Infrastructure.Services.UserActivityNotifier<ProcurementHTE.Web.Hubs.DashboardHub>
+>();
+builder.Services.AddSingleton<
+    ProcurementHTE.Core.Interfaces.INotificationPusher,
+    ProcurementHTE.Infrastructure.Services.NotificationPusher<ProcurementHTE.Web.Hubs.DashboardHub>
+>();
 var app = builder.Build();
 
 // ==================== ENSURE TEMPLATES DIRECTORY EXISTS ====================
@@ -62,22 +75,60 @@ app.MapStaticAssets();
 app.MapControllers();
 app.MapControllerRoute(name: "default", pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
+// Map SignalR hub
+app.MapHub<ProcurementHTE.Web.Hubs.DashboardHub>("/hubs/dashboard");
+
 // ===== Migrate & Seed =====
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<AppDbContext>();
 
     try
     {
-        // 1️⃣ Jalankan migrasi otomatis jika belum ada tabel
-        var context = services.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+        // 1️⃣ Cek apakah ada pending migrations
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation(
+                "Applying {Count} pending migration(s)...",
+                pendingMigrations.Count()
+            );
+            foreach (var migration in pendingMigrations)
+            {
+                logger.LogInformation("  - {Migration}", migration);
+            }
+
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogInformation("Database is up to date. No pending migrations.");
+        }
+
+        // 2️⃣ Jalankan seeder
         await DataSeeder.SeedAsync(services);
+        logger.LogInformation("Data seeding completed.");
+    }
+    catch (Exception ex)
+        when (ex.Message.Contains("already exists")
+            || ex.Message.Contains("already an object named")
+            || ex.Message.Contains("duplicate key")
+        )
+    {
+        // Skip jika table/column sudah ada
+        logger.LogWarning(
+            "Migration skipped - database objects already exist: {Message}",
+            ex.Message
+        );
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Failed to migrate or seed database.");
+        logger.LogError(ex, "Failed to migrate or seed database");
+        throw;
     }
 }
 

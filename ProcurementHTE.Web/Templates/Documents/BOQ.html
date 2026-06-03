@@ -10,11 +10,14 @@
       crossorigin="anonymous"
     />
     <style>
+      :root {
+        font-size: 12pt;
+      }
+
       body {
         margin: 20px 25px;
         font-family: "Calibri", Arial, Helvetica, sans-serif;
-        font-size: 11px;
-        line-height: 1.4;
+        line-height: 1.5;
       }
 
       th,
@@ -24,7 +27,16 @@
 
       @page {
         size: A4;
-        margin: 0;
+        margin: 2.5cm 1cm;
+      }
+
+      @media print {
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+          text-size-adjust: none;
+          -webkit-text-size-adjust: none;
+        }
       }
     </style>
   </head>
@@ -47,13 +59,13 @@
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="4">
+          <td class="ps-5" colspan="4">
             Catatan: Referensi penawaran harga {{ SelectedVendorName }} <br />
-            {{ NoLetter }}
+            {{ NoLetter }} pada tanggal {{ RoundCreatedAt }}
           </td>
         </tr>
         <tr>
-          <td colspan="4">Periode Pekerjaan: {{ StartDate }} s.d {{ EndDate }}</td>
+          <td class="ps-5" colspan="4">Periode Pekerjaan: {{ StartDate }} s.d {{ EndDate }}</td>
         </tr>
       </tfoot>
     </table>

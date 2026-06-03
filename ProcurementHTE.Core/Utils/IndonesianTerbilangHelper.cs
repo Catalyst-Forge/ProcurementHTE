@@ -34,6 +34,27 @@
             return TerbilangInteger(value);
         }
 
+        public static string ToTerbilangHari(
+            this DateTime startDate,
+            DateTime endDate,
+            bool includeUnitWord = true
+        )
+        {
+            var start = startDate.Date;
+            var end = endDate.Date;
+
+            if (end < start)
+                throw new ArgumentException(
+                    "End date tidak boleh sebelum start date.",
+                    nameof(endDate)
+                );
+
+            var totalDays = (int)(end - start).TotalDays;
+            var terbilang = TerbilangInteger(totalDays);
+
+            return includeUnitWord ? $"{terbilang} hari" : terbilang;
+        }
+
         private static string ToTerbilang(decimal amount, bool includeCurrencyWord, bool includeSen)
         {
             // Guard sederhana biar gak overflow saat cast ke long
@@ -97,17 +118,17 @@
             string[] angkaDasar =
             {
                 "", // dummy index 0 (tidak dipakai)
-                "satu", // 1
-                "dua", // 2
-                "tiga", // 3
-                "empat", // 4
-                "lima", // 5
-                "enam", // 6
-                "tujuh", // 7
-                "delapan", // 8
-                "sembilan", // 9
-                "sepuluh", // 10
-                "sebelas", // 11
+                "Satu", // 1
+                "Dua", // 2
+                "Tiga", // 3
+                "Empat", // 4
+                "Lima", // 5
+                "Enam", // 6
+                "Tujuh", // 7
+                "Delapan", // 8
+                "Sembilan", // 9
+                "Sepuluh", // 10
+                "Sebelas", // 11
             };
 
             string result;

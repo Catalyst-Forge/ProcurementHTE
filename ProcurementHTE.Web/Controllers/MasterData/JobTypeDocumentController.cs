@@ -1,20 +1,21 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using ProcurementHTE.Core.Enums;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
-using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
 [Authorize]
 public class JobTypeDocumentController : Controller
 {
-    private readonly AppDbContext _db;
+    private readonly IJobTypeDocumentAdminService _service;
     private const string ActivePageName = "Index Job Type Documents";
 
-    public JobTypeDocumentController(AppDbContext db)
+    public JobTypeDocumentController(IJobTypeDocumentAdminService service)
     {
-        _db = db;
+        _service = service;
     }
 
     public override void OnActionExecuting(
@@ -28,22 +29,8 @@ public class JobTypeDocumentController : Controller
     // GET: JobTypeDocument
     public async Task<IActionResult> Index(string? jobTypeId = null, CancellationToken ct = default)
     {
-        var query = _db
-            .JobTypeDocuments.Include(x => x.JobType)
-            .Include(x => x.DocumentType)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(jobTypeId))
-        {
-            query = query.Where(x => x.JobTypeId == jobTypeId);
-        }
-
-        var items = await query
-            .OrderBy(x => x.JobType.TypeName)
-            .ThenBy(x => x.Sequence)
-            .ToListAsync(ct);
-
-        ViewBag.JobTypes = await _db.JobTypes.OrderBy(x => x.TypeName).ToListAsync(ct);
+        var items = await _service.GetAllAsync(jobTypeId, ct);
+        ViewBag.JobTypes = await _service.GetJobTypesAsync(ct);
         return View(items);
     }
 
@@ -66,7 +53,21 @@ public class JobTypeDocumentController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(JobTypeDocuments model, CancellationToken ct = default)
     {
-        if (await ExistsAsync(model.JobTypeId, model.DocumentTypeId, ct))
+        if (model.Sequence <= 0)
+        {
+            model.Sequence = 1;
+            ModelState.Remove(nameof(model.Sequence));
+        }
+
+        if (
+            await _service.ExistsAsync(
+                model.JobTypeId,
+                model.DocumentTypeId,
+                model.ProcurementCategory,
+                excludeId: null,
+                ct
+            )
+        )
         {
             ModelState.AddModelError(
                 string.Empty,
@@ -76,20 +77,35 @@ public class JobTypeDocumentController : Controller
 
         if (!ModelState.IsValid)
         {
+            LogModelErrors("Create");
             await PopulateSelections(ct);
             return View(model);
         }
 
-        _db.JobTypeDocuments.Add(model);
-        await _db.SaveChangesAsync(ct);
-        TempData["SuccessMessage"] = "Job Type Document mapping created.";
-        return RedirectToAction(nameof(Index));
+        if (string.IsNullOrWhiteSpace(model.JobTypeDocumentId))
+        {
+            model.JobTypeDocumentId = Guid.NewGuid().ToString();
+        }
+
+        try
+        {
+            await _service.CreateAsync(model, ct);
+            TempData["SuccessMessage"] = "Job Type Document mapping created.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Failed to save mapping: {ex.Message}");
+        }
+
+        await PopulateSelections(ct);
+        return View(model);
     }
 
     // GET: JobTypeDocument/Edit/5
     public async Task<IActionResult> Edit(string id, CancellationToken ct = default)
     {
-        var entity = await _db.JobTypeDocuments.FindAsync(new object?[] { id }, ct);
+        var entity = await _service.GetByIdAsync(id, ct);
         if (entity is null)
             return NotFound();
         await PopulateSelections(ct);
@@ -105,10 +121,24 @@ public class JobTypeDocumentController : Controller
         CancellationToken ct = default
     )
     {
+        if (model.Sequence <= 0)
+        {
+            model.Sequence = 1;
+            ModelState.Remove(nameof(model.Sequence));
+        }
+
         if (id != model.JobTypeDocumentId)
             return BadRequest();
 
-        if (await ExistsAsync(model.JobTypeId, model.DocumentTypeId, ct, excludeId: id))
+        if (
+            await _service.ExistsAsync(
+                model.JobTypeId,
+                model.DocumentTypeId,
+                model.ProcurementCategory,
+                excludeId: id,
+                ct
+            )
+        )
         {
             ModelState.AddModelError(
                 string.Empty,
@@ -118,14 +148,29 @@ public class JobTypeDocumentController : Controller
 
         if (!ModelState.IsValid)
         {
+            LogModelErrors("Edit");
             await PopulateSelections(ct);
             return View(model);
         }
 
-        _db.Entry(model).State = EntityState.Modified;
-        await _db.SaveChangesAsync(ct);
-        TempData["SuccessMessage"] = "Job Type Document mapping updated.";
-        return RedirectToAction(nameof(Index));
+        if (string.IsNullOrWhiteSpace(model.JobTypeDocumentId))
+        {
+            model.JobTypeDocumentId = id;
+        }
+
+        try
+        {
+            await _service.UpdateAsync(model, ct);
+            TempData["SuccessMessage"] = "Job Type Document mapping updated.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Failed to update mapping: {ex.Message}");
+        }
+
+        await PopulateSelections(ct);
+        return View(model);
     }
 
     // POST: JobTypeDocument/Delete/5
@@ -133,35 +178,40 @@ public class JobTypeDocumentController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(string id, CancellationToken ct = default)
     {
-        var entity = await _db.JobTypeDocuments.FindAsync(new object?[] { id }, ct);
-        if (entity is null)
-            return NotFound();
-
-        _db.JobTypeDocuments.Remove(entity);
-        await _db.SaveChangesAsync(ct);
+        await _service.DeleteAsync(id, ct);
         TempData["SuccessMessage"] = "Mapping deleted.";
         return RedirectToAction(nameof(Index));
     }
 
     private async Task PopulateSelections(CancellationToken ct)
     {
-        ViewBag.JobTypes = await _db.JobTypes.OrderBy(x => x.TypeName).ToListAsync(ct);
-        ViewBag.DocumentTypes = await _db.DocumentTypes.OrderBy(x => x.Name).ToListAsync(ct);
+        ViewBag.JobTypes = await _service.GetJobTypesAsync(ct);
+        ViewBag.DocumentTypes = await _service.GetDocumentTypesAsync(ct);
+        ViewBag.Categories = new List<SelectListItem>
+        {
+            new("All (Barang & Jasa)", ""),
+            new("Barang", ((int)ProcurementCategory.Barang).ToString()),
+            new("Jasa", ((int)ProcurementCategory.Jasa).ToString()),
+        };
     }
 
-    private Task<bool> ExistsAsync(
-        string jobTypeId,
-        string documentTypeId,
-        CancellationToken ct,
-        string? excludeId = null
-    )
+    private void LogModelErrors(string actionName)
     {
-        var query = _db.JobTypeDocuments.AsQueryable();
-        query = query.Where(x => x.JobTypeId == jobTypeId && x.DocumentTypeId == documentTypeId);
-        if (!string.IsNullOrWhiteSpace(excludeId))
+        if (ModelState.IsValid)
+            return;
+
+        var errors = ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .Select(kvp =>
+                $"{kvp.Key}: {string.Join(" | ", kvp.Value!.Errors.Select(e => e.ErrorMessage ?? e.Exception?.Message ?? "<no message>"))}"
+            )
+            .ToArray();
+
+        if (errors.Length > 0)
         {
-            query = query.Where(x => x.JobTypeDocumentId != excludeId);
+            Console.WriteLine(
+                $"[JobTypeDocumentController:{actionName}] ModelState invalid ({HttpContext.TraceIdentifier}): {string.Join("; ", errors)}"
+            );
         }
-        return query.AnyAsync(ct);
     }
 }

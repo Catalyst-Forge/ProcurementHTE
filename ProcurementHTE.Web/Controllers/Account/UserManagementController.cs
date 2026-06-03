@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Web.Models.Admin;
 
@@ -15,19 +14,16 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<Role> _roleManager;
-        private readonly ILogger<UserManagementController> _logger;
 
         public UserManagementController(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
-            RoleManager<Role> roleManager,
-            ILogger<UserManagementController> logger
+            RoleManager<Role> roleManager
         )
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
-            _logger = logger;
         }
 
         // LIST + FILTER
@@ -237,8 +233,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create user {UserName}", model.Form.UserName);
-                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat membuat user.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Terjadi kesalahan saat membuat user: {ex.Message}"
+                );
 
                 model.Roles = await GetRoleOptionsAsync();
                 if (string.IsNullOrWhiteSpace(model.GeneratedPassword))
@@ -387,8 +385,10 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to update user {UserId}", model.Form.Id);
-                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat mengubah user.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Terjadi kesalahan saat mengubah user: {ex.Message}"
+                );
 
                 model.Roles = await GetRoleOptionsAsync();
                 return View(model);
@@ -452,9 +452,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete user {UserId}", id);
                 TempData["ErrorMessage"] =
-                    "Gagal menghapus user. Pastikan user tidak dipakai di data lain.";
+                    $"Gagal menghapus user. Pastikan user tidak dipakai di data lain. Detail: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

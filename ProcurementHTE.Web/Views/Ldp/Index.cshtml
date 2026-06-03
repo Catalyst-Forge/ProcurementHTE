@@ -1,0 +1,547 @@
+@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Web.Models.ViewModels
+@model LdpIndexViewModel
+@inject IAuthorizationService AuthZ
+@{
+    ViewData["Title"] = "LDP - Laporan Data Procurement";
+    var currentSearch = Model.Search ?? "";
+    Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
+    Func<DateTime?, string> formatDate = value => value?.ToString("dd MMM yyyy") ?? "-";
+    Func<DateTime?, string> formatDateTime = value => value?.ToString("dd MMM yyyy HH:mm") ?? "-";
+    Func<int?, string> formatYear = value => value?.ToString() ?? "-";
+    Func<string?, string> formatText = value => !string.IsNullOrWhiteSpace(value) ? value : "-";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">LDP - Laporan Data Procurement</h1>
+        <p class="text-muted mb-0">Rekapitulasi semua data procurement dalam satu tabel</p>
+    </div>
+    <span class="badge bg-info fs-6">Total: @Model.Total data</span>
+</header>
+
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-3">
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" style="width: 25rem;" 
+               placeholder="Cari berdasarkan No WO, Job Name, No SPK..." 
+               value="@currentSearch" />
+    </div>
+
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@Model.PageSize" />
+</form>
+
+<div class="table-responsive border rounded-3 mb-2">
+    <table class="table table-hover align-middle table-sm mb-0">
+        <thead class="table-light">
+            <tr class="align-middle text-center">
+                <th class="border-end position-sticky start-0 bg-light" style="min-width: 60px; z-index: 2;">No</th>
+                <th class="border-end" style="min-width: 120px;">No WO</th>
+                <th class="border-end" style="min-width: 150px;">No SPK</th>
+                <th class="border-end" style="min-width: 150px;">Vendor Terpilih</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Selesai</th>
+                <th class="border-end" style="min-width: 200px;">Job Name</th>
+                <th class="border-end" style="min-width: 120px;">Job Type</th>
+                <th class="border-end" style="min-width: 100px;">Contract Type</th>
+                <th class="border-end" style="min-width: 150px;">LTC Name</th>
+                <th class="border-end" style="min-width: 200px;">Text Pekerjaan PR</th>
+                <th class="border-end" style="min-width: 80px;">50K</th>
+                <th class="border-end" style="min-width: 120px;">No Accrual</th>
+                <th class="border-end" style="min-width: 80px;">Year Job</th>
+                <th class="border-end" style="min-width: 120px;">No Rig</th>
+                <th class="border-end" style="min-width: 120px;">Nilai PnL</th>
+                <th class="border-end" style="min-width: 120px;">Nilai Accrual</th>
+                <th class="border-end" style="min-width: 120px;">Nilai Realisasi</th>
+                <th class="border-end" style="min-width: 120px;">No SPMP</th>
+                <th class="border-end" style="min-width: 120px;">No HTE</th>
+                <th class="border-end" style="min-width: 120px;">SA No</th>
+                <th class="border-end" style="min-width: 120px;">SP3 No</th>
+                <th class="border-end" style="min-width: 100px;">Project Region</th>
+                <th class="border-end" style="min-width: 120px;">Project Code</th>
+                <th class="border-end" style="min-width: 150px;">Link Dokumen</th>
+                <th class="border-end" style="min-width: 200px;">Unit Item</th>
+                <th class="border-end" style="min-width: 150px;">Surat Penawaran</th>
+                <th class="border-end" style="min-width: 120px;">Memorandum</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Doc</th>
+                <th class="border-end" style="min-width: 150px;">Keterangan-1</th>
+                <th class="border-end" style="min-width: 120px;">Potensi Accrual</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Accrual</th>
+                <th class="border-end" style="min-width: 100px;">Status Accrual</th>
+                <th class="border-end" style="min-width: 100px;">RKS Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">RKS Tgl Selesai</th>
+                <th class="border-end" style="min-width: 100px;">BOQ Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">BOQ Tgl Selesai</th>
+                <th class="border-end" style="min-width: 100px;">Memo Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Memo Tgl Selesai</th>
+                <th class="border-end" style="min-width: 100px;">RA Tgl Mulai</th>
+                <th class="border-end" style="min-width: 100px;">RA Tgl Selesai</th>
+                <th class="border-end" style="min-width: 120px;">No PR</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Buat PR</th>
+                <th class="border-end" style="min-width: 100px;">Tgl Rilis PR</th>
+                <th class="border-end" style="min-width: 120px;">Aprvl User Ops</th>
+                <th class="border-end" style="min-width: 100px;">Aprvl MGR Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Aprvl MGR Selesai</th>
+                <th class="border-end" style="min-width: 100px;">Aprvl VP Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Aprvl VP Selesai</th>
+                <th class="border-end" style="min-width: 100px;">Aprvl Dir Mulai</th>
+                <th class="border-end" style="min-width: 100px;">Aprvl Dir Selesai</th>
+                <th class="border-end" style="min-width: 120px;">Tgl Submit ISPA</th>
+                <th class="position-sticky end-0 bg-light text-center" style="min-width: 140px; z-index: 2;">Aksi</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any())
+            {
+                <tr>
+                    <td colspan="55" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                        @if (!string.IsNullOrWhiteSpace(Model?.Search))
+                        {
+                            <p class="mb-2">Tidak ditemukan data yang sesuai dengan pencarian "<strong>@Model.Search</strong>"</p>
+                            <a href="@Url.Action("Index")" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-left"></i> Tampilkan Semua Data
+                            </a>
+                        }
+                        else
+                        {
+                            <p class="mb-0">Tidak ada data LDP yang tersedia</p>
+                        }
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @for (int i = 0; i < Model.Items.Count; i++)
+                {
+                    var item = Model.Items[i];
+                    var rowNumber = ((Model.Page - 1) * Model.PageSize) + i + 1;
+                    <tr>
+                        <td class="text-center position-sticky start-0 bg-white" style="z-index: 1;">@rowNumber</td>
+                        <td>@formatText(item.NoWo)</td>
+                        <td>@formatText(item.NoSpk)</td>
+                        <td>@formatText(item.NamaVendor)</td>
+                        <td class="text-center">@formatDate(item.TglMulai)</td>
+                        <td class="text-center">@formatDate(item.TglSelesai)</td>
+                        <td>@formatText(item.TextPekerjaan)</td>
+                        <td>@formatText(item.JobType)</td>
+                        <td>@formatText(item.ContractType)</td>
+                        <td>@formatText(item.LtcName)</td>
+                        <td>@formatText(item.TextPekerjaanPr)</td>
+                        <td class="text-center">@formatText(item.Flag50K)</td>
+                        <td>@formatText(item.NoAccrual)</td>
+                        <td class="text-center">@formatYear(item.YearJob)</td>
+                        <td>@formatText(item.NoRig)</td>
+                        <td class="text-end">@formatMoney(item.NilaiPnl)</td>
+                        <td class="text-end">@formatMoney(item.NilaiAccrual)</td>
+                        <td class="text-end">@formatMoney(item.NilaiRealisasi)</td>
+                        <td>@formatText(item.NoSpmp)</td>
+                        <td>@formatText(item.NoHte)</td>
+                        <td>@formatText(item.SANo)</td>
+                        <td>@formatText(item.SP3No)</td>
+                        <td>@formatText(item.ProjectRegion)</td>
+                        <td>@formatText(item.ProjectCode)</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.LinkDokumen))
+                            {
+                                <small class="text-success"><i class="bi bi-check-circle"></i> Ada</small>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </td>
+                        <td>@formatText(item.UnitItemPenawaran)</td>
+                        <td>@formatText(item.SuratPenawaranVendor)</td>
+                        <td>@formatText(item.Memorandum)</td>
+                        <td class="text-center">@formatDate(item.TglDoc)</td>
+                        <td>@formatText(item.Keterangan1)</td>
+                        <td class="text-end">@formatMoney(item.PotensiAccrual)</td>
+                        <td class="text-center">@formatDate(item.TglAccrual)</td>
+                        <td>@formatText(item.StatusAccrual)</td>
+                        <td class="text-center">@formatDate(item.RksTglMulai)</td>
+                        <td class="text-center">@formatDate(item.RksTglSelesai)</td>
+                        <td class="text-center">@formatDate(item.BoqTglMulai)</td>
+                        <td class="text-center">@formatDate(item.BoqTglSelesai)</td>
+                        <td class="text-center">@formatDate(item.MemoTglMulai)</td>
+                        <td class="text-center">@formatDate(item.MemoTglSelesai)</td>
+                        <td class="text-center">@formatDate(item.RaTglMulai)</td>
+                        <td class="text-center">@formatDate(item.RaTglSelesai)</td>
+                        <td>@formatText(item.NoPr)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalBuatPr)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalRilisPr)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalApprovalOps)</td>
+                        <td class="text-center">@formatDate(item.ManagerApprovalMulai)</td>
+                        <td class="text-center">@formatDate(item.ManagerApprovalSelesai)</td>
+                        <td class="text-center">@formatDate(item.VpApprovalMulai)</td>
+                        <td class="text-center">@formatDate(item.VpApprovalSelesai)</td>
+                        <td class="text-center">@formatDate(item.OpDirApprovalMulai)</td>
+                        <td class="text-center">@formatDate(item.OpDirApprovalSelesai)</td>
+                        <td class="text-center">@formatDateTime(item.TanggalSubmitIspa)</td>
+                        <td class="position-sticky end-0 bg-white text-center" style="z-index: 1;">
+                            @if (item.HasLdpDocument)
+                            {
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary btn-download-ldp" 
+                                            data-procurement-id="@item.ProcurementId"
+                                            data-filename="@item.LdpFileName"
+                                            title="Download Dokumen LDP">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-upload-ldp" 
+                                            data-procurement-id="@item.ProcurementId"
+                                            title="Ganti Dokumen LDP">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-delete-ldp" 
+                                            data-procurement-id="@item.ProcurementId"
+                                            data-filename="@item.LdpFileName"
+                                            title="Hapus Dokumen LDP">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-sm btn-primary btn-upload-ldp" 
+                                        data-procurement-id="@item.ProcurementId"
+                                        title="Upload Dokumen LDP">
+                                    <i class="bi bi-upload me-1"></i>Upload
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@await Html.PartialAsync("_Pager", Model)
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="uploadLdpForm" enctype="multipart/form-data">
+                <input type="hidden" name="procurementId" id="uploadProcurementId" value="" />
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
+                        <i class="bi bi-upload me-2"></i>Upload Dokumen LDP
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ldpFile" class="form-label">Pilih File Dokumen LDP</label>
+                        <input type="file" class="form-control" id="ldpFile" name="ldpFile" 
+                               accept="application/pdf,.pdf" required />
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Format: PDF. Maksimal: 50MB. 
+                            <br/>
+                            <small class="text-muted">Dokumen ini berisi rekapan seluruh ProcDocuments yang sudah ditanda tangan basah.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitUpload">
+                        <i class="bi bi-upload me-1"></i>Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script>
+        // ===== Constants (use var to avoid redeclaration error on HTMX swap) =====
+        var MAX_UPLOAD_SIZE = window.MAX_UPLOAD_SIZE || 50 * 1024 * 1024; // 50MB
+        var ANTIFORGERY_TOKEN = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+        // ===== Toast utility =====
+        function showToast(icon, title, text = '', timer = 4000) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon, title, text,
+                showConfirmButton: false,
+                timer, timerProgressBar: true,
+                didOpen: t => {
+                    t.addEventListener('mouseenter', Swal.stopTimer);
+                    t.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+        }
+
+        // ===== Modal helper =====
+        function closeUploadModal() {
+            const modalEl = document.getElementById('uploadModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            // Cleanup backdrop manually if stuck
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }, 300);
+        }
+
+        function openUploadModal(procurementId) {
+            document.getElementById('uploadProcurementId').value = procurementId;
+            document.getElementById('ldpFile').value = '';
+            const modalEl = document.getElementById('uploadModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+
+        // ===== Reinit HTMX =====
+        function reinitHtmx() {
+            if (typeof htmx !== 'undefined' && htmx.process) {
+                htmx.process(document.body);
+            }
+        }
+
+        // ===== Upload handler =====
+        function handleUpload(e) {
+            e.preventDefault();
+            
+            const procurementId = document.getElementById('uploadProcurementId').value;
+            const fileInput = document.getElementById('ldpFile');
+            const file = fileInput.files[0];
+            const submitBtn = document.getElementById('btnSubmitUpload');
+
+            if (!file) {
+                showToast('warning', 'Pilih file terlebih dahulu');
+                return;
+            }
+
+            // Validate file type
+            if (file.type !== 'application/pdf') {
+                showToast('error', 'Format tidak valid', 'Hanya file PDF yang diperbolehkan');
+                return;
+            }
+
+            // Validate file size
+            if (file.size > MAX_UPLOAD_SIZE) {
+                showToast('error', 'Ukuran file terlalu besar', 'Maksimal 50MB');
+                return;
+            }
+
+            // Disable button & show loading
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+
+            const formData = new FormData();
+            formData.append('procurementId', procurementId);
+            formData.append('ldpFile', file);
+
+            fetch('@Url.Action("UploadDocument", "Ldp")', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': ANTIFORGERY_TOKEN
+                },
+                body: formData
+            })
+            .then(async res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Upload gagal');
+                    return data;
+                } else {
+                    if (!res.ok) throw new Error('Upload gagal');
+                    return { success: true };
+                }
+            })
+            .then(data => {
+                closeUploadModal();
+                showToast('success', 'Upload berhasil!', 'Dokumen LDP berhasil diunggah');
+                
+                // Refresh page to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            })
+            .catch(err => {
+                console.error('Upload error:', err);
+                showToast('error', 'Upload gagal', err.message);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+
+        // ===== Download handler =====
+        function handleDownload(procurementId, filename) {
+            showToast('info', 'Memproses download...', '', 1500);
+            
+            const url = `@Url.Action("DownloadDocument", "Ldp")?procurementId=${encodeURIComponent(procurementId)}`;
+            const a = document.createElement('a');
+            a.href = url;
+            if (filename) a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            setTimeout(() => showToast('success', 'Download dimulai', filename || ''), 500);
+        }
+
+        // ===== Delete handler =====
+        function handleDelete(procurementId, filename) {
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                html: `<div class="text-start">
+                        <p class="mb-2">Apakah Anda yakin ingin menghapus dokumen LDP ini?</p>
+                        <div class="alert alert-warning mb-0">
+                            <strong><i class="bi bi-file-earmark-pdf me-1"></i>${filename || 'Dokumen LDP'}</strong>
+                        </div>
+                    </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-trash me-1"></i>Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    const formData = new FormData();
+                    formData.append('procurementId', procurementId);
+
+                    fetch('@Url.Action("DeleteDocument", "Ldp")', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': ANTIFORGERY_TOKEN
+                        },
+                        body: formData
+                    })
+                    .then(async res => {
+                        const contentType = res.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Hapus gagal');
+                            return data;
+                        } else {
+                            if (!res.ok) throw new Error('Hapus gagal');
+                            return { success: true };
+                        }
+                    })
+                    .then(data => {
+                        Swal.close();
+                        showToast('success', 'Berhasil dihapus!', 'Dokumen LDP telah dihapus');
+                        
+                        // Refresh page to show updated data
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    })
+                    .catch(err => {
+                        console.error('Delete error:', err);
+                        Swal.close();
+                        showToast('error', 'Hapus gagal', err.message);
+                    });
+                }
+            });
+        }
+
+        // ===== Initialize event handlers =====
+        function initLdpHandlers() {
+            // Upload form submit
+            const uploadForm = document.getElementById('uploadLdpForm');
+            if (uploadForm && !uploadForm.dataset.bound) {
+                uploadForm.dataset.bound = '1';
+                uploadForm.addEventListener('submit', handleUpload);
+            }
+
+            // Upload buttons (open modal)
+            document.querySelectorAll('.btn-upload-ldp').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', function() {
+                    openUploadModal(this.dataset.procurementId);
+                });
+            });
+
+            // Download buttons
+            document.querySelectorAll('.btn-download-ldp').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', function() {
+                    handleDownload(this.dataset.procurementId, this.dataset.filename);
+                });
+            });
+
+            // Delete buttons
+            document.querySelectorAll('.btn-delete-ldp').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', function() {
+                    handleDelete(this.dataset.procurementId, this.dataset.filename);
+                });
+            });
+
+            reinitHtmx();
+        }
+
+        // ===== DOM Ready =====
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLdpHandlers);
+        } else {
+            initLdpHandlers();
+        }
+
+        // Re-init after HTMX swaps
+        if (!window.ldpHtmxHooked) {
+            window.ldpHtmxHooked = true;
+            document.body?.addEventListener('htmx:afterSwap', initLdpHandlers);
+        }
+
+        // ===== Filter form handlers =====
+        (function () {
+            const form = document.getElementById('filterForm');
+            const searchBox = document.getElementById('searchBox');
+            const pageHidden = document.getElementById('pageHidden');
+
+            // Enter di search langsung submit (page reset ke 1)
+            searchBox.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    pageHidden.value = 1;
+                    form.submit();
+                }
+            });
+
+            // Refresh: hapus search, reset page ke 1 & submit
+            document.getElementById('btnRefresh').addEventListener('click', function () {
+                searchBox.value = '';
+                pageHidden.value = 1;
+                form.submit();
+            });
+        })();
+    </script>
+}

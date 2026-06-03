@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
-using QRCoder;
 
 namespace ProcurementHTE.Core.Services;
 
@@ -13,7 +12,6 @@ public sealed class ProcDocumentService : IProcDocumentService
     private readonly IProcDocumentRepository _procDocumentRepository;
     private readonly IProcurementRepository _procurementRepository;
     private readonly IJobTypeDocumentRepository _jobTypeDocumentRepository;
-    private readonly IProcDocApprovalFlowService _approvalFlowService;
     private readonly IProfitLossService _pnlService;
     private readonly IDocumentTypeRepository _documentTypeRepository;
     private readonly IObjectStorage _objectStorage;
@@ -23,7 +21,6 @@ public sealed class ProcDocumentService : IProcDocumentService
         IProcDocumentRepository procDocumentRepository,
         IProcurementRepository procurementRepository,
         IJobTypeDocumentRepository jobTypeDocumentRepository,
-        IProcDocApprovalFlowService approvalFlowService,
         IProfitLossService pnlService,
         IDocumentTypeRepository documentTypeRepository,
         IObjectStorage objectStorage,
@@ -38,8 +35,6 @@ public sealed class ProcDocumentService : IProcDocumentService
         _jobTypeDocumentRepository =
             jobTypeDocumentRepository
             ?? throw new ArgumentNullException(nameof(jobTypeDocumentRepository));
-        _approvalFlowService =
-            approvalFlowService ?? throw new ArgumentNullException(nameof(approvalFlowService));
         _pnlService = pnlService ?? throw new ArgumentNullException(nameof(pnlService));
         _documentTypeRepository =
             documentTypeRepository
@@ -70,7 +65,7 @@ public sealed class ProcDocumentService : IProcDocumentService
         );
     }
 
-    public async Task<bool> DeleteAsync(string procDocumentId)
+    public async Task<bool> DeleteAsync(string procDocumentId, string deletedByUserId)
     {
         var entity = await _procDocumentRepository.GetByIdAsync(procDocumentId);
         if (entity is null)
@@ -81,15 +76,33 @@ public sealed class ProcDocumentService : IProcDocumentService
             await SafeDeleteAsync(entity.ObjectKey);
         }
 
-        if (!string.IsNullOrWhiteSpace(entity.QrObjectKey))
-        {
-            await SafeDeleteAsync(entity.QrObjectKey);
-        }
-
-        await _procDocumentRepository.DeleteAsync(procDocumentId);
+        await _procDocumentRepository.DeleteAsync(procDocumentId, deletedByUserId);
         await _procDocumentRepository.SaveAsync();
 
         return true;
+    }
+
+    public async Task<int> DeleteAllByProcurementAsync(string procurementId, string deletedByUserId)
+    {
+        var documents = await _procDocumentRepository.GetByProcurementAsync(procurementId);
+        if (documents == null || documents.Count == 0)
+            return 0;
+
+        var deletedCount = 0;
+        foreach (var doc in documents)
+        {
+            // Soft delete file dari storage jika ada
+            if (!string.IsNullOrWhiteSpace(doc.ObjectKey))
+            {
+                await SafeDeleteAsync(doc.ObjectKey);
+            }
+
+            await _procDocumentRepository.DeleteAsync(doc.ProcDocumentId, deletedByUserId);
+            deletedCount++;
+        }
+
+        await _procDocumentRepository.SaveAsync();
+        return deletedCount;
     }
 
     public Task<ProcDocuments?> GetByIdAsync(string id) => _procDocumentRepository.GetByIdAsync(id);
@@ -142,7 +155,6 @@ public sealed class ProcDocumentService : IProcDocumentService
             Description = request.Description,
             CreatedAt = request.NowUtc,
             CreatedByUserId = request.UploadedByUserId,
-            Status = DocStatuses.Uploaded,
         };
 
         await _procDocumentRepository.AddAsync(entity);
@@ -253,13 +265,12 @@ public sealed class ProcDocumentService : IProcDocumentService
 
         var jobTypeDocs = await _jobTypeDocumentRepository.ListByJobTypeAsync(
             procurement.JobTypeId,
+            procurement.ProcurementCategory,
             ct
         );
 
         var docs = await _procDocumentRepository.GetByProcurementAsync(procurementId);
-        var availableDocTypes = docs.Where(d =>
-                !string.Equals(d.Status, DocStatuses.Deleted, StringComparison.OrdinalIgnoreCase)
-            )
+        var availableDocTypes = docs
             .Select(d => d.DocumentTypeId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -276,6 +287,10 @@ public sealed class ProcDocumentService : IProcDocumentService
         return required.All(cfg => availableDocTypes.Contains(cfg.DocumentTypeId));
     }
 
+    /// <summary>
+    /// Send approval sekarang hanya generate approval flow jika diperlukan.
+    /// Status tracking ada di level PR, bukan per document.
+    /// </summary>
     public async Task SendApprovalAsync(
         string procDocumentId,
         string requestedByUserId,
@@ -285,108 +300,58 @@ public sealed class ProcDocumentService : IProcDocumentService
         var doc = await _procDocumentRepository.GetByIdAsync(procDocumentId);
         if (doc == null)
             throw new InvalidOperationException("Dokumen tidak ditemukan.");
-        if (string.Equals(doc.Status, DocStatuses.Deleted, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Dokumen sudah dihapus.");
+
+        // SPH / SNH tidak memerlukan approval: skip
+        try
+        {
+            var docType = await _documentTypeRepository.GetByIdAsync(doc.DocumentTypeId);
+            var name = docType?.Name ?? doc.DocumentType?.Name ?? string.Empty;
+            var fileName = doc.FileName ?? string.Empty;
+            if (
+                name.Equals("Surat Penawaran Harga", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("Surat Negosiasi Harga", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("SPH_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("SNH_", StringComparison.OrdinalIgnoreCase)
+                || (fileName.Contains("Penawaran", StringComparison.OrdinalIgnoreCase)
+                    && fileName.Contains("Harga", StringComparison.OrdinalIgnoreCase))
+            )
+            {
+                return; // No approval needed for SPH/SNH
+            }
+        }
+        catch (Exception)
+        {
+            // fallback ke flow biasa jika lookup docType gagal
+        }
 
         var procurement = await GetProcurementOrThrowAsync(doc.ProcurementId);
         var jobTypeDocs = string.IsNullOrWhiteSpace(procurement.JobTypeId)
             ? Array.Empty<JobTypeDocuments>()
-            : await _jobTypeDocumentRepository.ListByJobTypeAsync(procurement.JobTypeId, ct);
-
-        await EnsureQrArtifactsAsync(doc, procurement, ct);
+            : await _jobTypeDocumentRepository.ListByJobTypeAsync(
+                procurement.JobTypeId,
+                procurement.ProcurementCategory,
+                ct
+            );
 
         var config = jobTypeDocs.FirstOrDefault(j =>
             j.DocumentTypeId.Equals(doc.DocumentTypeId, StringComparison.OrdinalIgnoreCase)
         );
 
-        if (config?.RequiresApproval == true)
-        {
-            if (
-                !string.Equals(
-                    doc.Status,
-                    DocStatuses.PendingApproval,
-                    StringComparison.OrdinalIgnoreCase
-                )
-            )
-            {
-                // Special handling: if this document is Profit & Loss and selected final offer > 300,000,000
-                // then append Vice President to approval flow
-                var extraRoles = new List<string>();
-                try
-                {
-                    var docType = await _documentTypeRepository.GetByIdAsync(doc.DocumentTypeId);
-                    if (
-                        docType != null
-                        && !string.IsNullOrWhiteSpace(docType.Name)
-                        && docType.Name.IndexOf(
-                            "Profit & Loss.pdf",
-                            StringComparison.OrdinalIgnoreCase
-                        ) >= 0
-                    )
-                    {
-                        var pnl = await _pnlService.GetLatestByProcurementAsync(doc.ProcurementId);
-                        if (pnl != null && pnl.SelectedVendorFinalOffer > 300_000_000m)
-                        {
-                            extraRoles.Add("Vice President");
-                        }
-                    }
-                }
-                catch (Exception) { }
-
-                if (extraRoles.Count > 0)
-                    await _approvalFlowService.GenerateFlowAsync(
-                        doc.ProcurementId,
-                        doc.ProcDocumentId,
-                        extraRoles
-                    );
-                else
-                    await _approvalFlowService.GenerateFlowAsync(
-                        doc.ProcurementId,
-                        doc.ProcDocumentId
-                    );
-
-                doc.Status = DocStatuses.PendingApproval;
-                await _procDocumentRepository.UpdateAsync(doc);
-            }
-        }
-        else
-        {
-            if (!DocStatuses.IsFinal(doc.Status ?? string.Empty))
-            {
-                doc.Status = DocStatuses.Approved;
-                doc.IsApproved = true;
-                doc.ApprovedAt = DateTime.UtcNow;
-                doc.ApprovedByUserId = requestedByUserId;
-                await _procDocumentRepository.UpdateAsync(doc);
-            }
-        }
-
-        await _procDocumentRepository.SaveAsync();
+        // Approval flow per document sudah dihapus
+        // Approval sekarang hanya di level PR
     }
 
-    public async Task<string?> GetPresignedQrUrlAsync(
+    /// <summary>
+    /// QR Code sekarang ada di level PR, bukan per document.
+    /// Method ini deprecated dan hanya return null.
+    /// </summary>
+    public Task<string?> GetPresignedQrUrlAsync(
         string procDocumentId,
         TimeSpan expiry,
         CancellationToken ct = default
     )
     {
-        var doc = await _procDocumentRepository.GetByIdAsync(procDocumentId);
-        if (doc is null)
-            return null;
-
-        var procurement = await GetProcurementOrThrowAsync(doc.ProcurementId);
-        await EnsureQrArtifactsAsync(doc, procurement, ct);
-        await _procDocumentRepository.SaveAsync();
-
-        if (string.IsNullOrWhiteSpace(doc.QrObjectKey))
-            return null;
-
-        return await _objectStorage.GetPresignedUrlAsync(
-            _storageOptions.Bucket,
-            doc.QrObjectKey,
-            expiry,
-            ct
-        );
+        return Task.FromResult<string?>(null);
     }
 
     public async Task<UploadProcDocumentResult> SaveGeneratedAsync(
@@ -454,7 +419,6 @@ public sealed class ProcDocumentService : IProcDocumentService
                 Description = request.Description,
                 CreatedAt = request.CreatedAt == default ? DateTime.UtcNow : request.CreatedAt,
                 CreatedByUserId = request.GeneratedByUserId,
-                Status = DocStatuses.Uploaded,
             };
 
             await _procDocumentRepository.AddAsync(entity);
@@ -470,12 +434,6 @@ public sealed class ProcDocumentService : IProcDocumentService
             entity.Description = request.Description;
             entity.CreatedAt = request.CreatedAt == default ? DateTime.UtcNow : request.CreatedAt;
             entity.CreatedByUserId = request.GeneratedByUserId;
-            entity.Status = DocStatuses.Uploaded;
-            entity.IsApproved = null;
-            entity.ApprovedAt = null;
-            entity.ApprovedByUserId = null;
-            entity.QrText = null;
-            entity.QrObjectKey = null;
 
             await _procDocumentRepository.UpdateAsync(entity);
         }
@@ -541,9 +499,6 @@ public sealed class ProcDocumentService : IProcDocumentService
     ) =>
         $"procurements/{procurementId}/generated/{documentTypeId}/{Guid.NewGuid():N}-{SanitizeFileName(fileName)}";
 
-    private static string BuildQrObjectKey(string procurementId, string procDocumentId) =>
-        $"procurements/{procurementId}/qr/{procDocumentId}.png";
-
     private static string SanitizeFileName(string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
@@ -557,54 +512,6 @@ public sealed class ProcDocumentService : IProcDocumentService
         }
 
         return builder.ToString();
-    }
-
-    private static byte[] GenerateQrBytes(string data)
-    {
-        var generator = new QRCodeGenerator();
-        var qrData = generator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);
-        var qrCode = new PngByteQRCode(qrData);
-        return qrCode.GetGraphic(pixelsPerModule: 10);
-    }
-
-    private static string BuildQrText(ProcDocuments doc, Procurement procurement)
-    {
-        return $"DocId={doc.ProcDocumentId};ProcNum={procurement.ProcNum};Type={doc.DocumentTypeId}";
-    }
-
-    private async Task EnsureQrArtifactsAsync(
-        ProcDocuments doc,
-        Procurement procurement,
-        CancellationToken ct
-    )
-    {
-        var requiresUpload = string.IsNullOrWhiteSpace(doc.QrObjectKey);
-        if (string.IsNullOrWhiteSpace(doc.QrText))
-        {
-            doc.QrText = BuildQrText(doc, procurement);
-            await _procDocumentRepository.UpdateAsync(doc);
-        }
-
-        if (!requiresUpload)
-            return;
-
-        var bytes = GenerateQrBytes(doc.QrText!);
-        var objectKey = BuildQrObjectKey(procurement.ProcurementId, doc.ProcDocumentId);
-
-        using (var ms = new MemoryStream(bytes, writable: false))
-        {
-            await _objectStorage.UploadAsync(
-                _storageOptions.Bucket,
-                objectKey,
-                ms,
-                ms.Length,
-                "image/png",
-                ct
-            );
-        }
-
-        doc.QrObjectKey = objectKey;
-        await _procDocumentRepository.UpdateAsync(doc);
     }
 
     private async Task SafeDeleteAsync(string objectKey)

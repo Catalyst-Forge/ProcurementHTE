@@ -11,7 +11,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
     public class JobTypeController : Controller
     {
         private readonly IJobTypeService _jobTypeService;
-        private const string ActivePageName = "Index Work Order Types";
+        private const string ActivePageName = "Index Job Types";
 
         public JobTypeController(IJobTypeService jobTypeService)
         {
@@ -76,12 +76,12 @@ namespace ProcurementHTE.Web.Controllers.MasterData
             try
             {
                 await _jobTypeService.AddJobTypesAsync(jobType);
-                TempData["SuccessMessage"] = "Work order type added successfully.";
+                TempData["SuccessMessage"] = "Job type added successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Failed to add work order type: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to add job type: " + ex.Message;
                 return View(jobType);
             }
         }
@@ -113,12 +113,12 @@ namespace ProcurementHTE.Web.Controllers.MasterData
             try
             {
                 await _jobTypeService.EditJobTypesAsync(jobType, JobTypeId);
-                TempData["SuccessMessage"] = "Work order type updated successfully.";
+                TempData["SuccessMessage"] = "Job type updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Failed to update work order type: " + ex.Message;
+                TempData["ErrorMessage"] = "Failed to update job type: " + ex.Message;
                 return View(jobType);
             }
         }
@@ -140,19 +140,17 @@ namespace ProcurementHTE.Web.Controllers.MasterData
 
                 await _jobTypeService.DeleteJobTypesAsync(jobType);
 
-                TempData["SuccessMessage"] = "Work order type deleted successfully.";
+                TempData["SuccessMessage"] = "Job type deleted successfully.";
             }
             catch (DbUpdateException ex)
             {
                 // tampilkan pesan SQL aslinya
                 var inner = ex.InnerException?.Message ?? ex.Message;
                 TempData["ErrorMessage"] = $"DBUpdateException: {inner}";
-                Console.WriteLine("[DEBUG] SQL ERROR: " + inner);
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Unexpected error: {ex.Message}";
-                Console.WriteLine("[DEBUG] Unexpected ERROR: " + ex);
             }
 
             return RedirectToAction(nameof(Index));
