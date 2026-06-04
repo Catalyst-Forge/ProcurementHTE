@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Options;
 using ProcurementHTE.Infrastructure.Data;
@@ -25,6 +26,12 @@ builder.Services.AddHttpClient("MinioProxy");
 builder.Services.Configure<SecurityBypassOptions>(
     builder.Configuration.GetSection("SecurityBypass")
 );
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // SignalR for real-time updates
 builder.Services.AddSignalR();
@@ -59,6 +66,7 @@ else
     app.UseHsts();
 }
 
+app.UseForwardedHeaders();
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 app.UseHttpsRedirection();
