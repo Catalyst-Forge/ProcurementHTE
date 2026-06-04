@@ -401,17 +401,11 @@ a {
 }
 
 .twofactor-setup-content {
-  min-height: 37rem;
   scroll-margin-top: 5rem;
 }
 
 .twofactor-setup-card {
   border-radius: 0.5rem;
-  min-height: 37rem;
-}
-
-.twofactor-setup-card .card-body {
-  min-height: 35rem;
 }
 
 .twofactor-panel-body {
@@ -584,11 +578,6 @@ a {
   }
 
   .twofactor-setup-card .card-body {
-    min-height: auto;
-  }
-
-  .twofactor-setup-card,
-  .twofactor-setup-content {
     min-height: auto;
   }
 
