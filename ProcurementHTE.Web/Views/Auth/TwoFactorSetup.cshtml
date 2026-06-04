@@ -224,7 +224,29 @@
     <script>
         (() => {
             const sendUrl = '@Url.Action("SendTwoFactorSetupCode")';
+            const setupTabs = document.getElementById('twoFactorSetupTabs');
             const DEFAULT_COOLDOWN = 60;
+
+            function initStableTabs() {
+                if (!setupTabs) return;
+                let previousTop = null;
+
+                setupTabs.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+                    tab.addEventListener('show.bs.tab', () => {
+                        previousTop = setupTabs.getBoundingClientRect().top;
+                    });
+
+                    tab.addEventListener('shown.bs.tab', () => {
+                        if (previousTop === null) return;
+                        const nextTop = setupTabs.getBoundingClientRect().top;
+                        const delta = nextTop - previousTop;
+                        if (Math.abs(delta) > 1) {
+                            window.scrollBy(0, delta);
+                        }
+                        previousTop = null;
+                    });
+                });
+            }
 
             function startCooldown(button, seconds, statusSelector, baseMessage) {
                 if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
@@ -386,6 +408,7 @@
 
             initOtpInputs();
             initCooldownButtons();
+            initStableTabs();
         })();
     </script>
 }

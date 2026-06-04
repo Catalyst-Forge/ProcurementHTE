@@ -356,9 +356,8 @@ a {
 }
 
 .twofactor-method-tabs {
-  position: sticky;
-  top: 0.75rem;
-  z-index: 20;
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: nowrap;
   gap: 0.35rem;
@@ -367,7 +366,7 @@ a {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 0.75rem;
   background: rgba(248, 249, 250, 0.94);
-  box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.08);
+  box-shadow: 0 0.35rem 1rem rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(10px);
 }
 
@@ -397,15 +396,17 @@ a {
 }
 
 .twofactor-setup-content {
+  min-height: 44rem;
   scroll-margin-top: 5rem;
 }
 
 .twofactor-setup-card {
   border-radius: 0.5rem;
+  min-height: 44rem;
 }
 
 .twofactor-setup-card .card-body {
-  min-height: 31rem;
+  min-height: 42rem;
 }
 
 .twofactor-secret-code {
@@ -440,7 +441,6 @@ a {
 
 @media (max-width: 576px) {
   .twofactor-method-tabs {
-    top: 0.5rem;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -458,6 +458,11 @@ a {
   }
 
   .twofactor-setup-card .card-body {
+    min-height: auto;
+  }
+
+  .twofactor-setup-card,
+  .twofactor-setup-content {
     min-height: auto;
   }
 
