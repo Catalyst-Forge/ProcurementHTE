@@ -375,11 +375,16 @@ a {
 }
 
 .twofactor-method-tabs .nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: 2.85rem;
+  padding: 0 0.75rem;
   border-radius: 0.55rem;
   color: #1f2937;
   font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
 }
 
