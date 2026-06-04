@@ -23,6 +23,7 @@ namespace ProcurementHTE.Web.Controllers.Account
         private readonly IAccountService _accountService;
         private readonly EmailSenderOptions _emailOptions;
         private readonly SmsSenderOptions _smsOptions;
+        private readonly SecurityBypassOptions _securityBypassOptions;
         private const int VerificationCooldownSeconds = 60;
         private const string EmailVerificationCooldownKey = "settings.email";
         private const string PhoneVerificationCooldownKey = "settings.phone";
@@ -32,7 +33,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             SignInManager<User> signInManager,
             IAccountService accountService,
             IOptions<EmailSenderOptions> emailOptions,
-            IOptions<SmsSenderOptions> smsOptions
+            IOptions<SmsSenderOptions> smsOptions,
+            IOptions<SecurityBypassOptions> bypassOptions
         )
         {
             _userManager = userManager;
@@ -40,6 +42,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             _accountService = accountService;
             _emailOptions = emailOptions.Value;
             _smsOptions = smsOptions.Value;
+            _securityBypassOptions = bypassOptions.Value ?? new SecurityBypassOptions();
         }
 
         public async Task<IActionResult> Settings()
@@ -115,6 +118,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             ViewBag.DevMagicLink = _emailOptions.UseDevelopmentMode
                 ? TempData["DevMagicLink"]
                 : null;
+            ViewBag.SmsVerificationAvailable =
+                IsSmsVerificationAvailable() && !_securityBypassOptions.BypassPhoneVerification;
             ViewBag.RecoveryCodesHidden = overview.RecoveryCodesHidden;
             ViewBag.HasStoredRecoveryCodes = recoveryCodes?.Length > 0;
             ViewBag.EmailVerificationCooldown = GetCooldownSeconds(EmailVerificationCooldownKey);
@@ -122,6 +127,8 @@ namespace ProcurementHTE.Web.Controllers.Account
             ViewBag.RequirePhoneVerificationForTwoFactor =
                 twoFactor.IsEnabled
                 && twoFactor.Method == TwoFactorMethod.Sms
+                && IsSmsVerificationAvailable()
+                && !_securityBypassOptions.BypassPhoneVerification
                 && !overview.PhoneNumberConfirmed;
             ViewBag.RequireEmailVerificationForTwoFactor =
                 twoFactor.IsEnabled
@@ -162,7 +169,10 @@ namespace ProcurementHTE.Web.Controllers.Account
                 StringComparison.OrdinalIgnoreCase
             );
             var requiresPhoneVerification =
-                phoneChanged && !string.IsNullOrWhiteSpace(normalizedPhone);
+                phoneChanged
+                && !string.IsNullOrWhiteSpace(normalizedPhone)
+                && IsSmsVerificationAvailable()
+                && !_securityBypassOptions.BypassPhoneVerification;
 
             var request = new UpdateProfileRequest
             {
@@ -312,6 +322,12 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            if (_securityBypassOptions.BypassPhoneVerification || !IsSmsVerificationAvailable())
+            {
+                TempData["ErrorMessage"] = "Verifikasi nomor HP sementara dinonaktifkan.";
+                return RedirectToAction(nameof(Settings));
+            }
+
             if (IsCooldownActive(PhoneVerificationCooldownKey, out var phoneRemaining))
             {
                 TempData["ErrorMessage"] =
@@ -355,6 +371,12 @@ namespace ProcurementHTE.Web.Controllers.Account
             var user = await GetCurrentUserAsync();
             if (user == null)
                 return RedirectToAction("Login", "Auth");
+
+            if (_securityBypassOptions.BypassPhoneVerification || !IsSmsVerificationAvailable())
+            {
+                TempData["ErrorMessage"] = "Verifikasi nomor HP sementara dinonaktifkan.";
+                return RedirectToAction(nameof(Settings));
+            }
 
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -439,6 +461,14 @@ namespace ProcurementHTE.Web.Controllers.Account
             var user = await GetCurrentUserAsync();
             if (user == null)
                 return RedirectToAction("Login", "Auth");
+
+            if (method == TwoFactorMethod.Sms && !CanUseSmsTwoFactor(user))
+            {
+                TempData["ErrorMessage"] = IsSmsVerificationAvailable()
+                    ? "Nomor HP belum siap untuk SMS OTP."
+                    : "SMS OTP belum dikonfigurasi.";
+                return RedirectToAction(nameof(Settings));
+            }
 
             try
             {
@@ -582,6 +612,19 @@ namespace ProcurementHTE.Web.Controllers.Account
                     {
                         success = false,
                         message = "Authenticator tidak membutuhkan kode pengiriman.",
+                    }
+                );
+            }
+
+            if (method == TwoFactorMethod.Sms && !CanUseSmsTwoFactor(user))
+            {
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = IsSmsVerificationAvailable()
+                            ? "Nomor HP belum siap untuk SMS OTP."
+                            : "SMS OTP belum dikonfigurasi.",
                     }
                 );
             }
@@ -731,6 +774,19 @@ namespace ProcurementHTE.Web.Controllers.Account
         private string? GetCurrentSessionId() => Request.Cookies[CookieNames.Session];
 
         private string? GetRemoteIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
+
+        private bool CanUseSmsTwoFactor(User user) =>
+            !_securityBypassOptions.BypassPhoneVerification
+            && IsSmsVerificationAvailable()
+            && !string.IsNullOrWhiteSpace(user.PhoneNumber)
+            && user.PhoneNumberConfirmed;
+
+        private bool IsSmsVerificationAvailable() =>
+            _smsOptions.UseDevelopmentMode
+            || (
+                !string.IsNullOrWhiteSpace(_smsOptions.ProviderUrl)
+                && !string.IsNullOrWhiteSpace(_smsOptions.ApiKey)
+            );
 
         private bool IsCooldownActive(string key, out int remainingSeconds)
         {

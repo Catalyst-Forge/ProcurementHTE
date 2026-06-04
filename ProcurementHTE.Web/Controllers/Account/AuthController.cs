@@ -543,6 +543,12 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (user == null)
                 return RedirectToAction("Login");
 
+            if (_securityBypassOptions.BypassPhoneVerification || !IsSmsVerificationAvailable())
+            {
+                TempData["ErrorMessage"] = "Verifikasi nomor HP sementara dinonaktifkan.";
+                return RedirectToAction(nameof(ContactVerification), new { returnUrl });
+            }
+
             if (string.IsNullOrWhiteSpace(user.PhoneNumber))
             {
                 TempData["ErrorMessage"] = "Nomor HP belum diisi.";
@@ -594,9 +600,7 @@ namespace ProcurementHTE.Web.Controllers.Account
                 HttpContext.RequestAborted
             );
             var emailAvailable = !string.IsNullOrWhiteSpace(user.Email) && user.EmailConfirmed;
-            var phoneAvailable =
-                RequiresPhoneVerification(user) == false
-                && !string.IsNullOrWhiteSpace(user.PhoneNumber);
+            var phoneAvailable = CanUseSmsTwoFactor(user);
             var requestedTab = TempData["TwoFactorSetupActiveTab"] as string;
             var defaultTab = string.IsNullOrWhiteSpace(requestedTab)
                 ? "auth"
@@ -661,6 +665,15 @@ namespace ProcurementHTE.Web.Controllers.Account
                 return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
             }
 
+            if (method == TwoFactorMethod.Sms && !CanUseSmsTwoFactor(user))
+            {
+                TempData["ErrorMessage"] = IsSmsVerificationAvailable()
+                    ? "Nomor HP belum siap untuk SMS OTP."
+                    : "SMS OTP belum dikonfigurasi.";
+                TempData["TwoFactorSetupActiveTab"] = GetTabForMethod(method);
+                return RedirectToAction(nameof(TwoFactorSetup), new { returnUrl });
+            }
+
             try
             {
                 await _accountService.EnableTwoFactorAsync(
@@ -710,6 +723,19 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (method == TwoFactorMethod.Sms && RequiresPhoneVerification(user))
             {
                 return Json(new { success = false, message = "Nomor HP belum terverifikasi." });
+            }
+
+            if (method == TwoFactorMethod.Sms && !CanUseSmsTwoFactor(user))
+            {
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = IsSmsVerificationAvailable()
+                            ? "Nomor HP belum siap untuk SMS OTP."
+                            : "SMS OTP belum dikonfigurasi.",
+                    }
+                );
             }
 
             var cooldownKey = method switch
@@ -777,6 +803,12 @@ namespace ProcurementHTE.Web.Controllers.Account
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return RedirectToAction("Login");
+
+            if (_securityBypassOptions.BypassPhoneVerification || !IsSmsVerificationAvailable())
+            {
+                TempData["ErrorMessage"] = "Verifikasi nomor HP sementara dinonaktifkan.";
+                return RedirectToAction(nameof(ContactVerification), new { returnUrl });
+            }
 
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -1662,7 +1694,23 @@ namespace ProcurementHTE.Web.Controllers.Account
         }
 
         private bool RequiresPhoneVerification(User user) =>
-            !string.IsNullOrWhiteSpace(user.PhoneNumber) && !user.PhoneNumberConfirmed;
+            !_securityBypassOptions.BypassPhoneVerification
+            && IsSmsVerificationAvailable()
+            && !string.IsNullOrWhiteSpace(user.PhoneNumber)
+            && !user.PhoneNumberConfirmed;
+
+        private bool CanUseSmsTwoFactor(User user) =>
+            !_securityBypassOptions.BypassPhoneVerification
+            && IsSmsVerificationAvailable()
+            && !string.IsNullOrWhiteSpace(user.PhoneNumber)
+            && user.PhoneNumberConfirmed;
+
+        private bool IsSmsVerificationAvailable() =>
+            _smsOptions.UseDevelopmentMode
+            || (
+                !string.IsNullOrWhiteSpace(_smsOptions.ProviderUrl)
+                && !string.IsNullOrWhiteSpace(_smsOptions.ApiKey)
+            );
 
         private static string GetTabForMethod(TwoFactorMethod method) =>
             method switch

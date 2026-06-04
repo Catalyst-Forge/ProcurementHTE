@@ -18,6 +18,9 @@
     var hasStoredRecoveryCodes = recoveryCodes?.Any() == true;
     var emailVerificationCooldown = ViewBag.EmailVerificationCooldown as int? ?? 0;
     var phoneVerificationCooldown = ViewBag.PhoneVerificationCooldown as int? ?? 0;
+    var smsVerificationAvailable = ViewBag.SmsVerificationAvailable as bool? ?? false;
+    var contactVerificationComplete = Model.Overview.EmailConfirmed
+        && (Model.Overview.PhoneNumberConfirmed || !smsVerificationAvailable);
 }
 
 @section HeadScripts {
@@ -98,10 +101,12 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-0">Verifikasi Kontak</h5>
-            <small class="text-muted">Pastikan email dan nomor HP terverifikasi untuk keamanan maksimal.</small>
+            <small class="text-muted">
+                Pastikan email terverifikasi. Verifikasi nomor HP akan aktif setelah gateway SMS/WhatsApp tersedia.
+            </small>
         </div>
-        <span class="badge @(Model.Overview.EmailConfirmed && Model.Overview.PhoneNumberConfirmed ? "text-bg-success" : "text-bg-warning")">
-            @(Model.Overview.EmailConfirmed && Model.Overview.PhoneNumberConfirmed ? "Semua tervalidasi" : "Butuh verifikasi")
+        <span class="badge @(contactVerificationComplete ? "text-bg-success" : "text-bg-warning")">
+            @(contactVerificationComplete ? "Kontak utama tervalidasi" : "Butuh verifikasi")
         </span>
     </div>
     <div class="card-body">
@@ -156,12 +161,23 @@
                                     <i class="bi bi-check-circle-fill text-primary fs-5"></i>
                                 }
                             </div>
-                            <small class="text-muted">Status: @(Model.Overview.PhoneNumberConfirmed ? "Terverifikasi" : "Belum terverifikasi")</small>
+                            <small class="text-muted">
+                                Status:
+                                @(Model.Overview.PhoneNumberConfirmed
+                                    ? "Terverifikasi"
+                                    : smsVerificationAvailable ? "Belum terverifikasi" : "Ditunda sementara")
+                            </small>
                         </div>
                         <i class="bi bi-phone icon-lg text-primary"></i>
                     </div>
 
-                    @if (string.IsNullOrWhiteSpace(Model.Overview.PhoneNumber))
+                    @if (!smsVerificationAvailable)
+                    {
+                        <div class="alert alert-info mt-3 mb-0 small">
+                            Verifikasi nomor HP sementara dinonaktifkan sampai gateway SMS/WhatsApp dikonfigurasi.
+                        </div>
+                    }
+                    else if (string.IsNullOrWhiteSpace(Model.Overview.PhoneNumber))
                     {
                         <div class="alert alert-warning mt-3 mb-0 small">
                             Isi nomor HP terlebih dahulu di form profil sebelum melakukan verifikasi.
@@ -340,11 +356,19 @@
                                         <small class="text-muted">Kode dikirim ke email @Model.Overview.Email.</small>
                                     </div>
                                 </label>
-                                <label class="list-group-item d-flex align-items-start gap-2">
-                                    <input class="form-check-input mt-1" type="radio" name="method" value="@TwoFactorMethod.Sms" />
+                                <label class="list-group-item d-flex align-items-start gap-2 @(smsVerificationAvailable && Model.Overview.PhoneNumberConfirmed ? string.Empty : "text-muted")">
+                                    <input class="form-check-input mt-1"
+                                           type="radio"
+                                           name="method"
+                                           value="@TwoFactorMethod.Sms"
+                                           @(smsVerificationAvailable && Model.Overview.PhoneNumberConfirmed ? string.Empty : "disabled") />
                                     <div>
                                         <div class="fw-semibold">SMS OTP</div>
-                                        <small class="text-muted">Pastikan nomor HP valid.</small>
+                                        <small class="text-muted">
+                                            @(smsVerificationAvailable
+                                                ? "Pastikan nomor HP sudah terverifikasi."
+                                                : "Belum tersedia sampai gateway SMS/WhatsApp dikonfigurasi.")
+                                        </small>
                                     </div>
                                 </label>
                             </div>

@@ -359,20 +359,30 @@ a {
 }
 
 .otp-input-wrapper {
-  justify-content: center;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(2.25rem, 3rem));
+  gap: 0.5rem !important;
+  justify-content: start;
+  max-width: 100%;
 }
 
 .otp-input {
-  width: 3rem;
+  width: 100%;
+  min-width: 0;
   height: 3.25rem;
   font-size: 1.35rem;
   font-weight: 600;
   border-radius: 0.65rem;
+  padding-inline: 0;
 }
 
 @media (max-width: 576px) {
+  .otp-input-wrapper {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.35rem !important;
+  }
+
   .otp-input {
-    width: 2.75rem;
     height: 3rem;
     font-size: 1.25rem;
   }
