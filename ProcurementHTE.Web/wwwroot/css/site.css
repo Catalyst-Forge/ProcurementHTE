@@ -350,6 +350,68 @@ a {
   color: #fff;
 }
 
+.twofactor-setup-page {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.twofactor-method-tabs {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  align-items: stretch;
+  padding: 0.35rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(248, 249, 250, 0.94);
+  box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.twofactor-method-tabs .nav-item {
+  flex: 1 1 0;
+}
+
+.twofactor-method-tabs .nav-link {
+  width: 100%;
+  min-height: 2.85rem;
+  border-radius: 0.55rem;
+  color: #1f2937;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.twofactor-method-tabs .nav-link.active {
+  color: #fff;
+  box-shadow: 0 0.35rem 0.75rem rgba(13, 110, 253, 0.24);
+}
+
+.twofactor-method-tabs .nav-link.disabled,
+.twofactor-method-tabs .nav-link:disabled {
+  color: #6c757d;
+  background-color: #eef1f4;
+  opacity: 0.72;
+}
+
+.twofactor-setup-content {
+  scroll-margin-top: 5rem;
+}
+
+.twofactor-setup-card {
+  border-radius: 0.5rem;
+}
+
+.twofactor-setup-card .card-body {
+  min-height: 31rem;
+}
+
+.twofactor-secret-code {
+  overflow-wrap: anywhere;
+}
+
 .equal-card {
   height: 100%;
 }
@@ -377,6 +439,28 @@ a {
 }
 
 @media (max-width: 576px) {
+  .twofactor-method-tabs {
+    top: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .twofactor-method-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .twofactor-method-tabs .nav-item {
+    flex: 0 0 auto;
+  }
+
+  .twofactor-method-tabs .nav-link {
+    min-width: 7.75rem;
+  }
+
+  .twofactor-setup-card .card-body {
+    min-height: auto;
+  }
+
   .otp-input-wrapper {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.35rem !important;
