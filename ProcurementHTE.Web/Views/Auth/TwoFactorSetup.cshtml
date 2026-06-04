@@ -55,32 +55,37 @@
 <div class="tab-content twofactor-setup-content">
     <div class="tab-pane fade @(activeTab == "auth" ? "show active" : string.Empty)" id="tab-auth" role="tabpanel">
         <div class="card shadow-sm equal-card twofactor-setup-card">
-            <div class="card-body d-flex flex-column gap-3">
-                <h5 class="mb-1">Authenticator App</h5>
-                <p class="text-muted">Scan QR atau masukkan kode di aplikasi authenticator, lalu isi kode 6 digit yang muncul.</p>
-                <form asp-action="EnableTwoFactorFromSetup" method="post" class="d-flex flex-column gap-3 flex-grow-1">
+            <div class="card-body twofactor-panel-body">
+                <div class="twofactor-panel-header">
+                    <h5>Authenticator App</h5>
+                    <p>Scan QR atau masukkan kode di aplikasi authenticator, lalu isi kode 6 digit yang muncul.</p>
+                </div>
+                <form asp-action="EnableTwoFactorFromSetup" method="post" class="twofactor-method-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="method" value="@TwoFactorMethod.AuthenticatorApp" />
                     <input type="hidden" name="returnUrl" value="@returnUrl" />
-                    <div class="border rounded p-3 bg-light-subtle small">
-                        <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="twofactor-method-surface twofactor-auth-surface">
+                        <div class="twofactor-secret-block">
                             <div>
                                 <span class="fw-semibold d-block text-uppercase text-muted small">Kode Rahasia</span>
                                 <span class="fs-5 fw-bold twofactor-secret-code">@Model.SharedKey</span>
                             </div>
-                            @if (!string.IsNullOrWhiteSpace(Model.AuthenticatorQrBase64))
-                            {
-                                <img src="data:image/png;base64,@Model.AuthenticatorQrBase64" alt="QR" class="border rounded" style="max-width: 200px;" />
-                            }
+                            <small class="text-muted d-block mt-2">Gunakan kode ini kalau aplikasi authenticator tidak bisa scan QR.</small>
                         </div>
-                        <small class="text-muted d-block mt-2">Buka Google Authenticator / Microsoft Authenticator lalu scan QR di atas.</small>
+                        @if (!string.IsNullOrWhiteSpace(Model.AuthenticatorQrBase64))
+                        {
+                            <div class="twofactor-qr-frame">
+                                <img src="data:image/png;base64,@Model.AuthenticatorQrBase64" alt="QR" />
+                                <small>Buka Google Authenticator / Microsoft Authenticator lalu scan QR.</small>
+                            </div>
+                        }
                     </div>
-                    <div>
+                    <div class="twofactor-code-section">
                         <label class="form-label fw-semibold">Kode Verifikasi</label>
                         <input type="text" name="verificationCode" class="form-control" maxlength="8" placeholder="123456" required />
                         <small class="text-muted">Masukkan kode yang tampil di aplikasi authenticator.</small>
                     </div>
-                    <div class="d-flex justify-content-between mt-auto">
+                    <div class="twofactor-action-row">
                         <button type="submit"
                                 class="btn btn-link link-secondary"
                                 formaction="@Url.Action("Logout", "Auth")"
@@ -97,39 +102,42 @@
 
     <div class="tab-pane fade @(activeTab == "email" ? "show active" : string.Empty)" id="tab-email" role="tabpanel">
         <div class="card shadow-sm equal-card twofactor-setup-card">
-            <div class="card-body d-flex flex-column">
+            <div class="card-body twofactor-panel-body">
                 @if (!emailAvailable)
                 {
-                    <div class="alert alert-warning mb-0">
-                        Email belum terverifikasi. Selesaikan verifikasi email sebelum menggunakan metode ini.
+                    <div class="twofactor-unavailable-state">
+                        <h5>Email OTP</h5>
+                        <p class="mb-0">Email belum terverifikasi. Selesaikan verifikasi email sebelum menggunakan metode ini.</p>
                     </div>
                 }
                 else
                 {
-                    <h5 class="mb-1">OTP via Email</h5>
-                    <p class="text-muted">Kami akan mengirimkan kode OTP ke email terverifikasi Anda.</p>
-                    <form asp-action="EnableTwoFactorFromSetup" method="post" class="mt-3 d-flex flex-column gap-3 flex-grow-1">
+                    <div class="twofactor-panel-header">
+                        <h5>OTP via Email</h5>
+                        <p>Kami akan mengirimkan kode OTP ke email terverifikasi Anda.</p>
+                    </div>
+                    <form asp-action="EnableTwoFactorFromSetup" method="post" class="twofactor-method-form">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="method" value="@TwoFactorMethod.Email" />
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                        <div>
+                        <div class="twofactor-method-surface">
                             <label class="form-label">Email Tujuan</label>
-                            <input type="text" class="form-control" value="@(Model.Email ?? "-")" readonly />
-                                    <div class="d-flex align-items-center gap-2 mt-2">
-                                        <button type="button"
-                                                class="btn btn-outline-primary"
-                                                data-send-setup-code
-                                                data-method="email"
-                                                data-status-target="#emailSetupStatus"
-                                                data-label="Kirim kode"
-                                                data-cooldown-button
-                                                data-cooldown-seconds="@((emailAvailable ? emailSetupCooldown : 0))">
-                                            Kirim kode
-                                        </button>
-                                        <div class="small" id="emailSetupStatus"></div>
-                                    </div>
+                            <div class="twofactor-send-row">
+                                <input type="text" class="form-control" value="@(Model.Email ?? "-")" readonly />
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        data-send-setup-code
+                                        data-method="email"
+                                        data-status-target="#emailSetupStatus"
+                                        data-label="Kirim kode"
+                                        data-cooldown-button
+                                        data-cooldown-seconds="@((emailAvailable ? emailSetupCooldown : 0))">
+                                    Kirim kode
+                                </button>
+                            </div>
+                            <div class="small twofactor-status-line" id="emailSetupStatus"></div>
                         </div>
-                        <div>
+                        <div class="twofactor-code-section">
                             <label class="form-label">Kode OTP</label>
                             <input type="hidden" name="verificationCode" data-otp-hidden="TwoFactor.Email" />
                             <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactor.Email">
@@ -140,7 +148,7 @@
                             </div>
                             <small class="text-muted">Masukkan kode 6 digit dari email Anda.</small>
                         </div>
-                        <div class="d-flex justify-content-between mt-auto">
+                        <div class="twofactor-action-row">
                             <button type="submit"
                                     class="btn btn-link link-secondary"
                                     formaction="@Url.Action("Logout", "Auth")"
@@ -158,39 +166,42 @@
 
     <div class="tab-pane fade @(activeTab == "sms" ? "show active" : string.Empty)" id="tab-sms" role="tabpanel">
         <div class="card shadow-sm equal-card twofactor-setup-card">
-            <div class="card-body d-flex flex-column">
+            <div class="card-body twofactor-panel-body">
                 @if (!smsAvailable)
                 {
-                    <div class="alert alert-warning mb-0">
-                        Nomor HP belum terverifikasi. Selesaikan verifikasi nomor dahulu sebelum menggunakan metode ini.
+                    <div class="twofactor-unavailable-state">
+                        <h5>SMS OTP</h5>
+                        <p class="mb-0">SMS OTP belum tersedia. Selesaikan verifikasi nomor setelah gateway SMS/WhatsApp dikonfigurasi.</p>
                     </div>
                 }
                 else
                 {
-                    <h5 class="mb-1">OTP via SMS</h5>
-                    <p class="text-muted">Kami kirimkan OTP ke nomor HP Anda.</p>
-                    <form asp-action="EnableTwoFactorFromSetup" method="post" class="mt-3 d-flex flex-column gap-3 flex-grow-1">
+                    <div class="twofactor-panel-header">
+                        <h5>OTP via SMS</h5>
+                        <p>Kami kirimkan OTP ke nomor HP Anda.</p>
+                    </div>
+                    <form asp-action="EnableTwoFactorFromSetup" method="post" class="twofactor-method-form">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="method" value="@TwoFactorMethod.Sms" />
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                        <div>
+                        <div class="twofactor-method-surface">
                             <label class="form-label">Nomor Tujuan</label>
-                            <input type="text" class="form-control" value="@(Model.PhoneNumber ?? "-")" readonly />
-                                    <div class="d-flex align-items-center gap-2 mt-2">
-                                        <button type="button"
-                                                class="btn btn-outline-secondary"
-                                                data-send-setup-code
-                                                data-method="sms"
-                                                data-status-target="#smsSetupStatus"
-                                                data-label="Kirim kode"
-                                                data-cooldown-button
-                                                data-cooldown-seconds="@((smsAvailable ? smsSetupCooldown : 0))">
-                                            Kirim kode
-                                        </button>
-                                        <div class="small" id="smsSetupStatus"></div>
-                                    </div>
+                            <div class="twofactor-send-row">
+                                <input type="text" class="form-control" value="@(Model.PhoneNumber ?? "-")" readonly />
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        data-send-setup-code
+                                        data-method="sms"
+                                        data-status-target="#smsSetupStatus"
+                                        data-label="Kirim kode"
+                                        data-cooldown-button
+                                        data-cooldown-seconds="@((smsAvailable ? smsSetupCooldown : 0))">
+                                    Kirim kode
+                                </button>
+                            </div>
+                            <div class="small twofactor-status-line" id="smsSetupStatus"></div>
                         </div>
-                        <div>
+                        <div class="twofactor-code-section">
                             <label class="form-label">Kode OTP</label>
                             <input type="hidden" name="verificationCode" data-otp-hidden="TwoFactor.Sms" />
                             <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactor.Sms">
@@ -201,7 +212,7 @@
                             </div>
                             <small class="text-muted">Masukkan kode 6 digit dari SMS.</small>
                         </div>
-                        <div class="d-flex justify-content-between mt-auto">
+                        <div class="twofactor-action-row">
                             <button type="submit"
                                     class="btn btn-link link-secondary"
                                     formaction="@Url.Action("Logout", "Auth")"
