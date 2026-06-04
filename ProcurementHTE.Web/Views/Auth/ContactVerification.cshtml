@@ -117,7 +117,12 @@
         </div>
 
         <div class="text-center mt-3">
-            <a asp-action="Login" class="link-secondary">Keluar &amp; ganti akun</a>
+            <form asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-link link-secondary p-0">
+                    Keluar &amp; ganti akun
+                </button>
+            </form>
         </div>
     </div>
 </div>
