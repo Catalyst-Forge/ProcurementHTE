@@ -8,6 +8,8 @@ using ProcurementHTE.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.ValidateProductionSettings(builder.Environment);
+
 // === DataProtection Keys ===
 var keysPath = builder.Configuration["DataProtection:KeysPath"] ?? "/var/www/ProcurementHTE/keys";
 Directory.CreateDirectory(keysPath);

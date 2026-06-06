@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Web.Extensions;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
@@ -11,11 +13,16 @@ namespace ProcurementHTE.Web.Controllers.MasterData;
 public class JobTypeDocumentController : Controller
 {
     private readonly IJobTypeDocumentAdminService _service;
+    private readonly ILogger<JobTypeDocumentController> _logger;
     private const string ActivePageName = "Index Job Type Documents";
 
-    public JobTypeDocumentController(IJobTypeDocumentAdminService service)
+    public JobTypeDocumentController(
+        IJobTypeDocumentAdminService service,
+        ILogger<JobTypeDocumentController> logger
+    )
     {
         _service = service;
+        _logger = logger;
     }
 
     public override void OnActionExecuting(
@@ -77,7 +84,12 @@ public class JobTypeDocumentController : Controller
 
         if (!ModelState.IsValid)
         {
-            LogModelErrors("Create");
+            _logger.LogInvalidModelState(
+                ModelState,
+                "job type document",
+                "Create",
+                HttpContext.TraceIdentifier
+            );
             await PopulateSelections(ct);
             return View(model);
         }
@@ -148,7 +160,12 @@ public class JobTypeDocumentController : Controller
 
         if (!ModelState.IsValid)
         {
-            LogModelErrors("Edit");
+            _logger.LogInvalidModelState(
+                ModelState,
+                "job type document",
+                "Edit",
+                HttpContext.TraceIdentifier
+            );
             await PopulateSelections(ct);
             return View(model);
         }
@@ -195,23 +212,4 @@ public class JobTypeDocumentController : Controller
         };
     }
 
-    private void LogModelErrors(string actionName)
-    {
-        if (ModelState.IsValid)
-            return;
-
-        var errors = ModelState
-            .Where(kvp => kvp.Value?.Errors.Count > 0)
-            .Select(kvp =>
-                $"{kvp.Key}: {string.Join(" | ", kvp.Value!.Errors.Select(e => e.ErrorMessage ?? e.Exception?.Message ?? "<no message>"))}"
-            )
-            .ToArray();
-
-        if (errors.Length > 0)
-        {
-            Console.WriteLine(
-                $"[JobTypeDocumentController:{actionName}] ModelState invalid ({HttpContext.TraceIdentifier}): {string.Join("; ", errors)}"
-            );
-        }
-    }
 }

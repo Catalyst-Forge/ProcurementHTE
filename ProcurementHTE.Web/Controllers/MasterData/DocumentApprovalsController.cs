@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Web.Extensions;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
@@ -9,11 +11,16 @@ namespace ProcurementHTE.Web.Controllers.MasterData;
 public class DocumentApprovalsController : Controller
 {
     private readonly IDocumentApprovalsService _service;
+    private readonly ILogger<DocumentApprovalsController> _logger;
     private const string ActivePageName = "Index Document Approvals";
 
-    public DocumentApprovalsController(IDocumentApprovalsService service)
+    public DocumentApprovalsController(
+        IDocumentApprovalsService service,
+        ILogger<DocumentApprovalsController> logger
+    )
     {
         _service = service;
+        _logger = logger;
     }
 
     public override void OnActionExecuting(
@@ -60,7 +67,12 @@ public class DocumentApprovalsController : Controller
 
         if (!ModelState.IsValid)
         {
-            LogModelErrors("Create");
+            _logger.LogInvalidModelState(
+                ModelState,
+                "document approvals",
+                "Create",
+                HttpContext.TraceIdentifier
+            );
             await PopulateSelections(ct);
             return View(model);
         }
@@ -100,7 +112,12 @@ public class DocumentApprovalsController : Controller
 
         if (!ModelState.IsValid)
         {
-            LogModelErrors("Edit");
+            _logger.LogInvalidModelState(
+                ModelState,
+                "document approvals",
+                "Edit",
+                HttpContext.TraceIdentifier
+            );
             await PopulateSelections(ct);
             return View(model);
         }
@@ -136,23 +153,4 @@ public class DocumentApprovalsController : Controller
         ViewBag.Roles = roles;
     }
 
-    private void LogModelErrors(string actionName)
-    {
-        if (ModelState.IsValid)
-            return;
-
-        var errors = ModelState
-            .Where(kvp => kvp.Value?.Errors.Count > 0)
-            .Select(kvp =>
-                $"{kvp.Key}: {string.Join(" | ", kvp.Value?.Errors.Select(e => e.ErrorMessage ?? e.Exception?.Message ?? "<no message>") ?? Enumerable.Empty<string>())}"
-            )
-            .ToArray();
-
-        if (errors.Length > 0)
-        {
-            Console.WriteLine(
-                $"[DocumentApprovalsController:{actionName}] ModelState invalid ({HttpContext.TraceIdentifier}): {string.Join("; ", errors)}"
-            );
-        }
-    }
 }

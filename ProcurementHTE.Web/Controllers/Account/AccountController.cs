@@ -71,7 +71,9 @@ namespace ProcurementHTE.Web.Controllers.Account
             );
             var currentSessionId = GetCurrentSessionId();
             var recoveryCodes = overview.RecoveryCodesSnapshot?.ToArray();
-            var profilePhoneInput = FormatPhoneForInput(overview.PhoneNumber);
+            var profilePhoneInput = IndonesianPhoneNumberFormatter.FormatForInput(
+                overview.PhoneNumber
+            );
 
             var viewModel = new AccountSettingsViewModel
             {
@@ -154,7 +156,9 @@ namespace ProcurementHTE.Web.Controllers.Account
                 return RedirectToAction("Login", "Auth");
 
             var normalizedEmail = model.Email?.Trim() ?? string.Empty;
-            var normalizedPhone = NormalizePhoneInput(model.PhoneNumber);
+            var normalizedPhone = IndonesianPhoneNumberFormatter.NormalizeForStorage(
+                model.PhoneNumber
+            );
             var currentPhone = string.IsNullOrWhiteSpace(user.PhoneNumber)
                 ? null
                 : user.PhoneNumber.Trim();
@@ -737,36 +741,6 @@ namespace ProcurementHTE.Web.Controllers.Account
             );
             TempData["SuccessMessage"] = "Sesi berhasil dihentikan.";
             return RedirectToAction(nameof(Settings));
-        }
-
-        private static string? NormalizePhoneInput(string? raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-                return null;
-
-            var digitsOnly = new string(raw.Where(char.IsDigit).ToArray());
-            if (digitsOnly.StartsWith("62"))
-                digitsOnly = digitsOnly[2..];
-            if (digitsOnly.StartsWith("0"))
-                digitsOnly = digitsOnly[1..];
-
-            return string.IsNullOrEmpty(digitsOnly) ? null : $"+62{digitsOnly}";
-        }
-
-        private static string? FormatPhoneForInput(string? stored)
-        {
-            if (string.IsNullOrWhiteSpace(stored))
-                return null;
-
-            var normalized = stored.Trim();
-            if (normalized.StartsWith("+62"))
-                normalized = normalized[3..];
-            else if (normalized.StartsWith("62"))
-                normalized = normalized[2..];
-            if (normalized.StartsWith("0"))
-                normalized = normalized[1..];
-
-            return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
         }
 
         private Task<User?> GetCurrentUserAsync() => _userManager.GetUserAsync(User);

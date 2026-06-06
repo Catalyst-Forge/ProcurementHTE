@@ -1516,20 +1516,6 @@ namespace ProcurementHTE.Web.Controllers.Account
         private static string NormalizeRecoveryCode(string code) =>
             (code ?? string.Empty).Replace(" ", string.Empty, StringComparison.Ordinal);
 
-        private static string NormalizePhone(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-                return string.Empty;
-
-            var digitsOnly = new string(raw.Where(char.IsDigit).ToArray());
-            if (digitsOnly.StartsWith("62"))
-                digitsOnly = digitsOnly[2..];
-            if (digitsOnly.StartsWith("0"))
-                digitsOnly = digitsOnly[1..];
-
-            return string.IsNullOrEmpty(digitsOnly) ? string.Empty : $"+62{digitsOnly}";
-        }
-
         private bool NeedsRecoveryReset() =>
             HttpContext.Session.GetString(RecoveryResetSessionKey) == "1";
 
@@ -1559,7 +1545,7 @@ namespace ProcurementHTE.Web.Controllers.Account
             if (string.IsNullOrWhiteSpace(rawPhone))
                 return null;
 
-            var normalized = NormalizePhone(rawPhone);
+            var normalized = IndonesianPhoneNumberFormatter.NormalizeForStorageOrEmpty(rawPhone);
             var digits = new string(normalized.Where(char.IsDigit).ToArray());
             var candidates = new[] { normalized, $"+{digits}", "0" + digits, digits };
 
