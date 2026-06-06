@@ -9,6 +9,7 @@ namespace ProcurementHTE.Web.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly SecurityBypassOptions _bypass;
+        private readonly SmsSenderOptions _smsOptions;
         private static readonly string[] AllowedPrefixes =
         {
             "/auth/login",
@@ -31,11 +32,13 @@ namespace ProcurementHTE.Web.Middleware
 
         public SecurityCheckpointMiddleware(
             RequestDelegate next,
-            IOptions<SecurityBypassOptions> bypassOptions
+            IOptions<SecurityBypassOptions> bypassOptions,
+            IOptions<SmsSenderOptions> smsOptions
         )
         {
             _next = next;
             _bypass = bypassOptions.Value ?? new SecurityBypassOptions();
+            _smsOptions = smsOptions.Value ?? new SmsSenderOptions();
         }
 
         public async Task InvokeAsync(HttpContext context, UserManager<User> userManager)
@@ -95,16 +98,29 @@ namespace ProcurementHTE.Web.Middleware
             return false;
         }
 
-        private static bool RequiresContactVerification(User user)
+        private bool RequiresContactVerification(User user)
         {
             if (!string.IsNullOrWhiteSpace(user.Email) && !user.EmailConfirmed)
                 return true;
 
-            if (!string.IsNullOrWhiteSpace(user.PhoneNumber) && !user.PhoneNumberConfirmed)
+            if (RequiresPhoneVerification(user))
                 return true;
 
             return false;
         }
+
+        private bool RequiresPhoneVerification(User user) =>
+            !_bypass.BypassPhoneVerification
+            && IsSmsVerificationAvailable()
+            && !string.IsNullOrWhiteSpace(user.PhoneNumber)
+            && !user.PhoneNumberConfirmed;
+
+        private bool IsSmsVerificationAvailable() =>
+            _smsOptions.UseDevelopmentMode
+            || (
+                !string.IsNullOrWhiteSpace(_smsOptions.ProviderUrl)
+                && !string.IsNullOrWhiteSpace(_smsOptions.ApiKey)
+            );
 
         private static void Redirect(HttpContext context, string target, string? returnUrl)
         {

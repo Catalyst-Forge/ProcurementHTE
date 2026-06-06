@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcurementHTE.Core", "Proc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcurementHTE.Infrastructure", "ProcurementHTE.Infrastructure\ProcurementHTE.Infrastructure.csproj", "{EB79BBF2-015C-44E7-8605-D8FDB181BE96}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcurementHTE.Tests", "ProcurementHTE.Tests\ProcurementHTE.Tests.csproj", "{1E49EC9D-4B59-44CE-9B92-35A1231AE2DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{EB79BBF2-015C-44E7-8605-D8FDB181BE96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB79BBF2-015C-44E7-8605-D8FDB181BE96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB79BBF2-015C-44E7-8605-D8FDB181BE96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E49EC9D-4B59-44CE-9B92-35A1231AE2DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E49EC9D-4B59-44CE-9B92-35A1231AE2DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E49EC9D-4B59-44CE-9B92-35A1231AE2DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E49EC9D-4B59-44CE-9B92-35A1231AE2DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

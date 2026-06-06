@@ -365,10 +365,13 @@ FodyWeavers.xsd
 # Ignore appsettings for development
 **/appsettings.*.json
 /.claude
+/.runtime-logs/
+.vscode/settings.json
 /.env
 /docker-compose.minio.yml
 /mc-init.sh
 /minio-policy.json
+/minio-data/
 # Deployment artifacts
 /publish/
 /releases/
