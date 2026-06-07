@@ -18,6 +18,8 @@ public static class ConfigurationValidationExtensions
             return;
 
         var failures = new List<string>();
+        var jwtSection = configuration.GetJwtSettingsSection();
+        var jwtSecretKey = $"{jwtSection.Path}:Secret";
 
         RequireNotPlaceholder(
             failures,
@@ -28,12 +30,12 @@ public static class ConfigurationValidationExtensions
 
         RequireNotPlaceholder(
             failures,
-            configuration["Jwt:Secret"],
-            "Jwt:Secret",
+            jwtSection["Secret"],
+            jwtSecretKey,
             "CHANGE_THIS_IN_PRODUCTION"
         );
 
-        RequireMinimumLength(failures, configuration["Jwt:Secret"], "Jwt:Secret", 32);
+        RequireMinimumLength(failures, jwtSection["Secret"], jwtSecretKey, 32);
 
         RequireNotPlaceholder(
             failures,
