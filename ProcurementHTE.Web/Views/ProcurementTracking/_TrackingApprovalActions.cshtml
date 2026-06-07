@@ -1,0 +1,44 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+@if (ViewData["CanApprove"] is true)
+{
+    <div class="card border-0 shadow-sm mb-4 border-success">
+        <div class="card-header bg-success-subtle border-bottom">
+            <h6 class="mb-0 fw-bold text-success">
+                <i class="bi bi-check-circle me-2"></i>Approval Actions
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Current Status:</strong> @Model.CurrentStatusDescription
+                <br/>
+                <small class="text-muted">Anda dapat melakukan approval atau reject untuk procurement ini.</small>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <form asp-action="Approve" method="post" id="approveForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Catatan Approval (Opsional)</label>
+                            <input type="text" class="form-control" name="approvalNote" placeholder="Masukkan catatan..." />
+                        </div>
+                        <button type="button" class="btn btn-success w-100" onclick="confirmApprove()">
+                            <i class="bi bi-check-lg me-1"></i>Approve
+                        </button>
+                    </form>
+                </div>
+
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="bi bi-x-lg me-1"></i>Return for Revision
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_TrackingRevisionModal", Model)
+}

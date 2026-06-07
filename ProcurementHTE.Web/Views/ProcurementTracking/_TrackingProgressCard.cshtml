@@ -1,0 +1,12 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-diagram-3 me-2"></i>Progress Tracking
+        </h6>
+    </div>
+    <div class="card-body">
+        @await Html.PartialAsync("_ProcurementProgressBar", Model)
+    </div>
+</div>

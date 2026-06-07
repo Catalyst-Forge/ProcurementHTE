@@ -1,0 +1,83 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+@using ProcurementHTE.Core.Enums
+
+@{
+    var needsRevision = Model.CurrentStatus == ProcurementStatus.NeedsRevisionData ||
+        Model.CurrentStatus == ProcurementStatus.NeedsRevisionPR;
+}
+
+@if (needsRevision)
+{
+    var isDataRevision = Model.CurrentStatus == ProcurementStatus.NeedsRevisionData;
+    var revisionType = isDataRevision ? "Data" : "PR/Document";
+    var responsibleRole = isDataRevision ? "PIC Ops / Analyst HTE" : "AP-PO";
+    var cardBorderClass = isDataRevision ? "border-warning" : "border-primary";
+    var headerBgClass = isDataRevision ? "bg-warning-subtle text-warning" : "bg-primary-subtle text-primary";
+    var canResubmit = isDataRevision ? ViewData["CanResubmitData"] is true : ViewData["CanResubmitPR"] is true;
+
+    <div class="card border-0 shadow-sm mb-4 @cardBorderClass">
+        <div class="card-header @headerBgClass border-bottom">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-arrow-repeat me-2"></i>Revision Required - @revisionType
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Perlu Revisi:</strong> Procurement ini dikembalikan untuk perbaikan oleh approver.
+                <br/>
+                <small class="text-muted">Ditangani oleh: <strong>@responsibleRole</strong></small>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.RejectionNote))
+            {
+                <div class="mb-3">
+                    <label class="form-label small text-muted fw-bold">Catatan dari Approver:</label>
+                    <div class="p-2 bg-light rounded border">
+                        @Model.RejectionNote
+                    </div>
+                </div>
+            }
+
+            @if (Model.PendingRevisionSymptoms.HasValue && Model.PendingRevisionSymptoms.Value != RejectionSymptom.None)
+            {
+                <div class="mb-3">
+                    <label class="form-label small text-muted fw-bold">Masalah yang Perlu Diperbaiki:</label>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var symptomName in Model.PendingRevisionSymptoms.Value.GetSelectedDisplayNames())
+                        {
+                            <li class="list-group-item py-1 px-2 bg-transparent">
+                                <i class="bi bi-dot text-danger"></i> @symptomName
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (Model.RevisionCount > 0)
+            {
+                <div class="mb-3">
+                    <small class="text-muted">Revisi ke-@Model.RevisionCount</small>
+                </div>
+            }
+
+            @if (canResubmit)
+            {
+                <hr/>
+                <p class="text-muted small mb-3">
+                    Setelah melakukan perbaikan yang diperlukan, klik tombol di bawah untuk submit ulang.
+                </p>
+                <button type="button" class="btn btn-success w-100" id="resubmitBtn" data-procurement-id="@Model.ProcurementId">
+                    <i class="bi bi-send me-1"></i>Submit Revision
+                </button>
+            }
+            else
+            {
+                <div class="alert alert-secondary mb-0">
+                    <i class="bi bi-person-lock me-2"></i>
+                    Menunggu <strong>@responsibleRole</strong> untuk melakukan perbaikan.
+                </div>
+            }
+        </div>
+    </div>
+}

@@ -1,0 +1,116 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectModalLabel">
+                    <i class="bi bi-arrow-return-left me-2"></i>Return for Revision
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="revisionForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Pilih masalah yang ditemukan. Masalah akan ditangani secara berurutan - <strong>Data Issues</strong> terlebih dahulu, kemudian <strong>PR Issues</strong>.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning-subtle">
+                                    <h6 class="mb-0 fw-bold text-warning">
+                                        <i class="bi bi-database me-2"></i>Data Issues
+                                    </h6>
+                                    <small class="text-muted">Ditangani oleh PIC Ops</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="1" id="symptom1">
+                                        <label class="form-check-label" for="symptom1">Anomali nilai P&L</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="2" id="symptom2">
+                                        <label class="form-check-label" for="symptom2">Data tanggal tidak sesuai</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="4" id="symptom4">
+                                        <label class="form-check-label" for="symptom4">Vendor/SPK tidak valid</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="8" id="symptom8">
+                                        <label class="form-check-label" for="symptom8">Data pekerjaan tidak sesuai</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="16" id="symptom16">
+                                        <label class="form-check-label" for="symptom16">Data kontrak tidak valid</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card border-primary h-100">
+                                <div class="card-header bg-primary-subtle">
+                                    <h6 class="mb-0 fw-bold text-primary">
+                                        <i class="bi bi-file-earmark-text me-2"></i>PR Issues
+                                    </h6>
+                                    <small class="text-muted">Ditangani oleh AP-PO</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check pr-symptom" type="checkbox" name="symptoms" value="32" id="symptom32">
+                                        <label class="form-check-label" for="symptom32">
+                                            <strong class="text-danger">PR tidak bisa digabung</strong>
+                                            <small class="d-block text-muted">Akan unlink dan reset ke draft</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="64" id="symptom64">
+                                        <label class="form-check-label" for="symptom64">Linking PR tidak sesuai</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="128" id="symptom128">
+                                        <label class="form-check-label" for="symptom128">Dokumen tidak lengkap</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="256" id="symptom256">
+                                        <label class="form-check-label" for="symptom256">Format dokumen tidak valid</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="512" id="symptom512">
+                                        <label class="form-check-label" for="symptom512">Dokumen kadaluarsa</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input symptom-check" type="checkbox" name="symptoms" value="1024" id="symptom1024">
+                                <label class="form-check-label" for="symptom1024">
+                                    Masalah lainnya (jelaskan di catatan)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label fw-bold">Catatan Rejection <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="rejectionNote" id="rejectionNoteModal" rows="3" placeholder="Jelaskan detail masalah yang ditemukan..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="submitRevisionBtn">
+                        <i class="bi bi-arrow-return-left me-1"></i>Return for Revision
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
