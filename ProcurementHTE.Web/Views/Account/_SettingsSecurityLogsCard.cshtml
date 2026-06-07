@@ -1,0 +1,32 @@
+@model AccountSettingsViewModel
+
+<div class="card mt-4 shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0">Riwayat Keamanan</h5>
+        <small class="text-muted">Login, perubahan password, dan aktivitas penting.</small>
+    </div>
+    <div class="card-body">
+        @if (!Model.SecurityLogs.Any())
+        {
+            <p class="text-muted mb-0">Belum ada aktivitas terekam.</p>
+        }
+        else
+        {
+            <ul class="list-unstyled security-log mb-0">
+                @foreach (var log in Model.SecurityLogs)
+                {
+                    <li class="d-flex gap-3 mb-3">
+                        <div class="timeline-dot @(log.IsSuccess ? "bg-success-subtle" : "bg-danger-subtle")"></div>
+                        <div>
+                            <div class="fw-semibold">@log.EventType</div>
+                            <div class="text-muted small">
+                                @log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm") &bull; @(log.IpAddress ?? "IP tidak diketahui")
+                            </div>
+                            <div>@(log.Description ?? "-")</div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

@@ -1,0 +1,12 @@
+@model AccountSettingsPageViewModel
+
+<div class="row g-4 align-items-start">
+    <div class="col-12 col-xl-6">
+        @await Html.PartialAsync("_SettingsChangePasswordCard", Model.Settings)
+        @await Html.PartialAsync("_SettingsTwoFactorCard", Model)
+    </div>
+    <div class="col-12 col-xl-6">
+        @await Html.PartialAsync("_SettingsSessionsCard", Model.Settings)
+        @await Html.PartialAsync("_SettingsSecurityLogsCard", Model.Settings)
+    </div>
+</div>
