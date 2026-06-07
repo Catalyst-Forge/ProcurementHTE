@@ -1,0 +1,93 @@
+@model DashboardViewModel
+
+<div class="row g-3 mb-4">
+    <div class="col-xl-4 col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Procurement</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalProcurements</h3>
+                        <small class="text-success"><i class="bi bi-activity"></i> @Model.ActiveProcurements Active</small>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-3"><i class="bi bi-cart-check fs-2 text-primary"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Pending Approvals</p>
+                        <h3 class="mb-0 fw-bold">@Model.PendingApprovals</h3>
+                        <small class="text-warning"><i class="bi bi-hourglass-split"></i> Memerlukan Persetujuan</small>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 rounded-3 p-3"><i class="bi bi-clipboard-check fs-2 text-warning"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Vendor</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalVendors</h3>
+                        <small class="text-info"><i class="bi bi-people"></i> Vendor Terdaftar</small>
+                    </div>
+                    <div class="bg-info bg-opacity-10 rounded-3 p-3"><i class="bi bi-building fs-2 text-info"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Revenue</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalRevenue.ToString("N0")</h3>
+                        <small class="text-success"><i class="bi bi-graph-up-arrow"></i> Profit: @Model.TotalProfit.ToString("N0")</small>
+                    </div>
+                    <div class="bg-success bg-opacity-10 rounded-3 p-3"><i class="bi bi-currency-dollar fs-2 text-success"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Purchase Requisitions</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalPurchaseRequisitions</h3>
+                        <small class="text-primary"><i class="bi bi-file-earmark-text"></i> Total PR</small>
+                    </div>
+                    <div class="admin-pr-icon-card rounded-3 p-3"><i class="bi bi-file-earmark-ruled fs-2 admin-pr-icon"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">User Online</p>
+                        <h3 class="mb-0 fw-bold">@Model.OnlineUsersCount</h3>
+                        <small class="text-success"><i class="bi bi-circle-fill admin-dot"></i> Active Now</small>
+                    </div>
+                    <div class="bg-success bg-opacity-10 rounded-3 p-3"><i class="bi bi-people-fill fs-2 text-success"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,39 @@
+@model DashboardViewModel
+
+<div class="row g-3 mb-4">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3"><h5 class="mb-0"><i class="bi bi-activity me-2"></i>Recent Activities</h5></div>
+            <div class="card-body admin-activity-list">
+                <div class="activity-list">
+                    @if (Model.RecentActivities != null && Model.RecentActivities.Any())
+                    {
+                        @foreach (var activity in Model.RecentActivities)
+                        {
+                            <div class="d-flex mb-3 pb-3 border-bottom">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2"><i class="bi bi-person-check text-primary"></i></div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="small fw-semibold">@activity.User</div>
+                                    <div class="text-muted small">@activity.Description</div>
+                                    <div class="text-muted small"><i class="bi bi-clock"></i> @activity.Time.ToString("dd MMM yyyy HH:mm")</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i><small>No recent activities</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        @await Html.PartialAsync("_AdminDashboardUserStatus", Model)
+    </div>
+</div>
