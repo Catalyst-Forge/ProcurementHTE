@@ -1,0 +1,39 @@
+@model ProcurementDetailsPageViewModel
+
+@{
+    var items = Model.ProfitLoss!.Items;
+}
+
+<table class="table align-middle mb-0">
+    <thead class="table-info">
+        <tr>
+            <th>Item</th>
+            <th class="text-end">Qty Items</th>
+            <th class="text-end">Unit Items</th>
+            <th class="text-end">Durasi</th>
+            <th class="text-end">Unit Revenue</th>
+            <th class="text-end">Base Price</th>
+            <th class="text-end">Revenue</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var it in items)
+        {
+            <tr>
+                <td class="w-25">@it.ItemName</td>
+                <td class="text-end">@it.UnitQty</td>
+                <td class="text-end">@(it.UnitItems ?? "-")</td>
+                <td class="text-end">@(it.Quantity?.ToString() ?? "-")</td>
+                <td class="text-end">@(it.UnitRevenue ?? "-")</td>
+                <td class="text-end">@it.BasePrice.ToIDR()</td>
+                <td class="text-end fw-semibold">@it.Revenue.ToIDR()</td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr class="table-light">
+            <th class="text-end" colspan="6">Total</th>
+            <th class="text-end fw-bold">@items.Sum(x => x.Revenue).ToIDR()</th>
+        </tr>
+    </tfoot>
+</table>

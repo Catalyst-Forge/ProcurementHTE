@@ -1,0 +1,15 @@
+@model ProcurementDetailsPageViewModel
+
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h5"><i class="bi bi-file-text-fill text-primary me-1"></i> Job Description</h2>
+    </header>
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-12 fw-semibold text-uppercase text-secondary mb-2">@Html.DisplayNameFor(m => m.Procurement.Note)</dt>
+            <dd class="col-12 bg-info-subtle text-info-emphasis p-3 lh-base border-start border-info rounded-3 border-5">@Html.DisplayFor(m => m.Procurement.Note)</dd>
+        </dl>
+    </div>
+</article>
