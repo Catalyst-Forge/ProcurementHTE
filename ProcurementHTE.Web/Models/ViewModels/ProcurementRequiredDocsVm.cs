@@ -16,3 +16,14 @@ public class UploadProcDocumentVm
     public string? Description { get; set; }
     public IFormFile File { get; set; } = default!;
 }
+
+public class ProcurementDocumentRowViewModel
+{
+    public string ProcurementId { get; init; } = default!;
+    public RequiredDocItemDto Item { get; init; } = default!;
+    public int RowIndex { get; init; }
+    public bool IsPending { get; init; }
+
+    public bool IsUploaded => Item.Uploaded;
+    public string Status => Item.Uploaded ? "Uploaded" : (Item.IsMandatory ? "Required" : "Optional");
+}

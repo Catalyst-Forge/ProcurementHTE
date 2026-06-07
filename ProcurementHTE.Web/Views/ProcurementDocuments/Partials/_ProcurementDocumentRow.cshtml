@@ -1,0 +1,54 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementDocumentRowViewModel
+
+@{
+    var item = Model.Item;
+}
+
+<tr
+    data-doc-id="@item.ProcDocumentId"
+    data-row-index="@Model.RowIndex"
+    data-doc-title="@item.DocumentTypeName"
+    data-uploaded="@item.Uploaded.ToString().ToLowerInvariant()"
+    data-mandatory="@item.IsMandatory.ToString().ToLowerInvariant()"
+    data-generated="@item.IsGenerated.ToString().ToLowerInvariant()"
+    data-upload-required="@item.IsUploadRequired.ToString().ToLowerInvariant()"
+    data-requires-approval="@item.RequiresApproval.ToString().ToLowerInvariant()">
+    <td class="text-muted ps-4 fw-semibold">@Model.RowIndex</td>
+
+    <td>
+        <div class="d-flex align-items-start gap-3">
+            <div class="pt-1">
+                @if (Model.IsPending)
+                {
+                    <i class="bi bi-hourglass-split text-warning fs-4" title="Pending Approval"></i>
+                }
+                else if (item.Uploaded)
+                {
+                    <i class="bi bi-file-earmark-check-fill text-success fs-4" title="Uploaded"></i>
+                }
+                else if (item.IsUploadRequired)
+                {
+                    <i class="bi bi-file-earmark-medical-fill text-warning fs-4" title="Required"></i>
+                }
+                else
+                {
+                    <i class="bi bi-file-earmark text-secondary fs-4" title="Optional"></i>
+                }
+            </div>
+
+            <div class="flex-grow-1">
+                <div class="fw-semibold mb-1">@item.DocumentTypeName</div>
+                @await Html.PartialAsync("_ProcurementDocumentBadges", Model)
+                @await Html.PartialAsync("_ProcurementDocumentMetadata", Model)
+            </div>
+        </div>
+    </td>
+
+    <td class="text-center" data-status-row="@Model.RowIndex">
+        @await Html.PartialAsync("_ProcurementDocumentStatusBadge", Model)
+    </td>
+
+    <td class="pe-4" data-actions-row="@Model.RowIndex">
+        @await Html.PartialAsync("_ProcurementDocumentActions", Model)
+    </td>
+</tr>

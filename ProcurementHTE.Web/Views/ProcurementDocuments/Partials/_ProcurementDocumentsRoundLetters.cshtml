@@ -1,0 +1,68 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementRequiredDocsVm
+@using ProcurementHTE.Core.Models
+
+@{
+    var roundLetters =
+        ViewBag.RoundLetters as IReadOnlyList<VendorRoundLetter> ?? Array.Empty<VendorRoundLetter>();
+    var sphLetters = roundLetters
+        .Where(r => r.Round == 1)
+        .OrderBy(r => r.Vendor?.VendorName ?? r.VendorId)
+        .ToList();
+    var snhLetters = roundLetters
+        .Where(r => r.Round > 1)
+        .OrderBy(r => r.Vendor?.VendorName ?? r.VendorId)
+        .ThenBy(r => r.Round)
+        .ToList();
+
+    ViewData["ProcurementId"] = Model.ProcurementId;
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-xl-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <h5 class="card-title mb-0">Surat Penawaran Harga (SPH)</h5>
+                        <small class="text-muted">Ronde 1 Dst</small>
+                    </div>
+                </div>
+
+                @if (sphLetters.Any())
+                {
+                    @await Html.PartialAsync("_ProcurementRoundLetterTable", sphLetters)
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        Belum ada SPH yang diunggah. Unggah SPH melalui form Profit &amp; Loss.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <h5 class="card-title mb-0">Surat Negosiasi Harga (SNH)</h5>
+                        <small class="text-muted">Ronde 2 dan seterusnya</small>
+                    </div>
+                </div>
+
+                @if (snhLetters.Any())
+                {
+                    @await Html.PartialAsync("_ProcurementRoundLetterTable", snhLetters)
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        Belum ada SNH yang diunggah. Gunakan form Profit &amp; Loss untuk mengunggah SNH per ronde negosiasi.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

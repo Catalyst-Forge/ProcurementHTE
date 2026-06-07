@@ -1,0 +1,44 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementDocumentRowViewModel
+
+<form class="d-inline-flex gap-2 align-items-center flex-wrap upload-form"
+      asp-controller="ProcurementDocuments"
+      asp-action="Upload"
+      method="post"
+      enctype="multipart/form-data"
+      hx-boost="false"
+      data-row="@Model.RowIndex"
+      data-upload-form="true">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="ProcurementId" value="@Model.ProcurementId" />
+    <input type="hidden" name="DocumentTypeId" value="@Model.Item.DocumentTypeId" />
+
+    <div class="upload-input-stack" data-row="@Model.RowIndex">
+        <label class="upload-dropzone mb-1" data-row="@Model.RowIndex" tabindex="0">
+            <div class="d-flex flex-column">
+                <span class="fw-semibold">
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Drop / Select File (PDF)
+                </span>
+                <small class="text-muted">Maksimal 10MB</small>
+            </div>
+            <input class="d-none file-input"
+                   type="file"
+                   name="File"
+                   accept="application/pdf,.pdf"
+                   required
+                   data-row="@Model.RowIndex" />
+        </label>
+        <div class="selected-file small text-muted" data-row="@Model.RowIndex">
+            <i class="bi bi-info-circle me-1"></i>No file selected yet
+        </div>
+    </div>
+
+    <div class="d-flex flex-column">
+        <button class="btn btn-sm btn-primary upload-btn"
+                type="submit"
+                disabled
+                data-row="@Model.RowIndex">
+            <i class="bi bi-upload"></i> Upload
+        </button>
+        <div class="upload-feedback small text-muted mt-1" data-row="@Model.RowIndex"></div>
+    </div>
+</form>

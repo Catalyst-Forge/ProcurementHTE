@@ -1,0 +1,25 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementDocumentRowViewModel
+
+<div>
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary btn-preview"
+            data-doc-id="@Model.Item.ProcDocumentId"
+            data-doc-name="@Model.Item.DocumentTypeName"
+            data-file-name="@Model.Item.FileName">
+        <i class="bi bi-eye"></i> Preview
+    </button>
+    <button type="button"
+            class="btn btn-sm btn-outline-primary btn-download"
+            data-doc-id="@Model.Item.ProcDocumentId"
+            data-file-name="@Model.Item.FileName">
+        <i class="bi bi-download"></i> Download
+    </button>
+    <button type="button"
+            class="btn btn-sm btn-outline-danger btn-delete"
+            data-doc-id="@Model.Item.ProcDocumentId"
+            data-doc-name="@Model.Item.DocumentTypeName"
+            data-file-name="@Model.Item.FileName"
+            data-procurement-id="@Model.ProcurementId">
+        <i class="bi bi-trash"></i>
+    </button>
+</div>

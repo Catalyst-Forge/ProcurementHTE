@@ -1,0 +1,34 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementDocumentRowViewModel
+
+@{
+    var item = Model.Item;
+    var disableGenerate = item.RequiresApproval &&
+        (string.Equals(Model.Status, "Pending Approval", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(Model.Status, "Approved", StringComparison.OrdinalIgnoreCase));
+    var disableReason = disableGenerate ? "Disabled while approval in progress/approved" : string.Empty;
+}
+
+<div>
+    <form asp-controller="ProcurementDocuments"
+          asp-action="Generate"
+          method="post"
+          class="d-inline js-generate-form"
+          hx-boost="false"
+          data-generate-form="true">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+        <input type="hidden" name="documentTypeId" value="@item.DocumentTypeId" />
+        @if (!string.IsNullOrEmpty(item.ProcDocumentId))
+        {
+            <input type="hidden" name="procDocumentId" value="@item.ProcDocumentId" />
+        }
+
+        <button type="submit"
+                class="btn btn-sm btn-success js-generate-btn"
+                @(disableGenerate ? "disabled" : "")
+                title="@(disableReason)">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i>
+            @(item.Uploaded ? "Regenerate" : "Generate")
+        </button>
+    </form>
+</div>
