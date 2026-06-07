@@ -1,0 +1,23 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
+@{
+    var isEdit = Model is ProcurementHTE.Web.Models.ViewModels.ProfitLossEditViewModel;
+    var pageTitle = isEdit ? "Edit Profit & Loss" : "Create Profit & Loss";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">@pageTitle</h1>
+        <p class="text-muted small mb-0">
+            Procurement: <strong>@ViewBag.ProcNum</strong> &middot; Issued: @ViewBag.IssueDate
+        </p>
+    </div>
+
+    <nav class="d-flex gap-2" aria-label="Page navigation">
+        <a asp-action="Details"
+           asp-route-id="@Model.ProcurementId"
+           class="btn btn-outline-secondary"
+           role="button">
+            <i class="bi bi-arrow-left"></i> Back to Procurement
+        </a>
+    </nav>
+</header>

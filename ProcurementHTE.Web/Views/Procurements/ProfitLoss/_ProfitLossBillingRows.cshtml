@@ -1,0 +1,101 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
+@using ProcurementHTE.Web.Models.ViewModels
+@{
+    var isEdit = Model is ProfitLossEditViewModel;
+    var jobTypeName = Model.JobTypeName ?? ViewBag.JobTypeName ?? "Angkutan";
+    var isPengangkutan = jobTypeName == "Angkutan";
+}
+
+<tbody id="pdcItems">
+@for (var i = 0; i < Model.Items.Count; i++)
+{
+    var procOfferId = Model.Items[i].ProcOfferId;
+    var offerItem = Model.OfferItems.FirstOrDefault(x => x.ProcOfferId == procOfferId);
+    var quantityItem = Model.Items[i].QtyItems > 0 ? Model.Items[i].QtyItems : (int)(offerItem?.Quantity ?? 0);
+    var unitItem = offerItem?.Unit;
+    var unitRevenue = offerItem?.UnitRevenue;
+
+    <tr data-item-row data-proc-offer-id="@procOfferId">
+        <input type="hidden" name="Items.Index" value="@i" />
+        <input type="hidden" name="Items[@i].ProcOfferId" value="@procOfferId" />
+        <td class="fw-semibold">@offerItem?.ItemPenawaran</td>
+
+        @if (isPengangkutan)
+        {
+            <input type="hidden" name="Items[@i].UnitRevenue" value="TRIP" />
+            <input type="hidden" data-qty-items value="@quantityItem" />
+            <td class="text-end">
+                <div class="input-group input-group-sm">
+                    @if (isEdit)
+                    {
+                        <input class="form-control text-end" asp-for="Items[@i].Quantity" data-unit-qty />
+                    }
+                    else
+                    {
+                        <input class="form-control text-end" name="Items[@i].Quantity" data-unit-qty value="@quantityItem" />
+                    }
+                </div>
+                <span class="text-danger small field-validation-valid" asp-validation-for="Items[@i].Quantity"></span>
+            </td>
+            <td class="text-end">
+                <input type="text" class="form-control form-control-sm text-end" value="@unitItem" readonly />
+            </td>
+            <td class="text-end">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input class="form-control text-end" asp-for="Items[@i].TarifAwal" asp-format="{0:0}" data-tarif-awal data-format-currency autocomplete="off" inputmode="numeric" />
+                </div>
+            </td>
+            <td class="text-end">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input class="form-control text-end" asp-for="Items[@i].TarifAdd" asp-format="{0:0}" data-tarif-add data-format-currency autocomplete="off" inputmode="numeric" />
+                </div>
+            </td>
+            <td class="text-end">
+                <input class="form-control form-control-sm text-end" asp-for="Items[@i].KmPer25" data-km readonly />
+            </td>
+            <td class="text-end">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input class="form-control form-control-sm text-end" data-operator readonly />
+                </div>
+            </td>
+        }
+        else
+        {
+            <td class="text-end">
+                <input type="hidden" name="Items[@i].QtyItems" value="@quantityItem" />
+                <input type="text" class="form-control form-control-sm text-end" value="@quantityItem" data-qty-items readonly />
+            </td>
+            <td class="text-end">
+                <input type="hidden" name="Items[@i].UnitItems" value="@unitItem" />
+                <input type="text" class="form-control form-control-sm text-end" value="@unitItem" data-unit-items readonly />
+            </td>
+            <td class="text-end">
+                <div class="input-group input-group-sm">
+                    <input class="form-control text-end" asp-for="Items[@i].Quantity" data-quantity-durasi inputmode="numeric" />
+                </div>
+            </td>
+            <td class="text-end">
+                <select class="form-select form-select-sm unit-revenue-dropdown" name="Items[@i].UnitRevenue" data-unit-revenue data-current-value="@unitRevenue">
+                    <option value="">-- Pilih --</option>
+                </select>
+            </td>
+            <td class="text-end">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input class="form-control text-end" asp-for="Items[@i].TarifAwal" asp-format="{0:0}" data-base-price data-format-currency autocomplete="off" inputmode="numeric" />
+                </div>
+            </td>
+        }
+
+        <td class="text-end">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text">Rp</span>
+                <input class="form-control form-control-sm text-end fw-semibold" data-rev readonly />
+            </div>
+        </td>
+    </tr>
+}
+</tbody>
