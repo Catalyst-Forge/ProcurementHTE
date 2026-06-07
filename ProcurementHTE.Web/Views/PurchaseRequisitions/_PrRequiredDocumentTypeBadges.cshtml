@@ -1,0 +1,28 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+<div class="d-flex flex-wrap gap-1 justify-content-center">
+    @if (Model.Document.IsMandatory)
+    {
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+            <i class="bi bi-exclamation-triangle me-1"></i>Required
+        </span>
+    }
+    @if (Model.Document.IsGenerated)
+    {
+        <span class="badge bg-success-subtle text-success border border-success-subtle">
+            <i class="bi bi-gear me-1"></i>Generated
+        </span>
+    }
+    @if (Model.Document.IsUploadRequired && !Model.Document.IsGenerated)
+    {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+            <i class="bi bi-upload me-1"></i>Upload
+        </span>
+    }
+    @if (Model.Document.RequiresApproval)
+    {
+        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+            <i class="bi bi-person-check me-1"></i>Approval
+        </span>
+    }
+</div>

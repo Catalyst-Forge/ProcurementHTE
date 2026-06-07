@@ -1,0 +1,36 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+<form class="d-inline-flex gap-2 align-items-center flex-nowrap upload-form"
+      asp-controller="ProcurementDocuments"
+      asp-action="Upload"
+      method="post"
+      enctype="multipart/form-data"
+      hx-boost="false"
+      data-row="@Model.RowIndex"
+      data-upload-form="true">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="ProcurementId" value="@Model.ProcurementId" />
+    <input type="hidden" name="DocumentTypeId" value="@Model.Document.DocumentTypeId" />
+
+    <label class="upload-dropzone" data-row="@Model.RowIndex" tabindex="0">
+        <span class="fw-semibold small">
+            <i class="bi bi-cloud-arrow-up me-1"></i>Drop/Select (PDF)
+        </span>
+        <input class="d-none file-input"
+               type="file"
+               name="File"
+               accept="application/pdf,.pdf"
+               required
+               data-row="@Model.RowIndex" />
+    </label>
+
+    <div class="selected-file small text-muted text-nowrap" data-row="@Model.RowIndex">
+        <i class="bi bi-info-circle me-1"></i>No file
+    </div>
+
+    <button class="btn btn-sm btn-primary upload-btn" type="submit" disabled data-row="@Model.RowIndex">
+        <i class="bi bi-upload"></i> Upload
+    </button>
+
+    <div class="upload-feedback small text-muted" data-row="@Model.RowIndex"></div>
+</form>

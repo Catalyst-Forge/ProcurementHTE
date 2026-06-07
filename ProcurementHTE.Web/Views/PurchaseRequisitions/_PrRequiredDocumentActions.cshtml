@@ -1,0 +1,23 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+<div class="d-flex gap-2 justify-content-end flex-wrap">
+    @if (Model.CanEditDelete && !Model.Document.Uploaded && Model.Document.IsUploadRequired && !Model.Document.IsGenerated)
+    {
+        @await Html.PartialAsync("_PrRequiredDocumentUploadForm", Model)
+    }
+
+    @if (Model.CanEditDelete && Model.Document.IsGenerated && !Model.IsUploaded)
+    {
+        @await Html.PartialAsync("_PrRequiredDocumentGenerateForm", Model)
+    }
+
+    @if (Model.IsUploaded && !string.IsNullOrEmpty(Model.Document.ProcDocumentId))
+    {
+        @await Html.PartialAsync("_PrRequiredDocumentFileActions", Model)
+    }
+
+    @if (Model.IsPending && !string.IsNullOrEmpty(Model.Document.ProcDocumentId))
+    {
+        @await Html.PartialAsync("_PrRequiredDocumentPendingActions", Model)
+    }
+</div>

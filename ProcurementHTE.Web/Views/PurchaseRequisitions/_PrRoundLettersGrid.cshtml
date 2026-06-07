@@ -1,0 +1,35 @@
+@model PurchaseRequisitionLinkedProcurementViewModel
+
+@{
+    var p = Model.Procurement;
+    var sph = p.RoundLetters.Where(r => r.Round == 1).ToList();
+    var snh = p.RoundLetters.Where(r => r.Round > 1).ToList();
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-6">
+        @await Html.PartialAsync("_PrRoundLetterCard", new PurchaseRequisitionRoundLetterCardViewModel
+        {
+            ProcurementId = p.ProcurementId,
+            Title = "Surat Penawaran Harga (SPH)",
+            Subtitle = string.Empty,
+            IconClass = "bi bi-file-text text-primary me-1",
+            EmptyText = "Belum ada SPH",
+            ShowRound = false,
+            Letters = sph
+        })
+    </div>
+
+    <div class="col-xl-6">
+        @await Html.PartialAsync("_PrRoundLetterCard", new PurchaseRequisitionRoundLetterCardViewModel
+        {
+            ProcurementId = p.ProcurementId,
+            Title = "Surat Negosiasi Harga (SNH)",
+            Subtitle = string.Empty,
+            IconClass = "bi bi-file-richtext text-warning me-1",
+            EmptyText = "Belum ada SNH",
+            ShowRound = true,
+            Letters = snh
+        })
+    </div>
+</div>

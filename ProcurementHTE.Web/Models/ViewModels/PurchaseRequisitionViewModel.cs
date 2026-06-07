@@ -106,3 +106,40 @@ public class ProcurementWithDocsViewModel
     public int TotalDocs { get; set; }
     public int ProgressPercent => TotalDocs > 0 ? (CompletedDocs * 100 / TotalDocs) : 0;
 }
+
+public class PurchaseRequisitionLinkedProcurementViewModel
+{
+    public string PrId { get; init; } = default!;
+    public ProcurementWithDocsViewModel Procurement { get; init; } = default!;
+    public bool CanEditDelete { get; init; }
+    public int Index { get; init; }
+    public bool IsFirst { get; init; }
+}
+
+public class PurchaseRequisitionDocumentRowViewModel
+{
+    public string PrId { get; init; } = default!;
+    public string ProcurementId { get; init; } = default!;
+    public RequiredDocItemDto Document { get; init; } = default!;
+    public int RowIndex { get; init; }
+    public bool CanEditDelete { get; init; }
+    public bool IsPending { get; init; }
+    public bool IsApproved { get; init; }
+
+    public bool IsUploaded => Document.Uploaded;
+    public bool DisableGenerate => false;
+    public string Status => Document.Uploaded
+        ? "Uploaded"
+        : (Document.IsMandatory ? "Required" : "Optional");
+}
+
+public class PurchaseRequisitionRoundLetterCardViewModel
+{
+    public string ProcurementId { get; init; } = default!;
+    public string Title { get; init; } = default!;
+    public string Subtitle { get; init; } = default!;
+    public string IconClass { get; init; } = default!;
+    public string EmptyText { get; init; } = default!;
+    public bool ShowRound { get; init; }
+    public IReadOnlyList<VendorRoundLetter> Letters { get; init; } = [];
+}

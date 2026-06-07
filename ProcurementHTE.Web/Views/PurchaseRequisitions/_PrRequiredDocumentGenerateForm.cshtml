@@ -1,0 +1,22 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+<div>
+    <form asp-controller="PurchaseRequisitions"
+          asp-action="GenerateDocument"
+          method="post"
+          class="d-inline js-generate-form"
+          hx-boost="false"
+          data-generate-form="true">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="prId" value="@Model.PrId" />
+        <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+        <input type="hidden" name="documentTypeId" value="@Model.Document.DocumentTypeId" />
+
+        <button type="submit"
+                class="btn btn-sm btn-success js-generate-btn"
+                @(Model.DisableGenerate ? "disabled" : "")
+                title="@(Model.DisableGenerate ? "Disabled while approval in progress" : "")">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i> Generate
+        </button>
+    </form>
+</div>

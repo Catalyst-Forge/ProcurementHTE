@@ -1,0 +1,43 @@
+@model PurchaseRequisitionDetailsViewModel
+
+<section class="card shadow-sm mb-4 rounded-4">
+    <div class="card-header bg-success-subtle text-success-emphasis rounded-top-4">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-link-45deg"></i> Linked Procurements (@Model.Procurements.Count)
+        </h5>
+    </div>
+
+    <div class="card-body p-0">
+        @if (!Model.Procurements.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                <p class="mb-0">No procurements linked</p>
+            </div>
+        }
+        else
+        {
+            var canEditDelete = ViewData["CanEditDelete"] is true;
+            var rowIndex = 0;
+
+            <div class="accordion" id="procAccordion">
+                @for (var i = 0; i < Model.Procurements.Count; i++)
+                {
+                    var procurement = Model.Procurements[i];
+                    var item = new PurchaseRequisitionLinkedProcurementViewModel
+                    {
+                        PrId = Model.PrId,
+                        Procurement = procurement,
+                        CanEditDelete = canEditDelete,
+                        Index = i,
+                        IsFirst = i == 0
+                    };
+
+                    ViewData["PrDetailsRowIndex"] = rowIndex;
+                    @await Html.PartialAsync("_PrLinkedProcurementItem", item, ViewData)
+                    rowIndex = ViewData["PrDetailsRowIndex"] is int nextRow ? nextRow : rowIndex;
+                }
+            </div>
+        }
+    </div>
+</section>

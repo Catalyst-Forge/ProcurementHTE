@@ -1,0 +1,20 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+<div class="btn-group btn-group-sm" role="group">
+    <button type="button"
+            class="btn btn-outline-secondary btn-preview"
+            data-doc-id="@Model.Document.ProcDocumentId"
+            data-doc-name="@Model.Document.DocumentTypeName"
+            data-file-name="@Model.Document.FileName"
+            title="Preview">
+        <i class="bi bi-eye"></i>
+    </button>
+
+    <button type="button"
+            class="btn btn-outline-primary btn-download"
+            data-doc-id="@Model.Document.ProcDocumentId"
+            data-file-name="@Model.Document.FileName"
+            title="Download">
+        <i class="bi bi-download"></i>
+    </button>
+</div>

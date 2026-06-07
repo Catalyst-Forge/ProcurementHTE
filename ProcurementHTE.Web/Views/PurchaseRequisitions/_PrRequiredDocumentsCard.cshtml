@@ -1,0 +1,54 @@
+@model PurchaseRequisitionLinkedProcurementViewModel
+
+<article class="card shadow-sm rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h6">
+            <i class="bi bi-folder-fill text-primary me-1"></i> Procurement Documents
+        </h2>
+    </header>
+
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body p-0">
+        <div class="table-responsive rounded-bottom-4">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-info">
+                    <tr>
+                        <th class="ps-3">No</th>
+                        <th>Document Name</th>
+                        <th class="text-center">Type</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">File</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Procurement.RequiredDocuments.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No documents configured.</td>
+                        </tr>
+                    }
+
+                    @foreach (var doc in Model.Procurement.RequiredDocuments.OrderBy(x => x.Sequence))
+                    {
+                        var rowIndex = ViewData["PrDetailsRowIndex"] is int value ? value + 1 : 1;
+                        ViewData["PrDetailsRowIndex"] = rowIndex;
+                        var row = new PurchaseRequisitionDocumentRowViewModel
+                        {
+                            PrId = Model.PrId,
+                            ProcurementId = Model.Procurement.ProcurementId,
+                            Document = doc,
+                            RowIndex = rowIndex,
+                            CanEditDelete = Model.CanEditDelete,
+                            IsPending = false,
+                            IsApproved = false
+                        };
+
+                        @await Html.PartialAsync("_PrRequiredDocumentRow", row)
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</article>
