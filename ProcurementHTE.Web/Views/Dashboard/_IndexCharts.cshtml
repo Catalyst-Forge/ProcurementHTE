@@ -1,0 +1,57 @@
+@model DashboardViewModel
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart me-2"></i>Procurement by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="procurementStatusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart me-2"></i>Procurement by Job Type
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="jobTypeChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i>Purchase Requisition Trend
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="purchaseRequisitionChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up-arrow me-2"></i>Tren Procurement (12 Bulan Terakhir)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyTrendChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
