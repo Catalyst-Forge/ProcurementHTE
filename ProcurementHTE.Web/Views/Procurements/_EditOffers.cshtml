@@ -1,0 +1,86 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementEditViewModel
+@using ProcurementHTE.Core.Models
+@using System.Collections.Generic
+@using System.Linq
+@{
+    var emptyOfferKey = Guid.NewGuid().ToString("N");
+}
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <legend class="card-title fw-semibold mb-0">Item Penawaran</legend>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+        <hr />
+
+        <div class="row g-3" id="offers-container">
+            @if (Model.Offers.Any())
+            {
+                for (var i = 0; i < Model.Offers.Count; i++)
+                {
+                    <div class="col-12 offer-row position-relative">
+                        <input type="hidden" name="Offers.Index" value="@i" />
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-10">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                        <input asp-for="Offers[i].ItemPenawaran" class="form-control" />
+                                        <span class="text-danger" asp-validation-for="Offers[i].ItemPenawaran"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Qty Items</label>
+                                        <input asp-for="Offers[i].Qty" type="number" min="1" step="1" class="form-control text-end" />
+                                        <span class="text-danger" asp-validation-for="Offers[i].Qty"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Unit Items</label>
+                                        <input asp-for="Offers[i].Unit" class="form-control" placeholder="Pcs, Unit, Set..." />
+                                        <span class="text-danger" asp-validation-for="Offers[i].Unit"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 d-flex justify-content-end">
+                                <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 offer-row position-relative">
+                    <input type="hidden" name="Offers.Index" value="@emptyOfferKey" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-10">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                    <input class="form-control" name="Offers[@emptyOfferKey].ItemPenawaran" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Qty Items</label>
+                                    <input class="form-control text-end" type="number" min="1" step="1" name="Offers[@emptyOfferKey].Qty" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Unit Items</label>
+                                    <input class="form-control" name="Offers[@emptyOfferKey].Unit" placeholder="Pcs, Unit, Set..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 d-flex justify-content-end">
+                            <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </fieldset>
+</section>
