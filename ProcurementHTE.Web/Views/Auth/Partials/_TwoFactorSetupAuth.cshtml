@@ -1,0 +1,52 @@
+@model ProcurementHTE.Web.Models.Auth.TwoFactorSetupViewModel
+@using ProcurementHTE.Core.Enums
+@{
+    var activeTab = (Model.ActiveTab ?? "auth").ToLowerInvariant();
+    var returnUrl = Model.ReturnUrl;
+}
+<div class="tab-pane fade @(activeTab == "auth" ? "show active" : string.Empty)" id="tab-auth" role="tabpanel">
+    <div class="card shadow-sm equal-card twofactor-setup-card">
+        <div class="card-body twofactor-panel-body">
+            <div class="twofactor-panel-header">
+                <h5>Authenticator App</h5>
+                <p>Scan QR atau masukkan kode di aplikasi authenticator, lalu isi kode 6 digit yang muncul.</p>
+            </div>
+            <form asp-action="EnableTwoFactorFromSetup" method="post" class="twofactor-method-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="method" value="@TwoFactorMethod.AuthenticatorApp" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <div class="twofactor-method-surface twofactor-auth-surface">
+                    <div class="twofactor-secret-block">
+                        <div>
+                            <span class="fw-semibold d-block text-uppercase text-muted small">Kode Rahasia</span>
+                            <span class="fs-5 fw-bold twofactor-secret-code">@Model.SharedKey</span>
+                        </div>
+                        <small class="text-muted d-block mt-2">Gunakan kode ini kalau aplikasi authenticator tidak bisa scan QR.</small>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.AuthenticatorQrBase64))
+                    {
+                        <div class="twofactor-qr-frame">
+                            <img src="data:image/png;base64,@Model.AuthenticatorQrBase64" alt="QR" />
+                            <small>Buka Google Authenticator / Microsoft Authenticator lalu scan QR.</small>
+                        </div>
+                    }
+                </div>
+                <div class="twofactor-code-section">
+                    <label class="form-label fw-semibold">Kode Verifikasi</label>
+                    <input type="text" name="verificationCode" class="form-control" maxlength="8" placeholder="123456" required />
+                    <small class="text-muted">Masukkan kode yang tampil di aplikasi authenticator.</small>
+                </div>
+                <div class="twofactor-action-row">
+                    <button type="submit"
+                            class="btn btn-link link-secondary"
+                            formaction="@Url.Action("Logout", "Auth")"
+                            formmethod="post"
+                            formnovalidate>
+                        Keluar
+                    </button>
+                    <button type="submit" class="btn btn-success">Aktifkan 2FA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

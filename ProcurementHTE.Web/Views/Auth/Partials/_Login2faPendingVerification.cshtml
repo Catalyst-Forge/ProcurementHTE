@@ -1,0 +1,133 @@
+@using ProcurementHTE.Core.Enums
+@model LoginWith2faViewModel
+@{
+    var isAuthenticator = Model.Method == TwoFactorMethod.AuthenticatorApp;
+    var devTwoFactorCode = ViewBag.DevTwoFactorCode as string;
+    var autoMessage = ViewBag.Auto2faMessage as string;
+    var autoError = ViewBag.Auto2faError as string;
+    var requireEmailVerification = (ViewBag.RequireEmailVerification as bool?) ?? false;
+    var requirePhoneVerification = (ViewBag.RequirePhoneVerification as bool?) ?? false;
+    var blockOtp = !isAuthenticator && (requireEmailVerification || requirePhoneVerification);
+    var devMagicLink = (TempData["TwoFactorFlashDevLink"] as string) ?? ViewBag.DevMagicLink as string;
+    var devPhoneOtp = (TempData["TwoFactorFlashDevOtp"] as string) ?? ViewBag.DevPhoneOtp as string;
+    var emailAddress = ViewBag.EmailAddress as string;
+    var phoneNumber = ViewBag.PhoneNumber as string;
+    var loginEmailCooldown = ViewBag.LoginEmailCooldown as int? ?? 0;
+    var loginSmsCooldown = ViewBag.LoginSmsCooldown as int? ?? 0;
+}
+@if (!string.IsNullOrWhiteSpace(autoMessage))
+{
+    <div class="alert alert-success small">@autoMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(autoError))
+{
+    <div class="alert alert-danger small">@autoError</div>
+}
+@if (!string.IsNullOrWhiteSpace(devTwoFactorCode))
+{
+    <div class="alert alert-info small">
+        Dev kode verifikasi: <strong>@devTwoFactorCode</strong>
+    </div>
+}
+@if (blockOtp)
+{
+    <div class="row g-3 mt-2">
+        @if (requireEmailVerification)
+        {
+            <div class="col">
+                <div class="card border-warning-subtle h-100 twofactor-pending-card">
+                    <div class="card-body">
+                        <h6 class="text-warning fw-semibold mb-1">
+                            Verifikasi Email
+                        </h6>
+                        <p class="small mb-2">
+                            Email <strong>@emailAddress</strong> belum terverifikasi. Klik magic link terbaru untuk mengaktifkan kembali 2FA Email.
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(devMagicLink))
+                        {
+                            <div class="alert alert-info small py-2">
+                                Dev magic link: <a href="@devMagicLink">Buka tautan</a>
+                            </div>
+                        }
+                        <form asp-action="ResendPendingEmailVerification" method="post" class="d-flex flex-column gap-2">
+                            <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                            <button type="submit"
+                                    class="btn btn-outline-primary btn-sm"
+                                    data-cooldown-button
+                                    data-label="Kirim ulang magic link"
+                                    data-cooldown-seconds="@loginEmailCooldown"
+                                    data-status-target="#pendingEmailStatus">
+                                Kirim ulang magic link
+                            </button>
+                            <small class="text-muted">
+                                Setelah email terverifikasi, ulangi login 2FA.
+                            </small>
+                        </form>
+                        <div class="small text-muted mt-1" id="pendingEmailStatus"></div>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (requirePhoneVerification)
+        {
+            <div class="col">
+                <div class="card border-warning-subtle h-100 twofactor-pending-card">
+                    <div class="card-body">
+                        <h6 class="text-warning fw-semibold mb-1">
+                            Verifikasi Nomor HP
+                        </h6>
+                        <p class="small mb-2">
+                            Nomor <strong>@phoneNumber</strong> belum terverifikasi. Gunakan OTP terbaru untuk mengaktifkan kembali 2FA SMS.
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(devPhoneOtp))
+                        {
+                            <div class="alert alert-info small py-2">
+                                Dev OTP: <strong>@devPhoneOtp</strong>
+                            </div>
+                        }
+                        <form asp-action="VerifyPendingPhone" method="post" class="d-flex flex-column gap-2">
+                            <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                            <label class="form-label small mb-1">Masukkan OTP Verifikasi</label>
+                            <input type="hidden" name="code" data-otp-hidden="pending.phone" />
+                            <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="pending.phone">
+                                @for (var i = 0; i < 6; i++)
+                                {
+                                    <input type="text"
+                                           inputmode="numeric"
+                                           maxlength="1"
+                                           class="form-control text-center otp-input"
+                                           data-otp-input
+                                           autocomplete="one-time-code" />
+                                }
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm mt-2">
+                                Verifikasi Nomor
+                            </button>
+                        </form>
+                        <form asp-action="ResendPendingPhoneVerification" method="post" class="d-flex flex-column gap-2 mt-2">
+                            <input type="hidden" name="rememberMe" value="@Model.RememberMe" />
+                            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                            <button type="submit"
+                                    class="btn btn-outline-primary btn-sm"
+                                    data-cooldown-button
+                                    data-label="Kirim ulang OTP verifikasi"
+                                    data-cooldown-seconds="@loginSmsCooldown"
+                                    data-status-target="#pendingPhoneStatus">
+                                Kirim ulang OTP verifikasi
+                            </button>
+                            <small class="text-muted">
+                                Setelah nomor terverifikasi, ulangi login 2FA.
+                            </small>
+                        </form>
+                        <div class="small text-muted mt-1" id="pendingPhoneStatus"></div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="alert alert-info small mt-3">
+        Masuk menggunakan recovery code untuk memperbarui informasi verifikasi, kemudian aktifkan kembali 2FA Email/SMS.
+    </div>
+}

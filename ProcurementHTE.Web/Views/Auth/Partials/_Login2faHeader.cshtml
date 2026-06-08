@@ -1,0 +1,22 @@
+@using ProcurementHTE.Core.Enums
+@model LoginWith2faViewModel
+@{
+    var isAuthenticator = Model.Method == TwoFactorMethod.AuthenticatorApp;
+}
+<header class="mb-3 text-center">
+    <h1 class="fs-3 mb-1">Two-Factor Authentication</h1>
+    <p class="text-muted mb-0">
+        @if (isAuthenticator)
+        {
+            <text>Masukkan kode dari aplikasi authenticator Anda.</text>
+        }
+        else if (Model.Method == TwoFactorMethod.Email)
+        {
+            <text>Kami telah mengirim kode OTP ke email terdaftar Anda.</text>
+        }
+        else
+        {
+            <text>Kami telah mengirim kode melalui SMS.</text>
+        }
+    </p>
+</header>

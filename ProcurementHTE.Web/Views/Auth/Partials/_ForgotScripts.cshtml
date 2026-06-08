@@ -1,0 +1,163 @@
+@* Forgot Password specific scripts *@
+<script>
+    (() => {
+        const DEFAULT_COOLDOWN = 60;
+
+        function startCooldown(button, seconds, statusSelector, baseMessage) {
+            if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
+                return;
+
+            button.dataset.cooldownActive = '1';
+            const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
+            let remaining = seconds;
+            button.disabled = true;
+
+            const baseText = baseMessage ? `${baseMessage} ` : '';
+
+            const updateStatus = () => {
+                if (statusEl) {
+                    statusEl.textContent = `${baseText}Tunggu ${remaining} detik sebelum mengirim ulang.`;
+                    statusEl.classList.remove('text-success', 'text-danger');
+                    statusEl.classList.add('text-warning');
+                }
+            };
+
+            updateStatus();
+
+            const intervalId = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(intervalId);
+                    button.disabled = false;
+                    button.dataset.cooldownActive = '';
+                    if (statusEl) {
+                        statusEl.textContent = baseMessage ?? '';
+                        if (!baseMessage)
+                            statusEl.classList.remove('text-warning');
+                    }
+                } else {
+                    updateStatus();
+                }
+            }, 1000);
+        }
+
+        function initCooldownButtons() {
+            document.querySelectorAll('[data-cooldown-button]').forEach(button => {
+                const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
+                if (seconds > 0) {
+                    startCooldown(button, seconds, button.dataset.statusTarget, null);
+                }
+            });
+        }
+
+        const toast = window.Swal
+            ? window.Swal.mixin({
+                toast: true,
+                position: 'bottom-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: toastInstance => {
+                    toastInstance.addEventListener('mouseenter', window.Swal.stopTimer);
+                    toastInstance.addEventListener('mouseleave', window.Swal.resumeTimer);
+                }
+            })
+            : null;
+
+        function updateStatus(targetSelector, message, isSuccess) {
+            if (!targetSelector) return;
+            const el = document.querySelector(targetSelector);
+            if (!el) return;
+            el.textContent = message || '';
+            el.classList.remove('text-success', 'text-danger');
+            if (!message) return;
+            el.classList.add(isSuccess ? 'text-success' : 'text-danger');
+        }
+
+        async function handleSendCode(button, fieldName, method) {
+            const form = button.closest('form');
+            if (!form) return;
+            const input = form.querySelector(`[name="${fieldName}"]`);
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            if (!input || !tokenInput) return;
+
+            const value = input.value.trim();
+            if (!value.length) {
+                const message = 'Isi field ini terlebih dahulu.';
+                updateStatus(button.dataset.statusTarget, message, false);
+                input.focus();
+                if (toast) toast.fire({ icon: 'error', title: message });
+                return;
+            }
+
+            const originalContent = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengirim...`;
+            updateStatus(button.dataset.statusTarget, '', true);
+            let cooldownData = null;
+
+            try {
+                const body = new URLSearchParams();
+                body.append('__RequestVerificationToken', tokenInput.value);
+                body.append(fieldName, value);
+
+                const response = await fetch(button.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body
+                });
+
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch {
+                    data = null;
+                }
+
+                if (response.ok && data?.success) {
+                    const baseMessage = data.message ?? 'Kode berhasil dikirim.';
+                    const devCode = data.devCode;
+                    const devLabel = method === 'sms' ? 'Kode dev SMS' : 'Kode dev email';
+                    const finalMessage = devCode ? `${baseMessage} (${devLabel}: ${devCode})` : baseMessage;
+                    updateStatus(button.dataset.statusTarget, finalMessage, true);
+                    if (toast) toast.fire({ icon: 'success', title: finalMessage });
+                    cooldownData = { seconds: data.cooldown ?? DEFAULT_COOLDOWN, message: baseMessage };
+                } else {
+                    const fallbackError = data?.message
+                        ?? data?.errors?.[0]?.messages?.[0]
+                        ?? 'Gagal mengirim kode.';
+                    updateStatus(button.dataset.statusTarget, fallbackError, false);
+                    if (toast) toast.fire({ icon: 'error', title: fallbackError });
+                    if (data?.remaining) {
+                        cooldownData = { seconds: data.remaining, message: fallbackError };
+                    }
+                }
+            } catch {
+                const message = 'Terjadi kesalahan jaringan. Coba ulangi.';
+                updateStatus(button.dataset.statusTarget, message, false);
+                if (toast) toast.fire({ icon: 'error', title: message });
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+                if (cooldownData && cooldownData.seconds > 0) {
+                    startCooldown(button, cooldownData.seconds, button.dataset.statusTarget, cooldownData.message);
+                }
+            }
+        }
+
+        const emailButton = document.querySelector('[data-send-email-code]');
+        if (emailButton) {
+            emailButton.addEventListener('click', () =>
+                handleSendCode(emailButton, 'EmailReset.Identifier', 'email'));
+        }
+
+        const smsButton = document.querySelector('[data-send-sms-code]');
+        if (smsButton) {
+            smsButton.addEventListener('click', () =>
+                handleSendCode(smsButton, 'SmsReset.Identifier', 'sms'));
+        }
+
+        if (typeof initOtpInputs === 'function') initOtpInputs();
+        initCooldownButtons();
+    })();
+</script>
