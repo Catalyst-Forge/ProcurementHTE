@@ -22,7 +22,7 @@ public partial class ProcurementDocumentsController
                 return NotFound("Procurement was not found.");
             }
 
-            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            var procurement = await _queryService.GetProcurementByIdAsync(procurementId);
             ViewBag.ProcNum = procurement?.ProcNum ?? "-";
             ViewBag.Vendors = await _vendorService.GetAllVendorsAsync();
             ViewBag.RoundLetters = await _roundLetterRepo.ListByProcurementAsync(procurementId);

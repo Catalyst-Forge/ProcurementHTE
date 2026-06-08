@@ -13,15 +13,18 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
     public class ApPoPickupController : Controller
     {
         private const string ActivePageName = "AP-PO Pickup";
-        private readonly IProcurementService _procurementService;
+        private readonly IProcurementQueryService _queryService;
+        private readonly IProcurementWorkflowService _workflowService;
         private readonly UserManager<User> _userManager;
 
         public ApPoPickupController(
-            IProcurementService procurementService,
+            IProcurementQueryService queryService,
+            IProcurementWorkflowService workflowService,
             UserManager<User> userManager
         )
         {
-            _procurementService = procurementService;
+            _queryService = queryService;
+            _workflowService = workflowService;
             _userManager = userManager;
         }
 
@@ -55,7 +58,7 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
             Core.Common.PagedResult<Procurement> procurements;
             if (tab == "mypickups" && !string.IsNullOrEmpty(userId))
             {
-                procurements = await _procurementService.GetMyAppoPickupsAsync(
+                procurements = await _queryService.GetMyAppoPickupsAsync(
                     userId,
                     page,
                     pageSize,
@@ -66,7 +69,7 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
             }
             else
             {
-                procurements = await _procurementService.GetProcurementsForAppoApprovalAsync(
+                procurements = await _queryService.GetProcurementsForAppoApprovalAsync(
                     page,
                     pageSize,
                     search,
@@ -97,7 +100,7 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
                     return RedirectToAction(nameof(Index));
                 }
 
-                await _procurementService.PickupAsync(id, userId);
+                await _workflowService.PickupAsync(id, userId);
                 TempData["SuccessMessage"] = "Procurement berhasil di-pickup";
             }
             catch (Exception ex)
@@ -116,7 +119,7 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
 
             try
             {
-                var procurement = await _procurementService.GetProcurementByIdAsync(id);
+                var procurement = await _queryService.GetProcurementByIdAsync(id);
                 if (procurement == null)
                     return NotFound();
 

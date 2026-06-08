@@ -24,8 +24,8 @@ public partial class ProcurementService
             throw new InvalidOperationException("Procurement sudah di-pickup oleh AP-Invoice");
 
         procurement.ApInvoiceUserId = apInvoiceUserId;
-        procurement.ApInvoicePickedUpAt = DateTime.UtcNow;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.ApInvoicePickedUpAt = _timeProvider.GetUtcNow().UtcDateTime;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -44,7 +44,7 @@ public partial class ProcurementService
         procurement.SANo = saNo;
         procurement.SP3No = sp3No;
         procurement.ApInvoiceUserId = filledByUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -62,8 +62,8 @@ public partial class ProcurementService
             throw new InvalidOperationException("Procurement sudah di-pickup oleh AR");
 
         procurement.ArUserId = arUserId;
-        procurement.ArPickedUpAt = DateTime.UtcNow;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.ArPickedUpAt = _timeProvider.GetUtcNow().UtcDateTime;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 

@@ -35,7 +35,7 @@ public partial class ProcurementService
         return (offers ?? []).Where(o => !string.IsNullOrWhiteSpace(o.ItemPenawaran)).ToList();
     }
 
-    private static void UpdateProcurementProperties(Procurement existing, Procurement updated)
+    private void UpdateProcurementProperties(Procurement existing, Procurement updated)
     {
         existing.ContractType = updated.ContractType;
         existing.ProcurementCategory = updated.ProcurementCategory;
@@ -64,7 +64,7 @@ public partial class ProcurementService
         existing.VicePresidentPjs = updated.VicePresidentPjs;
         existing.OperationDirectorPjs = updated.OperationDirectorPjs;
         existing.PresidentDirectorPjs = updated.PresidentDirectorPjs;
-        existing.UpdatedAt = DateTime.UtcNow;
+        existing.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         if (!string.IsNullOrWhiteSpace(updated.JobTypeId))
             existing.JobTypeId = updated.JobTypeId;

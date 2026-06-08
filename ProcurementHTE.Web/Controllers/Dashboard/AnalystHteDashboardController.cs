@@ -12,12 +12,12 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
     public class AnalystHteDashboardController : DashboardBaseController
     {
         public AnalystHteDashboardController(
-            IProcurementService procurementService,
+            IProcurementQueryService procurementQueryService,
             UserManager<User> userManager,
             IProfitLossService profitLossService,
             IDashboardService dashboardService
         )
-            : base(procurementService, userManager, profitLossService, dashboardService) { }
+            : base(procurementQueryService, userManager, profitLossService, dashboardService) { }
 
         [HttpGet("")]
         public Task<IActionResult> Index(CancellationToken ct = default) =>

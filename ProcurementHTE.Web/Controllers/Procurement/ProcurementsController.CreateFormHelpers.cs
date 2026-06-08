@@ -11,7 +11,7 @@ public partial class ProcurementsController
         ProcurementCategory? category
     )
     {
-        var (jobTypes, _) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+        var (jobTypes, _) = await _queryService.GetRelatedEntitiesForProcurementAsync();
         var selectedJobType =
             jobTypes.FirstOrDefault(jobType => jobType.JobTypeId == jobTypeId)
             ?? jobTypes.FirstOrDefault();
@@ -43,7 +43,7 @@ public partial class ProcurementsController
 
         await PopulateCreateUserSelectListsAsync(createViewModel);
 
-        var (jobTypes, _) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+        var (jobTypes, _) = await _queryService.GetRelatedEntitiesForProcurementAsync();
         createViewModel.JobTypes = jobTypes;
 
         if (string.IsNullOrWhiteSpace(createViewModel.Procurement.JobTypeId))

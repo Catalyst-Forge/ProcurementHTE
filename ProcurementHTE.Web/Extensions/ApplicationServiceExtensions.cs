@@ -7,7 +7,11 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddApplicationLayer(this IServiceCollection services)
     {
-        services.AddScoped<IProcurementService, ProcurementService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<ProcurementService>();
+        services.AddScoped<IProcurementQueryService>(sp => sp.GetRequiredService<ProcurementService>());
+        services.AddScoped<IProcurementCommandService>(sp => sp.GetRequiredService<ProcurementService>());
+        services.AddScoped<IProcurementWorkflowService>(sp => sp.GetRequiredService<ProcurementService>());
         services.AddScoped<IPurchaseRequisitionService, PurchaseRequisitionService>();
         services.AddScoped<IVendorService, VendorService>();
         services.AddScoped<IJobTypeService, JobTypesService>();

@@ -29,7 +29,7 @@ public partial class ProcurementsController
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var user = _userManager.GetUserId(User);
-        var procurements = await _procurementService.GetAllProcurementWithDetailsAsync(
+        var procurements = await _queryService.GetAllProcurementWithDetailsAsync(
             page,
             pageSize,
             search,
@@ -57,7 +57,7 @@ public partial class ProcurementsController
 
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(id);
+            var procurement = await _queryService.GetProcurementByIdAsync(id);
             if (procurement == null)
                 return NotFound();
 

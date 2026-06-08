@@ -26,7 +26,7 @@ public partial class ProcurementsController
         ValidateEditRaNumber(editViewModel);
         ValidateEditApprovers(editViewModel);
 
-        var status = await _procurementService.GetStatusByNameAsync(submitAction ?? "Created");
+        var status = await _queryService.GetStatusByNameAsync(submitAction ?? "Created");
         if (status == null)
             ModelState.AddModelError("", $"Status '{submitAction}' tidak ditemukan.");
         else

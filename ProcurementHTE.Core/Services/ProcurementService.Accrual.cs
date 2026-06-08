@@ -25,8 +25,8 @@ public partial class ProcurementService
         procurement.PotensiAccrual = potensiAccrual;
         procurement.StatusAccrual = statusAccrual;
         procurement.AccrualFilledByUserId = filledByUserId;
-        procurement.AccrualFilledAt = DateTime.UtcNow;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.AccrualFilledAt = _timeProvider.GetUtcNow().UtcDateTime;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }

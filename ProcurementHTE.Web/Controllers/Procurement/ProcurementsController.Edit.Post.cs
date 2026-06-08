@@ -23,7 +23,7 @@ public partial class ProcurementsController
             return NotFound();
         }
 
-        var procForAuthCheck = await _procurementService.GetProcurementByIdAsync(id);
+        var procForAuthCheck = await _queryService.GetProcurementByIdAsync(id);
         if (procForAuthCheck == null)
             return NotFound();
 
@@ -45,14 +45,14 @@ public partial class ProcurementsController
 
         try
         {
-            var existingProcurement = await _procurementService.GetProcurementByIdAsync(id);
+            var existingProcurement = await _queryService.GetProcurementByIdAsync(id);
             if (existingProcurement == null)
             {
                 TempData["ErrorMessage"] = "Procurement tidak ditemukan";
                 return RedirectToAction(nameof(Index));
             }
 
-            await _procurementService.EditProcurementAsync(
+            await _commandService.EditProcurementAsync(
                 BuildProcurementForUpdate(editViewModel, existingProcurement),
                 id,
                 editViewModel.Details ?? [],

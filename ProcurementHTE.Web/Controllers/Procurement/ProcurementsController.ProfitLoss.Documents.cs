@@ -9,7 +9,7 @@ public partial class ProcurementsController
     private async Task GenerateProfitLossDocumentsAsync(ProfitLossInputDto dto)
     {
         var procurement =
-            await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
+            await _queryService.GetProcurementByIdAsync(dto.ProcurementId)
             ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
         var docTypes = await GetProcDocumentTypesByNameAsync();
@@ -35,7 +35,7 @@ public partial class ProcurementsController
     private async Task GenerateSpmpAfterProfitLossUpdateAsync(string procurementId)
     {
         var procurement =
-            await _procurementService.GetProcurementByIdAsync(procurementId)
+            await _queryService.GetProcurementByIdAsync(procurementId)
             ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
         await GenerateSpmpDocumentAsync(

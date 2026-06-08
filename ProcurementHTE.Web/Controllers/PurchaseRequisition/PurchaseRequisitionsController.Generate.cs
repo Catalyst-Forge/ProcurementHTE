@@ -17,7 +17,7 @@ public partial class PurchaseRequisitionsController
     {
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            var procurement = await _queryService.GetProcurementByIdAsync(procurementId);
             if (procurement == null)
             {
                 TempData["ErrorMessage"] = "Procurement not found.";
@@ -64,7 +64,7 @@ public partial class PurchaseRequisitionsController
     {
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            var procurement = await _queryService.GetProcurementByIdAsync(procurementId);
             if (procurement == null)
                 return Json(new { success = false, message = "Procurement not found." });
 

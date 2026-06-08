@@ -3,9 +3,8 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Interfaces;
 
-public interface IPurchaseRequisitionService
+public interface IPurchaseRequisitionQueryService
 {
-    // Query Methods
     Task<PagedResult<PurchaseRequisition>> GetAllAsync(
         int page,
         int pageSize,
@@ -29,19 +28,4 @@ public interface IPurchaseRequisitionService
     Task<int> CountAsync(CancellationToken ct = default);
 
     Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default);
-
-    // Command Methods
-    Task<PurchaseRequisition> CreateAsync(
-        PurchaseRequisition purchaseRequisition,
-        IEnumerable<string> procurementIds,
-        CancellationToken ct = default
-    );
-
-    Task UpdateAsync(
-        PurchaseRequisition purchaseRequisition,
-        IEnumerable<string>? procurementIds = null,
-        CancellationToken ct = default
-    );
-
-    Task DeleteAsync(string id, string deletedByUserId, CancellationToken ct = default);
 }

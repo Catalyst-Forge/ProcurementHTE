@@ -7,7 +7,7 @@ public partial class ProcurementsController
     private async Task RepopulateEditViewModel(ProcurementEditViewModel viewModel)
     {
         var (jobTypes, statuses) =
-            await _procurementService.GetRelatedEntitiesForProcurementAsync();
+            await _queryService.GetRelatedEntitiesForProcurementAsync();
         viewModel.JobTypes = jobTypes;
         viewModel.Statuses = statuses;
 

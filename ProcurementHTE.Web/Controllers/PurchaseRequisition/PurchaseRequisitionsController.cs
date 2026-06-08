@@ -29,7 +29,7 @@ public partial class PurchaseRequisitionsController : Controller
     private readonly IVendorRoundLetterRepository _vendorRoundLetterRepository;
     private readonly IProcurementDocumentGenerator _documentGenerator;
     private readonly IDocumentTypeRepository _documentTypeRepository;
-    private readonly IProcurementService _procurementService;
+    private readonly IProcurementQueryService _queryService;
     private readonly IObjectStorage _objectStorage;
     private readonly ObjectStorageOptions _storageOptions;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -46,7 +46,7 @@ public partial class PurchaseRequisitionsController : Controller
         IVendorRoundLetterRepository vendorRoundLetterRepository,
         IProcurementDocumentGenerator documentGenerator,
         IDocumentTypeRepository documentTypeRepository,
-        IProcurementService procurementService,
+        IProcurementQueryService queryService,
         IObjectStorage objectStorage,
         IOptions<ObjectStorageOptions> storageOptions,
         IHttpClientFactory httpClientFactory,
@@ -63,7 +63,7 @@ public partial class PurchaseRequisitionsController : Controller
         _vendorRoundLetterRepository = vendorRoundLetterRepository;
         _documentGenerator = documentGenerator;
         _documentTypeRepository = documentTypeRepository;
-        _procurementService = procurementService;
+        _queryService = queryService;
         _objectStorage = objectStorage;
         _storageOptions =
             storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));

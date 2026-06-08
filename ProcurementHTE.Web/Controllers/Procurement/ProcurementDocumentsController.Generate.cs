@@ -18,7 +18,7 @@ public partial class ProcurementDocumentsController
     {
         try
         {
-            var procurementEntity = await _procurementService.GetProcurementByIdAsync(
+            var procurementEntity = await _queryService.GetProcurementByIdAsync(
                 procurementId
             );
             if (procurementEntity == null)
@@ -76,7 +76,7 @@ public partial class ProcurementDocumentsController
     {
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            var procurement = await _queryService.GetProcurementByIdAsync(procurementId);
             if (procurement == null)
                 return NotFound("Procurement was not found");
 

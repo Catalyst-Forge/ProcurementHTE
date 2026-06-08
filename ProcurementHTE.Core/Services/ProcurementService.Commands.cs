@@ -15,7 +15,7 @@ public partial class ProcurementService
         if (!string.IsNullOrWhiteSpace(procurement.JobTypeId))
             await EnsureJobTypeExistsAsync(procurement.JobTypeId);
 
-        procurement.CreatedAt = DateTime.UtcNow;
+        procurement.CreatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         var validDetails = FilterValidDetails(details);
         var validOffers = FilterValidOffers(offers);

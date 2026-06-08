@@ -16,7 +16,7 @@ public partial class ProcurementsController
 
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(id);
+            var procurement = await _queryService.GetProcurementByIdAsync(id);
             return procurement == null ? NotFound() : View(procurement);
         }
         catch (Exception ex)
@@ -39,7 +39,7 @@ public partial class ProcurementsController
 
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(id);
+            var procurement = await _queryService.GetProcurementByIdAsync(id);
             if (procurement == null)
             {
                 TempData["ErrorMessage"] = "Procurement tidak ditemukan";
@@ -51,7 +51,7 @@ public partial class ProcurementsController
             var deletedDocsCount = await _procDocService.DeleteAllByProcurementAsync(id, currentUserId);
 
             await _pnlService.DeleteByProcurementAsync(id, currentUserId);
-            await _procurementService.DeleteProcurementAsync(procurement, currentUserId);
+            await _commandService.DeleteProcurementAsync(procurement, currentUserId);
 
             if (!string.IsNullOrEmpty(prId))
                 await _trackingService.RecalculatePrStatusAsync(prId);

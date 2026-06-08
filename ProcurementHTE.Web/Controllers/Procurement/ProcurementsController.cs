@@ -13,7 +13,9 @@ public partial class ProcurementsController : Controller
 {
     private const string ActivePageName = "Index Procurements";
 
-    private readonly IProcurementService _procurementService;
+    private readonly IProcurementQueryService _queryService;
+    private readonly IProcurementCommandService _commandService;
+    private readonly IProcurementWorkflowService _workflowService;
     private readonly IVendorService _vendorService;
     private readonly IProfitLossService _pnlService;
     private readonly IVendorOfferService _voService;
@@ -29,7 +31,9 @@ public partial class ProcurementsController : Controller
     private readonly ILogger<ProcurementsController> _logger;
 
     public ProcurementsController(
-        IProcurementService procurementService,
+        IProcurementQueryService queryService,
+        IProcurementCommandService commandService,
+        IProcurementWorkflowService workflowService,
         IVendorService vendorService,
         IProfitLossService pnlService,
         IVendorOfferService voService,
@@ -45,7 +49,9 @@ public partial class ProcurementsController : Controller
         ILogger<ProcurementsController> logger
     )
     {
-        _procurementService = procurementService;
+        _queryService = queryService;
+        _commandService = commandService;
+        _workflowService = workflowService;
         _vendorService = vendorService;
         _pnlService = pnlService;
         _voService = voService;

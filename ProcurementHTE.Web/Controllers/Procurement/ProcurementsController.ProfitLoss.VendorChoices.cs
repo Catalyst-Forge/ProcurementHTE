@@ -9,7 +9,7 @@ public partial class ProcurementsController
         var vendors = await _vendorService.GetAllVendorsAsync();
         viewModel.VendorChoices = BuildVendorChoices(vendors);
 
-        var procurement = await _procurementService.GetProcurementByIdAsync(
+        var procurement = await _queryService.GetProcurementByIdAsync(
             viewModel.ProcurementId
         );
 

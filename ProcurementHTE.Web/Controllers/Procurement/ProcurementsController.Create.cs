@@ -51,7 +51,7 @@ public partial class ProcurementsController
         var isDraft = submitAction?.Equals("Draft", StringComparison.OrdinalIgnoreCase) == true;
         _logger.LogDebug("Create procurement request resolved draft mode: {IsDraft}", isDraft);
 
-        var status = await _procurementService.GetStatusByNameAsync(submitAction ?? "");
+        var status = await _queryService.GetStatusByNameAsync(submitAction ?? "");
         if (status == null)
         {
             _logger.LogWarning("Create procurement failed because status {SubmitAction} was not found", submitAction);
@@ -85,7 +85,7 @@ public partial class ProcurementsController
             proc.SpmpNumber = ProcurementReferenceNumberFormatter.AppendSuffixIfNeeded(proc.SpmpNumber);
             proc.OeNumber = ProcurementReferenceNumberFormatter.AppendSuffixIfNeeded(proc.OeNumber);
 
-            await _procurementService.AddProcurementWithDetailsAsync(
+            await _commandService.AddProcurementWithDetailsAsync(
                 proc,
                 procurementViewModel.Details ?? [],
                 procurementViewModel.Offers ?? []

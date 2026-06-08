@@ -11,19 +11,19 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
     [Authorize]
     public abstract partial class DashboardBaseController : Controller
     {
-        protected readonly IProcurementService ProcurementService;
+        protected readonly IProcurementQueryService _procurementQueryService;
         protected readonly UserManager<User> UserManager;
         protected readonly IProfitLossService ProfitLossService;
         protected readonly IDashboardService DashboardService;
 
         protected DashboardBaseController(
-            IProcurementService procurementService,
+            IProcurementQueryService procurementQueryService,
             UserManager<User> userManager,
             IProfitLossService profitLossService,
             IDashboardService dashboardService
         )
         {
-            ProcurementService = procurementService;
+            _procurementQueryService = procurementQueryService;
             UserManager = userManager;
             ProfitLossService = profitLossService;
             DashboardService = dashboardService;
@@ -41,7 +41,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             var totalUsers = UserManager.Users.Count();
             var activeUsers = UserManager.Users.Count(u => u.IsActive);
 
-            var recentProcurements = await ProcurementService.GetMyRecentProcurementAsync(
+            var recentProcurements = await _procurementQueryService.GetMyRecentProcurementAsync(
                 userId,
                 5,
                 ct
@@ -73,7 +73,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 TotalUsers = totalUsers,
                 ActiveUsers = activeUsers,
                 TotalRevenueThisMonth = totalRevenueThisMonth,
-                TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
+                TotalProcurements = await _procurementQueryService.CountAllProcurementsAsync(ct),
 
                 // Recent Procurements - using unified list
                 RecentProcurementsList = recentProcurements
@@ -173,7 +173,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
 
             return new DashboardViewModel
             {
-                TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
+                TotalProcurements = await _procurementQueryService.CountAllProcurementsAsync(ct),
                 ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
                 PendingApprovals = await DashboardService.GetPendingApprovalsCountAsync(ct),
                 TotalVendors = await DashboardService.GetTotalVendorsCountAsync(ct),

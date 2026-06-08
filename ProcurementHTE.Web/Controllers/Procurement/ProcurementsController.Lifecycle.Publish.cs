@@ -27,8 +27,8 @@ public partial class ProcurementsController
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var procurement = await _procurementService.GetProcurementByIdAsync(id);
-            await _procurementService.PublishAsync(id);
+            var procurement = await _queryService.GetProcurementByIdAsync(id);
+            await _workflowService.PublishAsync(id);
             await NotifyProcurementPublishedAsync(id, procurement);
 
             TempData["SuccessMessage"] =
@@ -63,7 +63,7 @@ public partial class ProcurementsController
 
         try
         {
-            await _procurementService.UnpublishAsync(id);
+            await _workflowService.UnpublishAsync(id);
             TempData["SuccessMessage"] =
                 "Publish procurement berhasil dibatalkan. Status kembali menjadi 'Created'.";
         }

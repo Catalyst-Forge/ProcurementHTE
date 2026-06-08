@@ -17,7 +17,7 @@ public partial class ProcurementService
 
         var completedStatus = await GetCompletedStatusAsync();
         procurement.StatusId = completedStatus.StatusId;
-        procurement.CompletedAt = DateTime.UtcNow;
+        procurement.CompletedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -40,7 +40,7 @@ public partial class ProcurementService
             throw new InvalidOperationException("Procurement ini sudah di-approve oleh AP-PO");
 
         procurement.AppoUserId = appoUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -61,7 +61,7 @@ public partial class ProcurementService
             ?? throw new InvalidOperationException("Status 'Created' tidak ditemukan");
 
         procurement.StatusId = createdStatus.StatusId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -82,7 +82,7 @@ public partial class ProcurementService
             ?? throw new InvalidOperationException("Status 'Waiting Pickup' tidak ditemukan");
 
         procurement.StatusId = waitingPickupStatus.StatusId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -103,7 +103,7 @@ public partial class ProcurementService
             ?? throw new InvalidOperationException("Status 'Created' tidak ditemukan");
 
         procurement.StatusId = createdStatus.StatusId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
@@ -128,8 +128,8 @@ public partial class ProcurementService
 
         procurement.StatusId = inProgressStatus.StatusId;
         procurement.AppoUserId = appoUserId;
-        procurement.PickedUpAt = DateTime.UtcNow;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.PickedUpAt = _timeProvider.GetUtcNow().UtcDateTime;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 

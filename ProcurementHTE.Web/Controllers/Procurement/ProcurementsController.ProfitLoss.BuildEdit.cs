@@ -11,7 +11,7 @@ public partial class ProcurementsController
         var dto = await _pnlService.GetEditDataAsync(profitLossId);
         var vendors = await _vendorService.GetAllVendorsAsync();
         var procurement =
-            await _procurementService.GetProcurementByIdAsync(dto.ProcurementId)
+            await _queryService.GetProcurementByIdAsync(dto.ProcurementId)
             ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
         var offerItems = BuildProfitLossOfferItems(procurement);

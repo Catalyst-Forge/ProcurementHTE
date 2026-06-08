@@ -18,7 +18,7 @@ public partial class ProcurementsController
 
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(procurementId);
+            var procurement = await _queryService.GetProcurementByIdAsync(procurementId);
             if (procurement == null)
             {
                 TempData["ErrorMessage"] = "Procurement tidak ditemukan";

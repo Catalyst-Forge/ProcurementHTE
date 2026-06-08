@@ -12,15 +12,18 @@ namespace ProcurementHTE.Web.Controllers.ArPickup
     public class ArPickupController : Controller
     {
         private const string ActivePageName = "AR Pickup";
-        private readonly IProcurementService _procurementService;
+        private readonly IProcurementQueryService _queryService;
+        private readonly IProcurementWorkflowService _workflowService;
         private readonly UserManager<User> _userManager;
 
         public ArPickupController(
-            IProcurementService procurementService,
+            IProcurementQueryService queryService,
+            IProcurementWorkflowService workflowService,
             UserManager<User> userManager
         )
         {
-            _procurementService = procurementService;
+            _queryService = queryService;
+            _workflowService = workflowService;
             _userManager = userManager;
         }
 
@@ -48,7 +51,7 @@ namespace ProcurementHTE.Web.Controllers.ArPickup
             Core.Common.PagedResult<Procurement> procurements;
             if (tab == "mypickups" && !string.IsNullOrEmpty(userId))
             {
-                procurements = await _procurementService.GetMyArPickupsAsync(
+                procurements = await _queryService.GetMyArPickupsAsync(
                     userId,
                     page,
                     pageSize,
@@ -59,7 +62,7 @@ namespace ProcurementHTE.Web.Controllers.ArPickup
             else
             {
                 // Default: show pending (waiting to be picked up)
-                procurements = await _procurementService.GetProcurementsForArPickupAsync(
+                procurements = await _queryService.GetProcurementsForArPickupAsync(
                     page,
                     pageSize,
                     search,
@@ -89,7 +92,7 @@ namespace ProcurementHTE.Web.Controllers.ArPickup
                     return RedirectToAction(nameof(Index));
                 }
 
-                await _procurementService.PickupForArAsync(id, userId);
+                await _workflowService.PickupForArAsync(id, userId);
                 TempData["SuccessMessage"] = "Procurement berhasil di-pickup untuk AR. Silakan isi data accrual.";
 
                 // Redirect to Accrual page to fill in accrual data
@@ -111,7 +114,7 @@ namespace ProcurementHTE.Web.Controllers.ArPickup
 
             try
             {
-                var procurement = await _procurementService.GetProcurementByIdAsync(id);
+                var procurement = await _queryService.GetProcurementByIdAsync(id);
                 if (procurement == null)
                     return NotFound();
 

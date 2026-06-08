@@ -12,16 +12,19 @@ namespace ProcurementHTE.Web.Controllers.ArPickup;
 [Route("[controller]")]
 public class AccrualController : Controller
 {
-    private readonly IProcurementService _procurementService;
+    private readonly IProcurementQueryService _queryService;
+    private readonly IProcurementWorkflowService _workflowService;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<AccrualController> _logger;
 
     public AccrualController(
-        IProcurementService procurementService,
+        IProcurementQueryService queryService,
+        IProcurementWorkflowService workflowService,
         UserManager<User> userManager,
         ILogger<AccrualController> logger)
     {
-        _procurementService = procurementService;
+        _queryService = queryService;
+        _workflowService = workflowService;
         _userManager = userManager;
         _logger = logger;
     }
@@ -39,7 +42,7 @@ public class AccrualController : Controller
     {
         try
         {
-            var result = await _procurementService.GetProcurementsForAccrualAsync(
+            var result = await _queryService.GetProcurementsForAccrualAsync(
                 page, pageSize, search, filter, ct);
 
             var viewModel = new AccrualIndexViewModel
@@ -71,7 +74,7 @@ public class AccrualController : Controller
     {
         try
         {
-            var procurement = await _procurementService.GetProcurementByIdAsync(id);
+            var procurement = await _queryService.GetProcurementByIdAsync(id);
             if (procurement == null)
                 return NotFound(new { message = "Procurement tidak ditemukan" });
 
@@ -113,7 +116,7 @@ public class AccrualController : Controller
                 return Unauthorized(new { success = false, message = "User tidak ditemukan" });
 
             // Validate that procurement has been picked up by AR
-            var procurement = await _procurementService.GetProcurementByIdAsync(request.ProcurementId);
+            var procurement = await _queryService.GetProcurementByIdAsync(request.ProcurementId);
             if (procurement == null)
                 return NotFound(new { success = false, message = "Procurement tidak ditemukan" });
 
@@ -123,7 +126,7 @@ public class AccrualController : Controller
                 return BadRequest(new { success = false, message = "Anda harus pickup procurement ini terlebih dahulu dari menu AR Pickup" });
             }
 
-            await _procurementService.UpdateAccrualDataAsync(
+            await _workflowService.UpdateAccrualDataAsync(
                 request.ProcurementId,
                 request.NoAccrual,
                 request.PotensiAccrual,

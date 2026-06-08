@@ -15,7 +15,7 @@ public partial class ProcurementsController
         if (string.IsNullOrEmpty(id))
             return NotFound();
 
-        var procurement = await _procurementService.GetProcurementByIdAsync(id);
+        var procurement = await _queryService.GetProcurementByIdAsync(id);
         if (procurement == null)
             return NotFound();
 
@@ -38,7 +38,7 @@ public partial class ProcurementsController
 
     private async Task<ProcurementEditViewModel> BuildEditViewModelAsync(Procurement procurement)
     {
-        var (jobTypes, statuses) = await _procurementService.GetRelatedEntitiesForProcurementAsync();
+        var (jobTypes, statuses) = await _queryService.GetRelatedEntitiesForProcurementAsync();
         var viewModel = new ProcurementEditViewModel
         {
             ProcurementId = procurement.ProcurementId,
