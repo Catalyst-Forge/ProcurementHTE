@@ -1,0 +1,67 @@
+@model ProcurementHTE.Web.Models.ViewModels.DashboardViewModel
+@functions {
+    string GetWinRateClass(decimal winRate) {
+        return winRate switch {
+            >= 70 => "success",
+            >= 40 => "info",
+            >= 20 => "warning",
+            _ => "danger"
+        };
+    }
+}
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-trophy me-2"></i>Top 10 Vendor Performance
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Vendor Code</th>
+                                <th>Vendor Name</th>
+                                <th class="text-center">Total Offers</th>
+                                <th class="text-center">Selected</th>
+                                <th class="text-center">Win Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.TopVendors.Count; i++)
+                            {
+                                var vendor = Model.TopVendors[i];
+                                <tr>
+                                    <td><strong>@(i + 1)</strong></td>
+                                    <td>@vendor.VendorCode</td>
+                                    <td>@vendor.VendorName</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@vendor.OfferCount</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">@vendor.SelectedCount</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-@(GetWinRateClass(vendor.WinRate))"
+                                                 role="progressbar"
+                                                 style="width: @(vendor.WinRate)%"
+                                                 aria-valuenow="@vendor.WinRate"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                @vendor.WinRate%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

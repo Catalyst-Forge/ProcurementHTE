@@ -1,0 +1,281 @@
+@Html.AntiForgeryToken()
+<script>
+    // ===== Constants (use var to avoid redeclaration error on HTMX swap) =====
+    var MAX_UPLOAD_SIZE = window.MAX_UPLOAD_SIZE || 50 * 1024 * 1024; // 50MB
+    var ANTIFORGERY_TOKEN = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+    // ===== Toast utility =====
+    function showToast(icon, title, text = '', timer = 4000) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon, title, text,
+            showConfirmButton: false,
+            timer, timerProgressBar: true,
+            didOpen: t => {
+                t.addEventListener('mouseenter', Swal.stopTimer);
+                t.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+    }
+
+    // ===== Modal helper =====
+    function closeUploadModal() {
+        const modalEl = document.getElementById('uploadModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+        
+        // Cleanup backdrop manually if stuck
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }, 300);
+    }
+
+    function openUploadModal(procurementId) {
+        document.getElementById('uploadProcurementId').value = procurementId;
+        document.getElementById('ldpFile').value = '';
+        const modalEl = document.getElementById('uploadModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    // ===== Reinit HTMX =====
+    function reinitHtmx() {
+        if (typeof htmx !== 'undefined' && htmx.process) {
+            htmx.process(document.body);
+        }
+    }
+
+    // ===== Upload handler =====
+    function handleUpload(e) {
+        e.preventDefault();
+        
+        const procurementId = document.getElementById('uploadProcurementId').value;
+        const fileInput = document.getElementById('ldpFile');
+        const file = fileInput.files[0];
+        const submitBtn = document.getElementById('btnSubmitUpload');
+
+        if (!file) {
+            showToast('warning', 'Pilih file terlebih dahulu');
+            return;
+        }
+
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+            showToast('error', 'Format tidak valid', 'Hanya file PDF yang diperbolehkan');
+            return;
+        }
+
+        // Validate file size
+        if (file.size > MAX_UPLOAD_SIZE) {
+            showToast('error', 'Ukuran file terlalu besar', 'Maksimal 50MB');
+            return;
+        }
+
+        // Disable button & show loading
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+
+        const formData = new FormData();
+        formData.append('procurementId', procurementId);
+        formData.append('ldpFile', file);
+
+        fetch('@Url.Action("UploadDocument", "Ldp")', {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': ANTIFORGERY_TOKEN
+            },
+            body: formData
+        })
+        .then(async res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Upload gagal');
+                return data;
+            } else {
+                if (!res.ok) throw new Error('Upload gagal');
+                return { success: true };
+            }
+        })
+        .then(data => {
+            closeUploadModal();
+            showToast('success', 'Upload berhasil!', 'Dokumen LDP berhasil diunggah');
+            
+            // Refresh page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        })
+        .catch(err => {
+            console.error('Upload error:', err);
+            showToast('error', 'Upload gagal', err.message);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    }
+
+    // ===== Download handler =====
+    function handleDownload(procurementId, filename) {
+        showToast('info', 'Memproses download...', '', 1500);
+        
+        const url = `@Url.Action("DownloadDocument", "Ldp")?procurementId=${encodeURIComponent(procurementId)}`;
+        const a = document.createElement('a');
+        a.href = url;
+        if (filename) a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        setTimeout(() => showToast('success', 'Download dimulai', filename || ''), 500);
+    }
+
+    // ===== Delete handler =====
+    function handleDelete(procurementId, filename) {
+        Swal.fire({
+            title: 'Konfirmasi Hapus',
+            html: `<div class="text-start">
+                    <p class="mb-2">Apakah Anda yakin ingin menghapus dokumen LDP ini?</p>
+                    <div class="alert alert-warning mb-0">
+                        <strong><i class="bi bi-file-earmark-pdf me-1"></i>${filename || 'Dokumen LDP'}</strong>
+                    </div>
+                </div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-trash me-1"></i>Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusCancel: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Menghapus...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                const formData = new FormData();
+                formData.append('procurementId', procurementId);
+
+                fetch('@Url.Action("DeleteDocument", "Ldp")', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': ANTIFORGERY_TOKEN
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    const contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Hapus gagal');
+                        return data;
+                    } else {
+                        if (!res.ok) throw new Error('Hapus gagal');
+                        return { success: true };
+                    }
+                })
+                .then(data => {
+                    Swal.close();
+                    showToast('success', 'Berhasil dihapus!', 'Dokumen LDP telah dihapus');
+                    
+                    // Refresh page to show updated data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                })
+                .catch(err => {
+                    console.error('Delete error:', err);
+                    Swal.close();
+                    showToast('error', 'Hapus gagal', err.message);
+                });
+            }
+        });
+    }
+
+    // ===== Initialize event handlers =====
+    function initLdpHandlers() {
+        // Upload form submit
+        const uploadForm = document.getElementById('uploadLdpForm');
+        if (uploadForm && !uploadForm.dataset.bound) {
+            uploadForm.dataset.bound = '1';
+            uploadForm.addEventListener('submit', handleUpload);
+        }
+
+        // Upload buttons (open modal)
+        document.querySelectorAll('.btn-upload-ldp').forEach(btn => {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function() {
+                openUploadModal(this.dataset.procurementId);
+            });
+        });
+
+        // Download buttons
+        document.querySelectorAll('.btn-download-ldp').forEach(btn => {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function() {
+                handleDownload(this.dataset.procurementId, this.dataset.filename);
+            });
+        });
+
+        // Delete buttons
+        document.querySelectorAll('.btn-delete-ldp').forEach(btn => {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function() {
+                handleDelete(this.dataset.procurementId, this.dataset.filename);
+            });
+        });
+
+        reinitHtmx();
+    }
+
+    // ===== DOM Ready =====
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLdpHandlers);
+    } else {
+        initLdpHandlers();
+    }
+
+    // Re-init after HTMX swaps
+    if (!window.ldpHtmxHooked) {
+        window.ldpHtmxHooked = true;
+        document.body?.addEventListener('htmx:afterSwap', initLdpHandlers);
+    }
+
+    // ===== Filter form handlers =====
+    (function () {
+        const form = document.getElementById('filterForm');
+        const searchBox = document.getElementById('searchBox');
+        const pageHidden = document.getElementById('pageHidden');
+
+        // Enter di search langsung submit (page reset ke 1)
+        searchBox.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                pageHidden.value = 1;
+                form.submit();
+            }
+        });
+
+        // Refresh: hapus search, reset page ke 1 & submit
+        document.getElementById('btnRefresh').addEventListener('click', function () {
+            searchBox.value = '';
+            pageHidden.value = 1;
+            form.submit();
+        });
+    })();
+</script>
