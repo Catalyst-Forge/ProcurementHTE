@@ -1,0 +1,174 @@
+<partial name="_ValidationScriptsPartial" />
+<script>
+    (() => {
+        'use strict';
+
+        const form = document.getElementById('createPrForm');
+        const filterVendor = document.getElementById('filterVendor');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterJobType = document.getElementById('filterJobType');
+        const procurementTableBody = document.getElementById('procurementTableBody');
+        const procurementTableContainer = document.getElementById('procurementTableContainer');
+        const btnRefresh = document.getElementById('btnRefreshProcurements');
+        const btnClearFilters = document.getElementById('btnClearFilters');
+        const selectAll = document.getElementById('selectAll');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        const validationError = document.getElementById('procurementValidationError');
+
+        let procurements = [];
+
+        const loadProcurements = async () => {
+            const vendorId = filterVendor.value;
+            const category = filterCategory.value;
+            const jobTypeId = filterJobType.value;
+
+            procurementTableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm" role="status"></div> Loading procurements...
+                    </td>
+                </tr>`;
+
+            const params = new URLSearchParams();
+            if (vendorId) params.append('vendorId', vendorId);
+            if (category) params.append('category', category);
+            if (jobTypeId) params.append('jobTypeId', jobTypeId);
+
+            try {
+                const response = await fetch(`@Url.Action("GetFilteredProcurements", "PurchaseRequisitions")?${params.toString()}`);
+                const data = await response.json();
+                console.log('Procurements loaded:', data);
+                procurements = data;
+                renderProcurements(data);
+            } catch (error) {
+                console.error('Error loading procurements:', error);
+                procurementTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-danger py-4">
+                            <i class="bi bi-exclamation-triangle"></i> Failed to load procurements.
+                        </td>
+                    </tr>`;
+            }
+        };
+
+        const renderProcurements = (data) => {
+            if (!data || data.length === 0) {
+                procurementTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox"></i> No procurements found.
+                        </td>
+                    </tr>`;
+                selectAll.checked = false;
+                updateSelectedCount();
+                return;
+            }
+
+            const html = data.map(proc => {
+                const statusBadge = getStatusBadge(proc.status);
+                const formattedStartDate = proc.startDate ? formatDate(proc.startDate) : '-';
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input procurement-checkbox" name="ProcurementIds" value="${proc.id}" /></td>
+                        <td><strong>${proc.procNum || '-'}</strong></td>
+                        <td>${proc.wonum || '-'}</td>
+                        <td>${proc.jobName || '-'}</td>
+                        <td>${formattedStartDate}</td>
+                        <td><span class="badge bg-info">${proc.category || '-'}</span></td>
+                        <td>${proc.jobType || '-'}</td>
+                        <td>${proc.vendorName || '-'}</td>
+                        <td>${statusBadge}</td>
+                    </tr>`;
+            }).join('');
+
+            procurementTableBody.innerHTML = html;
+            selectAll.checked = false;
+
+            procurementTableBody.querySelectorAll('.procurement-checkbox').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    updateSelectedCount();
+                    validateProcurementSelection();
+                });
+            });
+
+            updateSelectedCount();
+        };
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        };
+
+        const getStatusBadge = (status) => {
+            const statusMap = {
+                'Created': 'bg-secondary',
+                'Draft': 'bg-secondary',
+                'In Progress': 'bg-primary',
+                'Pending': 'bg-warning text-dark',
+                'Approved': 'bg-success',
+                'Rejected': 'bg-danger',
+                'Completed': 'bg-success',
+                'Cancelled': 'bg-dark'
+            };
+            const badgeClass = statusMap[status] || 'bg-secondary';
+            return `<span class="badge ${badgeClass}">${status || 'Unknown'}</span>`;
+        };
+
+        const updateSelectedCount = () => {
+            const checkboxes = procurementTableBody.querySelectorAll('.procurement-checkbox:checked');
+            selectedCountSpan.textContent = checkboxes.length;
+        };
+
+        const validateProcurementSelection = () => {
+            const checkboxes = procurementTableBody.querySelectorAll('.procurement-checkbox:checked');
+            const isValid = checkboxes.length > 0;
+
+            if (isValid) {
+                validationError.style.display = 'none';
+                procurementTableContainer.classList.remove('border-danger');
+            } else {
+                validationError.style.display = 'inline';
+                procurementTableContainer.classList.add('border-danger');
+            }
+
+            return isValid;
+        };
+
+        // Form submit validation
+        form.addEventListener('submit', (e) => {
+            const isValid = validateProcurementSelection();
+            if (!isValid) {
+                e.preventDefault();
+                procurementTableContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+        // Event listeners
+        filterVendor.addEventListener('change', loadProcurements);
+        filterCategory.addEventListener('change', loadProcurements);
+        filterJobType.addEventListener('change', loadProcurements);
+        btnRefresh.addEventListener('click', loadProcurements);
+
+        btnClearFilters.addEventListener('click', () => {
+            filterVendor.value = '';
+            filterCategory.value = '';
+            filterJobType.value = '';
+            loadProcurements();
+        });
+
+        selectAll.addEventListener('change', () => {
+            const checkboxes = procurementTableBody.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateSelectedCount();
+            validateProcurementSelection();
+        });
+
+        // Initial load
+        loadProcurements();
+    })();
+</script>

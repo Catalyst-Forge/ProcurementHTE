@@ -1,0 +1,41 @@
+@model ProcurementHTE.Core.Models.Procurement
+@{
+    var no = 1;
+}
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h5"><i class="bi bi-list-check text-primary me-1"></i> Items</h2>
+    </header>
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body">
+        <div class="table-responsive rounded-3">
+            <table class="table table-hover">
+                <thead class="table-info">
+                    <tr>
+                        <th class="mw-100 text-nowrap text-uppercase">No</th>
+                        <th class="mw-100 text-nowrap text-uppercase">Item Name</th>
+                        <th class="mw-100 text-nowrap text-uppercase">Quantity</th>
+                        <th class="mw-100 text-nowrap text-uppercase">Unit</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model?.ProcOffers != null)
+                    {
+                        @foreach (var item in Model.ProcOffers)
+                        {
+                            <tr>
+                                <td class="text-nowrap">@no</td>
+                                <td>@item.ItemPenawaran</td>
+                                <td>@item.Qty</td>
+                                <td>@item.Unit</td>
+                            </tr>
+                            no++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</article>

@@ -1,0 +1,37 @@
+@using ProcurementHTE.Web.Models.Admin
+@model UserManagementIndexViewModel
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <small class="text-muted d-block">Total User</small>
+                <span class="fw-bold">@Model.TotalCount</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <small class="text-muted d-block">Aktif</small>
+                <span class="fw-bold text-success">@Model.ActiveCount</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <small class="text-muted d-block">Nonaktif</small>
+                <span class="fw-bold text-danger">@Model.InactiveCount</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <small class="text-muted d-block">2FA Aktif</small>
+                <span class="fw-bold text-info">@Model.TwoFactorEnabledCount</span>
+            </div>
+        </div>
+    </div>
+</div>

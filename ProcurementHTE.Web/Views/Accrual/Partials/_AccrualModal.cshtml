@@ -1,0 +1,59 @@
+<!-- Modal Input Accrual -->
+<div class="modal fade" id="accrualModal" tabindex="-1" aria-labelledby="accrualModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="accrualModalLabel">
+                    <i class="bi bi-pencil-square me-2"></i>Input Data Accrual
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="text-muted mt-2">Memuat data...</div>
+                </div>
+                <div id="modalError" class="text-center py-4" style="display: none;">
+                    <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
+                    <div class="text-danger mt-2">Gagal memuat data</div>
+                    <div class="error-message text-muted small"></div>
+                </div>
+                <div id="modalContent" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Procurement</label>
+                        <div class="fw-semibold" id="modalProcInfo"></div>
+                    </div>
+                    <hr />
+                    <input type="hidden" id="modalProcurementId" />
+                    <div class="mb-3">
+                        <label for="noAccrual" class="form-label">No. Accrual</label>
+                        <input type="text" class="form-control" id="noAccrual" maxlength="100" placeholder="Masukkan No. Accrual" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="potensiAccrual" class="form-label">Potensi Accrual (Rp)</label>
+                        <input type="text" class="form-control" id="potensiAccrual" placeholder="0" />
+                        <div class="form-text">Format: 1.000.000</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusAccrual" class="form-label">Status Accrual</label>
+                        <select class="form-select" id="statusAccrual">
+                            <option value="">Pilih Status</option>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveAccrual">
+                    <i class="bi bi-check-lg me-1"></i>Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,183 @@
+@model ProcurementHTE.Web.Models.ViewModels.PurchaseRequisitionEditViewModel
+
+<script>
+    (() => {
+        'use strict';
+
+        const filterVendor = document.getElementById('filterVendor');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterJobType = document.getElementById('filterJobType');
+        const procurementTableBody = document.getElementById('procurementTableBody');
+        const btnRefresh = document.getElementById('btnRefreshProcurements');
+        const btnClearFilters = document.getElementById('btnClearFilters');
+        const selectAll = document.getElementById('selectAll');
+        const selectedCountSpan = document.getElementById('selectedCount');
+
+        // Pre-selected procurement IDs from the model
+        const preSelectedIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProcurementIds));
+        const currentPrId = '@Model.PrId';
+
+        let procurements = [];
+
+        const loadProcurements = async () => {
+            const vendorId = filterVendor.value;
+            const category = filterCategory.value;
+            const jobTypeId = filterJobType.value;
+
+            procurementTableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm" role="status"></div> Loading procurements...
+                    </td>
+                </tr>`;
+
+            const params = new URLSearchParams();
+            if (vendorId) params.append('vendorId', vendorId);
+            if (category) params.append('category', category);
+            if (jobTypeId) params.append('jobTypeId', jobTypeId);
+
+            try {
+                const response = await fetch(`@Url.Action("GetFilteredProcurements", "PurchaseRequisitions")?${params.toString()}`);
+                const data = await response.json();
+                console.log('Procurements loaded:', data);
+                procurements = data;
+                
+                // Also fetch currently linked procurements for this PR
+                await loadLinkedProcurements(data);
+            } catch (error) {
+                console.error('Error loading procurements:', error);
+                procurementTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-danger py-4">
+                            <i class="bi bi-exclamation-triangle"></i> Failed to load procurements. Check console for details.
+                        </td>
+                    </tr>`;
+            }
+        };
+
+        const loadLinkedProcurements = async (availableProcurements) => {
+            try {
+                // Fetch linked procurements for current PR
+                const response = await fetch(`@Url.Action("GetLinkedProcurements", "PurchaseRequisitions")?prId=${currentPrId}`);
+                const linkedData = await response.json();
+                console.log('Linked procurements:', linkedData);
+
+                // Merge linked procurements with available ones (avoiding duplicates)
+                const availableIds = new Set(availableProcurements.map(p => p.id));
+                const linkedProcurements = linkedData.filter(p => !availableIds.has(p.id));
+                
+                // Combine both lists
+                const combinedData = [...linkedProcurements, ...availableProcurements];
+                
+                renderProcurements(combinedData);
+            } catch (error) {
+                console.error('Error loading linked procurements:', error);
+                // If linked endpoint fails, just render available procurements
+                renderProcurements(availableProcurements);
+            }
+        };
+
+        const renderProcurements = (data) => {
+            if (!data || data.length === 0) {
+                procurementTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox"></i> No procurements found.
+                        </td>
+                    </tr>`;
+                selectAll.checked = false;
+                updateSelectedCount();
+                return;
+            }
+
+            const html = data.map(proc => {
+                const isPreSelected = preSelectedIds.includes(proc.id);
+                const statusBadge = getStatusBadge(proc.status);
+                const formattedStartDate = proc.startDate ? formatDate(proc.startDate) : '-';
+                const linkedBadge = isPreSelected ? '<span class="badge bg-success ms-1"><i class="bi bi-link-45deg"></i></span>' : '';
+                return `
+                    <tr class="${isPreSelected ? 'table-success' : ''}">
+                        <td><input type="checkbox" class="form-check-input procurement-checkbox" name="ProcurementIds" value="${proc.id}" ${isPreSelected ? 'checked' : ''} /></td>
+                        <td><strong>${proc.procNum || '-'}</strong>${linkedBadge}</td>
+                        <td>${proc.wonum || '-'}</td>
+                        <td>${proc.jobName || '-'}</td>
+                        <td>${formattedStartDate}</td>
+                        <td><span class="badge bg-info">${proc.category || '-'}</span></td>
+                        <td>${proc.jobType || '-'}</td>
+                        <td>${proc.vendorName || '-'}</td>
+                        <td>${statusBadge}</td>
+                    </tr>`;
+            }).join('');
+
+            procurementTableBody.innerHTML = html;
+
+            // Update select all checkbox state
+            const allCheckboxes = procurementTableBody.querySelectorAll('.procurement-checkbox');
+            const checkedCheckboxes = procurementTableBody.querySelectorAll('.procurement-checkbox:checked');
+            selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
+
+            allCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectedCount);
+            });
+
+            updateSelectedCount();
+        };
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        };
+
+        const getStatusBadge = (status) => {
+            const statusMap = {
+                'Created': 'bg-secondary',
+                'Draft': 'bg-secondary',
+                'In Progress': 'bg-primary',
+                'Pending': 'bg-warning text-dark',
+                'Approved': 'bg-success',
+                'Rejected': 'bg-danger',
+                'Completed': 'bg-success',
+                'Cancelled': 'bg-dark'
+            };
+            const badgeClass = statusMap[status] || 'bg-secondary';
+            return `<span class="badge ${badgeClass}">${status || 'Unknown'}</span>`;
+        };
+
+        const updateSelectedCount = () => {
+            const checkboxes = procurementTableBody.querySelectorAll('.procurement-checkbox:checked');
+            selectedCountSpan.textContent = checkboxes.length;
+
+            // Update select all checkbox
+            const allCheckboxes = procurementTableBody.querySelectorAll('.procurement-checkbox');
+            selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkboxes.length;
+            selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+        };
+
+        // Event listeners
+        filterVendor.addEventListener('change', loadProcurements);
+        filterCategory.addEventListener('change', loadProcurements);
+        filterJobType.addEventListener('change', loadProcurements);
+        btnRefresh.addEventListener('click', loadProcurements);
+
+        btnClearFilters.addEventListener('click', () => {
+            filterVendor.value = '';
+            filterCategory.value = '';
+            filterJobType.value = '';
+            loadProcurements();
+        });
+
+        selectAll.addEventListener('change', () => {
+            const checkboxes = procurementTableBody.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateSelectedCount();
+        });
+
+        // Initial load
+        loadProcurements();
+    })();
+</script>

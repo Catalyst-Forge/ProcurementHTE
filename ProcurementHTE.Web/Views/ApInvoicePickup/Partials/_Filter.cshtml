@@ -1,0 +1,20 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    var currentTab = ViewBag.CurrentTab as string ?? "waiting";
+    var currentSearch = ViewBag.Search as string ?? "";
+    var pageSize = Model.PageSize;
+}
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
+    <input type="hidden" name="tab" value="@currentTab" />
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
+    </div>
+
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@pageSize" />
+</form>

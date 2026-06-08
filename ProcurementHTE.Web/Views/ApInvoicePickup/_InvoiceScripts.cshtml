@@ -1,0 +1,52 @@
+<script>
+    (function() {
+        var invoiceForm = document.getElementById('invoiceForm');
+        var displayMode = document.getElementById('invoiceDisplayMode');
+        var editMode = document.getElementById('invoiceEditMode');
+        var btnEdit = document.getElementById('btnEditInvoice');
+        var btnCancel = document.getElementById('btnCancelEdit');
+
+        // Toggle to edit mode
+        if (btnEdit) {
+            btnEdit.addEventListener('click', function() {
+                displayMode.classList.add('d-none');
+                editMode.classList.remove('d-none');
+                btnEdit.classList.add('d-none');
+                document.getElementById('saNo').focus();
+            });
+        }
+
+        // Cancel edit - back to display mode
+        if (btnCancel) {
+            btnCancel.addEventListener('click', function() {
+                editMode.classList.add('d-none');
+                displayMode.classList.remove('d-none');
+                btnEdit.classList.remove('d-none');
+            });
+        }
+
+        // Form submit with confirmation
+        if (invoiceForm) {
+            invoiceForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var form = this;
+
+                Swal.fire({
+                    title: 'Simpan Invoice Data?',
+                    text: 'Apakah Anda yakin ingin menyimpan data invoice ini?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-save"></i> Ya, Simpan',
+                    cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                    reverseButtons: true
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        }
+    })();
+</script>

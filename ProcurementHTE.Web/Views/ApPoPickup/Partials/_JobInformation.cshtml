@@ -1,0 +1,57 @@
+@model ProcurementHTE.Core.Models.Procurement
+
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h5"><i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Job Information</h2>
+    </header>
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body">
+        <div class="row mb-0">
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ContractType)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ContractType)</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">Job Type</dt>
+                <dd class="fw-medium text-secondary-emphasis">@((Model?.JobType?.TypeName) ?? "-")</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcurementCategory)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcurementCategory)</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProcNum)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProcNum)</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.Wonum)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.Wonum)</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectRegion)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.ProjectRegion)</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.ProjectCode)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Model?.ProjectCode</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.JobName)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.JobName)</dd>
+            </dl>
+
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(model => model.LtcName)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(model => model.LtcName)</dd>
+            </dl>
+        </div>
+    </div>
+</article>

@@ -1,0 +1,164 @@
+@using Microsoft.AspNetCore.Authorization
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@using ProcurementHTE.Core.Authorization
+@using System.Linq
+@using System.Collections.Generic
+@inject IAuthorizationService AuthZ
+@model PagedResult<Procurement>
+
+@{
+    var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
+    
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-light text-body border"
+    };
+
+    Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
+    var userNames = ViewBag.UserNames as IDictionary<string, string> ?? new Dictionary<string, string>();
+    Func<string?, string> resolveUserName = id => {
+        if (string.IsNullOrWhiteSpace(id))
+            return "-";
+        return userNames.TryGetValue(id, out var name) ? name : id;
+    };
+}
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle mobile-table">
+        <thead class="table-light text-center">
+            <tr class="align-middle">
+                <th class="border-end" style="min-width: 220px">Job Name</th>
+                <th class="border-end">WO Number</th>
+                <th class="border-end" style="min-width: 110px">Start Date</th>
+                <th class="border-end" style="min-width: 100px">Job Type</th>
+                <th class="border-end" style="min-width: 130px">Revenue</th>
+                <th class="border-end" style="min-width: 130px">Cost</th>
+                <th class="border-end" style="min-width: 70px">Profit %</th>
+                <th class="border-end" style="min-width: 150px">Vendor</th>
+                <th class="border-end" style="min-width: 130px">Project Region</th>
+                <th class="border-end text-center" style="min-width: 150px">Analyst</th>
+                <th class="border-end text-center" style="min-width: 150px">Asst. Manager</th>
+                <th class="border-end text-center" style="min-width: 150px">Manager</th>
+                <th class="border-end text-center">Status</th>
+                <th class="text-center position-sticky end-0 width-10-rem">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any()) {
+                <tr>
+                    <td colspan="13" class="text-center text-muted">No Procurement data found</td>
+                </tr>
+            } else {
+                foreach (var item in Model.Items) {
+                    var latestPnl = item.ProfitLosses?
+                    .OrderByDescending(p => p.CreatedAt)
+                    .FirstOrDefault();
+                    var revenue = latestPnl?.AccrualAmount;
+                    var cost = latestPnl?.SelectedVendorFinalOffer;
+                    var profitPercent = latestPnl != null
+                    ? latestPnl.ProfitPercent.ToString("0.##")
+                    : "-";
+                    var vendorName = latestPnl?.SelectedVendor?.VendorName
+                    ?? (!string.IsNullOrWhiteSpace(latestPnl?.SelectedVendorId) ? latestPnl!.SelectedVendorId : null)
+                    ?? "-";
+                    var region = item.ProjectRegion.ToString();
+                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
+                    var analyst = resolveUserName(item.AnalystHteUserId);
+                    var assistant = resolveUserName(item.AssistantManagerUserId);
+                    var manager = resolveUserName(item.ManagerUserId);
+                    var statusName = item.Status?.StatusName ?? "-";
+                    
+                    var isPublished = statusName.Equals("Waiting Pickup", StringComparison.OrdinalIgnoreCase) 
+                                   || statusName.Equals("In Progress", StringComparison.OrdinalIgnoreCase)
+                                   || statusName.Equals("Completed", StringComparison.OrdinalIgnoreCase) 
+                                   || statusName.Equals("Closed", StringComparison.OrdinalIgnoreCase);
+                    var canEditThisItem = canEdit.Succeeded && !isPublished;
+                    var canDeleteThisItem = canDelete.Succeeded && !isPublished;
+                    <tr>
+                        <td class="d-flex d-sm-table-cell" data-label="Job Name">
+                            @item.JobName
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="WO Number">
+                            @wonum
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Start Date">
+                            @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Job Type">
+                            @(item.JobType?.TypeName ?? "-")
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Revenue">
+                            @formatMoney(revenue)
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Cost">
+                            @formatMoney(cost)
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Profit %">
+                            @profitPercent
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Vendor">
+                            @vendorName
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Project Region">
+                            @(!string.IsNullOrWhiteSpace(region) ? region : "-")
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Analyst">
+                            @analyst
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Asst. Manager">
+                            @assistant
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Manager">
+                            @manager
+                        </td>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Status">
+                            <span class="badge rounded-pill @BadgeClass(statusName)">@statusName</span>
+                        </td>
+                        <td class="text-md-center d-flex d-sm-table-cell position-sticky end-0 width-10-rem" data-label="Action">
+                            @if (canEditThisItem) {
+                                <a class="btn btn-outline-warning btn-sm mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
+                                    <i class="bi bi-pencil-fill"></i>
+                                    <span class="ms-1">Edit</span>
+                                </a>
+                            }
+                            <a class="btn btn-outline-info btn-sm mb-sm-2 w-100" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
+                                <i class="bi bi-eye-fill"></i>
+                                <span class="ms-1">Detail</span>
+                            </a>
+                            @if (canDeleteThisItem) {
+                                var deleteTitle = string.IsNullOrWhiteSpace(item.Wonum)
+                                ? "Delete procurement?"
+                                : $"Delete {item.Wonum}?";
+                                var deleteMessage = string.IsNullOrWhiteSpace(item.JobName)
+                                ? "This action cannot be undone."
+                                : $"You are about to delete \"{item.JobName}\". This action cannot be undone.";
+                                <form asp-action="Delete"
+                                      method="post"
+                                      class="d-inline delete-form"
+                                      hx-boost="false"
+                                      hx-ignore="true"
+                                      data-loading-overlay="true"
+                                      data-confirm-title="@deleteTitle"
+                                      data-confirm-message="@System.Text.Encodings.Web.HtmlEncoder.Default.Encode(deleteMessage)">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.ProcurementId" />
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm mb-sm-2 w-100">
+                                        <i class="bi bi-trash-fill"></i>
+                                        <span class="ms-1">Delete</span>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

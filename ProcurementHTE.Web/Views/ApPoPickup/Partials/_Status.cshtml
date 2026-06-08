@@ -1,0 +1,94 @@
+@model ProcurementHTE.Core.Models.Procurement
+@{
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
+        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "waiting pickup" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        "in progress" => "bg-primary-subtle text-primary-emphasis border border-primary-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "closed" => "bg-dark-subtle text-dark-emphasis border border-dark-subtle",
+        _ => "bg-light text-body border"
+    };
+    var statusName = Model?.Status?.StatusName;
+}
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Status</h2>
+    </header>
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body">
+        <div class="row mb-0">
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                    @Html.DisplayNameFor(model => model.JobType)
+                </dt>
+                <dd>
+                    <span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">
+                        @Html.DisplayFor(model => model.JobType!.TypeName)
+                    </span>
+                </dd>
+            </dl>
+
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                    @Html.DisplayNameFor(model => model.Status)
+                </dt>
+                <dd>
+                    <span class="badge @BadgeClass(statusName ?? "") rounded-5 p-2 px-3">
+                        @Html.DisplayFor(model => model.Status!.StatusName)
+                    </span>
+                </dd>
+            </dl>
+
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                    @Html.DisplayNameFor(model => model.CreatedAt)
+                </dt>
+                <dd class="fw-medium text-secondary-emphasis">
+                    @Model?.CreatedAt.ToTanggalIndonesia()
+                </dd>
+            </dl>
+
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                    @Html.DisplayNameFor(model => model.User)
+                </dt>
+                <dd class="fw-medium text-secondary-emphasis">
+                    @Html.DisplayFor(model => model.User!.FullName)
+                </dd>
+            </dl>
+
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                    @Html.DisplayNameFor(model => model.CompletedAt)
+                </dt>
+                <dd class="fw-medium text-secondary-emphasis">
+                    @Model?.CompletedAt.ToTanggalIndonesia()
+                </dd>
+            </dl>
+
+            @if (Model?.AppoUser != null)
+            {
+                <dl class="col-12">
+                    <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                        Picked Up By
+                    </dt>
+                    <dd class="fw-medium text-secondary-emphasis">
+                        <i class="bi bi-box-arrow-in-down text-success me-1"></i>
+                        @Model.AppoUser.FullName
+                    </dd>
+                </dl>
+
+                <dl class="col-12">
+                    <dt class="fw-semibold text-uppercase text-secondary mb-1">
+                        Picked Up At
+                    </dt>
+                    <dd class="fw-medium text-secondary-emphasis">
+                        @Model.PickedUpAt?.ToTanggalIndonesia()
+                    </dd>
+                </dl>
+            }
+        </div>
+    </div>
+</article>

@@ -1,0 +1,40 @@
+@model ProcurementHTE.Web.Models.ViewModels.PurchaseRequisitionEditViewModel
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <div class="card-body">
+        <h5 class="card-title fw-semibold">PR Document</h5>
+        <hr />
+        <div class="row g-3">
+            @if (!string.IsNullOrEmpty(Model.ExistingDocumentFileName))
+            {
+                <div class="col-md-12">
+                    <label class="form-label">Current Document</label>
+                    <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
+                        <i class="bi bi-file-earmark-text fs-4 text-primary"></i>
+                        <div class="flex-grow-1">
+                            <span class="fw-semibold">@Model.ExistingDocumentFileName</span>
+                        </div>
+                        <a asp-action="DownloadDocument" asp-route-id="@Model.PrId" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                    </div>
+                    <input type="hidden" asp-for="ExistingDocumentFileName" />
+                </div>
+            }
+            <div class="col-md-12">
+                <label asp-for="DocumentFile" class="form-label">
+                    @(string.IsNullOrEmpty(Model.ExistingDocumentFileName) ? "Upload Document" : "Replace Document (Optional)")
+                </label>
+                <input asp-for="DocumentFile" type="file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx" />
+                <span asp-validation-for="DocumentFile" class="text-danger"></span>
+                <small class="form-text text-muted">
+                    Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB). 
+                    @if (!string.IsNullOrEmpty(Model.ExistingDocumentFileName))
+                    {
+                        <span>Leave empty to keep the current document.</span>
+                    }
+                </small>
+            </div>
+        </div>
+    </div>
+</section>
