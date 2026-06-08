@@ -1,0 +1,158 @@
+@using System.Text.Json
+@using ProcurementHTE.Core.Models.DTOs
+@using ProcurementHTE.Web.Models.ViewModels
+@model ProcurementHTE.Web.Models.ViewModels.DashboardViewModel
+@{
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    var procurementStatusJson = JsonSerializer.Serialize(Model.ProcurementsByStatus ?? new List<StatusCountViewModel>(), jsonOptions);
+    var revenuePerMonthJson = JsonSerializer.Serialize(Model.RevenuePerMonth ?? Array.Empty<RevenuePerMonthDto>(), jsonOptions);
+    var documentApprovalStatsJson = JsonSerializer.Serialize(Model.DocumentApprovalStats ?? new List<StatusCountViewModel>(), jsonOptions);
+    var jobTypeDistributionJson = JsonSerializer.Serialize(Model.JobTypeDistribution ?? new List<JobTypeCountViewModel>(), jsonOptions);
+}
+
+        // Procurement Status Chart
+        const procurementStatusCanvas = document.getElementById("procurementStatusChart");
+        if (procurementStatusCanvas) {
+            const procurementStatusData = @Html.Raw(procurementStatusJson);
+            const procurementStatusCtx = procurementStatusCanvas.getContext("2d");
+            destroyExistingChart(procurementStatusCanvas);
+            
+            if (procurementStatusData && procurementStatusData.length > 0) {
+                new Chart(procurementStatusCtx, {
+                    type: "doughnut",
+                    data: {
+                        labels: procurementStatusData.map(item => item.statusName),
+                        datasets: [{
+                            data: procurementStatusData.map(item => item.count),
+                            backgroundColor: ["#0d6efd","#198754","#ffc107","#dc3545","#6c757d"],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: "bottom"
+                            }
+                        }
+                    }
+                });
+            } else {
+                renderNoDataMessage(procurementStatusCtx, procurementStatusCanvas, "No data available");
+            }
+        }
+
+        // Revenue Chart
+        const revenueCanvas = document.getElementById("revenueChart");
+        if (revenueCanvas) {
+            const revenuePerMonth = @Html.Raw(revenuePerMonthJson);
+            const revenueCtx = revenueCanvas.getContext("2d");
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const revenueLabels = revenuePerMonth.map(item => monthNames[item.month - 1]);
+            const revenueData = revenuePerMonth.map(item => item.total);
+
+            destroyExistingChart(revenueCanvas);
+            
+            if (revenuePerMonth && revenuePerMonth.length > 0) {
+                new Chart(revenueCtx, {
+                    type: "line",
+                    data: {
+                        labels: revenueLabels,
+                        datasets: [{
+                            label: "Revenue",
+                            data: revenueData,
+                            borderColor: "#0d6efd",
+                            backgroundColor: "rgba(13, 110, 253, 0.12)",
+                            tension: 0.35,
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return "Rp " + Number(value).toLocaleString("id-ID");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Approval Status Chart
+        const approvalCanvas = document.getElementById("approvalStatusChart");
+        if (approvalCanvas) {
+            const approvalStatus = @Html.Raw(documentApprovalStatsJson);
+            const approvalCtx = approvalCanvas.getContext("2d");
+            destroyExistingChart(approvalCanvas);
+            
+            if (approvalStatus && approvalStatus.length > 0) {
+                new Chart(approvalCtx, {
+                    type: "doughnut",
+                    data: {
+                        labels: approvalStatus.map(x => x.statusName),
+                        datasets: [{
+                            data: approvalStatus.map(x => x.count),
+                            backgroundColor: ["#198754", "#ffc107", "#dc3545", "#0d6efd"],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: "bottom" }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Job Type Distribution Chart
+        const jobTypeCanvas = document.getElementById("jobTypeChart");
+        if (jobTypeCanvas) {
+            const jobTypeData = @Html.Raw(jobTypeDistributionJson);
+            const jobTypeCtx = jobTypeCanvas.getContext("2d");
+            destroyExistingChart(jobTypeCanvas);
+            
+            if (jobTypeData && jobTypeData.length > 0) {
+                new Chart(jobTypeCtx, {
+                    type: "bar",
+                    data: {
+                        labels: jobTypeData.map(item => item.jobTypeName),
+                        datasets: [{
+                            label: "Count",
+                            data: jobTypeData.map(item => item.count),
+                            backgroundColor: "rgba(13, 110, 253, 0.7)",
+                            borderColor: "rgb(13, 110, 253)",
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            }
+                        }
+                    }
+                });
+            } else {
+                renderNoDataMessage(jobTypeCtx, jobTypeCanvas, "No data available");
+            }
+        }

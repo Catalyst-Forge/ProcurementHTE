@@ -1,0 +1,107 @@
+@using System.Text.Json
+@using ProcurementHTE.Core.Models.DTOs
+@using ProcurementHTE.Web.Models.ViewModels
+@model ProcurementHTE.Web.Models.ViewModels.DashboardViewModel
+@{
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    var monthlyProcurementTrendJson = JsonSerializer.Serialize(Model.MonthlyProcurementTrend ?? new List<MonthlyTrendViewModel>(), jsonOptions);
+    var monthlyPrTrendJson = JsonSerializer.Serialize(Model.MonthlyPurchaseRequisitionTrend ?? new List<MonthlyTrendViewModel>(), jsonOptions);
+}
+
+        // Monthly Procurement Trend Chart
+        const monthlyTrendCanvas = document.getElementById("monthlyTrendChart");
+        if (monthlyTrendCanvas) {
+            const monthlyTrendData = @Html.Raw(monthlyProcurementTrendJson);
+            const monthlyTrendCtx = monthlyTrendCanvas.getContext("2d");
+            destroyExistingChart(monthlyTrendCanvas);
+            
+            if (monthlyTrendData && monthlyTrendData.length > 0) {
+                new Chart(monthlyTrendCtx, {
+                    type: "line",
+                    data: {
+                        labels: monthlyTrendData.map(item => item.monthYear),
+                        datasets: [{
+                            label: "Procurement Count",
+                            data: monthlyTrendData.map(item => item.count),
+                            borderColor: "rgb(75, 192, 192)",
+                            backgroundColor: "rgba(75, 192, 192, 0.2)",
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            }
+                        }
+                    }
+                });
+            } else {
+                renderNoDataMessage(monthlyTrendCtx, monthlyTrendCanvas, "No data available");
+            }
+        }
+
+        // Purchase Requisition Chart
+        const prCanvas = document.getElementById("purchaseRequisitionChart");
+        if (prCanvas) {
+            const prTrendData = @Html.Raw(monthlyPrTrendJson);
+            const prCtx = prCanvas.getContext("2d");
+            destroyExistingChart(prCanvas);
+
+            if (prTrendData && prTrendData.length > 0) {
+                new Chart(prCtx, {
+                    type: "line",
+                    data: {
+                        labels: prTrendData.map(item => item.monthYear),
+                        datasets: [{
+                            label: "Purchase Requisitions",
+                            data: prTrendData.map(item => item.count),
+                            borderColor: "#6f42c1",
+                            backgroundColor: "rgba(111, 66, 193, 0.2)",
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: "#6f42c1",
+                            pointBorderColor: "#fff",
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return "Total PR: " + context.parsed.y;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                renderNoDataMessage(prCtx, prCanvas, "No data available");
+            }
+        }

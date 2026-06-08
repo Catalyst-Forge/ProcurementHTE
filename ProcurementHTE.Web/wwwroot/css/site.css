@@ -1,6 +1,12 @@
 @import url('./components/twofactor.css');
+@import url('./components/twofactor-layout.css');
 @import url('./components/error-page.css');
 @import url('./components/notifications.css');
+@import url('./components/loading-overlay.css');
+@import url('./components/avatar.css');
+@import url('./components/account.css');
+@import url('./components/nav.css');
+@import url('./components/mobile-table.css');
 
 :root {
   --bs-primary: #00ccff;
@@ -9,37 +15,8 @@
 html {
   font-size: 14px;
   interpolate-size: allow-keywords;
-}
-
-.global-loading-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 2050;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.global-loading-overlay:not(.d-none) {
-  pointer-events: all;
-}
-
-.global-loading-overlay__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(2px);
-}
-
-.global-loading-overlay__content {
   position: relative;
-  z-index: 1;
-  background: rgba(15, 23, 42, 0.85);
-  padding: 1.75rem 2.5rem;
-  border-radius: 1rem;
-  min-width: 220px;
-  box-shadow: 0 25px 55px rgba(15, 23, 42, 0.45);
+  min-height: 100%;
 }
 
 @media (min-width: 768px) {
@@ -48,89 +25,8 @@ html {
   }
 }
 
-.avatar-xl {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-}
-
-.hero-avatar {
-  width: 140px;
-  height: 140px;
-  border: 4px solid rgba(255, 255, 255, 0.6);
-}
-
-.status-indicator {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-}
-
-.account-hero {
-  background: linear-gradient(120deg, rgba(0, 204, 255, 0.12), rgba(13, 110, 253, 0.08));
-}
-
-.account-chip {
-  border-radius: 999px;
-  padding: 0.35rem 0.85rem;
-  background-color: rgba(13, 110, 253, 0.12);
-  color: var(--bs-primary);
-  font-weight: 600;
-}
-
-.mini-stat {
-  padding: 0.65rem 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--bs-border-color);
-  background: rgba(255, 255, 255, 0.7);
-  min-width: 140px;
-}
-
-.contact-tile {
-  border: 1px dashed var(--bs-border-color);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.65);
-}
-
-.contact-tile .icon-lg {
-  font-size: 1.75rem;
-}
-
-.cropper-area {
-  min-height: 360px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.cropper-area img {
-  max-width: 100%;
-}
-
-.avatar-live-preview {
-  width: 160px;
-  height: 160px;
-  border: 1px dashed var(--bs-border-color);
-  background-color: var(--bs-body-bg);
-  overflow: hidden;
-}
-
-.security-log .timeline-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-top: 6px;
-}
-
-.security-log li:last-child {
-  margin-bottom: 0;
+body {
+  margin-bottom: 60px;
 }
 
 .btn:focus,
@@ -141,30 +37,6 @@ html {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
-}
-
-body {
-  margin-bottom: 60px;
-}
-
-.content-loading-indicator {
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(1px);
-  align-items: center;
-  justify-content: center;
-}
-
-.htmx-indicator {
-  display: none;
-}
-
 a {
   color: #00bfff;
 }
@@ -173,53 +45,8 @@ a {
   --bs-btn-border-color: var(--bs-border-color);
 }
 
-#sidebar {
-  transition: all 300ms ease-in-out;
-}
-
 .content {
   min-height: 100vh;
-}
-
-.nav {
-  gap: 0.75rem;
-
-  .nav-link {
-    transition: 200ms linear;
-
-    &:hover:not(.active) {
-      background-color: rgba(0, 191, 255, 0.25);
-    }
-  }
-}
-
-.nav-link.active {
-  color: #000 !important;
-  font-weight: 700;
-}
-
-.icon-link-hover {
-  --bs-icon-link-transform: translate3d(0, -0.125rem, 0);
-  --bs-icon-link-hover-color: var(--bs-primary);
-}
-
-.bi-chevron-down {
-  transition: transform 0.3s ease;
-}
-
-.bi-chevron-down.rotate,
-.nav-link[aria-expanded="true"] > .bi-chevron-down {
-  transform: rotate(180deg);
-}
-
-.nav-link.menu ~ .submenu .nav-link::before {
-  content: "●";
-  margin-inline-end: 1rem;
-}
-
-.submenu .nav-link.active::before {
-  color: darkorange;
-  text-shadow: 0 0 5px darkorange;
 }
 
 .pagination {
@@ -232,70 +59,6 @@ a {
   grid-template-columns: 1fr;
 }
 
-.button-nav-wrap {
-  position: fixed;
-}
-
-.group-nav-button {
-  position: fixed;
-  bottom: 4rem;
-  right: -100%;
-  z-index: 9;
-  transition: right 250ms ease;
-}
-
-.group-nav-button.show {
-  right: 1.5rem;
-}
-
-/* --- Tampilan Mobile (Pola Card Stack) --- */
-@media screen and (max-width: 575px) {
-  .mobile-table thead {
-    display: none;
-  }
-
-  .mobile-table,
-  .mobile-table tbody,
-  .mobile-table tr,
-  .mobile-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .mobile-table tbody {
-    padding: 0.3rem;
-  }
-
-  .mobile-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    overflow: hidden;
-  }
-
-  .mobile-table td {
-    border: none;
-    border-bottom: 1px solid #eee;
-    position: relative;
-    text-align: right;
-  }
-
-  .mobile-table td:last-child {
-    border-bottom: 0;
-  }
-
-  .mobile-table td[data-label]::before {
-    content: attr(data-label);
-    margin-right: auto;
-    position: sticky;
-    left: 0;
-    width: 45%;
-    padding-right: 10px;
-    font-weight: bold;
-    text-align: left;
-  }
-}
-
 @media (min-width: 576px) {
   .auth-container {
     width: 80%;
@@ -303,10 +66,8 @@ a {
 }
 
 @media (min-width: 768px) {
-  #sidebar {
-    aside {
-      height: 100vh !important;
-    }
+  #sidebar aside {
+    height: 100vh !important;
   }
 
   .auth-container {
