@@ -1,0 +1,49 @@
+@model ProcurementCreateViewModel
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Schedule &amp; Etc</legend>
+        <hr />
+
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label asp-for="Procurement.DocumentDate" class="form-label"></label>
+                <input asp-for="Procurement.DocumentDate" type="date" class="form-control" value="@FormatDateValue(Model.Procurement.DocumentDate)" />
+                <span class="text-danger" asp-validation-for="Procurement.DocumentDate"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Procurement.StartDate" class="form-label"></label>
+                <input asp-for="Procurement.StartDate" type="date" class="form-control" value="@FormatDateValue(Model.Procurement.StartDate)" />
+                <span class="text-danger" asp-validation-for="Procurement.StartDate"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Procurement.EndDate" class="form-label"></label>
+                <input asp-for="Procurement.EndDate" type="date" class="form-control" value="@FormatDateValue(Model.Procurement.EndDate)" />
+                <span class="text-danger" asp-validation-for="Procurement.EndDate"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Procurement.PotentialAccrualDate" class="form-label"></label>
+                <input asp-for="Procurement.PotentialAccrualDate" type="date" class="form-control" />
+                <span class="text-danger" asp-validation-for="Procurement.PotentialAccrualDate"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-md-6">
+                <label asp-for="Procurement.LtcName" class="form-label"></label>
+                <input asp-for="Procurement.LtcName" class="form-control" maxlength="255" />
+                <span class="text-danger" asp-validation-for="Procurement.LtcName"></span>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <label asp-for="Procurement.Note" class="form-label"></label>
+            <textarea asp-for="Procurement.Note" class="form-control" rows="3" maxlength="1000"></textarea>
+            <span class="text-danger" asp-validation-for="Procurement.Note"></span>
+        </div>
+    </fieldset>
+</section>
+
+@functions {
+    string? FormatDateValue(DateTime date) => date == DateTime.MinValue ? null : date.ToString("yyyy-MM-dd");
+}

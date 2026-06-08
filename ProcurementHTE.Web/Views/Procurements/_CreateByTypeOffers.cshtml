@@ -1,0 +1,69 @@
+@using ProcurementHTE.Core.Models
+@model ProcurementCreateViewModel
+@{
+    var offers = Model.Offers ?? new List<ProcOffer>();
+    if (!offers.Any())
+    {
+        offers = new List<ProcOffer> { new ProcOffer() };
+    }
+}
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <legend class="card-title fw-semibold mb-0">Offer Item</legend>
+            <div class="w-100 text-end">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
+                    <i class="bi bi-plus-lg"></i> <span class="ms-1">Add Item</span>
+                </button>
+            </div>
+        </div>
+        <hr />
+
+        <div class="row g-3" id="offers-container">
+            @for (var i = 0; i < offers.Count; i++)
+            {
+                var offer = offers[i];
+                var idx = i;
+                <div class="col-12 offer-row position-relative">
+                    <input type="hidden" name="Offers.Index" value="@idx" />
+
+                    <div class="row g-1 align-items-end">
+                        <div class="col-md-10">
+                            <div class="row g-1">
+                                <div class="col-md-6">
+                                    <label class="form-label">Item <span class="text-danger">*</span></label>
+                                    <input class="form-control" 
+                                           name="Offers[@(idx)].ItemPenawaran" 
+                                           value="@offer.ItemPenawaran" />
+                                    @Html.ValidationMessage($"Offers[{idx}].ItemPenawaran", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Qty Items <span class="text-danger">*</span></label>
+                                    <input type="number" min="1" step="1"
+                                           class="form-control text-end"
+                                           name="Offers[@(idx)].Qty" 
+                                           value="@(offer.Qty > 0 ? offer.Qty : "")" />
+                                    @Html.ValidationMessage($"Offers[{idx}].Qty", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Unit Items <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" 
+                                           name="Offers[@(idx)].Unit" 
+                                           value="@offer.Unit"
+                                           placeholder="Pcs, Unit, Set..." />
+                                    @Html.ValidationMessage($"Offers[{idx}].Unit", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </fieldset>
+</section>

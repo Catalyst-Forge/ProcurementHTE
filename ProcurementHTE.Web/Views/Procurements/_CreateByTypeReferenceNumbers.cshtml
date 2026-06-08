@@ -1,0 +1,68 @@
+@using ProcurementHTE.Core.Enums
+@model ProcurementCreateViewModel
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Reference Numbers</legend>
+        <hr />
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Procurement.SpkNumber" class="form-label"></label>
+                <input asp-for="Procurement.SpkNumber" class="form-control" maxlength="100" />
+                <span class="text-danger" asp-validation-for="Procurement.SpkNumber"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Procurement.SpmpNumber" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Procurement.SpmpNumber" class="form-control" maxlength="50" placeholder="e.g., 4514" />
+                    <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
+                </div>
+                <small class="form-text text-muted">Masukkan angka/kode saja (contoh: 4514)</small>
+                <span class="text-danger" asp-validation-for="Procurement.SpmpNumber"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Procurement.MemoNumber" class="form-label"></label>
+                <input asp-for="Procurement.MemoNumber" class="form-control" maxlength="100" />
+                <span class="text-danger" asp-validation-for="Procurement.MemoNumber"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-md-6">
+                <label asp-for="Procurement.OeNumber" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="Procurement.OeNumber" class="form-control" maxlength="50" placeholder="e.g., OE-TRS" />
+                    <span class="input-group-text">/PDC-1110/@DateTime.Now.Year-S0</span>
+                </div>
+                <small class="form-text text-muted">Masukkan prefix saja (contoh: OE-TRS)</small>
+                <span class="text-danger" asp-validation-for="Procurement.OeNumber"></span>
+            </div>
+
+            <div class="col-md-6" id="raNumberWrapper">
+                @if (Model.Procurement?.ProcurementCategory == ProcurementCategory.Jasa)
+                {
+                    <label class="form-label" asp-for="Procurement.RaNumber"></label>
+                    <input class="form-control" asp-for="Procurement.RaNumber" />
+                    <span class="text-danger" asp-validation-for="Procurement.RaNumber"></span>
+                }
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-md-6">
+                <label asp-for="Procurement.NoRig" class="form-label"></label>
+                <input asp-for="Procurement.NoRig" class="form-control" maxlength="100" placeholder="Masukkan No. Rig" />
+                <span class="text-danger" asp-validation-for="Procurement.NoRig"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Procurement.NoHte" class="form-label"></label>
+                <input asp-for="Procurement.NoHte" class="form-control" maxlength="100" placeholder="Masukkan No. HTE" />
+                <span class="text-danger" asp-validation-for="Procurement.NoHte"></span>
+            </div>
+        </div>
+    </fieldset>
+</section>

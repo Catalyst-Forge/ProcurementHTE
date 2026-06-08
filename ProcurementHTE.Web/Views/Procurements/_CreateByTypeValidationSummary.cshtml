@@ -1,0 +1,18 @@
+@model ProcurementCreateViewModel
+
+@if (!ViewData.ModelState.IsValid)
+{
+    var generalErrors = ViewData.ModelState[""]?.Errors;
+    if (generalErrors != null && generalErrors.Count > 0)
+    {
+        <div class="alert alert-danger mb-3">
+            <strong><i class="bi bi-exclamation-triangle"></i> Error:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var error in generalErrors)
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+}
