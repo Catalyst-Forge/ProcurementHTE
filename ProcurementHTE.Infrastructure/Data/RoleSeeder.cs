@@ -31,9 +31,12 @@ namespace ProcurementHTE.Infrastructure.Data
                 "AP-Invoice",
             ];
 
-            foreach (var roleName in roles) {
-                if (!await roleManager.RoleExistsAsync(roleName)) {
-                    var role = new Role {
+            foreach (var roleName in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    var role = new Role
+                    {
                         Name = roleName,
                         NormalizedName = roleName.ToUpperInvariant(),
                         Description = $"{roleName} system role",
@@ -42,11 +45,14 @@ namespace ProcurementHTE.Infrastructure.Data
                 }
             }
 
-            async Task AddPermissions(string roleName, params string[] permissions) {
+            async Task AddPermissions(string roleName, params string[] permissions)
+            {
                 var role = await roleManager.FindByNameAsync(roleName);
                 var existing = await roleManager.GetClaimsAsync(role!);
-                foreach (var permission in permissions.Distinct()) {
-                    if (!existing.Any(c => c.Type == "permission" && c.Value == permission)) {
+                foreach (var permission in permissions.Distinct())
+                {
+                    if (!existing.Any(c => c.Type == "permission" && c.Value == permission))
+                    {
                         await roleManager.AddClaimAsync(role!, new Claim("permission", permission));
                     }
                 }

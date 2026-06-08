@@ -87,7 +87,7 @@ namespace ProcurementHTE.Core.Models.DTOs
                     return 0;
 
                 int statusValue = (int)CurrentStatus;
-                
+
                 // For statuses after approval (ISPA=8, Hardcopy=9, PO=10, Done=11)
                 // We need to adjust based on which approval levels were skipped
                 if (statusValue >= 8)

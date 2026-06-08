@@ -1,4 +1,5 @@
-namespace ProcurementHTE.Core.Options {
+namespace ProcurementHTE.Core.Options
+{
     public class SecurityBypassOptions
     {
         public bool BypassContactVerification { get; set; }

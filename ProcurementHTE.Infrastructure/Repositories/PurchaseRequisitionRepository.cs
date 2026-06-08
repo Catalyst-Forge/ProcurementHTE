@@ -111,12 +111,12 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
     {
         var query = _context.PurchaseRequisitions
             .Where(pr => pr.PrNumber == prNumber && !pr.IsDeleted);
-        
+
         if (!string.IsNullOrEmpty(excludePrId))
         {
             query = query.Where(pr => pr.PrId != excludePrId);
         }
-        
+
         return await query.AnyAsync(ct);
     }
 
@@ -159,12 +159,12 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             entityToDelete.IsDeleted = true;
             entityToDelete.DeletedAt = DateTime.UtcNow;
             entityToDelete.DeletedBy = deletedByUserId;
-            
+
             // Append deletion timestamp to PrNumber to allow reuse of the same PR number
             // Format: DELETED_<original>_<timestamp> to ensure uniqueness
             var timestamp = entityToDelete.DeletedAt.Value.ToString("yyyyMMddHHmmssfff");
             entityToDelete.PrNumber = $"DELETED_{entityToDelete.PrNumber}_{timestamp}";
-            
+
             await _context.SaveChangesAsync(ct);
         }
     }
@@ -190,7 +190,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         foreach (var procurement in procurements)
         {
             procurement.PrId = prId;
-            
+
             // Update status to "In Progress" when linked to PR
             if (inProgressStatus != null)
             {
@@ -215,7 +215,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         foreach (var procurement in procurements)
         {
             procurement.PrId = null;
-            
+
             // Revert status back to "Waiting Pickup" when unlinked from PR
             if (waitingPickupStatus != null)
             {

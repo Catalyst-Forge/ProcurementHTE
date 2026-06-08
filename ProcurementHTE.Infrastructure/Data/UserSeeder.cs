@@ -39,7 +39,7 @@ namespace ProcurementHTE.Infrastructure.Data
             {
                 user = await userManager.FindByNameAsync(userName);
             }
-            
+
             if (user == null)
             {
                 user = new User

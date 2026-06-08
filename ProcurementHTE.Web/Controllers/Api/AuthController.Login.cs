@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Models.DTOs;
 
-namespace ProcurementHTE.Web.Controllers.ApiController
+namespace ProcurementHTE.Web.Controllers.Api
 {
     public partial class AuthController
     {

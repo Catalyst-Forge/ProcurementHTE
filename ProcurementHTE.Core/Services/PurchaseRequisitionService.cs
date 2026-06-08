@@ -97,10 +97,10 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         }
 
         purchaseRequisition.CreatedAt = DateTime.UtcNow;
-        
+
         // Set initial status
         purchaseRequisition.Status = PurchaseRequisitionStatus.OnCreateDP3;
-        
+
         // Add initial status history - On Create DP3 (APPO)
         // Don't set PrId explicitly - EF will set it from the navigation property
         purchaseRequisition.StatusHistories.Add(new PurchaseRequisitionStatusHistory

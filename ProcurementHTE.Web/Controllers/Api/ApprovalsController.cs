@@ -50,7 +50,7 @@ namespace ProcurementHTE.Web.Controllers.Api
             var roles = await _userManager.GetRolesAsync(user);
             var rolesArray = roles.ToArray();
 
-            _logger.LogInformation("GetPendingCount: User {UserName} (ID: {UserId}) with roles [{Roles}]", 
+            _logger.LogInformation("GetPendingCount: User {UserName} (ID: {UserId}) with roles [{Roles}]",
                 user.UserName, userId, string.Join(", ", rolesArray));
 
             // Check if user has approver role
@@ -95,15 +95,15 @@ namespace ProcurementHTE.Web.Controllers.Api
             }
 
             var (items, totalCount) = await _dashboardService.GetPendingApprovalsByUserAsync(
-                userId, 
-                rolesArray, 
-                skip, 
-                take, 
+                userId,
+                rolesArray,
+                skip,
+                take,
                 ct
             );
 
-            return Ok(new 
-            { 
+            return Ok(new
+            {
                 items = items.Select(i => new
                 {
                     procurementId = i.ProcurementId,
@@ -115,7 +115,7 @@ namespace ProcurementHTE.Web.Controllers.Api
                     documentDate = i.DocumentDate,
                     sentForApprovalAt = i.SentForApprovalAt
                 }),
-                totalCount 
+                totalCount
             });
         }
     }

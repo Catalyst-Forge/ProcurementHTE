@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Web.Models.ViewModels;
 
-namespace ProcurementHTE.Web.Controllers.LDP
+namespace ProcurementHTE.Web.Controllers.Ldp
 {
     [Authorize]
     public partial class LdpController : Controller
@@ -16,7 +16,7 @@ namespace ProcurementHTE.Web.Controllers.LDP
         private readonly string _bucketName;
 
         public LdpController(
-            ILdpService ldpService, 
+            ILdpService ldpService,
             IProcurementRepository procurementRepo,
             IObjectStorage objectStorage,
             ILogger<LdpController> logger,
@@ -63,14 +63,14 @@ namespace ProcurementHTE.Web.Controllers.LDP
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadDocument(
-            string procurementId, 
+            string procurementId,
             IFormFile ldpFile,
             CancellationToken ct)
         {
-            bool isAjax = Request.Headers.XRequestedWith == "XMLHttpRequest" 
+            bool isAjax = Request.Headers.XRequestedWith == "XMLHttpRequest"
                        || Request.Headers.Accept.ToString().Contains("application/json")
                        || Request.Headers.ContentType.ToString().Contains("multipart/form-data");
-            
+
             try
             {
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

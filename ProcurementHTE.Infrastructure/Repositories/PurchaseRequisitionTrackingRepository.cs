@@ -90,7 +90,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             // Check if entity is already being tracked
             var trackedEntity = _context.ChangeTracker.Entries<PurchaseRequisition>()
                 .FirstOrDefault(e => e.Entity.PrId == pr.PrId);
-            
+
             if (trackedEntity != null)
             {
                 // Entity is already tracked, update its properties

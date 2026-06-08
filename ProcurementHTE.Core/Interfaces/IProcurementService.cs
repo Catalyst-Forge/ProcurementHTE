@@ -68,14 +68,14 @@ namespace ProcurementHTE.Core.Interfaces
         Task PublishAsync(string procurementId);
         Task UnpublishAsync(string procurementId);
         Task PickupAsync(string procurementId, string appoUserId);
-        
+
         /// <summary>
         /// Update accrual data for a procurement (filled by AR role)
         /// </summary>
         Task UpdateAccrualDataAsync(
-            string procurementId, 
-            string? noAccrual, 
-            decimal? potensiAccrual, 
+            string procurementId,
+            string? noAccrual,
+            decimal? potensiAccrual,
             string? statusAccrual,
             string filledByUserId
         );

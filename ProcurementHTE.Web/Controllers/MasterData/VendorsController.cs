@@ -196,7 +196,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 {
                     return RedirectToAction(nameof(Index));
                 }
-                
+
                 var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
                 await _vendorService.DeleteVendorAsync(vendor, currentUserId);
 

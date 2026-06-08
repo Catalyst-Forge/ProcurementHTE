@@ -93,10 +93,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 entityToDelete.IsDeleted = true;
                 entityToDelete.DeletedAt = DateTime.UtcNow;
                 entityToDelete.DeletedBy = deletedByUserId;
-                
+
                 // Prepend dash to VendorCode to allow reuse of the same code
                 entityToDelete.VendorCode = $"-{entityToDelete.VendorCode}";
-                
+
                 await _context.SaveChangesAsync();
             }
         }

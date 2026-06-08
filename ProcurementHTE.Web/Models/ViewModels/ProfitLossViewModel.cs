@@ -202,7 +202,8 @@ namespace ProcurementHTE.Web.Models.ViewModels
             int? Quantity,
             string? UnitRevenue,
             string? UnitItems
-        )> Items { get; set; } = [];
+        )> Items
+        { get; set; } = [];
 
         public List<string> SelectedVendorNames { get; set; } = [];
 
@@ -212,6 +213,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
             decimal Profit,
             decimal ProfitPercent,
             bool IsSelected
-        )> Rows { get; set; } = [];
+        )> Rows
+        { get; set; } = [];
     }
 }

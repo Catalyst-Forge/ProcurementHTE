@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace ProcurementHTE.Web.Controllers.LDP
+namespace ProcurementHTE.Web.Controllers.Ldp
 {
     public partial class LdpController
     {
@@ -38,9 +38,9 @@ namespace ProcurementHTE.Web.Controllers.LDP
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteDocument(string procurementId, CancellationToken ct)
         {
-            bool isAjax = Request.Headers.XRequestedWith == "XMLHttpRequest" 
+            bool isAjax = Request.Headers.XRequestedWith == "XMLHttpRequest"
                        || Request.Headers.Accept.ToString().Contains("application/json");
-            
+
             try
             {
                 var procurement = await _procurementRepo.GetByIdAsync(procurementId);

@@ -6,7 +6,7 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 
-namespace ProcurementHTE.Web.Controllers.ApiController
+namespace ProcurementHTE.Web.Controllers.Api
 {
     [ApiController]
     [Area("Api")]

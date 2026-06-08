@@ -45,20 +45,20 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             // Get approval dates from PR Status History
             var statusHistories = pr?.StatusHistories?.ToList() ?? new List<Core.Models.PurchaseRequisitionStatusHistory>();
-            
+
             // Tanggal Approval Analyst = ketika status berubah ke WaitingApprovalAsstManager
             var approvalAnalystDate = statusHistories
                 .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.WaitingApprovalAsstManager)?.ChangedAt;
-            
+
             // Tanggal Approval Asst Manager = ketika status berubah ke WaitingApprovalManager  
             var approvalAsstManagerDate = statusHistories
                 .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.WaitingApprovalManager)?.ChangedAt;
-            
+
             // Tanggal Approval Manager = ketika status berubah ke OnSubmitISPA
             // Ini adalah tanggal selesai untuk dokumen RKS, BOQ, MEMO, RA
             var approvalManagerDate = statusHistories
                 .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.OnSubmitISPA)?.ChangedAt;
-            
+
             // Tanggal Release PR = ketika status berubah ke OnSubmitHardcopy
             var releasePrDate = statusHistories
                 .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.OnSubmitHardcopy)?.ChangedAt;

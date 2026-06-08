@@ -1,4 +1,5 @@
-namespace ProcurementHTE.Core.Enums {
+namespace ProcurementHTE.Core.Enums
+{
     public enum SecurityLogEventType
     {
         LoginSuccess = 0,

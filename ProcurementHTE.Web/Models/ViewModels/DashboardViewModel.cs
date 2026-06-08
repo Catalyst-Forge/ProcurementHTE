@@ -88,16 +88,16 @@ namespace ProcurementHTE.Web.Models.ViewModels
         public List<RegionDistributionViewModel> RegionDistribution { get; set; } = new();
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    }
+
+
+
+
+
+
+
+
+
+
+
+}
 

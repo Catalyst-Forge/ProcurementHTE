@@ -119,7 +119,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 entityToDelete.IsDeleted = true;
                 entityToDelete.DeletedAt = DateTime.UtcNow;
                 entityToDelete.DeletedBy = deletedByUserId;
-                
+
                 await _context.SaveChangesAsync();
             }
         }
