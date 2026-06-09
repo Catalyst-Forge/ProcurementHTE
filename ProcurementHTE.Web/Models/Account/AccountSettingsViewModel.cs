@@ -28,7 +28,7 @@ namespace ProcurementHTE.Web.Models.Account
         public bool RequirePhoneVerificationForTwoFactor { get; init; }
 
         public string AvatarUrl => Settings.Overview.AvatarUrl
-            ?? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Settings.Overview.FirstName)}&background=0D8ABC&color=fff";
+            ?? "/img/default-avatar.svg";
         public string FullName => string.Join(" ", new[] { Settings.Overview.FirstName, Settings.Overview.LastName }.Where(x => !string.IsNullOrWhiteSpace(x)));
         public string Roles => Settings.Overview.Roles?.Count > 0 ? string.Join(", ", Settings.Overview.Roles) : "Role belum diatur";
         public string JobTitle => string.IsNullOrWhiteSpace(Settings.Overview.JobTitle) ? "Belum diatur" : Settings.Overview.JobTitle;
