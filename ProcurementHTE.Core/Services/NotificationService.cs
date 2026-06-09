@@ -22,6 +22,7 @@ namespace ProcurementHTE.Core.Services
             _pusher = pusher;
             _userRepository = userRepository;
             _logger = logger;
+            _timeProvider = timeProvider;
         }
     }
 }
