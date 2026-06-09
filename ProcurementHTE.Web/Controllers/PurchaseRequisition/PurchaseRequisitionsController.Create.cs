@@ -60,7 +60,7 @@ public partial class PurchaseRequisitionsController
                 CreatedByUserId = userId,
             };
 
-            await _purchaseRequisitionService.CreateAsync(
+            await _purchaseRequisitionCommandService.CreateAsync(
                 purchaseRequisition,
                 model.ProcurementIds ?? []
             );
@@ -93,7 +93,7 @@ public partial class PurchaseRequisitionsController
 
         if (!string.IsNullOrWhiteSpace(model.PRNumber))
         {
-            var exists = await _purchaseRequisitionService.IsPrNumberExistsAsync(model.PRNumber);
+            var exists = await _purchaseRequisitionQueryService.IsPrNumberExistsAsync(model.PRNumber);
             if (exists)
             {
                 ModelState.AddModelError(

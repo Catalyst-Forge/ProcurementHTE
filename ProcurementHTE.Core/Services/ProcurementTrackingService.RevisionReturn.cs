@@ -17,9 +17,9 @@ public partial class ProcurementTrackingService
             return Failed("Procurement tidak ditemukan.");
 
         procurement.RejectionNote = rejectionNote;
-        procurement.RejectedAt = DateTime.UtcNow;
+        procurement.RejectedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.RejectedByUserId = rejectedByUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(
@@ -57,9 +57,9 @@ public partial class ProcurementTrackingService
         procurement.RejectionSymptoms = symptoms;
         procurement.PendingRevisionSymptoms = symptoms;
         procurement.RejectionNote = rejectionNote;
-        procurement.RejectedAt = DateTime.UtcNow;
+        procurement.RejectedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.RejectedByUserId = rejectedByUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         var (newStatus, notificationTarget) = ResolveRevisionTarget(symptoms);
         await _procurementRepo.UpdateProcurementAsync(procurement);

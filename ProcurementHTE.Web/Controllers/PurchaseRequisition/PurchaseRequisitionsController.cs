@@ -23,7 +23,8 @@ public partial class PurchaseRequisitionsController : Controller
     private readonly IProcurementRepository _procurementRepository;
     private readonly IVendorRepository _vendorRepository;
     private readonly IProfitLossRepository _profitLossRepository;
-    private readonly IPurchaseRequisitionService _purchaseRequisitionService;
+    private readonly IPurchaseRequisitionQueryService _purchaseRequisitionQueryService;
+    private readonly IPurchaseRequisitionCommandService _purchaseRequisitionCommandService;
     private readonly IProcurementDocumentQuery _procurementDocumentQuery;
     private readonly IProcDocumentService _procDocumentService;
     private readonly IVendorRoundLetterRepository _vendorRoundLetterRepository;
@@ -40,7 +41,8 @@ public partial class PurchaseRequisitionsController : Controller
         IProcurementRepository procurementRepository,
         IVendorRepository vendorRepository,
         IProfitLossRepository profitLossRepository,
-        IPurchaseRequisitionService purchaseRequisitionService,
+        IPurchaseRequisitionQueryService purchaseRequisitionQueryService,
+        IPurchaseRequisitionCommandService purchaseRequisitionCommandService,
         IProcurementDocumentQuery procurementDocumentQuery,
         IProcDocumentService procDocumentService,
         IVendorRoundLetterRepository vendorRoundLetterRepository,
@@ -57,7 +59,8 @@ public partial class PurchaseRequisitionsController : Controller
         _procurementRepository = procurementRepository;
         _vendorRepository = vendorRepository;
         _profitLossRepository = profitLossRepository;
-        _purchaseRequisitionService = purchaseRequisitionService;
+        _purchaseRequisitionQueryService = purchaseRequisitionQueryService;
+        _purchaseRequisitionCommandService = purchaseRequisitionCommandService;
         _procurementDocumentQuery = procurementDocumentQuery;
         _procDocumentService = procDocumentService;
         _vendorRoundLetterRepository = vendorRoundLetterRepository;

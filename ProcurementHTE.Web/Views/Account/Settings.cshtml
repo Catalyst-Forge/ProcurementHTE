@@ -26,7 +26,7 @@
 }
 
 @section HeadScripts {
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" />
+    <link rel="stylesheet" href="~/lib/cropperjs/cropper.min.css" asp-append-version="true" />
 }
 
 @await Html.PartialAsync("_SettingsHeader", page)
@@ -39,7 +39,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+    <script src="~/lib/cropperjs/cropper.min.js"></script>
     <script>
         window.accountSettingsConfig = @Html.Raw(JsonSerializer.Serialize(jsConfig, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
     </script>

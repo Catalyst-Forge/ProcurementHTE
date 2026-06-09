@@ -42,7 +42,7 @@ public partial class ProcurementTrackingService
         if (newStatus == currentStatus)
             return false;
 
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         SetApprovalTimelineOnStatusChange(procurement, currentStatus, newStatus, now);
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(
@@ -78,9 +78,9 @@ public partial class ProcurementTrackingService
     )
     {
         procurement.RejectionNote = note ?? "Rejected by approver";
-        procurement.RejectedAt = DateTime.UtcNow;
+        procurement.RejectedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.RejectedByUserId = approverUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(

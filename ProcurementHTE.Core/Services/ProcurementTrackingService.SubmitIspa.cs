@@ -55,13 +55,13 @@ public partial class ProcurementTrackingService
         procurement.IspaNumber = ispaNumber;
         procurement.IspaDate = ispaDate;
         procurement.IspaSubmitDate = ispaSubmitDate;
-        procurement.IspaSubmittedAt = DateTime.UtcNow;
+        procurement.IspaSubmittedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.IspaSubmittedByUserId = submittedByUserId;
         procurement.IspaFileName = ispaFileName;
         procurement.IspaFileObjectKey = objectKey;
         procurement.IspaFileContentType = ispaContentType;
         procurement.IspaFileSize = ispaFileSize;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(

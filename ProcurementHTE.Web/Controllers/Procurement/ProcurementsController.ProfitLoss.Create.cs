@@ -25,7 +25,7 @@ public partial class ProcurementsController
                 return RedirectToAction(nameof(Index));
             }
 
-            var existingPnl = await _pnlService.GetByProcurementAsync(procurementId);
+            var existingPnl = await _pnlQueryService.GetByProcurementAsync(procurementId);
             if (existingPnl != null)
             {
                 TempData["WarningMessage"] =
@@ -33,7 +33,7 @@ public partial class ProcurementsController
                 return RedirectToAction(nameof(EditProfitLoss), new { id = existingPnl.ProfitLossId });
             }
 
-            var vendors = (await _vendorService.GetAllVendorsAsync())?.ToList() ?? [];
+            var vendors = (await _vendorQueryService.GetAllVendorsAsync())?.ToList() ?? [];
             if (vendors.Count == 0)
             {
                 TempData["ErrorMessage"] =
@@ -95,7 +95,7 @@ public partial class ProcurementsController
         try
         {
             var dto = ProfitLossViewModelMapper.ToInputDto(viewModel, selectedVendors);
-            var pnl = await _pnlService.SaveInputAndCalculateAsync(dto);
+            var pnl = await _pnlCommandService.SaveInputAndCalculateAsync(dto);
             if (pnl == null)
             {
                 ModelState.AddModelError("", "Gagal menyimpan Profit & Loss. Result is null.");

@@ -9,7 +9,7 @@ public partial class PurchaseRequisitionsController
     public async Task<ActionResult> Index(int page = 1, int pageSize = 10, string? search = null)
     {
         var fields = new HashSet<string> { "PrNumber", "Description" };
-        var result = await _purchaseRequisitionService.GetAllAsync(
+        var result = await _purchaseRequisitionQueryService.GetAllAsync(
             page,
             pageSize,
             search,
@@ -44,7 +44,7 @@ public partial class PurchaseRequisitionsController
 
     public async Task<ActionResult> Details(string id)
     {
-        var pr = await _purchaseRequisitionService.GetByIdWithProcurementsAsync(id);
+        var pr = await _purchaseRequisitionQueryService.GetByIdWithProcurementsAsync(id);
         if (pr == null)
             return NotFound();
 

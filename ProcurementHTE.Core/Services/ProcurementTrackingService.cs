@@ -15,6 +15,7 @@ public partial class ProcurementTrackingService : IProcurementTrackingService
     private readonly IQrCodeGenerator _qrCodeGenerator;
     private readonly IObjectStorage _objectStorage;
     private readonly ObjectStorageOptions _storageOptions;
+    private readonly TimeProvider _timeProvider;
 
     public ProcurementTrackingService(
         IProcurementRepository procurementRepo,
@@ -25,7 +26,8 @@ public partial class ProcurementTrackingService : IProcurementTrackingService
         INotificationPusher notificationPusher,
         IQrCodeGenerator qrCodeGenerator,
         IObjectStorage objectStorage,
-        IOptions<ObjectStorageOptions> storageOptions
+        IOptions<ObjectStorageOptions> storageOptions,
+        TimeProvider timeProvider
     )
     {
         _procurementRepo = procurementRepo;
@@ -37,5 +39,6 @@ public partial class ProcurementTrackingService : IProcurementTrackingService
         _qrCodeGenerator = qrCodeGenerator;
         _objectStorage = objectStorage;
         _storageOptions = storageOptions.Value;
+        _timeProvider = timeProvider;
     }
 }

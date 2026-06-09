@@ -130,7 +130,7 @@ public partial class AccountService
         EnsureSucceeded(result, "Gagal mengaktifkan 2FA.");
 
         user.TwoFactorMethod = method;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _userManager.UpdateAsync(user);
 
         await LogEventAsync(

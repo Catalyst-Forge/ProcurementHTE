@@ -9,7 +9,7 @@ public partial class PurchaseRequisitionsController
     [HttpGet]
     public async Task<ActionResult> DownloadDocument(string id)
     {
-        var pr = await _purchaseRequisitionService.GetByIdAsync(id);
+        var pr = await _purchaseRequisitionQueryService.GetByIdAsync(id);
         if (pr == null || string.IsNullOrEmpty(pr.DocumentFilePath))
             return NotFound();
 
@@ -55,7 +55,7 @@ public partial class PurchaseRequisitionsController
     [HttpGet]
     public async Task<IActionResult> PreviewDocumentUrl(string id)
     {
-        var pr = await _purchaseRequisitionService.GetByIdAsync(id);
+        var pr = await _purchaseRequisitionQueryService.GetByIdAsync(id);
         if (pr == null || string.IsNullOrEmpty(pr.DocumentFilePath))
             return Json(new { ok = false, error = "Document not found." });
 

@@ -24,7 +24,7 @@ public partial class ProcurementDocumentsController
 
             var procurement = await _queryService.GetProcurementByIdAsync(procurementId);
             ViewBag.ProcNum = procurement?.ProcNum ?? "-";
-            ViewBag.Vendors = await _vendorService.GetAllVendorsAsync();
+            ViewBag.Vendors = await _vendorQueryService.GetAllVendorsAsync();
             ViewBag.RoundLetters = await _roundLetterRepo.ListByProcurementAsync(procurementId);
 
             var filteredDocItems = (dto.Items ?? Enumerable.Empty<RequiredDocItemDto>()).Where(

@@ -75,7 +75,7 @@ public partial class PurchaseRequisitionsController
         if (string.IsNullOrEmpty(prId))
             return Json(Array.Empty<object>());
 
-        var pr = await _purchaseRequisitionService.GetByIdWithProcurementsAsync(prId);
+        var pr = await _purchaseRequisitionQueryService.GetByIdWithProcurementsAsync(prId);
         if (pr?.Procurements == null || !pr.Procurements.Any())
             return Json(Array.Empty<object>());
 

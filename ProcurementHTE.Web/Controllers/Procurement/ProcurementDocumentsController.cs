@@ -18,7 +18,7 @@ public partial class ProcurementDocumentsController : Controller
     private readonly IProcurementDocumentQuery _query;
     private readonly IProcDocumentService _docSvc;
     private readonly IProcurementQueryService _queryService;
-    private readonly IVendorService _vendorService;
+    private readonly IVendorQueryService _vendorQueryService;
     private readonly IVendorRoundLetterRepository _roundLetterRepo;
     private readonly IHttpClientFactory _http;
     private readonly IProcurementDocumentGenerator _documentGenerator;
@@ -29,7 +29,7 @@ public partial class ProcurementDocumentsController : Controller
         IProcurementDocumentQuery query,
         IProcurementQueryService queryService,
         IProcDocumentService docSvc,
-        IVendorService vendorService,
+        IVendorQueryService vendorQueryService,
         IVendorRoundLetterRepository roundLetterRepo,
         IHttpClientFactory http,
         IProcurementDocumentGenerator documentGenerator,
@@ -40,7 +40,7 @@ public partial class ProcurementDocumentsController : Controller
         _query = query;
         _docSvc = docSvc;
         _queryService = queryService;
-        _vendorService = vendorService;
+        _vendorQueryService = vendorQueryService;
         _roundLetterRepo = roundLetterRepo;
         _http = http;
         _documentGenerator = documentGenerator;

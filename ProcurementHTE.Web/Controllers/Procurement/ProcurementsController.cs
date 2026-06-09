@@ -16,8 +16,9 @@ public partial class ProcurementsController : Controller
     private readonly IProcurementQueryService _queryService;
     private readonly IProcurementCommandService _commandService;
     private readonly IProcurementWorkflowService _workflowService;
-    private readonly IVendorService _vendorService;
-    private readonly IProfitLossService _pnlService;
+    private readonly IVendorQueryService _vendorQueryService;
+    private readonly IProfitLossQueryService _pnlQueryService;
+    private readonly IProfitLossCommandService _pnlCommandService;
     private readonly IVendorOfferService _voService;
     private readonly IDocumentGenerator _documentGenerator;
     private readonly IDocumentTypeService _docTypeService;
@@ -34,8 +35,9 @@ public partial class ProcurementsController : Controller
         IProcurementQueryService queryService,
         IProcurementCommandService commandService,
         IProcurementWorkflowService workflowService,
-        IVendorService vendorService,
-        IProfitLossService pnlService,
+        IVendorQueryService vendorQueryService,
+        IProfitLossQueryService pnlQueryService,
+        IProfitLossCommandService pnlCommandService,
         IVendorOfferService voService,
         IDocumentGenerator documentGenerator,
         IDocumentTypeService docTypeService,
@@ -52,8 +54,10 @@ public partial class ProcurementsController : Controller
         _queryService = queryService;
         _commandService = commandService;
         _workflowService = workflowService;
-        _vendorService = vendorService;
-        _pnlService = pnlService;
+        _vendorQueryService = vendorQueryService;
+        _pnlQueryService = pnlQueryService;
+        _pnlCommandService = pnlCommandService;
+        
         _voService = voService;
         _documentGenerator = documentGenerator;
         _docTypeService = docTypeService;

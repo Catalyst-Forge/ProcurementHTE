@@ -19,7 +19,7 @@ public partial class ProcurementsController
 
         try
         {
-            var profitLoss = await _pnlService.GetByProcurementAsync(id);
+            var profitLoss = await _pnlQueryService.GetByProcurementAsync(id);
             if (profitLoss == null)
             {
                 TempData["ErrorMessage"] =

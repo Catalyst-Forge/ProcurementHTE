@@ -41,9 +41,9 @@ public partial class ProcurementTrackingService
         procurement.HardcopyEvidenceFilePath = objectKey;
         procurement.HardcopyEvidenceContentType = hardcopyEvidenceContentType;
         procurement.HardcopyEvidenceFileSize = hardcopyEvidenceFileSize;
-        procurement.HardcopySubmittedAt = DateTime.UtcNow;
+        procurement.HardcopySubmittedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.HardcopySubmittedByUserId = submittedByUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(
@@ -81,9 +81,9 @@ public partial class ProcurementTrackingService
         }
 
         procurement.PoNumber = poNumber;
-        procurement.PoSubmittedAt = DateTime.UtcNow;
+        procurement.PoSubmittedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.PoSubmittedByUserId = submittedByUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(

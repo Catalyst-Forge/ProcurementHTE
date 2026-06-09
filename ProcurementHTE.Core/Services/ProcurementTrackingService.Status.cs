@@ -50,7 +50,7 @@ public partial class ProcurementTrackingService
 
         var oldStatus = pr.Status;
         pr.Status = newDerivedStatus;
-        pr.UpdatedAt = DateTime.UtcNow;
+        pr.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _prRepo.UpdateAsync(pr, ct);
         await _prRepo.AddStatusHistoryAsync(

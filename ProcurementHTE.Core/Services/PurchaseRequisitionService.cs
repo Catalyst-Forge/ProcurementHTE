@@ -6,15 +6,17 @@ using ProcurementHTE.Core.Utils;
 
 namespace ProcurementHTE.Core.Services;
 
-public class PurchaseRequisitionService : IPurchaseRequisitionService
+public class PurchaseRequisitionService : IPurchaseRequisitionQueryService, IPurchaseRequisitionCommandService
 {
     private readonly IPurchaseRequisitionRepository _purchaseRequisitionRepository;
     private readonly IProcurementTrackingService _procurementTrackingService;
+    private readonly TimeProvider _timeProvider;
     private const string PR_PREFIX = "PR";
 
     public PurchaseRequisitionService(
         IPurchaseRequisitionRepository purchaseRequisitionRepository,
-        IProcurementTrackingService procurementTrackingService)
+        IProcurementTrackingService procurementTrackingService,
+        TimeProvider timeProvider)
     {
         _purchaseRequisitionRepository =
             purchaseRequisitionRepository
@@ -22,6 +24,7 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         _procurementTrackingService =
             procurementTrackingService
             ?? throw new ArgumentNullException(nameof(procurementTrackingService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     #region Query Methods
@@ -96,7 +99,7 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
             purchaseRequisition.PrNumber = SequenceNumberGenerator.NumId(PR_PREFIX, lastPrNumber);
         }
 
-        purchaseRequisition.CreatedAt = DateTime.UtcNow;
+        purchaseRequisition.CreatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         // Set initial status
         purchaseRequisition.Status = PurchaseRequisitionStatus.OnCreateDP3;
@@ -153,7 +156,7 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         existing.DocumentFilePath = purchaseRequisition.DocumentFilePath;
         existing.DocumentContentType = purchaseRequisition.DocumentContentType;
         existing.DocumentFileSize = purchaseRequisition.DocumentFileSize;
-        existing.UpdatedAt = DateTime.UtcNow;
+        existing.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _purchaseRequisitionRepository.UpdateAsync(existing, ct);
 

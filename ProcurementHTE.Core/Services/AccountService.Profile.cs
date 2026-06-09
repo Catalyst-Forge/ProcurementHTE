@@ -77,7 +77,7 @@ public partial class AccountService
         if (phoneChanged)
             user.PhoneNumberConfirmed = false;
 
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         var updateResult = await _userManager.UpdateAsync(user);
         EnsureSucceeded(updateResult, "Gagal memperbarui profil.");
 
@@ -120,7 +120,7 @@ public partial class AccountService
 
         user.AvatarObjectKey = objectKey;
         user.AvatarFileName = fileName;
-        user.AvatarUpdatedAt = DateTime.UtcNow;
+        user.AvatarUpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         var updateResult = await _userManager.UpdateAsync(user);
         EnsureSucceeded(updateResult, "Gagal menyimpan foto profil.");

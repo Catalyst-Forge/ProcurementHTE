@@ -14,7 +14,7 @@ public partial class AccountService
         var codes = generated?.ToArray() ?? Array.Empty<string>();
         user.RecoveryCodesJson = string.Join(';', codes);
         user.RecoveryCodesHidden = false;
-        user.RecoveryCodesGeneratedAt = DateTime.UtcNow;
+        user.RecoveryCodesGeneratedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _userManager.UpdateAsync(user);
 
         await LogEventAsync(

@@ -64,7 +64,7 @@ namespace ProcurementHTE.Core.Services
             pnl.Distance = dto.Distance;
             pnl.TglMulaiSewa = dto.TglMulaiSewa;
             pnl.TglMulaiMoving = dto.TglMulaiMoving;
-            pnl.UpdatedAt = DateTime.Now;
+            pnl.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
             StampOffersWithProfitLossId(newOffers, pnl.ProfitLossId);
 

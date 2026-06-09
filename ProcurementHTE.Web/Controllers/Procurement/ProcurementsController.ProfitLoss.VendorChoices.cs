@@ -6,7 +6,7 @@ public partial class ProcurementsController
 {
     private async Task RepopulateVendorChoices(ProfitLossInputViewModel viewModel)
     {
-        var vendors = await _vendorService.GetAllVendorsAsync();
+        var vendors = await _vendorQueryService.GetAllVendorsAsync();
         viewModel.VendorChoices = BuildVendorChoices(vendors);
 
         var procurement = await _queryService.GetProcurementByIdAsync(

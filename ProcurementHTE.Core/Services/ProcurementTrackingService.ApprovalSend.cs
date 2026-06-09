@@ -33,9 +33,9 @@ public partial class ProcurementTrackingService
             return Failed($"Dokumen wajib belum lengkap. {uploadedDocs}/{totalDocs} dokumen telah diupload.");
 
         procurement.ApprovalToken = GenerateApprovalToken();
-        procurement.ApprovalTokenGeneratedAt = DateTime.UtcNow;
+        procurement.ApprovalTokenGeneratedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.ApprovalSentByUserId = sentByUserId;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await AssignHigherLevelApproversAsync(procurement, ct);
         await _procurementRepo.UpdateProcurementAsync(procurement);

@@ -7,7 +7,7 @@ public partial class PurchaseRequisitionsController
 {
     public async Task<ActionResult> Delete(string id)
     {
-        var pr = await _purchaseRequisitionService.GetByIdWithProcurementsAsync(id);
+        var pr = await _purchaseRequisitionQueryService.GetByIdWithProcurementsAsync(id);
         if (pr == null)
             return NotFound();
 
@@ -28,7 +28,7 @@ public partial class PurchaseRequisitionsController
     {
         try
         {
-            var pr = await _purchaseRequisitionService.GetByIdAsync(id);
+            var pr = await _purchaseRequisitionQueryService.GetByIdAsync(id);
             if (pr == null)
                 return NotFound();
 
@@ -43,7 +43,7 @@ public partial class PurchaseRequisitionsController
             if (!string.IsNullOrEmpty(pr.DocumentFilePath))
                 await SafeDeleteFromStorageAsync(pr.DocumentFilePath);
 
-            await _purchaseRequisitionService.DeleteAsync(id, currentUserId);
+            await _purchaseRequisitionCommandService.DeleteAsync(id, currentUserId);
 
             TempData["SuccessMessage"] =
                 $"Purchase Requisition {pr.PrNumber} deleted successfully.";

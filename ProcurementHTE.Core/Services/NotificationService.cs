@@ -9,13 +9,14 @@ namespace ProcurementHTE.Core.Services
         private readonly INotificationPusher _pusher;
         private readonly IUserRepository _userRepository;
         private readonly ILogger<NotificationService> _logger;
+        private readonly TimeProvider _timeProvider;
 
         public NotificationService(
             INotificationRepository repository,
             INotificationPusher pusher,
             IUserRepository userRepository,
             ILogger<NotificationService> logger
-        )
+        , TimeProvider timeProvider)
         {
             _repository = repository;
             _pusher = pusher;

@@ -18,7 +18,7 @@ public partial class AccountService
         var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         EnsureSucceeded(result, "Gagal mengganti password.");
 
-        user.PasswordChangedAt = DateTime.UtcNow;
+        user.PasswordChangedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _userManager.UpdateAsync(user);
 
         await LogEventAsync(

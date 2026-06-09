@@ -9,7 +9,7 @@ public sealed partial class ProcDocumentService : IProcDocumentService
     private readonly IProcDocumentRepository _procDocumentRepository;
     private readonly IProcurementRepository _procurementRepository;
     private readonly IJobTypeDocumentRepository _jobTypeDocumentRepository;
-    private readonly IProfitLossService _pnlService;
+    private readonly IProfitLossQueryService _pnlService;
     private readonly IDocumentTypeRepository _documentTypeRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly ObjectStorageOptions _storageOptions;
@@ -19,7 +19,7 @@ public sealed partial class ProcDocumentService : IProcDocumentService
         IProcDocumentRepository procDocumentRepository,
         IProcurementRepository procurementRepository,
         IJobTypeDocumentRepository jobTypeDocumentRepository,
-        IProfitLossService pnlService,
+        IProfitLossQueryService pnlService,
         IDocumentTypeRepository documentTypeRepository,
         IObjectStorage objectStorage,
         IOptions<ObjectStorageOptions> storageOptions,

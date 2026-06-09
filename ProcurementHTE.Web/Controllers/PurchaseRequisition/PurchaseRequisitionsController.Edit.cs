@@ -8,7 +8,7 @@ public partial class PurchaseRequisitionsController
 {
     public async Task<ActionResult> Edit(string id)
     {
-        var pr = await _purchaseRequisitionService.GetByIdWithProcurementsAsync(id);
+        var pr = await _purchaseRequisitionQueryService.GetByIdWithProcurementsAsync(id);
         if (pr == null)
             return NotFound();
 
@@ -46,7 +46,7 @@ public partial class PurchaseRequisitionsController
 
         try
         {
-            var existingPr = await _purchaseRequisitionService.GetByIdAsync(id);
+            var existingPr = await _purchaseRequisitionQueryService.GetByIdAsync(id);
             if (existingPr == null)
                 return NotFound();
 
@@ -84,7 +84,7 @@ public partial class PurchaseRequisitionsController
                 existingPr.DocumentFileSize = model.DocumentFile.Length;
             }
 
-            await _purchaseRequisitionService.UpdateAsync(existingPr, model.ProcurementIds);
+            await _purchaseRequisitionCommandService.UpdateAsync(existingPr, model.ProcurementIds);
             TempData["SuccessMessage"] =
                 $"Purchase Requisition {existingPr.PrNumber} updated successfully.";
             return RedirectToAction(nameof(Index));
@@ -107,7 +107,7 @@ public partial class PurchaseRequisitionsController
 
         if (!string.IsNullOrWhiteSpace(model.PRNumber))
         {
-            var exists = await _purchaseRequisitionService.IsPrNumberExistsAsync(
+            var exists = await _purchaseRequisitionQueryService.IsPrNumberExistsAsync(
                 model.PRNumber,
                 model.PrId
             );

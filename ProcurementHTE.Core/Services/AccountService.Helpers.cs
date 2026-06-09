@@ -72,7 +72,7 @@ public partial class AccountService
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         var reset = await _userManager.ResetPasswordAsync(user, token, newPassword);
         EnsureSucceeded(reset, "Gagal memperbarui password.");
-        user.PasswordChangedAt = DateTime.UtcNow;
+        user.PasswordChangedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _userManager.UpdateAsync(user);
         await LogEventAsync(
             user.Id,

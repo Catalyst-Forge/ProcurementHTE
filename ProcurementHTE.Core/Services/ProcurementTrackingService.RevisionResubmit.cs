@@ -110,9 +110,9 @@ public partial class ProcurementTrackingService
         };
     }
 
-    private static void CompleteRevision(Procurement procurement, string submittedByUserId)
+    private void CompleteRevision(Procurement procurement, string submittedByUserId)
     {
-        procurement.ResubmittedAt = DateTime.UtcNow;
+        procurement.ResubmittedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.ResubmittedByUserId = submittedByUserId;
         procurement.RevisionCount++;
         procurement.RejectionNote = null;

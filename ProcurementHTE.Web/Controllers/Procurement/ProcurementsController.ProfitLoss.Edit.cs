@@ -51,7 +51,7 @@ public partial class ProcurementsController
         try
         {
             var update = BuildProfitLossUpdateDto(viewModel, distinctSelectedVendors);
-            var pnlUpdated = await _pnlService.EditProfitLossAsync(update);
+            var pnlUpdated = await _pnlCommandService.EditProfitLossAsync(update);
 
             await UploadRoundLettersAsync(viewModel, pnlUpdated.ProfitLossId);
             await GenerateSpmpAfterProfitLossUpdateAsync(viewModel.ProcurementId);

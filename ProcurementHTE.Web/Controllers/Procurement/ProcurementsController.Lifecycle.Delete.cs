@@ -50,7 +50,7 @@ public partial class ProcurementsController
             var prId = procurement.PrId;
             var deletedDocsCount = await _procDocService.DeleteAllByProcurementAsync(id, currentUserId);
 
-            await _pnlService.DeleteByProcurementAsync(id, currentUserId);
+            await _pnlCommandService.DeleteByProcurementAsync(id, currentUserId);
             await _commandService.DeleteProcurementAsync(procurement, currentUserId);
 
             if (!string.IsNullOrEmpty(prId))

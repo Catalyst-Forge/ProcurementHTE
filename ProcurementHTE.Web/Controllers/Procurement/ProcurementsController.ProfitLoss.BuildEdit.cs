@@ -8,8 +8,8 @@ public partial class ProcurementsController
 {
     private async Task<ProfitLossEditViewModel> BuildProfitLossEditViewModelAsync(string profitLossId)
     {
-        var dto = await _pnlService.GetEditDataAsync(profitLossId);
-        var vendors = await _vendorService.GetAllVendorsAsync();
+        var dto = await _pnlQueryService.GetEditDataAsync(profitLossId);
+        var vendors = await _vendorQueryService.GetAllVendorsAsync();
         var procurement =
             await _queryService.GetProcurementByIdAsync(dto.ProcurementId)
             ?? throw new KeyNotFoundException("Procurement tidak ditemukan");

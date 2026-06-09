@@ -63,7 +63,7 @@ public partial class ProcurementsController
 
             await PopulateUserFullNamesAsync(procurement);
 
-            var summary = await _pnlService.GetSummaryByProcurementAsync(id);
+            var summary = await _pnlQueryService.GetSummaryByProcurementAsync(id);
             if (summary != null)
             {
                 ViewBag.SelectedVendorNames = summary.SelectedVendorNames;

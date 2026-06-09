@@ -13,13 +13,13 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
     {
         protected readonly IProcurementQueryService _procurementQueryService;
         protected readonly UserManager<User> UserManager;
-        protected readonly IProfitLossService ProfitLossService;
+        protected readonly IProfitLossQueryService ProfitLossService;
         protected readonly IDashboardService DashboardService;
 
         protected DashboardBaseController(
             IProcurementQueryService procurementQueryService,
             UserManager<User> userManager,
-            IProfitLossService profitLossService,
+            IProfitLossQueryService profitLossService,
             IDashboardService dashboardService
         )
         {

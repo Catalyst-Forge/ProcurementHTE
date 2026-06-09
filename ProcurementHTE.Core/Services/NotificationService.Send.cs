@@ -28,7 +28,7 @@ namespace ProcurementHTE.Core.Services
                     ActionUrl = actionUrl,
                     ReferenceId = referenceId,
                     CreatedByUserId = createdByUserId,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = _timeProvider.GetUtcNow().UtcDateTime,
                 };
 
                 await _repository.CreateAsync(notification, ct);
@@ -87,7 +87,7 @@ namespace ProcurementHTE.Core.Services
                         ActionUrl = actionUrl,
                         ReferenceId = referenceId,
                         CreatedByUserId = createdByUserId,
-                        CreatedAt = DateTime.UtcNow,
+                        CreatedAt = _timeProvider.GetUtcNow().UtcDateTime,
                     })
                     .ToList();
 

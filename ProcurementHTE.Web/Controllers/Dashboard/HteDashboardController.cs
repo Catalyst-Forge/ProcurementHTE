@@ -14,7 +14,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
         public HteDashboardController(
             IProcurementQueryService procurementQueryService,
             UserManager<User> userManager,
-            IProfitLossService profitLossService,
+            IProfitLossQueryService profitLossService,
             IDashboardService dashboardService
         )
             : base(procurementQueryService, userManager, profitLossService, dashboardService) { }

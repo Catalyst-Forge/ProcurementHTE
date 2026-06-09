@@ -12,12 +12,14 @@ namespace ProcurementHTE.Web.Controllers.MasterData
     [Authorize]
     public class VendorsController : Controller
     {
-        private readonly IVendorService _vendorService;
+        private readonly IVendorQueryService _vendorQueryService;
+    private readonly IVendorCommandService _vendorCommandService;
         private const string ActivePageName = "Vendors";
 
-        public VendorsController(IVendorService vendorService)
+        public VendorsController(IVendorQueryService vendorQueryService, IVendorCommandService vendorCommandService)
         {
-            _vendorService = vendorService;
+            _vendorQueryService = vendorQueryService;
+        _vendorCommandService = vendorCommandService;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -43,7 +45,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var vendors = await _vendorService.GetPagedAsync(
+            var vendors = await _vendorQueryService.GetPagedAsync(
                 page,
                 pageSize,
                 search,
@@ -66,7 +68,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
             if (id == null)
                 return NotFound();
 
-            var vendor = await _vendorService.GetVendorByIdAsync(id);
+            var vendor = await _vendorQueryService.GetVendorByIdAsync(id);
             return View(vendor);
         }
 
@@ -95,7 +97,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 return View(vendor);
             }
 
-            await _vendorService.AddVendorAsync(vendor);
+            await _vendorCommandService.AddVendorAsync(vendor);
             TempData["SuccessMessage"] = "Vendor added successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -108,7 +110,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 if (string.IsNullOrWhiteSpace(id))
                     return NotFound();
 
-                var vendor = await _vendorService.GetVendorByIdAsync(id);
+                var vendor = await _vendorQueryService.GetVendorByIdAsync(id);
                 if (vendor == null)
                     return NotFound();
 
@@ -144,7 +146,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                     return View(vendor);
                 }
 
-                await _vendorService.EditVendorAsync(vendor, id);
+                await _vendorCommandService.EditVendorAsync(vendor, id);
 
                 TempData["SuccessMessage"] = "Vendor updated successfully.";
                 return RedirectToAction(nameof(Index));
@@ -191,14 +193,14 @@ namespace ProcurementHTE.Web.Controllers.MasterData
         {
             try
             {
-                var vendor = await _vendorService.GetVendorByIdAsync(id);
+                var vendor = await _vendorQueryService.GetVendorByIdAsync(id);
                 if (vendor == null)
                 {
                     return RedirectToAction(nameof(Index));
                 }
 
                 var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-                await _vendorService.DeleteVendorAsync(vendor, currentUserId);
+                await _vendorCommandService.DeleteVendorAsync(vendor, currentUserId);
 
                 TempData["SuccessMessage"] = "Vendor deleted successfully.";
             }

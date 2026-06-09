@@ -11,6 +11,7 @@ public partial class AccountService : IAccountService
     private const string PasswordResetPurpose = "PasswordReset";
 
     private readonly UserManager<User> _userManager;
+    private readonly TimeProvider _timeProvider;
     private readonly IObjectStorage _objectStorage;
     private readonly ObjectStorageOptions _storageOptions;
     private readonly IUserSessionRepository _sessionRepository;
@@ -21,6 +22,7 @@ public partial class AccountService : IAccountService
 
     public AccountService(
         UserManager<User> userManager,
+        TimeProvider timeProvider,
         IObjectStorage objectStorage,
         IOptions<ObjectStorageOptions> storageOptions,
         IUserSessionRepository sessionRepository,
@@ -31,6 +33,7 @@ public partial class AccountService : IAccountService
     )
     {
         _userManager = userManager;
+        _timeProvider = timeProvider;
         _objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
         _storageOptions =
             storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));

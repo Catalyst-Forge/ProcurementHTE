@@ -31,8 +31,8 @@ public partial class AccountService
             Location = location,
             IsCurrent = isCurrent,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            LastAccessedAt = DateTime.UtcNow,
+            CreatedAt = _timeProvider.GetUtcNow().UtcDateTime,
+            LastAccessedAt = _timeProvider.GetUtcNow().UtcDateTime,
         };
 
         await _sessionRepository.AddAsync(session, ct);
@@ -104,7 +104,7 @@ public partial class AccountService
             Description = description,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = _timeProvider.GetUtcNow().UtcDateTime,
         };
 
         await _logRepository.AddAsync(log, ct);

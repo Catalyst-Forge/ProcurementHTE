@@ -22,10 +22,10 @@ public partial class ProcurementTrackingService
         procurement.AppoUserId = null;
         procurement.PickedUpAt = null;
         procurement.PendingRevisionSymptoms = RejectionSymptom.None;
-        procurement.ResubmittedAt = DateTime.UtcNow;
+        procurement.ResubmittedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.ResubmittedByUserId = resetByUserId;
         procurement.RevisionCount++;
-        procurement.UpdatedAt = DateTime.UtcNow;
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(
@@ -70,7 +70,7 @@ public partial class ProcurementTrackingService
         }
 
         oldPr.Status = PurchaseRequisitionStatus.ReturnedFromProcurement;
-        oldPr.UpdatedAt = DateTime.UtcNow;
+        oldPr.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _prRepo.UpdateAsync(oldPr, ct);
         await _prRepo.AddStatusHistoryAsync(
             oldPrId,
