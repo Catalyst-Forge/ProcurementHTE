@@ -20,27 +20,42 @@ namespace ProcurementHTE.Infrastructure.Migrations
                 """
             );
 
-            migrationBuilder.DropColumn(
-                name: "Quantity",
-                table: "VendorOffers");
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH(N'[VendorOffers]', N'Quantity') IS NOT NULL
+                    ALTER TABLE [VendorOffers] DROP COLUMN [Quantity];
+                """
+            );
 
-            migrationBuilder.DropColumn(
-                name: "SequenceOrder",
-                table: "ProcDocumentApprovals");
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH(N'[ProcDocumentApprovals]', N'SequenceOrder') IS NOT NULL
+                    ALTER TABLE [ProcDocumentApprovals] DROP COLUMN [SequenceOrder];
+                """
+            );
 
-            migrationBuilder.DropColumn(
-                name: "SequenceOrder",
-                table: "DocumentApprovals");
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH(N'[DocumentApprovals]', N'SequenceOrder') IS NOT NULL
+                    ALTER TABLE [DocumentApprovals] DROP COLUMN [SequenceOrder];
+                """
+            );
 
-            migrationBuilder.RenameColumn(
-                name: "Trip",
-                table: "VendorOffers",
-                newName: "QuantityItem");
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH(N'[VendorOffers]', N'Trip') IS NOT NULL
+                    AND COL_LENGTH(N'[VendorOffers]', N'QuantityItem') IS NULL
+                    EXEC sp_rename N'[VendorOffers].[Trip]', N'QuantityItem', N'COLUMN';
+                """
+            );
 
-            migrationBuilder.RenameColumn(
-                name: "TarifAwal",
-                table: "ProfitLossItems",
-                newName: "BasePrice");
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH(N'[ProfitLossItems]', N'TarifAwal') IS NOT NULL
+                    AND COL_LENGTH(N'[ProfitLossItems]', N'BasePrice') IS NULL
+                    EXEC sp_rename N'[ProfitLossItems].[TarifAwal]', N'BasePrice', N'COLUMN';
+                """
+            );
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "DeletedAt",
