@@ -1,6 +1,6 @@
 using ProcurementHTE.Core.Models;
 
-namespace ProcurementHTE.Core.Services;
+namespace ProcurementHTE.Core.Interfaces;
 
 /// <summary>
 /// Interface untuk service perhitungan PNL berdasarkan JobType

@@ -1,0 +1,47 @@
+@model ProcurementHTE.Core.Models.Procurement
+
+<!-- Procurement Information -->
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle text-primary me-1"></i> Procurement Information</h2>
+    </header>
+    <hr class="mx-3 my-2" />
+    <div class="card-body">
+        <div class="row mb-0">
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">Procurement No</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Model.ProcNum</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">Job Name</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Model.JobName</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">WO Number</dt>
+                <dd class="fw-medium text-secondary-emphasis">@(Model.Wonum ?? "-")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">SPK Number</dt>
+                <dd class="fw-medium text-secondary-emphasis">@(Model.SpkNumber ?? "-")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">Job Type</dt>
+                <dd class="fw-medium text-secondary-emphasis">@(Model.JobType?.TypeName ?? "-")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">Status</dt>
+                <dd class="fw-medium text-secondary-emphasis">
+                    <span class="badge bg-primary">@(Model.Status?.StatusName ?? "-")</span>
+                </dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">Start Date</dt>
+                <dd class="fw-medium text-secondary-emphasis">@(Model.StartDate == default ? "-" : Model.StartDate.ToString("dd MMM yyyy"))</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary">End Date</dt>
+                <dd class="fw-medium text-secondary-emphasis">@(Model.EndDate == default ? "-" : Model.EndDate.ToString("dd MMM yyyy"))</dd>
+            </dl>
+        </div>
+    </div>
+</article>

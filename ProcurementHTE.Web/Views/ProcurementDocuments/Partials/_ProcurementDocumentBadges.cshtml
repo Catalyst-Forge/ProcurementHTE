@@ -1,0 +1,28 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementDocumentRowViewModel
+
+@{
+    var item = Model.Item;
+}
+
+<div class="doc-attribute-badges d-flex flex-wrap gap-1 mb-1">
+    @if (item.IsMandatory)
+    {
+        <span class="badge badge-mandatory"><i class="bi bi-exclamation-triangle me-1"></i>Mandatory</span>
+    }
+    @if (item.IsUploadRequired)
+    {
+        <span class="badge badge-upload"><i class="bi bi-upload me-1"></i>Upload</span>
+    }
+    @if (item.IsGenerated)
+    {
+        <span class="badge badge-generated"><i class="bi bi-gear me-1"></i>Generated</span>
+    }
+    @if (item.RequiresApproval)
+    {
+        <span class="badge badge-approval"><i class="bi bi-person-check me-1"></i>Approval</span>
+    }
+    @if (item.Uploaded)
+    {
+        <span class="badge badge-complete"><i class="bi bi-check2 me-1"></i>Uploaded</span>
+    }
+</div>

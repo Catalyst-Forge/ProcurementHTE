@@ -1,0 +1,136 @@
+@model ProcurementHTE.Web.Models.ViewModels.AccrualIndexViewModel
+@{
+    string FormatMoney(decimal? value) => value.HasValue ? value.Value.ToString("N0") : "-";
+    string FormatDate(DateTime? date) => date.HasValue ? date.Value.ToString("dd MMM yyyy") : "-";
+}
+
+<!-- Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>No WO</th>
+                        <th>Job Name</th>
+                        <th>Vendor</th>
+                        <th>Status Accrual</th>
+                        <th>No Accrual</th>
+                        <th class="text-end">Potensi Accrual</th>
+                        <th>Diisi Oleh</th>
+                        <th class="text-center" style="width: 120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Procurements.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Tidak ada data ditemukan
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var rowNum = (Model.CurrentPage - 1) * Model.PageSize;
+                        @foreach (var item in Model.Procurements)
+                        {
+                            rowNum++;
+                            var vendor = item.ProfitLosses.FirstOrDefault()?.SelectedVendor?.VendorName ?? "-";
+                            var hasAccrual = !string.IsNullOrEmpty(item.NoAccrual);
+                            var isPickedByAr = !string.IsNullOrEmpty(item.ArUserId);
+
+                            <tr>
+                                <td>@rowNum</td>
+                                <td><code>@(item.Wonum ?? "-")</code></td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 250px;" title="@item.JobName">
+                                        @item.JobName
+                                    </span>
+                                </td>
+                                <td>@vendor</td>
+                                <td>
+                                    @if (hasAccrual)
+                                    {
+                                        <span class="badge bg-success">@(item.StatusAccrual ?? "Filled")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    }
+                                </td>
+                                <td>@(item.NoAccrual ?? "-")</td>
+                                <td class="text-end">@FormatMoney(item.PotensiAccrual)</td>
+                                <td>
+                                    @if (item.AccrualFilledByUser != null)
+                                    {
+                                        <small class="text-muted">
+                                            @item.AccrualFilledByUser.FullName<br />
+                                            <span class="text-secondary">@FormatDate(item.AccrualFilledAt)</span>
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (User.IsInRole("Admin") || (User.IsInRole("AR") && isPickedByAr))
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm @(hasAccrual ? "btn-outline-primary" : "btn-primary") btn-edit-accrual"
+                                                data-procurement-id="@item.ProcurementId"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#accrualModal">
+                                            <i class="bi @(hasAccrual ? "bi-pencil" : "bi-plus-lg")"></i>
+                                            @(hasAccrual ? "Edit" : "Isi Data")
+                                        </button>
+                                    }
+                                    else if (User.IsInRole("AR") && !isPickedByAr)
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-exclamation-triangle"></i> Pickup Dulu
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">View Only</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                        <a class="page-link" href="?page=@(Model.CurrentPage - 1)&search=@Model.Search&filter=@Model.Filter">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="?page=@i&search=@Model.Search&filter=@Model.Filter">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                        <a class="page-link" href="?page=@(Model.CurrentPage + 1)&search=@Model.Search&filter=@Model.Filter">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

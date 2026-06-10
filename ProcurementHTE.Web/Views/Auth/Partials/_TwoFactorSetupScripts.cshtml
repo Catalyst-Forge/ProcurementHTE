@@ -1,0 +1,151 @@
+@* Two Factor Setup Scripts *@
+<script>
+    (() => {
+        const sendUrl = '@Url.Action("SendTwoFactorSetupCode", "Auth")';
+        const setupTabs = document.getElementById('twoFactorSetupTabs');
+        const DEFAULT_COOLDOWN = 60;
+
+        function initStableTabs() {
+            if (!setupTabs) return;
+            let previousTop = null;
+
+            setupTabs.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+                tab.addEventListener('show.bs.tab', () => {
+                    previousTop = setupTabs.getBoundingClientRect().top;
+                });
+
+                tab.addEventListener('shown.bs.tab', () => {
+                    if (previousTop === null) return;
+                    const nextTop = setupTabs.getBoundingClientRect().top;
+                    const delta = nextTop - previousTop;
+                    if (Math.abs(delta) > 1) {
+                        window.scrollBy(0, delta);
+                    }
+                    previousTop = null;
+                });
+            });
+        }
+
+        function startCooldown(button, seconds, statusSelector, baseMessage) {
+            if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
+                return;
+
+            button.dataset.cooldownActive = '1';
+            const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
+            let remaining = seconds;
+            button.disabled = true;
+            const baseText = baseMessage ? `${baseMessage} ` : '';
+
+            const updateStatus = () => {
+                if (statusEl) {
+                    statusEl.textContent = `${baseText}Tunggu ${remaining} detik sebelum mengirim ulang.`;
+                    statusEl.classList.remove('text-success', 'text-danger');
+                    statusEl.classList.add('text-warning');
+                }
+            };
+
+            updateStatus();
+
+            const intervalId = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(intervalId);
+                    button.disabled = false;
+                    button.dataset.cooldownActive = '';
+                    if (statusEl) {
+                        statusEl.textContent = baseMessage ?? '';
+                        if (!baseMessage)
+                            statusEl.classList.remove('text-warning');
+                    }
+                } else {
+                    updateStatus();
+                }
+            }, 1000);
+        }
+
+        function initCooldownButtons() {
+            document.querySelectorAll('[data-cooldown-button]').forEach(button => {
+                const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
+                if (seconds > 0) {
+                    startCooldown(button, seconds, button.dataset.statusTarget, null);
+                }
+            });
+        }
+
+        async function sendSetupCode(button, method) {
+            const form = button.closest('form');
+            if (!form) return;
+            const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const statusEl = button.dataset.statusTarget ? document.querySelector(button.dataset.statusTarget) : null;
+            const original = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengirim...`;
+            if (statusEl) {
+                statusEl.textContent = '';
+                statusEl.classList.remove('text-success', 'text-danger');
+            }
+            let cooldownData = null;
+
+            try {
+                const body = new URLSearchParams();
+                body.append('method', method);
+                const response = await fetch(sendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token ?? ''
+                    },
+                    body: body.toString()
+                });
+                const data = await response.json();
+                if (response.ok && data?.success) {
+                    if (statusEl) {
+                        statusEl.textContent = data.message ?? 'Kode dikirim.';
+                        statusEl.classList.add('text-success');
+                    }
+                    if (data.devCode) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Kode dikirim',
+                            html: `<div class="fw-bold fs-4">${data.devCode}</div><small class="text-muted d-block mt-2">Dev mode.</small>`
+                        });
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'Kode dikirim', text: data.message ?? 'Silakan cek email/SMS.' });
+                    }
+                    cooldownData = { seconds: data.cooldown ?? DEFAULT_COOLDOWN, message: data.message ?? 'Kode dikirim.' };
+                } else {
+                    const message = data?.message ?? 'Gagal mengirim kode.';
+                    if (statusEl) {
+                        statusEl.textContent = message;
+                        statusEl.classList.add('text-danger');
+                    }
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: message });
+                    if (data?.remaining) {
+                        cooldownData = { seconds: data.remaining, message };
+                    }
+                }
+            } catch {
+                if (statusEl) {
+                    statusEl.textContent = 'Terjadi kesalahan jaringan.';
+                    statusEl.classList.add('text-danger');
+                }
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan jaringan.' });
+            } finally {
+                button.disabled = false;
+                button.innerHTML = original;
+                if (cooldownData && cooldownData.seconds > 0) {
+                    startCooldown(button, cooldownData.seconds, button.dataset.statusTarget, cooldownData.message);
+                }
+            }
+        }
+
+        document.querySelectorAll('[data-send-setup-code]').forEach(button => {
+            const method = button.dataset.method;
+            button.addEventListener('click', () => sendSetupCode(button, method));
+        });
+
+        if (typeof initOtpInputs === 'function') initOtpInputs();
+        initCooldownButtons();
+        initStableTabs();
+    })();
+</script>

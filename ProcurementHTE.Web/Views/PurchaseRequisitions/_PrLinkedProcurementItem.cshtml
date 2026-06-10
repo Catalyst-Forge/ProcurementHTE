@@ -1,0 +1,38 @@
+@model PurchaseRequisitionLinkedProcurementViewModel
+
+@{
+    var p = Model.Procurement;
+    var collapseId = $"c{Model.Index}";
+    var badge = (p.StatusName ?? "").ToLower() switch
+    {
+        "approved" or "completed" => "bg-success",
+        "pending" or "pending approval" => "bg-warning text-dark",
+        "uploaded" => "bg-info",
+        _ => "bg-secondary"
+    };
+}
+
+<div class="accordion-item border-0 border-top rounded-bottom-4 overflow-hidden">
+    <h2 class="accordion-header">
+        <button class="accordion-button @(Model.IsFirst ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId">
+            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                <div>
+                    <strong>@p.ProcNum</strong>
+                    <span class="text-muted ms-1">- @p.JobName</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge @badge">@p.StatusName</span>
+                    <span id="linked-doc-count-@p.ProcurementId" class="badge bg-light text-dark border">@p.CompletedDocs/@p.TotalDocs</span>
+                </div>
+            </div>
+        </button>
+    </h2>
+
+    <div id="@collapseId" class="accordion-collapse collapse @(Model.IsFirst ? "show" : "")" data-bs-parent="#procAccordion">
+        <div class="accordion-body">
+            @await Html.PartialAsync("_PrLinkedProcurementInfo", p)
+            @await Html.PartialAsync("_PrRoundLettersGrid", Model)
+            @await Html.PartialAsync("_PrRequiredDocumentsCard", Model, ViewData)
+        </div>
+    </div>
+</div>

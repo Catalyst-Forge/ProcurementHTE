@@ -72,6 +72,10 @@
     isConnected = true;
     updateConnectionStatus("connected");
     startHeartbeat(); // Restart heartbeat after reconnection
+    // Rejoin dashboard_viewers group after reconnection
+    connection.invoke("JoinDashboardViewers")
+      .then(() => console.log("Rejoined dashboard_viewers group"))
+      .catch(err => console.error("Failed to rejoin dashboard_viewers group:", err));
     // Refresh dashboard data after reconnection
     refreshDashboardData();
   });
@@ -93,14 +97,13 @@
     console.log("FullName:", data.fullName);
     console.log("===========================================");
     updateUserActivityUI(data);
+    window.DashboardUI.updateUserActivityUI(data);
   });
 
-  // Listen for dashboard data updates
   connection.on("DashboardDataUpdated", function () {
     console.log("Dashboard data updated");
-    refreshDashboardData();
+    window.DashboardUI.refreshDashboardData();
   });
-
   // Start connection
   connection
     .start()
@@ -109,6 +112,11 @@
       isConnected = true;
       updateConnectionStatus("connected");
       startHeartbeat(); // Start sending heartbeats
+      
+      // Join dashboard_viewers group to receive UserActivityChanged events
+      connection.invoke("JoinDashboardViewers")
+        .then(() => console.log("Joined dashboard_viewers group"))
+        .catch(err => console.error("Failed to join dashboard_viewers group:", err));
     })
     .catch((error) => {
       console.error("Failed to connect to dashboard hub:", error);
@@ -145,177 +153,6 @@
   }
 
   // Update user activity in the UI
-  function updateUserActivityUI(data) {
-    console.log("=== UPDATE USER ACTIVITY UI START ===");
-    console.log("Looking for user ID:", data.userId);
-
-    // Get all user rows to debug selector
-    const allUserRows = document.querySelectorAll("tr[data-user-id]");
-    console.log("Total user rows found:", allUserRows.length);
-    if (allUserRows.length > 0) {
-      console.log(
-        "Sample user IDs in table:",
-        Array.from(allUserRows)
-          .slice(0, 3)
-          .map((r) => r.getAttribute("data-user-id"))
-          .join(", ")
-      );
-    }
-
-    const userRow = document.querySelector(`tr[data-user-id="${data.userId}"]`);
-    if (!userRow) {
-      // User not in current view, might need to refresh the whole list
-      console.log("❌ User row NOT FOUND for ID:", data.userId);
-      console.log(
-        "All user IDs in table:",
-        Array.from(allUserRows).map((r) => r.getAttribute("data-user-id"))
-      );
-      console.log("Refreshing user activity table...");
-      refreshUserActivityTable();
-      return;
-    }
-
-    console.log("✓ Found user row for ID:", data.userId);
-    console.log("Current row status:", userRow.getAttribute("data-user-status"));
-    console.log("New status:", data.isOnline ? "online" : "offline");
-
-    // Update data-user-status attribute
-    userRow.setAttribute("data-user-status", data.isOnline ? "online" : "offline");
-
-    // Update status icon (first td with icon)
-    const iconCell = userRow.querySelector(".user-status-icon");
-    if (iconCell) {
-      if (data.isOnline) {
-        // Online: person-fill with pulse indicator
-        iconCell.className = "bi bi-person-fill text-success fs-5 user-status-icon";
-        iconCell.innerHTML = "";
-        const parentDiv = iconCell.parentElement;
-        if (parentDiv && !parentDiv.querySelector(".position-absolute")) {
-          const pulseSpan = document.createElement("span");
-          pulseSpan.className =
-            "position-absolute top-0 start-100 translate-middle p-1 bg-success border border-light rounded-circle";
-          pulseSpan.innerHTML = '<span class="visually-hidden">Online</span>';
-          parentDiv.style.position = "relative";
-          parentDiv.appendChild(pulseSpan);
-        }
-      } else {
-        // Offline: person outline without pulse
-        iconCell.className = "bi bi-person text-secondary fs-5 user-status-icon";
-        const parentDiv = iconCell.parentElement;
-        if (parentDiv) {
-          const pulseSpan = parentDiv.querySelector(".position-absolute");
-          if (pulseSpan) pulseSpan.remove();
-        }
-      }
-    }
-
-    // Update status badge
-    const badge = userRow.querySelector(".user-status-badge");
-    if (badge) {
-      badge.className = "badge user-status-badge";
-      if (data.isOnline) {
-        badge.classList.add("bg-success");
-        badge.innerHTML = '<i class="bi bi-circle-fill" style="font-size: 6px;"></i> Online';
-      } else {
-        badge.classList.add("bg-secondary");
-        badge.innerHTML = '<i class="bi bi-circle" style="font-size: 6px;"></i> Offline';
-      }
-    }
-
-    // Update timestamp
-    const timestamp = userRow.querySelector(".user-last-activity");
-    if (timestamp) {
-      const timeAgo = data.timestamp ? getTimeAgo(new Date(data.timestamp)) : "Baru saja";
-      timestamp.className = data.isOnline ? "text-success" : "text-muted";
-      timestamp.innerHTML = `<i class="bi bi-clock"></i> ${data.isOnline ? "Online" : "Offline"} - ${timeAgo}`;
-    }
-
-    // Update online users count
-    updateOnlineUsersCount();
-
-    // Log successful update (no toast notification needed)
-    console.log(`✓ User ${data.userId} status updated to ${data.isOnline ? "ONLINE" : "OFFLINE"}`);
-  }
-
-  // Refresh the entire user activity table
-  function refreshUserActivityTable() {
-    const tableContainer = document.querySelector("[data-user-activity-table]");
-    if (!tableContainer) return;
-
-    // Show loading state
-    const loadingHtml =
-      '<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-
-    fetch(window.location.href, {
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    })
-      .then((response) => response.text())
-      .then((html) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const newTable = doc.querySelector("[data-user-activity-table]");
-
-        if (newTable) {
-          tableContainer.innerHTML = newTable.innerHTML;
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to refresh user activity table:", error);
-      });
-  }
-
-  // Update online users count badge
-  function updateOnlineUsersCount() {
-    const onlineBadge = document.querySelector("[data-online-users-count]");
-    const offlineBadge = document.querySelector("[data-offline-users-count]");
-
-    const allRows = document.querySelectorAll("[data-user-id]");
-    const onlineRows = document.querySelectorAll('[data-user-status="online"]');
-    const offlineRows = document.querySelectorAll('[data-user-status="offline"]');
-
-    if (onlineBadge) {
-      onlineBadge.textContent = onlineRows.length;
-    }
-
-    if (offlineBadge) {
-      offlineBadge.textContent = offlineRows.length;
-    }
-
-    console.log(
-      `Counter updated - Online: ${onlineRows.length}, Offline: ${offlineRows.length}, Total: ${allRows.length}`
-    );
-  }
-
-  // Refresh entire dashboard data
-  function refreshDashboardData() {
-    // Trigger a soft refresh of dashboard metrics without full page reload
-    console.log("Refreshing dashboard metrics...");
-
-    // You can implement partial updates here
-    // For now, we'll just refresh the user activity table
-    refreshUserActivityTable();
-  }
-
-  // Helper: Calculate time ago
-  function getTimeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-
-    if (seconds < 60) return "Baru saja";
-
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} menit yang lalu`;
-
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} jam yang lalu`;
-
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} hari yang lalu`;
-
-    return date.toLocaleDateString("id-ID");
-  }
-
   // Heartbeat management
   let heartbeatInterval = null;
 

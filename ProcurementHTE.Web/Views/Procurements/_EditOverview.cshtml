@@ -1,0 +1,57 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProcurementEditViewModel
+@using ProcurementHTE.Core.Enums
+@{
+    var contractTypeOptions = Html.GetEnumSelectList<ContractType>();
+    var categoryOptions = Html.GetEnumSelectList<ProcurementCategory>();
+    var projectRegionOptions = Html.GetEnumSelectList<ProjectRegion>();
+}
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Procurement Overview</legend>
+        <hr />
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="ContractType" class="form-label"></label>
+                <select asp-for="ContractType" class="form-select" asp-items="contractTypeOptions">
+                    <option value="">Select contract type</option>
+                </select>
+                <span asp-validation-for="ContractType" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ProcurementCategory" class="form-label">Jenis Pengadaan</label>
+                <select asp-for="ProcurementCategory" class="form-select" asp-items="categoryOptions">
+                </select>
+                <span asp-validation-for="ProcurementCategory" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <label asp-for="JobName" class="form-label"></label>
+                <textarea asp-for="JobName" class="form-control" rows="3" maxlength="255"></textarea>
+                <span asp-validation-for="JobName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-md-4">
+                <label asp-for="ProjectRegion" class="form-label"></label>
+                <select asp-for="ProjectRegion" class="form-select" asp-items="projectRegionOptions">
+                    <option value="">Select project region</option>
+                </select>
+                <span asp-validation-for="ProjectRegion" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ProjectCode" class="form-label"></label>
+                <input asp-for="ProjectCode" class="form-control" maxlength="64" />
+                <span asp-validation-for="ProjectCode" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Wonum" class="form-label"></label>
+                <input asp-for="Wonum" class="form-control" maxlength="100" />
+                <span asp-validation-for="Wonum" class="text-danger"></span>
+            </div>
+        </div>
+    </fieldset>
+</section>

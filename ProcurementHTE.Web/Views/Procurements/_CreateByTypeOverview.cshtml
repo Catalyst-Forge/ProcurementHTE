@@ -1,0 +1,74 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using ProcurementHTE.Core.Enums
+@using ProcurementHTE.Core.Models
+@model ProcurementCreateViewModel
+@{
+    var jobTypes = (Model.JobTypes ?? Enumerable.Empty<JobTypes>()).ToList();
+    var procurement = Model.Procurement ??= new Procurement();
+    var jobTypeOptions = new SelectList(jobTypes, "JobTypeId", "TypeName", procurement.JobTypeId);
+    var contractTypeOptions = Html.GetEnumSelectList<ContractType>();
+    var categoryOptions = Html.GetEnumSelectList<ProcurementCategory>();
+    var projectRegionOptions = Html.GetEnumSelectList<ProjectRegion>();
+}
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <fieldset class="card-body">
+        <legend class="card-title fw-semibold">Procurement Overview</legend>
+        <hr />
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label" asp-for="Procurement.JobTypeId">Job Type</label>
+                <select class="form-select" asp-for="Procurement.JobTypeId" asp-items="jobTypeOptions"></select>
+                <span class="text-danger" asp-validation-for="Procurement.JobTypeId"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Procurement.ContractType" class="form-label"></label>
+                <select asp-for="Procurement.ContractType" class="form-select" asp-items="contractTypeOptions"></select>
+                <span class="text-danger" asp-validation-for="Procurement.ContractType"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Procurement.ProcurementCategory" class="form-label">Jenis Pengadaan</label>
+                <select asp-for="Procurement.ProcurementCategory"
+                        class="form-select"
+                        asp-items="categoryOptions"
+                        hx-get="@Url.Action("RenderRaNumberField", "Procurements")"
+                        hx-trigger="change"
+                        hx-target="#raNumberWrapper"
+                        hx-swap="innerHTML"
+                        hx-vals="js:{category: event.target.value, raNumber: document.getElementById('Procurement_RaNumber')?.value || ''}"></select>
+                <span class="text-danger" asp-validation-for="Procurement.ProcurementCategory"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <label asp-for="Procurement.JobName" class="form-label"></label>
+                <textarea asp-for="Procurement.JobName" class="form-control" rows="3" maxlength="255"></textarea>
+                <span class="text-danger" asp-validation-for="Procurement.JobName"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-0">
+            <div class="col-md-4">
+                <label asp-for="Procurement.ProjectRegion" class="form-label"></label>
+                <select asp-for="Procurement.ProjectRegion" class="form-select" asp-items="projectRegionOptions"></select>
+                <span class="text-danger" asp-validation-for="Procurement.ProjectRegion"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Procurement.ProjectCode" class="form-label"></label>
+                <input asp-for="Procurement.ProjectCode" class="form-control" maxlength="64" />
+                <span class="text-danger" asp-validation-for="Procurement.ProjectCode"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Procurement.Wonum" class="form-label"></label>
+                <input asp-for="Procurement.Wonum" class="form-control" maxlength="100" />
+                <span class="text-danger" asp-validation-for="Procurement.Wonum"></span>
+            </div>
+        </div>
+    </fieldset>
+</section>

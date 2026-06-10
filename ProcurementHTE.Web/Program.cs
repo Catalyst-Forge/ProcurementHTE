@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Options;
 using ProcurementHTE.Infrastructure.Data;
@@ -6,6 +7,8 @@ using ProcurementHTE.Web.Extensions;
 using ProcurementHTE.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.ValidateProductionSettings(builder.Environment);
 
 // === DataProtection Keys ===
 var keysPath = builder.Configuration["DataProtection:KeysPath"] ?? "/var/www/ProcurementHTE/keys";
@@ -25,12 +28,22 @@ builder.Services.AddHttpClient("MinioProxy");
 builder.Services.Configure<SecurityBypassOptions>(
     builder.Configuration.GetSection("SecurityBypass")
 );
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // SignalR for real-time updates
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<
     ProcurementHTE.Core.Interfaces.IUserActivityNotifier,
     ProcurementHTE.Infrastructure.Services.UserActivityNotifier<ProcurementHTE.Web.Hubs.DashboardHub>
+>();
+builder.Services.AddSingleton<
+    ProcurementHTE.Core.Interfaces.INotificationPusher,
+    ProcurementHTE.Infrastructure.Services.NotificationPusher<ProcurementHTE.Web.Hubs.DashboardHub>
 >();
 var app = builder.Build();
 
@@ -55,6 +68,7 @@ else
     app.UseHsts();
 }
 
+app.UseForwardedHeaders();
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 app.UseHttpsRedirection();
@@ -78,20 +92,53 @@ app.MapHub<ProcurementHTE.Web.Hubs.DashboardHub>("/hubs/dashboard");
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<AppDbContext>();
 
     try
     {
-        // 1️⃣ Jalankan migrasi otomatis jika belum ada tabel
-        var context = services.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+        // 1️⃣ Cek apakah ada pending migrations
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation(
+                "Applying {Count} pending migration(s)...",
+                pendingMigrations.Count()
+            );
+            foreach (var migration in pendingMigrations)
+            {
+                logger.LogInformation("  - {Migration}", migration);
+            }
+
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogInformation("Database is up to date. No pending migrations.");
+        }
+
+        // 2️⃣ Jalankan seeder
         await DataSeeder.SeedAsync(services);
+        logger.LogInformation("Data seeding completed.");
+    }
+    catch (Exception ex)
+        when (ex.Message.Contains("already exists")
+            || ex.Message.Contains("already an object named")
+            || ex.Message.Contains("duplicate key")
+        )
+    {
+        // Skip jika table/column sudah ada
+        logger.LogWarning(
+            "Migration skipped - database objects already exist: {Message}",
+            ex.Message
+        );
     }
     catch (Exception ex)
     {
-        throw new InvalidOperationException(
-            $"Failed to migrate or seed database: {ex.Message}",
-            ex
-        );
+        logger.LogError(ex, "Failed to migrate or seed database");
+        throw;
     }
 }
 

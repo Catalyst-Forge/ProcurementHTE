@@ -1,0 +1,79 @@
+<partial name="_ValidationScriptsPartial" />
+<script>
+    (function initEditProcurement() {
+        const offersContainer = document.getElementById('offers-container');
+        const btnAddOffer = document.getElementById('btn-add-offer');
+
+        // Debug log
+        console.log('Edit Procurement Script Loaded', {
+            offersContainer: !!offersContainer,
+            btnAddOffer: !!btnAddOffer
+        });
+
+        const newKey = () => Math.random().toString(36).slice(2, 10);
+
+        const offerRowMarkup = (key) => `
+            <div class="col-12 offer-row position-relative">
+                <input type="hidden" name="Offers.Index" value="${key}" />
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-10">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Item Penawaran <span class="text-danger">*</span></label>
+                                <input class="form-control" name="Offers[${key}].ItemPenawaran" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Qty Items</label>
+                                <input class="form-control text-end" type="number" min="1" step="1" name="Offers[${key}].Qty" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Unit Items</label>
+                                <input class="form-control" name="Offers[${key}].Unit" placeholder="Pcs, Unit, Set..." />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-danger js-remove-offer w-100">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (btnAddOffer && offersContainer) {
+            // Remove any existing listeners to prevent duplicates
+            const newBtnAddOffer = btnAddOffer.cloneNode(true);
+            btnAddOffer.parentNode.replaceChild(newBtnAddOffer, btnAddOffer);
+
+            newBtnAddOffer.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Add offer clicked');
+                const key = newKey();
+                offersContainer.insertAdjacentHTML('beforeend', offerRowMarkup(key));
+
+                if (window.jQuery && $.validator && $.validator.unobtrusive) {
+                    $.validator.unobtrusive.parse(offersContainer);
+                }
+            });
+        } else {
+            console.error('Required elements not found:', {
+                offersContainer: !!offersContainer,
+                btnAddOffer: !!btnAddOffer
+            });
+        }
+
+        // Use event delegation for remove buttons
+        document.body.addEventListener('click', (event) => {
+            const btnOffer = event.target.closest('.js-remove-offer');
+            if (btnOffer) {
+                event.preventDefault();
+                console.log('Remove offer clicked');
+                const row = btnOffer.closest('.offer-row');
+                if (row) {
+                    row.remove();
+                }
+            }
+        });
+    })();
+</script>

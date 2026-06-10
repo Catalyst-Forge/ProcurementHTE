@@ -1,0 +1,58 @@
+.admin-activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.admin-dot {
+    font-size: 8px;
+}
+
+.admin-pr-icon-card {
+    background-color: rgba(111, 66, 193, 0.1);
+}
+
+.admin-pr-icon {
+    color: #6f42c1;
+}
+
+.admin-progress {
+    height: 25px;
+}
+
+.admin-status-col {
+    width: 50px;
+}
+
+.admin-winrate {
+    height: 20px;
+}
+
+.realtime-status {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.realtime-status.status-connected {
+    color: #198754;
+    background-color: #d1e7dd;
+}
+
+.realtime-status.status-reconnecting {
+    color: #ffc107;
+    background-color: #fff3cd;
+    animation: admin-pulse 1.5s ease-in-out infinite;
+}
+
+.realtime-status.status-disconnected,
+.realtime-status.status-error {
+    color: #dc3545;
+    background-color: #f8d7da;
+}
+
+@keyframes admin-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

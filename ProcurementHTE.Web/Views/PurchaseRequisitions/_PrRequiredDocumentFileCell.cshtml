@@ -1,0 +1,20 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+@if (Model.Document.Uploaded && !string.IsNullOrEmpty(Model.Document.FileName))
+{
+    <small class="text-muted">
+        <i class="bi bi-file-pdf text-danger"></i> @Model.Document.FileName
+    </small>
+
+    @if (Model.Document.Size.HasValue)
+    {
+        var sizeKb = Model.Document.Size.Value / 1024.0;
+        var sizeMb = sizeKb / 1024.0;
+        var sizeText = sizeMb >= 1 ? $"{sizeMb:F2} MB" : $"{sizeKb:F2} KB";
+        <span class="text-muted small">&bull; @sizeText</span>
+    }
+}
+else
+{
+    <span class="text-muted">-</span>
+}

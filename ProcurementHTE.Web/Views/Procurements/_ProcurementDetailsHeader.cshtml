@@ -1,0 +1,55 @@
+@model ProcurementDetailsPageViewModel
+
+@{
+    var procurement = Model.Procurement;
+}
+
+<header class="mb-3">
+    <div class="hstack flex-wrap justify-content-between my-2">
+        <h1 class="h2 fw-bold">@ViewData["Title"]</h1>
+
+        <button class="btn btn-primary d-md-none position-fixed bottom-0 end-0 mb-4 me-4 z-3"
+                type="button"
+                id="buttonNavToggle">
+            <i class="bi bi-three-dots-vertical"></i>
+        </button>
+
+        <div class="d-flex gap-2 flex-column flex-md-row bg-body p-3 p-md-0 mb-2 border rounded shadow group-nav-button"
+             id="groupNavButton"
+             role="group"
+             aria-label="Button Action">
+            @if (Model.CanPublish)
+            {
+                <button type="button" class="btn btn-success btn-publish" data-procurement-id="@procurement.ProcurementId" data-procnum="@procurement.ProcNum">
+                    <i class="bi bi-send-fill"></i> Publish
+                </button>
+            }
+            @if (Model.CanUnpublish)
+            {
+                <button type="button" class="btn btn-warning btn-unpublish" data-procurement-id="@procurement.ProcurementId" data-procnum="@procurement.ProcNum">
+                    <i class="bi bi-arrow-counterclockwise"></i> Batal Publish
+                </button>
+            }
+            @if (Model.CanEditDelete)
+            {
+                <a asp-action="Edit" asp-route-id="@procurement.ProcurementId" class="btn btn-outline-warning" role="button"><i class="bi bi-pencil-square"></i> Edit</a>
+                <a asp-action="Delete" asp-route-id="@procurement.ProcurementId" class="btn btn-outline-danger" role="button"><i class="bi bi-trash-fill"></i> Delete</a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary" role="button"><i class="bi bi-arrow-left"></i> Back to List</a>
+        </div>
+    </div>
+
+    <nav>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="procurement-tab" data-bs-toggle="tab" data-bs-target="#procurement-tab-pane" type="button" role="tab" aria-controls="procurement-tab-pane" aria-selected="true">Procurement Information</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pnl-tab" data-bs-toggle="tab" data-bs-target="#pnl-tab-pane" type="button" role="tab" aria-controls="pnl-tab-pane" aria-selected="false">Profit and Loss</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="document-tab" data-bs-toggle="tab" data-bs-target="#document-tab-pane" type="button" role="tab" aria-controls="document-tab-pane" aria-selected="false">Documents</button>
+            </li>
+        </ul>
+    </nav>
+</header>

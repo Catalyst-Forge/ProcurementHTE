@@ -1,0 +1,47 @@
+@using ProcurementHTE.Web.Models.Admin
+@model UserManagementIndexViewModel
+
+<div class="card mb-3">
+    <div class="card-header">
+        Filter
+    </div>
+    <div class="card-body">
+        <form method="get" class="row gy-2 gx-2 align-items-end">
+            <div class="col-md-4">
+                <label asp-for="Filters.Search" class="form-label">Search</label>
+                <input asp-for="Filters.Search" class="form-control" placeholder="Nama, email, username, jabatan..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="Filters.Role">Role</label>
+                <select asp-for="Filters.Role" class="form-select">
+                    <option value="">Semua Role</option>
+                    @foreach (var role in Model.AvailableRoles)
+                    {
+                        <option value="@role.Name">@role.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Filters.Status" class="form-label">Status</label>
+                <select asp-for="Filters.Status" class="form-select">
+                    <option value="">Semua</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Filters.TwoFactor" class="form-label">2FA</label>
+                <select asp-for="Filters.TwoFactor" class="form-select">
+                    <option value="">Semua</option>
+                    <option value="enabled">Aktif</option>
+                    <option value="disabled">Tidak Aktif</option>
+                </select>
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -124,7 +124,7 @@ public sealed class ProcurementDocumentQuery : IProcurementDocumentQuery
                 ProcDocumentId = lastDoc != null ? lastDoc.ProcDocumentId : null,
                 FileName = lastDoc != null ? lastDoc.FileName : null,
                 Size = lastDoc != null ? lastDoc.Size : null,
-                Status = lastDoc != null ? lastDoc.Status : null,
+                // Status removed - tracking sekarang di level PR
             };
 
         var items = await q.ToListAsync();

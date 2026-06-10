@@ -1,0 +1,78 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    var isMyPickups = (bool)(ViewData["IsMyPickups"] ?? false);
+    var badgeClass = ViewData["BadgeClass"] as Func<string, string> ?? (s => "bg-light text-body border");
+}
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr class="align-middle">
+                <th class="border-end">Procurement No.</th>
+                <th class="border-end">Job Name</th>
+                <th class="border-end">WO Number</th>
+                <th class="border-end">Start Date</th>
+                <th class="border-end">Job Type</th>
+                <th class="border-end">Status</th>
+                <th class="text-center width-15-rem">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any()) {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        @if (isMyPickups) {
+                            <text>Belum ada procurement yang Anda pickup</text>
+                        } else {
+                            <text>Tidak ada procurement yang perlu di-pickup</text>
+                        }
+                    </td>
+                </tr>
+            } else {
+                foreach (var item in Model.Items) {
+                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
+
+                    <tr>
+                        <td data-label="Procurement No.">
+                            @item.ProcNum
+                        </td>
+                        <td data-label="Job Name">
+                            @item.JobName
+                        </td>
+                        <td data-label="WO Number">
+                            @wonum
+                        </td>
+                        <td data-label="Start Date">
+                            @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
+                        </td>
+                        <td data-label="Job Type">
+                            @(item.JobType?.TypeName ?? "-")
+                        </td>
+                        <td data-label="Status">
+                            <span class="badge @badgeClass(item.Status?.StatusName ?? string.Empty)">
+                                @(item.Status?.StatusName ?? "-")
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@item.ProcurementId" 
+                               class="btn btn-outline-info btn-sm me-1" title="View Details">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                            @if (!isMyPickups) {
+                                <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                        <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

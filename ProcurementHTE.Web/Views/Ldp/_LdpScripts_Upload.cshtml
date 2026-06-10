@@ -1,0 +1,123 @@
+<script>
+    // ===== Constants (use var to avoid redeclaration error on HTMX swap) =====
+    var MAX_UPLOAD_SIZE = window.MAX_UPLOAD_SIZE || 50 * 1024 * 1024; // 50MB
+    var ANTIFORGERY_TOKEN = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+    // ===== Toast utility =====
+    function showToast(icon, title, text = '', timer = 4000) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon, title, text,
+            showConfirmButton: false,
+            timer, timerProgressBar: true,
+            didOpen: t => {
+                t.addEventListener('mouseenter', Swal.stopTimer);
+                t.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+    }
+
+    // ===== Modal helper =====
+    function closeUploadModal() {
+        const modalEl = document.getElementById('uploadModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+        
+        // Cleanup backdrop manually if stuck
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }, 300);
+    }
+
+    function openUploadModal(procurementId) {
+        document.getElementById('uploadProcurementId').value = procurementId;
+        document.getElementById('ldpFile').value = '';
+        const modalEl = document.getElementById('uploadModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    // ===== Reinit HTMX =====
+    function reinitHtmx() {
+        if (typeof htmx !== 'undefined' && htmx.process) {
+            htmx.process(document.body);
+        }
+    }
+
+    // ===== Upload handler =====
+    function handleUpload(e) {
+        e.preventDefault();
+        
+        const procurementId = document.getElementById('uploadProcurementId').value;
+        const fileInput = document.getElementById('ldpFile');
+        const file = fileInput.files[0];
+        const submitBtn = document.getElementById('btnSubmitUpload');
+
+        if (!file) {
+            showToast('warning', 'Pilih file terlebih dahulu');
+            return;
+        }
+
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+            showToast('error', 'Format tidak valid', 'Hanya file PDF yang diperbolehkan');
+            return;
+        }
+
+        // Validate file size
+        if (file.size > MAX_UPLOAD_SIZE) {
+            showToast('error', 'Ukuran file terlalu besar', 'Maksimal 50MB');
+            return;
+        }
+
+        // Disable button & show loading
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+
+        const formData = new FormData();
+        formData.append('procurementId', procurementId);
+        formData.append('ldpFile', file);
+
+        fetch('@Url.Action("UploadDocument", "Ldp")', {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': ANTIFORGERY_TOKEN
+            },
+            body: formData
+        })
+        .then(async res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Upload gagal');
+                return data;
+            } else {
+                if (!res.ok) throw new Error('Upload gagal');
+                return { success: true };
+            }
+        })
+        .then(data => {
+            closeUploadModal();
+            showToast('success', 'Upload berhasil!', 'Dokumen LDP berhasil diunggah');
+            
+            // Refresh page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        })
+        .catch(err => {
+            console.error('Upload error:', err);
+            showToast('error', 'Upload gagal', err.message);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    }
+
+</script>

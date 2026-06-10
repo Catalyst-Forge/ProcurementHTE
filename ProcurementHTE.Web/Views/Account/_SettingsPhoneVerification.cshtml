@@ -1,0 +1,60 @@
+@model AccountSettingsPageViewModel
+
+<div class="contact-tile">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <p class="text-muted small mb-1">Nomor HP</p>
+            <div class="d-flex align-items-center gap-2">
+                <h6 class="mb-1">@(!string.IsNullOrWhiteSpace(Model.Settings.Overview.PhoneNumber) ? Model.Settings.Overview.PhoneNumber : "Belum diisi")</h6>
+                @if (Model.Settings.Overview.PhoneNumberConfirmed)
+                {
+                    <i class="bi bi-check-circle-fill text-primary fs-5"></i>
+                }
+            </div>
+            <small class="text-muted">
+                Status:
+                @(Model.Settings.Overview.PhoneNumberConfirmed
+                    ? "Terverifikasi"
+                    : Model.SmsVerificationAvailable ? "Belum terverifikasi" : "Ditunda sementara")
+            </small>
+        </div>
+        <i class="bi bi-phone icon-lg text-primary"></i>
+    </div>
+
+    @if (!Model.SmsVerificationAvailable)
+    {
+        <div class="alert alert-info mt-3 mb-0 small">Verifikasi nomor HP sementara dinonaktifkan sampai gateway SMS/WhatsApp dikonfigurasi.</div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.Settings.Overview.PhoneNumber))
+    {
+        <div class="alert alert-warning mt-3 mb-0 small">Isi nomor HP terlebih dahulu di form profil sebelum melakukan verifikasi.</div>
+    }
+    else if (!Model.Settings.Overview.PhoneNumberConfirmed)
+    {
+        <form asp-action="SendPhoneVerification" method="post" class="mt-3">
+            <button type="submit" class="btn btn-outline-secondary w-100" data-cooldown-button data-label="Kirim OTP" data-cooldown-seconds="@Model.PhoneVerificationCooldown" data-status-target="#phoneVerificationStatus">
+                <i class="bi bi-chat-dots"></i> Kirim OTP
+            </button>
+        </form>
+        <div class="small text-muted mt-2" id="phoneVerificationStatus"></div>
+        <form asp-action="VerifyPhone" method="post" class="mt-2 d-flex flex-column gap-3">
+            <label class="form-label small">Masukkan kode OTP</label>
+            <input type="hidden" name="code" data-otp-hidden="settings.phone" />
+            <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="settings.phone">
+                @for (var i = 0; i < 6; i++)
+                {
+                    <input type="text" inputmode="numeric" maxlength="1" class="form-control text-center otp-input" data-otp-input />
+                }
+            </div>
+            <button type="submit" class="btn btn-success w-100">Verifikasi</button>
+        </form>
+        @if (Model.ShowPhoneVerify)
+        {
+            <div class="alert alert-warning mt-2 mb-0 small">Masukkan kode OTP yang baru dikirim ke nomor Anda.</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.DevPhoneOtp))
+        {
+            <div class="alert alert-info mt-2 mb-0 small">Dev OTP: <strong>@Model.DevPhoneOtp</strong></div>
+        }
+    }
+</div>

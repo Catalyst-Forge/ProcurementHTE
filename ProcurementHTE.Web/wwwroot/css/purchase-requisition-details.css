@@ -1,0 +1,43 @@
+.modal-xl {
+    max-width: 95%;
+}
+
+.btn-sm {
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.625rem;
+}
+
+.upload-input-stack {
+    min-width: 200px;
+}
+
+.upload-dropzone {
+    border: 1px dashed var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color 0.2s, background-color 0.2s;
+    white-space: nowrap;
+}
+
+.upload-dropzone.drag-over {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.upload-dropzone.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.upload-feedback {
+    min-height: 1.2rem;
+}
+
+.pr-pdf-preview-frame {
+    width: 100%;
+    height: 75vh;
+    border: none;
+    display: none;
+}

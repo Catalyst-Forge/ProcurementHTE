@@ -1,0 +1,65 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+@using ProcurementHTE.Core.Enums
+
+@{
+    ViewData["Title"] = $"Tracking - {Model.ProcNum}";
+
+    var statusColor = Model.CurrentStatus switch
+    {
+        ProcurementStatus.Rejected => "danger",
+        ProcurementStatus.NeedsRevisionData => "warning",
+        ProcurementStatus.NeedsRevisionPR => "warning",
+        ProcurementStatus.DonePO => "success",
+        _ => "primary"
+    };
+
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isAdmin = User.IsInRole("Admin");
+    var canModify = isAdmin || (!string.IsNullOrEmpty(Model.AppoUserId) && Model.AppoUserId == currentUserId);
+
+    var isAnalyst = User.IsInRole("Analyst HTE & LTS");
+    var isAsstManager = User.IsInRole("Assistant Manager HTE");
+    var isManager = User.IsInRole("Manager Transport & Logistic");
+    var canApprove = Model.IsWaitingApproval && (
+        isAdmin ||
+        (isAnalyst && Model.CurrentStatus == ProcurementStatus.WaitingApprovalAnalyst) ||
+        (isAsstManager && Model.CurrentStatus == ProcurementStatus.WaitingApprovalAsstManager) ||
+        (isManager && Model.CurrentStatus == ProcurementStatus.WaitingApprovalManager)
+    );
+
+    var isOperation = User.IsInRole("Operation");
+    var isAppo = User.IsInRole("AP-PO");
+    var isPicOps = !string.IsNullOrEmpty(Model.PicOpsUserId) && Model.PicOpsUserId == currentUserId;
+    var isAssignedAppo = !string.IsNullOrEmpty(Model.AppoUserId) && Model.AppoUserId == currentUserId;
+
+    ViewData["TrackingStatusColor"] = statusColor;
+    ViewData["CanModify"] = canModify;
+    ViewData["CanApprove"] = canApprove;
+    ViewData["CanResubmitData"] = Model.CurrentStatus == ProcurementStatus.NeedsRevisionData &&
+        (isAdmin || isOperation || isAnalyst || isPicOps);
+    ViewData["CanResubmitPR"] = Model.CurrentStatus == ProcurementStatus.NeedsRevisionPR &&
+        (isAdmin || isAppo || isAssignedAppo);
+}
+
+<div class="container-fluid py-4">
+    @await Html.PartialAsync("_TrackingHeader", Model)
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            @await Html.PartialAsync("_TrackingProcurementInfoCard", Model)
+            @await Html.PartialAsync("_TrackingQrCodeCard", Model)
+            @await Html.PartialAsync("_TrackingResponsibleUsersCard", Model)
+        </div>
+
+        <div class="col-lg-8">
+            @await Html.PartialAsync("_PnLSummaryCard", Model.PnLSummary)
+            @await Html.PartialAsync("_TrackingProgressCard", Model)
+            @await Html.PartialAsync("_TrackingSubmitActions", Model)
+            @await Html.PartialAsync("_TrackingRevisionCard", Model)
+            @await Html.PartialAsync("_TrackingApprovalActions", Model)
+            @await Html.PartialAsync("_TrackingHistoryCard", Model)
+        </div>
+    </div>
+</div>
+
+<script src="~/js/tracking-result.js"></script>`r`n<script src="~/js/tracking-result-revision.js"></script>

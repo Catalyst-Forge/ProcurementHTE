@@ -1,0 +1,110 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+@using ProcurementHTE.Core.Enums
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-file-text me-2"></i>Informasi Procurement
+        </h6>
+    </div>
+    <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+            <tr>
+                <td class="text-muted" style="width: 40%">Proc Number</td>
+                <td class="fw-medium">@Model.ProcNum</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Project</td>
+                <td>
+                    @{
+                        var projectBadgeClass = Model.ProjectRegion switch
+                        {
+                            ProjectRegion.SMTR => "bg-success",
+                            ProjectRegion.JWKT => "bg-primary",
+                            ProjectRegion.AKOMODASI => "bg-info",
+                            _ => "bg-secondary"
+                        };
+                    }
+                    <span class="badge @projectBadgeClass">@Model.ProjectRegion</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="text-muted">WO Number</td>
+                <td>@Model.Wonum</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Job Name</td>
+                <td>@Model.JobName</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Date</td>
+                <td>@Model.DocumentDate.ToString("dd MMM yyyy")</td>
+            </tr>
+            <tr>
+                <td class="text-muted">Documents</td>
+                <td>
+                    <span class="badge bg-@(Model.AllMandatoryDocsReady ? "success" : "warning")">
+                        @Model.UploadedMandatoryDocs/@Model.TotalMandatoryDocs uploaded
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        @if (!string.IsNullOrEmpty(Model.IspaNumber))
+        {
+            <hr class="my-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small">ISPA Number</span>
+                <span class="fw-medium">@Model.IspaNumber</span>
+            </div>
+            @if (Model.IspaDate.HasValue || Model.IspaSubmitDate.HasValue)
+            {
+                <div class="small text-muted mb-1">
+                    @if (Model.IspaDate.HasValue)
+                    {
+                        <span><i class="bi bi-calendar me-1"></i>Tgl ISPA: @Model.IspaDate.Value.ToString("dd MMM yyyy")</span>
+                    }
+                    @if (Model.IspaSubmitDate.HasValue)
+                    {
+                        <span class="ms-2"><i class="bi bi-send me-1"></i>Tgl Submit: @Model.IspaSubmitDate.Value.ToString("dd MMM yyyy")</span>
+                    }
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.IspaFileName))
+            {
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span class="small text-truncate" style="max-width: 150px;" title="@Model.IspaFileName">
+                        <i class="bi bi-file-pdf text-danger me-1"></i>@Model.IspaFileName
+                    </span>
+                    <a asp-controller="ProcurementTracking" asp-action="DownloadIspaFile" asp-route-procurementId="@Model.ProcurementId"
+                       class="btn btn-sm btn-outline-primary" title="Download ISPA">
+                        <i class="bi bi-download"></i>
+                    </a>
+                </div>
+            }
+            <small class="text-muted">Submitted: @Model.IspaSubmittedAt?.ToString("dd MMM yyyy HH:mm")</small>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.HardcopyEvidenceFileName))
+        {
+            <hr class="my-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Hardcopy Evidence</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="showHardcopyEvidence('@Model.ProcurementId')">
+                    <i class="bi bi-eye me-1"></i>View
+                </button>
+            </div>
+            <small class="text-muted">@Model.HardcopySubmittedAt?.ToString("dd MMM yyyy HH:mm")</small>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.PoNumber))
+        {
+            <hr class="my-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small">PO Number</span>
+                <span class="fw-medium text-success">@Model.PoNumber</span>
+            </div>
+            <small class="text-muted">@Model.PoSubmittedAt?.ToString("dd MMM yyyy HH:mm")</small>
+        }
+    </div>
+</div>

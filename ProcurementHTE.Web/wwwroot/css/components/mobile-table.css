@@ -1,0 +1,47 @@
+/* --- Tampilan Mobile (Pola Card Stack) --- */
+@media screen and (max-width: 575px) {
+  .mobile-table thead {
+    display: none;
+  }
+
+  .mobile-table,
+  .mobile-table tbody,
+  .mobile-table tr,
+  .mobile-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-table tbody {
+    padding: 0.3rem;
+  }
+
+  .mobile-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .mobile-table td {
+    border: none;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    text-align: right;
+  }
+
+  .mobile-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-table td[data-label]::before {
+    content: attr(data-label);
+    margin-right: auto;
+    position: sticky;
+    left: 0;
+    width: 45%;
+    padding-right: 10px;
+    font-weight: bold;
+    text-align: left;
+  }
+}

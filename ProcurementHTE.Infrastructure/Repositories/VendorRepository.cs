@@ -85,10 +85,20 @@ namespace ProcurementHTE.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DropVendorAsync(Vendor vendor)
+        public async Task DeleteAsync(Vendor vendor, string deletedByUserId)
         {
-            _context.Vendors.Remove(vendor);
-            await _context.SaveChangesAsync();
+            var entityToDelete = await _context.Vendors.FirstOrDefaultAsync(v => v.VendorId == vendor.VendorId);
+            if (entityToDelete != null)
+            {
+                entityToDelete.IsDeleted = true;
+                entityToDelete.DeletedAt = DateTime.UtcNow;
+                entityToDelete.DeletedBy = deletedByUserId;
+
+                // Prepend dash to VendorCode to allow reuse of the same code
+                entityToDelete.VendorCode = $"-{entityToDelete.VendorCode}";
+
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -1,0 +1,38 @@
+@model PurchaseRequisitionRoundLetterCardViewModel
+
+<table class="table table-sm table-hover mb-0">
+    <thead class="table-light">
+        <tr>
+            <th>Vendor</th>
+            @if (Model.ShowRound)
+            {
+                <th class="text-center">Ronde</th>
+            }
+            <th>No Surat</th>
+            <th class="text-center">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var letter in Model.Letters)
+        {
+            <tr>
+                <td>@(letter.Vendor?.VendorName ?? letter.VendorId)</td>
+                @if (Model.ShowRound)
+                {
+                    <td class="text-center"><span class="badge bg-secondary">@letter.Round</span></td>
+                }
+                <td>@(letter.LetterNumber ?? "-")</td>
+                <td class="text-center">
+                    <a asp-controller="ProcurementDocuments"
+                       asp-action="Download"
+                       asp-route-id="@letter.ProcDocumentId"
+                       asp-route-procurementId="@Model.ProcurementId"
+                       class="btn btn-sm btn-outline-primary"
+                       hx-boost="false">
+                        <i class="bi bi-download"></i>
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

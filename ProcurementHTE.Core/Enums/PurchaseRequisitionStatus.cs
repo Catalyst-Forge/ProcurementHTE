@@ -33,6 +33,13 @@ namespace ProcurementHTE.Core.Enums
         [Description("Done PO")]
         DonePO = 8,
 
+        /// <summary>
+        /// Procurement dalam PR ini dikembalikan karena tidak bisa digabung.
+        /// PR perlu di-review dan procurement di-pickup ulang.
+        /// </summary>
+        [Description("Returned from Procurement")]
+        ReturnedFromProcurement = 10,
+
         [Description("Rejected")]
         Rejected = 99
     }

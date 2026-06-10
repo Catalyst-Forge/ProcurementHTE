@@ -30,6 +30,23 @@ namespace ProcurementHTE.Infrastructure.Services
         {
             if (string.IsNullOrWhiteSpace(_options.ProviderUrl))
                 throw new InvalidOperationException("URL provider SMS belum dikonfigurasi.");
+            if (
+                _options.ProviderUrl.Contains("example.com", StringComparison.OrdinalIgnoreCase)
+                || _options.ProviderUrl.Contains("example.", StringComparison.OrdinalIgnoreCase)
+            )
+                throw new InvalidOperationException(
+                    "URL provider SMS masih contoh/dummy. Isi SmsSender:ProviderUrl dengan endpoint provider SMS/WhatsApp yang asli."
+                );
+            if (
+                string.Equals(
+                    _options.ApiKey,
+                    "real-provider-api-key",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+                throw new InvalidOperationException(
+                    "API key SMS masih placeholder. Isi SmsSender:ApiKey dengan key provider yang asli."
+                );
 
             var client = _httpClientFactory.CreateClient("SmsProvider");
 

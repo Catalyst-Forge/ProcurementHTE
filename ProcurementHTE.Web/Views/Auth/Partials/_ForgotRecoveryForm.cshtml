@@ -1,0 +1,36 @@
+@model ProcurementHTE.Web.Models.Auth.ForgotPasswordPageViewModel
+@{
+    var activeTab = (Model.ActiveTab ?? "recovery").ToLowerInvariant();
+}
+<div class="tab-pane fade @(activeTab == "recovery" ? "show active" : string.Empty)" id="tab-recovery" role="tabpanel">
+    <div class="card shadow-sm equal-card">
+        <div class="card-body d-flex flex-column">
+            <h5 class="mb-1">Reset Password via Recovery Code</h5>
+            <p class="text-muted">Gunakan recovery code 2FA yang sudah Anda simpan sebelumnya.</p>
+            <form asp-action="ResetPasswordWithRecovery" method="post" class="mt-3 d-flex flex-column gap-3 flex-grow-1">
+                <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+                <div>
+                    <label asp-for="Recovery.Identifier" class="form-label"></label>
+                    <input asp-for="Recovery.Identifier" class="form-control" />
+                    <span asp-validation-for="Recovery.Identifier" class="text-danger small"></span>
+                </div>
+                <div>
+                    <label asp-for="Recovery.RecoveryCode" class="form-label"></label>
+                    <input asp-for="Recovery.RecoveryCode" class="form-control" placeholder="XXXX-XXXX" />
+                    <span asp-validation-for="Recovery.RecoveryCode" class="text-danger small"></span>
+                </div>
+                <div>
+                    <label asp-for="Recovery.NewPassword" class="form-label"></label>
+                    <input asp-for="Recovery.NewPassword" class="form-control" />
+                    <span asp-validation-for="Recovery.NewPassword" class="text-danger small"></span>
+                </div>
+                <div>
+                    <label asp-for="Recovery.ConfirmPassword" class="form-label"></label>
+                    <input asp-for="Recovery.ConfirmPassword" class="form-control" />
+                    <span asp-validation-for="Recovery.ConfirmPassword" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-auto">Reset dengan Recovery Code</button>
+            </form>
+        </div>
+    </div>
+</div>

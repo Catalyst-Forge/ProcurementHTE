@@ -1,0 +1,78 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
+@{
+    var jobTypeName = Model.JobTypeName ?? ViewBag.JobTypeName ?? "Angkutan";
+    var isPengangkutan = jobTypeName == "Angkutan";
+    var isSewaUnit = jobTypeName == "StandBy";
+    var isMoving = jobTypeName == "Moving";
+}
+
+<section class="col-12" aria-labelledby="pdc-section-title">
+    <div class="card shadow-sm">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold" id="pdc-section-title">Billing to PDC (Revenue Builder per Item)</legend>
+            <hr />
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="min-width:220px">Offer Item</th>
+                            @if (isPengangkutan)
+                            {
+                                <th class="text-end" style="width:100px">Qty Items</th>
+                                <th class="text-end" style="width:100px">Unit Items</th>
+                                <th class="text-end" style="width:180px">Base Price (400km)</th>
+                                <th class="text-end" style="width:160px">Additional Rate</th>
+                                <th class="text-end" style="width:140px">KM/25</th>
+                                <th class="text-end" style="width:180px">Operator Cost</th>
+                            }
+                            else
+                            {
+                                <th class="text-end" style="width:100px">Qty Items</th>
+                                <th class="text-end" style="width:100px">Unit Items</th>
+                                <th class="text-end" style="width:160px">Quantity/Durasi</th>
+                                <th class="text-end" style="width:120px">Unit Revenue</th>
+                                <th class="text-end" style="width:180px">Base Price</th>
+                            }
+                            <th class="text-end" style="width:180px">Revenue</th>
+                        </tr>
+                    </thead>
+                    <partial name="~/Views/Procurements/ProfitLoss/_ProfitLossBillingRows.cshtml" />
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="@(isPengangkutan ? 7 : 6)" class="text-end fw-bold">TOTAL</th>
+                            <th class="text-end">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text fw-bold">Rp</span>
+                                    <input id="revenue" class="form-control form-control-sm text-end fw-bold" readonly />
+                                </div>
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @if (isPengangkutan)
+            {
+                <small class="text-muted">
+                    <strong>Formula Pengangkutan:</strong><br />
+                    KM/25 = (Distance - 400) &divide; 25 <br />
+                    Operator cost per item = <em>Additional Rate &times; KM/25</em><br />
+                    Revenue per item = <em>(Base Price + Operator Cost) &times; UnitQty</em>
+                </small>
+            }
+            else if (isSewaUnit)
+            {
+                <small class="text-muted">
+                    <strong>Formula Sewa Unit:</strong><br />
+                    Revenue per item = <em>Base Price &times; Quantity/Durasi &times; UnitQty</em>
+                </small>
+            }
+            else if (isMoving)
+            {
+                <small class="text-muted">
+                    <strong>Formula Moving:</strong><br />
+                    Revenue per item = <em>Base Price &times; Quantity &times; UnitQty</em>
+                </small>
+            }
+        </fieldset>
+    </div>
+</section>

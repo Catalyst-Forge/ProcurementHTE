@@ -1,0 +1,49 @@
+@model AccountSettingsPageViewModel
+
+<div class="alert alert-success small mb-3">
+    2FA aktif menggunakan metode <strong>@Model.Settings.Overview.TwoFactorMethod</strong>.
+</div>
+@if (Model.RequireEmailVerificationForTwoFactor)
+{
+    <div class="alert alert-warning small">
+        Email @Model.Settings.Overview.Email belum terverifikasi sehingga 2FA Email tidak dapat digunakan.
+        <form asp-action="SendEmailVerification" method="post" class="mt-2">
+            <button type="submit" class="btn btn-sm btn-outline-primary" data-cooldown-button data-label="Kirim magic link" data-cooldown-seconds="@Model.EmailVerificationCooldown" data-status-target="#emailVerificationStatus">
+                Kirim magic link
+            </button>
+        </form>
+    </div>
+}
+@if (Model.RequirePhoneVerificationForTwoFactor)
+{
+    <div class="alert alert-warning small">
+        Nomor HP belum terverifikasi sehingga 2FA SMS tidak dapat digunakan. Verifikasi nomor terlebih dahulu di bagian informasi tambahan.
+        @if (!string.IsNullOrWhiteSpace(Model.Settings.Overview.PhoneNumber))
+        {
+            <form asp-action="SendPhoneVerification" method="post" class="mt-2">
+                <button type="submit" class="btn btn-sm btn-outline-primary" data-cooldown-button data-label="Kirim OTP" data-cooldown-seconds="@Model.PhoneVerificationCooldown" data-status-target="#phoneVerificationStatus">
+                    Kirim OTP verifikasi
+                </button>
+            </form>
+        }
+    </div>
+}
+
+<div class="d-flex flex-wrap gap-2 align-items-center">
+    <div>
+        <div class="fw-semibold">@Model.Settings.TwoFactor.RecoveryCodesLeft tersisa</div>
+        <small class="text-muted">Recovery code dapat digunakan saat kehilangan akses device.</small>
+    </div>
+    @if (Model.HasStoredRecoveryCodes)
+    {
+        <form asp-action="GenerateRecoveryCodes" method="post" class="ms-auto">
+            <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-repeat"></i> Generate Codes</button>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-warning w-100 mt-3 mb-0 small">Anda belum memiliki recovery codes. Generate terlebih dahulu untuk berjaga-jaga.</div>
+    }
+</div>
+
+@await Html.PartialAsync("_SettingsRecoveryCodes", Model)

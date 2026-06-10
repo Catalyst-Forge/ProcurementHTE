@@ -1,0 +1,108 @@
+@model ProcurementHTE.Web.Models.ViewModels.DashboardViewModel
+@functions {
+    string GetStatusBadgeClass(string status) {
+        return status?.ToLower() switch {
+            "created" => "success",
+            "draft" => "secondary",
+            "in progress" => "primary",
+            "completed" => "info",
+            _ => "danger"
+        };
+    }
+}
+<div class="row g-3 mb-4">
+    <!-- Recent Procurements -->
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Procurement Terbaru
+                </h5>
+                <a asp-controller="Procurements" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                    Lihat Semua <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Proc Number</th>
+                                <th>Job Type</th>
+                                <th>Status</th>
+                                <th>Created By</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var proc in Model.RecentProcurements) {
+                                <tr>
+                                    <td>
+                                        <strong>@proc.ProcNum</strong>
+                                        <br>
+                                        <small class="text-muted">@proc.CreatedDate.ToString("dd MMM yyyy")</small>
+                                    </td>
+                                    <td>@proc.JobTypeName</td>
+                                    <td>
+                                        <span class="badge bg-@(GetStatusBadgeClass(proc.StatusName))">
+                                            @proc.StatusName
+                                        </span>
+                                    </td>
+                                    <td><small>@proc.CreatedBy</small></td>
+                                    <td class="text-end">
+                                        <strong>Rp @proc.TotalAmount.ToString("N0")</strong>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Approvals -->
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-circle me-2"></i>Pending Approvals
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Procurement</th>
+                                <th>Document</th>
+                                <th>Role</th>
+                                <th class="text-center">Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var approval in Model.PendingApprovalsDetail) {
+                                <tr>
+                                    <td>
+                                        <strong>@approval.ProcNum</strong>
+                                    </td>
+                                    <td>
+                                        <small>@approval.DocumentName</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@approval.ApprovalRole</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-@(approval.DaysWaiting > 3 ? "danger" : "warning")">
+                                            @approval.DaysWaiting
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

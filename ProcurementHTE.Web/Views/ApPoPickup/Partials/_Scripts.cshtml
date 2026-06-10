@@ -1,0 +1,45 @@
+<script>
+    document.getElementById('btnRefresh')?.addEventListener('click', () => location.reload());
+
+    document.getElementById('btnApplyFilter')?.addEventListener('click', () => {
+        const selected = Array.from(document.querySelectorAll('.filter-col:checked'))
+            .map(el => el.value)
+            .join(',');
+        document.getElementById('fieldsHidden').value = selected || 'ProcNum,JobName';
+        document.getElementById('pageHidden').value = '1';
+        document.getElementById('filterForm').submit();
+    });
+
+    document.getElementById('searchBox')?.addEventListener('input', function() {
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => {
+            document.getElementById('pageHidden').value = '1';
+            document.getElementById('filterForm').submit();
+        }, 500);
+    });
+
+    // SweetAlert2 for Pickup buttons
+    document.querySelectorAll('.btn-pickup').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const form = this.closest('form');
+            const procNum = this.dataset.procnum;
+
+            Swal.fire({
+                title: 'Pickup Procurement?',
+                html: `Apakah Anda yakin ingin pickup procurement <strong>${procNum}</strong>?<br><small class="text-muted">Procurement akan masuk ke proses PR</small>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-box-arrow-in-down"></i> Ya, Pickup',
+                cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>

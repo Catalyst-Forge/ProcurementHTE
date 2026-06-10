@@ -29,7 +29,17 @@ namespace ProcurementHTE.Core.Models
         [Required]
         public string SubmitterRoleId { get; set; } = null!;
 
+        /// <summary>
+        /// Optional: User ID spesifik untuk submitter. Jika diisi, akan digunakan untuk nama di dokumen.
+        /// </summary>
+        public string? SubmitterUserId { get; set; }
+
         public string? ApproverRoleId { get; set; }
+
+        /// <summary>
+        /// Optional: User ID spesifik untuk approver. Jika diisi, akan digunakan untuk nama di dokumen.
+        /// </summary>
+        public string? ApproverUserId { get; set; }
 
         public int Sequence { get; set; } = 1;
 
@@ -40,5 +50,7 @@ namespace ProcurementHTE.Core.Models
         // Nav
         public DocumentType? DocumentType { get; set; }
         public JobTypes? JobType { get; set; }
+        public User? SubmitterUser { get; set; }
+        public User? ApproverUser { get; set; }
     }
 }

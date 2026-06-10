@@ -1,4 +1,5 @@
-﻿using ProcurementHTE.Core.Models;
+﻿using ProcurementHTE.Core.Enums;
+using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 
 namespace ProcurementHTE.Core.Interfaces
@@ -30,9 +31,21 @@ namespace ProcurementHTE.Core.Interfaces
         Task<IReadOnlyList<Procurement>> GetAllForSelectionAsync();
 
         /// <summary>
-        /// Get all procurements with status "In Progress" for AP-PO approval
+        /// Get all procurements with status "Waiting Pickup" for AP-PO pickup
         /// </summary>
         Task<Common.PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(
+            int page,
+            int pageSize,
+            string? search,
+            ISet<string> fields,
+            CancellationToken ct
+        );
+
+        /// <summary>
+        /// Get procurements that have been picked up by a specific AP-PO user
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetMyAppoPickupsAsync(
+            string appoUserId,
             int page,
             int pageSize,
             string? search,
@@ -58,6 +71,94 @@ namespace ProcurementHTE.Core.Interfaces
             List<ProcDetail> details,
             List<ProcOffer> offers
         );
-        Task DropProcurementAsync(Procurement procurement);
+        Task DeleteAsync(Procurement procurement, string deletedByUserId);
+
+        /// <summary>
+        /// Get procurements that need accrual data (for AR role)
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetProcurementsForAccrualAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? filter,
+            CancellationToken ct
+        );
+
+        /// <summary>
+        /// Get procurements for AP-Invoice pickup (picked by AP-PO but not yet by AP-Invoice)
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetProcurementsForApInvoiceAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? filter,
+            CancellationToken ct
+        );
+
+        /// <summary>
+        /// Get procurements that have been picked up by a specific AP-Invoice user
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetMyApInvoicePickupsAsync(
+            string apInvoiceUserId,
+            int page,
+            int pageSize,
+            string? search,
+            CancellationToken ct
+        );
+
+        /// <summary>
+        /// Get procurements for AR pickup (picked by AP-Invoice but not yet by AR)
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetProcurementsForArPickupAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? filter,
+            CancellationToken ct
+        );
+
+        /// <summary>
+        /// Get procurements that have been picked up by a specific AR user
+        /// </summary>
+        Task<Common.PagedResult<Procurement>> GetMyArPickupsAsync(
+            string arUserId,
+            int page,
+            int pageSize,
+            string? search,
+            CancellationToken ct
+        );
+
+        // ===== Procurement Tracking Methods =====
+
+        /// <summary>
+        /// Get procurement with tracking data (includes StatusHistories, User navigations)
+        /// </summary>
+        Task<Procurement?> GetWithTrackingDataAsync(string procurementId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get procurement by ProcNum or Wonum with tracking data
+        /// </summary>
+        Task<Procurement?> GetByProcNumWithTrackingAsync(string procNum, CancellationToken ct = default);
+
+        /// <summary>
+        /// Get all procurements linked to a PR with tracking data
+        /// </summary>
+        Task<IReadOnlyList<Procurement>> GetByPrIdWithTrackingAsync(string prId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Update procurement status and create status history entry
+        /// </summary>
+        Task<bool> UpdateStatusWithHistoryAsync(
+            string procurementId,
+            ProcurementStatus newStatus,
+            string? changedByUserId = null,
+            string? note = null,
+            CancellationToken ct = default
+        );
+
+        /// <summary>
+        /// Get procurement count by status for dashboard
+        /// </summary>
+        Task<IReadOnlyList<ProcurementStatusCountDto>> GetCountByProcurementStatusAsync(CancellationToken ct = default);
     }
 }

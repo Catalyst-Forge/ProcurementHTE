@@ -7,19 +7,25 @@
     var returnUrl = Model.ReturnUrl;
     var contactEmailCooldown = ViewBag.ContactEmailCooldown as int? ?? 0;
     var contactPhoneCooldown = ViewBag.ContactPhoneCooldown as int? ?? 0;
+    var verificationTargetText = hasEmail && hasPhone
+        ? "Verifikasi email dan nomor HP sebelum melanjutkan."
+        : hasEmail
+            ? "Verifikasi email sebelum melanjutkan."
+            : "Verifikasi nomor HP sebelum melanjutkan.";
+    var cardColumnClass = hasEmail && hasPhone ? "col-12 col-md-6" : "col-12";
 }
 
-<div class="card shadow-sm mx-auto" style="max-width: 720px">
+<div class="card shadow-sm mx-auto contact-verification-card" style="max-width: 760px">
     <div class="card-body">
         <div class="text-center mb-4">
             <h2 class="mb-1">Konfirmasi Identitas</h2>
-            <p class="text-muted mb-0">Verifikasi email dan nomor HP sebelum melanjutkan.</p>
+            <p class="text-muted mb-0">@verificationTargetText</p>
         </div>
 
-        <div class="row row-cols-1 row-cols-md-2 g-3">
+        <div class="row g-3 justify-content-center">
             @if (hasEmail)
             {
-                <div class="col">
+                <div class="@cardColumnClass">
                     <div class="card border-warning-subtle h-100 twofactor-pending-card">
                         <div class="card-body">
                             <h6 class="text-warning fw-semibold mb-1">Verifikasi Email</h6>
@@ -55,7 +61,7 @@
             }
             @if (hasPhone)
             {
-                <div class="col">
+                <div class="@cardColumnClass">
                     <div class="card border-warning-subtle h-100 twofactor-pending-card">
                         <div class="card-body">
                             <h6 class="text-warning fw-semibold mb-1">Verifikasi Nomor HP</h6>
@@ -117,135 +123,17 @@
         </div>
 
         <div class="text-center mt-3">
-            <a asp-action="Login" class="link-secondary">Keluar &amp; ganti akun</a>
+            <form asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-link link-secondary p-0">
+                    Keluar &amp; ganti akun
+                </button>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            function initOtpInputs() {
-                document.querySelectorAll('[data-otp-container]').forEach(container => {
-                    const target = container.dataset.otpContainer;
-                    if (!target) return;
-                    const hidden = document.querySelector(`input[data-otp-hidden="${target}"]`);
-                    if (!hidden) return;
-                    const inputs = Array.from(container.querySelectorAll('input[data-otp-input]'));
-                    if (!inputs.length) return;
-
-                    const syncFromHidden = () => {
-                        const value = (hidden.value || '').split('');
-                        inputs.forEach((input, index) => {
-                            input.value = value[index] ?? '';
-                        });
-                    };
-
-                    const syncHidden = () => {
-                        hidden.value = inputs.map(i => i.value ?? '').join('');
-                    };
-
-                    const focusNext = (currentIndex) => {
-                        if (currentIndex + 1 < inputs.length) {
-                            inputs[currentIndex + 1].focus();
-                        }
-                    };
-
-                    const focusPrev = (currentIndex) => {
-                        if (currentIndex - 1 >= 0) {
-                            inputs[currentIndex - 1].focus();
-                        }
-                    };
-
-                    inputs.forEach((input, index) => {
-                        input.addEventListener('focus', () => {
-                            input.select();
-                        });
-
-                        input.addEventListener('keydown', (event) => {
-                            if (event.key === 'Backspace' && !input.value) {
-                                event.preventDefault();
-                                focusPrev(index);
-                            }
-                            if (event.key === 'ArrowLeft') {
-                                event.preventDefault();
-                                focusPrev(index);
-                            }
-                            if (event.key === 'ArrowRight') {
-                                event.preventDefault();
-                                focusNext(index);
-                            }
-                        });
-
-                        input.addEventListener('input', (event) => {
-                            const value = event.target.value.replace(/[^0-9]/g, '');
-                            event.target.value = value.slice(-1);
-                            syncHidden();
-                            if (value.length) {
-                                focusNext(index);
-                            }
-                        });
-
-                        input.addEventListener('paste', (event) => {
-                            event.preventDefault();
-                            const pasted = (event.clipboardData?.getData('text') ?? '').replace(/[^0-9]/g, '');
-                            if (!pasted.length) return;
-                            inputs.forEach((inp, idx) => {
-                                inp.value = pasted[idx] ?? '';
-                            });
-                            syncHidden();
-                            const filled = Math.min(pasted.length, inputs.length - 1);
-                            inputs[filled]?.focus();
-                        });
-                    });
-
-                    syncFromHidden();
-                });
-            }
-
-            function startCooldown(button, seconds, statusSelector) {
-                if (!button || seconds <= 0 || button.dataset.cooldownActive === '1')
-                    return;
-
-                button.dataset.cooldownActive = '1';
-                let remaining = seconds;
-                button.disabled = true;
-                const statusEl = statusSelector ? document.querySelector(statusSelector) : null;
-
-                const updateStatus = () => {
-                    if (statusEl) {
-                        statusEl.textContent = `Tunggu ${remaining} detik sebelum mengirim ulang.`;
-                        statusEl.classList.add('text-warning');
-                    }
-                };
-
-                updateStatus();
-
-                const intervalId = setInterval(() => {
-                    remaining--;
-                    if (remaining <= 0) {
-                        clearInterval(intervalId);
-                        button.disabled = false;
-                        button.dataset.cooldownActive = '';
-                        if (statusEl) {
-                            statusEl.textContent = '';
-                            statusEl.classList.remove('text-warning');
-                        }
-                    } else {
-                        updateStatus();
-                    }
-                }, 1000);
-            }
-
-            document.querySelectorAll('[data-cooldown-button]').forEach(button => {
-                const seconds = parseInt(button.dataset.cooldownSeconds ?? '0', 10);
-                if (seconds > 0) {
-                    startCooldown(button, seconds, button.dataset.statusTarget);
-                }
-            });
-
-            initOtpInputs();
-        })();
-    </script>
+    @await Html.PartialAsync("_ContactVerificationScripts")
 }

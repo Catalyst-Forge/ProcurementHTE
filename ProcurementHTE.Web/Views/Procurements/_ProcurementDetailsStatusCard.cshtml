@@ -1,0 +1,48 @@
+@model ProcurementDetailsPageViewModel
+
+@{
+    var procurement = Model.Procurement;
+}
+
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h5"><i class="bi bi-info-circle-fill text-primary me-1"></i> Status</h2>
+    </header>
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body">
+        <div class="row mb-0">
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">@Html.DisplayNameFor(m => m.Procurement.JobType)</dt>
+                <dd><span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">@Html.DisplayFor(m => m.Procurement.JobType!.TypeName)</span></dd>
+            </dl>
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">@Html.DisplayNameFor(m => m.Procurement.Status)</dt>
+                <dd><span class="badge bg-secondary-subtle text-secondary border border-secondary rounded-5 p-2 px-3">@Html.DisplayFor(m => m.Procurement.Status!.StatusName)</span></dd>
+            </dl>
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">@Html.DisplayNameFor(m => m.Procurement.CreatedAt)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@procurement.CreatedAt.ToTanggalIndonesia()</dd>
+            </dl>
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">@Html.DisplayNameFor(m => m.Procurement.User)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(m => m.Procurement.User!.FullName)</dd>
+            </dl>
+            <dl class="col-12">
+                <dt class="fw-semibold text-uppercase text-secondary mb-1">@Html.DisplayNameFor(m => m.Procurement.CompletedAt)</dt>
+                <dd class="fw-medium text-secondary-emphasis">@procurement.CompletedAt.ToTanggalIndonesia()</dd>
+            </dl>
+            @if (procurement.AppoUser != null)
+            {
+                <dl class="col-12">
+                    <dt class="fw-semibold text-uppercase text-secondary mb-1">Picked Up By</dt>
+                    <dd class="fw-medium text-secondary-emphasis"><i class="bi bi-box-arrow-in-down text-success me-1"></i>@procurement.AppoUser.FullName</dd>
+                </dl>
+                <dl class="col-12">
+                    <dt class="fw-semibold text-uppercase text-secondary mb-1">Picked Up At</dt>
+                    <dd class="fw-medium text-secondary-emphasis">@procurement.PickedUpAt?.ToTanggalIndonesia()</dd>
+                </dl>
+            }
+        </div>
+    </div>
+</article>

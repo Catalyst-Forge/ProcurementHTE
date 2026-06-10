@@ -12,15 +12,12 @@ namespace ProcurementHTE.Infrastructure.Data
             RoleManager<Role> roleManager
         )
         {
-            if (await roleManager.Roles.AnyAsync())
-                return;
-
             string[] roles =
             [
                 "Admin",
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
-                "Operator",
+                "Operation",
                 "Assistant Manager HTE",
                 "Vice President",
                 "Operation Director",
@@ -30,11 +27,16 @@ namespace ProcurementHTE.Infrastructure.Data
                 "HSE",
                 "Supply Chain Management",
                 "AP-PO",
+                "AR",
+                "AP-Invoice",
             ];
 
-            foreach (var roleName in roles) {
-                if (!await roleManager.RoleExistsAsync(roleName)) {
-                    var role = new Role {
+            foreach (var roleName in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    var role = new Role
+                    {
                         Name = roleName,
                         NormalizedName = roleName.ToUpperInvariant(),
                         Description = $"{roleName} system role",
@@ -43,11 +45,14 @@ namespace ProcurementHTE.Infrastructure.Data
                 }
             }
 
-            async Task AddPermissions(string roleName, params string[] permissions) {
+            async Task AddPermissions(string roleName, params string[] permissions)
+            {
                 var role = await roleManager.FindByNameAsync(roleName);
                 var existing = await roleManager.GetClaimsAsync(role!);
-                foreach (var permission in permissions.Distinct()) {
-                    if (!existing.Any(c => c.Type == "permission" && c.Value == permission)) {
+                foreach (var permission in permissions.Distinct())
+                {
+                    if (!existing.Any(c => c.Type == "permission" && c.Value == permission))
+                    {
                         await roleManager.AddClaimAsync(role!, new Claim("permission", permission));
                     }
                 }
@@ -128,10 +133,11 @@ namespace ProcurementHTE.Infrastructure.Data
             );
 
             await AddPermissions(
-                "Operator",
+                "Operation",
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Create,
                 Permissions.Procurement.Edit,
+                Permissions.Procurement.Delete,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload
             );
@@ -139,8 +145,6 @@ namespace ProcurementHTE.Infrastructure.Data
             await AddPermissions(
                 "AP-PO",
                 Permissions.Procurement.Read,
-                Permissions.Procurement.Create,
-                Permissions.Procurement.Edit,
                 Permissions.Doc.Read,
                 Permissions.Doc.Upload
             );
@@ -148,6 +152,7 @@ namespace ProcurementHTE.Infrastructure.Data
             await AddPermissions(
                 "Analyst HTE & LTS",
                 Permissions.Procurement.Read,
+                Permissions.Procurement.Create,
                 Permissions.Procurement.Edit,
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Edit,
@@ -169,6 +174,20 @@ namespace ProcurementHTE.Infrastructure.Data
                 Permissions.Vendor.Read,
                 Permissions.Vendor.Create,
                 Permissions.Vendor.Edit,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                "AR",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                "AP-Invoice",
+                Permissions.Procurement.Read,
+                Permissions.Procurement.Edit,
                 Permissions.Doc.Read
             );
         }

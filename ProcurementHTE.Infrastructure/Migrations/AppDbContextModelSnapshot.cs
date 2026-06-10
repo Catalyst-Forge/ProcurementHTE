@@ -136,6 +136,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("ApproverRoleId")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ApproverUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -173,9 +176,16 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SubmitterUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("DocumentApprovalRuleId");
 
+                    b.HasIndex("ApproverUserId");
+
                     b.HasIndex("JobTypeId");
+
+                    b.HasIndex("SubmitterUserId");
 
                     b.HasIndex("DocumentTypeId", "JobTypeId", "ProcurementCategory", "MinAmount", "MaxAmount", "IsActive");
 
@@ -286,6 +296,72 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.ToTable("JobTypes");
                 });
 
+            modelBuilder.Entity("ProcurementHTE.Core.Models.Notification", b =>
+                {
+                    b.Property<string>("NotificationId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReferenceId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("NotificationType");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDetail", b =>
                 {
                     b.Property<string>("ProcDetailId")
@@ -323,68 +399,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.ToTable("ProcDetails");
                 });
 
-            modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDocumentApprovals", b =>
-                {
-                    b.Property<string>("ProcDocumentApprovalId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ApproverId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("AssignedApproverId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProcDocumentId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProcurementId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.HasKey("ProcDocumentApprovalId");
-
-                    b.HasIndex("ApproverId");
-
-                    b.HasIndex("AssignedApproverId");
-
-                    b.HasIndex("ProcDocumentId");
-
-                    b.HasIndex("ProcurementId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("ProcDocumentApprovals");
-                });
-
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDocuments", b =>
                 {
                     b.Property<string>("ProcDocumentId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ApprovedByUserId")
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ContentType")
@@ -419,9 +436,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<bool?>("IsApproved")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -434,21 +448,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("QrObjectKey")
-                        .HasMaxLength(600)
-                        .HasColumnType("nvarchar(600)");
-
-                    b.Property<string>("QrText")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
 
                     b.HasKey("ProcDocumentId");
 
@@ -494,8 +495,24 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("ProcurementId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("AccrualFilledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AccrualFilledByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("AnalystHtePjs")
+                        .HasColumnType("bit");
+
                     b.Property<string>("AnalystHteUserId")
-                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ApInvoicePickedUpAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApInvoiceUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -503,8 +520,28 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ApprovalSentByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ApprovalToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ApprovalTokenGeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ArPickedUpAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ArUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("AssistantManagerPjs")
+                        .HasColumnType("bit");
+
                     b.Property<string>("AssistantManagerUserId")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -534,28 +571,122 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("HardcopyEvidenceContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("HardcopyEvidenceFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("HardcopyEvidenceFilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long?>("HardcopyEvidenceFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("HardcopySubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HardcopySubmittedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("IspaDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IspaFileContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IspaFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("IspaFileObjectKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long?>("IspaFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IspaNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("IspaSubmitDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("IspaSubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IspaSubmittedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("JobName")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("JobTypeId")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LdpFileContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LdpFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("LdpFileObjectKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long?>("LdpFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("LdpUploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LdpUploadedByUserId")
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LtcName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<DateTime?>("ManagerApprovalEndAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ManagerApprovalStartAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("ManagerPjs")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ManagerUserId")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("MemoNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NoAccrual")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NoHte")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NoRig")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -567,15 +698,60 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("PicOpsUserId")
-                        .IsRequired()
+                    b.Property<DateTime?>("OpDirApprovalEndAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("OpDirApprovalStartAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("OperationDirectorPjs")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OperationDirectorUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("PendingRevisionSymptoms")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PicOpsUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("PickedUpAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PoNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("PoSubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PoSubmittedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal?>("PotensiAccrual")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("PotentialAccrualDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PrId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("PresDirApprovalEndAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PresDirApprovalStartAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("PresidentDirectorPjs")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PresidentDirectorUserId")
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProcNum")
@@ -584,6 +760,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ProcurementCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProcurementStatus")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -601,6 +782,38 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RejectedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RejectionNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("RejectionSymptoms")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResubmittedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("RevisionCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SANo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SP3No")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("SpkNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -612,6 +825,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("StatusAccrual")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("StatusBeforeRejection")
+                        .HasColumnType("int");
+
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
 
@@ -621,27 +841,113 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("VicePresidentPjs")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("VicePresidentUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("VpApprovalEndAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("VpApprovalStartAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Wonum")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("ProcurementId");
 
+                    b.HasIndex("AccrualFilledByUserId");
+
+                    b.HasIndex("AnalystHteUserId");
+
+                    b.HasIndex("ApInvoiceUserId");
+
+                    b.HasIndex("AppoUserId");
+
+                    b.HasIndex("ApprovalSentByUserId");
+
+                    b.HasIndex("ArUserId");
+
+                    b.HasIndex("AssistantManagerUserId");
+
+                    b.HasIndex("HardcopySubmittedByUserId");
+
+                    b.HasIndex("IspaSubmittedByUserId");
+
                     b.HasIndex("JobTypeId");
+
+                    b.HasIndex("ManagerUserId");
+
+                    b.HasIndex("OperationDirectorUserId");
+
+                    b.HasIndex("PicOpsUserId");
+
+                    b.HasIndex("PoSubmittedByUserId");
 
                     b.HasIndex("PrId");
 
+                    b.HasIndex("PresidentDirectorUserId");
+
                     b.HasIndex("ProcNum")
                         .IsUnique()
-                        .HasDatabaseName("AK_Procurements_ProcNum");
+                        .HasDatabaseName("AK_Procurements_ProcNum")
+                        .HasFilter("[IsDeleted] = 0 AND [ProcNum] IS NOT NULL");
+
+                    b.HasIndex("RejectedByUserId");
+
+                    b.HasIndex("ResubmittedByUserId");
 
                     b.HasIndex("StatusId");
+
+                    b.HasIndex("VicePresidentUserId");
 
                     b.HasIndex("UserId", "CreatedAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_Procurements_UserId_CreatedAt");
 
                     b.ToTable("Procurements");
+                });
+
+            modelBuilder.Entity("ProcurementHTE.Core.Models.ProcurementStatusHistory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("ChangedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ProcurementId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("ProcurementId");
+
+                    b.HasIndex("ProcurementId", "ChangedAt");
+
+                    b.ToTable("ProcurementStatusHistories");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLoss", b =>
@@ -812,6 +1118,17 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("PrId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ApprovalSentByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ApprovalToken")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ApprovalTokenGeneratedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -847,6 +1164,28 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<long?>("DocumentFileSize")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("HardcopyEvidenceContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("HardcopyEvidenceFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("HardcopyEvidenceFilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long?>("HardcopyEvidenceFileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("HardcopySubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HardcopySubmittedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -900,7 +1239,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasKey("PrId");
 
+                    b.HasIndex("ApprovalSentByUserId");
+
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("HardcopySubmittedByUserId");
 
                     b.HasIndex("IspaSubmittedByUserId");
 
@@ -908,7 +1251,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.HasIndex("PrNumber")
                         .IsUnique()
-                        .HasDatabaseName("AK_PurchaseRequisitions_PrNumber");
+                        .HasDatabaseName("AK_PurchaseRequisitions_PrNumber")
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("RejectedByUserId");
 
@@ -1419,7 +1763,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasKey("VendorId");
 
                     b.HasIndex("VendorCode")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Vendors");
                 });
@@ -1601,6 +1946,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.DocumentApprovalRule", b =>
                 {
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ApproverUser")
+                        .WithMany()
+                        .HasForeignKey("ApproverUserId");
+
                     b.HasOne("ProcurementHTE.Core.Models.DocumentType", "DocumentType")
                         .WithMany()
                         .HasForeignKey("DocumentTypeId")
@@ -1612,9 +1961,17 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasForeignKey("JobTypeId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("ProcurementHTE.Core.Models.User", "SubmitterUser")
+                        .WithMany()
+                        .HasForeignKey("SubmitterUserId");
+
+                    b.Navigation("ApproverUser");
+
                     b.Navigation("DocumentType");
 
                     b.Navigation("JobType");
+
+                    b.Navigation("SubmitterUser");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.DocumentApprovals", b =>
@@ -1655,6 +2012,24 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("JobType");
                 });
 
+            modelBuilder.Entity("ProcurementHTE.Core.Models.Notification", b =>
+                {
+                    b.HasOne("ProcurementHTE.Core.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDetail", b =>
                 {
                     b.HasOne("ProcurementHTE.Core.Models.Procurement", "Procurement")
@@ -1671,47 +2046,6 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("Procurement");
 
                     b.Navigation("Vendor");
-                });
-
-            modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDocumentApprovals", b =>
-                {
-                    b.HasOne("ProcurementHTE.Core.Models.User", "Approver")
-                        .WithMany()
-                        .HasForeignKey("ApproverId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ProcurementHTE.Core.Models.User", "AssignedApprover")
-                        .WithMany()
-                        .HasForeignKey("AssignedApproverId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ProcurementHTE.Core.Models.ProcDocuments", "ProcDocument")
-                        .WithMany("Approvals")
-                        .HasForeignKey("ProcDocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ProcurementHTE.Core.Models.Procurement", "Procurement")
-                        .WithMany("DocumentApprovals")
-                        .HasForeignKey("ProcurementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ProcurementHTE.Core.Models.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Approver");
-
-                    b.Navigation("AssignedApprover");
-
-                    b.Navigation("ProcDocument");
-
-                    b.Navigation("Procurement");
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDocuments", b =>
@@ -1746,16 +2080,87 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.Procurement", b =>
                 {
+                    b.HasOne("ProcurementHTE.Core.Models.User", "AccrualFilledByUser")
+                        .WithMany()
+                        .HasForeignKey("AccrualFilledByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "AnalystHteUser")
+                        .WithMany()
+                        .HasForeignKey("AnalystHteUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ApInvoiceUser")
+                        .WithMany()
+                        .HasForeignKey("ApInvoiceUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "AppoUser")
+                        .WithMany()
+                        .HasForeignKey("AppoUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ApprovalSentByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovalSentByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ArUser")
+                        .WithMany()
+                        .HasForeignKey("ArUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "AssistantManagerUser")
+                        .WithMany()
+                        .HasForeignKey("AssistantManagerUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "HardcopySubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("HardcopySubmittedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "IspaSubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("IspaSubmittedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("ProcurementHTE.Core.Models.JobTypes", "JobType")
                         .WithMany("Procurements")
                         .HasForeignKey("JobTypeId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ManagerUser")
+                        .WithMany()
+                        .HasForeignKey("ManagerUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "OperationDirectorUser")
+                        .WithMany()
+                        .HasForeignKey("OperationDirectorUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "PicOpsUser")
+                        .WithMany()
+                        .HasForeignKey("PicOpsUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "PoSubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("PoSubmittedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ProcurementHTE.Core.Models.PurchaseRequisition", "PurchaseRequisition")
                         .WithMany("Procurements")
                         .HasForeignKey("PrId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "PresidentDirectorUser")
+                        .WithMany()
+                        .HasForeignKey("PresidentDirectorUserId");
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "RejectedByUser")
+                        .WithMany()
+                        .HasForeignKey("RejectedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ResubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("ResubmittedByUserId");
 
                     b.HasOne("ProcurementHTE.Core.Models.Status", "Status")
                         .WithMany()
@@ -1768,13 +2173,69 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("ProcurementHTE.Core.Models.User", "VicePresidentUser")
+                        .WithMany()
+                        .HasForeignKey("VicePresidentUserId");
+
+                    b.Navigation("AccrualFilledByUser");
+
+                    b.Navigation("AnalystHteUser");
+
+                    b.Navigation("ApInvoiceUser");
+
+                    b.Navigation("AppoUser");
+
+                    b.Navigation("ApprovalSentByUser");
+
+                    b.Navigation("ArUser");
+
+                    b.Navigation("AssistantManagerUser");
+
+                    b.Navigation("HardcopySubmittedByUser");
+
+                    b.Navigation("IspaSubmittedByUser");
+
                     b.Navigation("JobType");
 
+                    b.Navigation("ManagerUser");
+
+                    b.Navigation("OperationDirectorUser");
+
+                    b.Navigation("PicOpsUser");
+
+                    b.Navigation("PoSubmittedByUser");
+
+                    b.Navigation("PresidentDirectorUser");
+
                     b.Navigation("PurchaseRequisition");
+
+                    b.Navigation("RejectedByUser");
+
+                    b.Navigation("ResubmittedByUser");
 
                     b.Navigation("Status");
 
                     b.Navigation("User");
+
+                    b.Navigation("VicePresidentUser");
+                });
+
+            modelBuilder.Entity("ProcurementHTE.Core.Models.ProcurementStatusHistory", b =>
+                {
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ChangedByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProcurementHTE.Core.Models.Procurement", "Procurement")
+                        .WithMany("StatusHistories")
+                        .HasForeignKey("ProcurementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("Procurement");
                 });
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.ProfitLoss", b =>
@@ -1849,11 +2310,19 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
             modelBuilder.Entity("ProcurementHTE.Core.Models.PurchaseRequisition", b =>
                 {
+                    b.HasOne("ProcurementHTE.Core.Models.User", "ApprovalSentByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovalSentByUserId");
+
                     b.HasOne("ProcurementHTE.Core.Models.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("ProcurementHTE.Core.Models.User", "HardcopySubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("HardcopySubmittedByUserId");
 
                     b.HasOne("ProcurementHTE.Core.Models.User", "IspaSubmittedByUser")
                         .WithMany()
@@ -1867,7 +2336,11 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("RejectedByUserId");
 
+                    b.Navigation("ApprovalSentByUser");
+
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("HardcopySubmittedByUser");
 
                     b.Navigation("IspaSubmittedByUser");
 
@@ -2015,15 +2488,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("Procurements");
                 });
 
-            modelBuilder.Entity("ProcurementHTE.Core.Models.ProcDocuments", b =>
-                {
-                    b.Navigation("Approvals");
-                });
-
             modelBuilder.Entity("ProcurementHTE.Core.Models.Procurement", b =>
                 {
-                    b.Navigation("DocumentApprovals");
-
                     b.Navigation("ProcDetails");
 
                     b.Navigation("ProcDocuments");
@@ -2031,6 +2497,8 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Navigation("ProcOffers");
 
                     b.Navigation("ProfitLosses");
+
+                    b.Navigation("StatusHistories");
 
                     b.Navigation("VendorOffers");
                 });

@@ -1,0 +1,71 @@
+@model ProcurementHTE.Web.Models.Auth.TwoFactorSetupViewModel
+@using ProcurementHTE.Core.Enums
+@{
+    var activeTab = (Model.ActiveTab ?? "auth").ToLowerInvariant();
+    var smsAvailable = Model.PhoneAvailable;
+    var smsSetupCooldown = ViewBag.SetupSmsCooldown as int? ?? 0;
+    var returnUrl = Model.ReturnUrl;
+}
+<div class="tab-pane fade @(activeTab == "sms" ? "show active" : string.Empty)" id="tab-sms" role="tabpanel">
+    <div class="card shadow-sm equal-card twofactor-setup-card">
+        <div class="card-body twofactor-panel-body">
+            @if (!smsAvailable)
+            {
+                <div class="twofactor-unavailable-state">
+                    <h5>SMS OTP</h5>
+                    <p class="mb-0">SMS OTP belum tersedia. Selesaikan verifikasi nomor setelah gateway SMS/WhatsApp dikonfigurasi.</p>
+                </div>
+            }
+            else
+            {
+                <div class="twofactor-panel-header">
+                    <h5>OTP via SMS</h5>
+                    <p>Kami kirimkan OTP ke nomor HP Anda.</p>
+                </div>
+                <form asp-action="EnableTwoFactorFromSetup" method="post" class="twofactor-method-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="method" value="@TwoFactorMethod.Sms" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <div class="twofactor-method-surface">
+                        <label class="form-label">Nomor Tujuan</label>
+                        <div class="twofactor-send-row">
+                            <input type="text" class="form-control" value="@(Model.PhoneNumber ?? "-")" readonly />
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-send-setup-code
+                                    data-method="sms"
+                                    data-status-target="#smsSetupStatus"
+                                    data-label="Kirim kode"
+                                    data-cooldown-button
+                                    data-cooldown-seconds="@((smsAvailable ? smsSetupCooldown : 0))">
+                                Kirim kode
+                            </button>
+                        </div>
+                        <div class="small twofactor-status-line" id="smsSetupStatus"></div>
+                    </div>
+                    <div class="twofactor-code-section">
+                        <label class="form-label">Kode OTP</label>
+                        <input type="hidden" name="verificationCode" data-otp-hidden="TwoFactor.Sms" />
+                        <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactor.Sms">
+                            @for (var i = 0; i < 6; i++)
+                            {
+                                <input type="text" inputmode="numeric" maxlength="1" class="form-control text-center otp-input" data-otp-input autocomplete="one-time-code" />
+                            }
+                        </div>
+                        <small class="text-muted">Masukkan kode 6 digit dari SMS.</small>
+                    </div>
+                    <div class="twofactor-action-row">
+                        <button type="submit"
+                                class="btn btn-link link-secondary"
+                                formaction="@Url.Action("Logout", "Auth")"
+                                formmethod="post"
+                                formnovalidate>
+                            Keluar
+                        </button>
+                        <button type="submit" class="btn btn-success">Aktifkan 2FA SMS</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>

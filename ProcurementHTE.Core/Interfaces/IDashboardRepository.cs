@@ -5,7 +5,7 @@ namespace ProcurementHTE.Core.Interfaces
     public interface IDashboardRepository
     {
         Task<List<RecentActivityDto>> GetRecentActivitiesAsync(int take = 10);
-        Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync();
+        // ApprovalStatusCountDto removed - approval per-document sudah dihapus
 
         // Dashboard Metrics
         Task<int> GetActiveProcurementsCountAsync(CancellationToken ct = default);
@@ -48,5 +48,35 @@ namespace ProcurementHTE.Core.Interfaces
             int take = 30,
             CancellationToken ct = default
         );
+
+        // Admin Extended Metrics
+        Task<AccrualStatistics> GetAccrualStatisticsAsync(CancellationToken ct = default);
+        Task<List<RegionDistribution>> GetRegionDistributionAsync(CancellationToken ct = default);
+
+        // Pending Approvals per-user (based on assigned user)
+        Task<int> GetPendingApprovalCountByUserAsync(
+            string userId,
+            string[] userRoles,
+            CancellationToken ct = default
+        );
+        Task<(List<PendingApprovalItem> Items, int TotalCount)> GetPendingApprovalsByUserAsync(
+            string userId,
+            string[] userRoles,
+            int skip = 0,
+            int take = 15,
+            CancellationToken ct = default
+        );
     }
+
+    // DTO for Pending Approval Item
+    public record PendingApprovalItem(
+        string ProcurementId,
+        string ProcNum,
+        string Wonum,
+        string JobName,
+        string CurrentStatus,
+        string CurrentStatusDescription,
+        DateTime DocumentDate,
+        DateTime? SentForApprovalAt
+    );
 }

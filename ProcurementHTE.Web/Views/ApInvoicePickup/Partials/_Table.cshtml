@@ -1,0 +1,97 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    var currentTab = ViewBag.CurrentTab as string ?? "waiting";
+    var isMyPickups = currentTab == "mypickups";
+}
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr class="align-middle">
+                <th class="border-end">Procurement No.</th>
+                <th class="border-end">Job Name</th>
+                <th class="border-end">WO Number</th>
+                <th class="border-end">Vendor</th>
+                <th class="border-end">Picked By APPO</th>
+                <th class="border-end">Status</th>
+                <th class="text-center width-15-rem">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model == null || !Model.Items.Any()) {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        @if (isMyPickups) {
+                            <text>Belum ada procurement yang Anda pickup</text>
+                        } else {
+                            <text>Tidak ada procurement yang menunggu untuk di-pickup</text>
+                        }
+                    </td>
+                </tr>
+            } else {
+                foreach (var item in Model.Items) {
+                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
+                    var vendorName = item.ProfitLosses?.FirstOrDefault()?.SelectedVendor?.VendorName ?? "-";
+
+                    <tr>
+                        <td data-label="Procurement No.">
+                            @item.ProcNum
+                        </td>
+                        <td data-label="Job Name">
+                            @item.JobName
+                        </td>
+                        <td data-label="WO Number">
+                            @wonum
+                        </td>
+                        <td data-label="Vendor">
+                            @vendorName
+                        </td>
+                        <td data-label="Picked By APPO">
+                            @if (item.AppoUser != null) {
+                                <small>
+                                    @item.AppoUser.FullName<br/>
+                                    <span class="text-muted">@item.PickedUpAt?.ToString("dd MMM yyyy HH:mm")</span>
+                                </small>
+                            } else {
+                                <text>-</text>
+                            }
+                        </td>
+                        <td data-label="Status">
+                            @if (isMyPickups) {
+                                var hasInvoiceData = !string.IsNullOrEmpty(item.SANo) || !string.IsNullOrEmpty(item.SP3No);
+                                <span class="badge @(hasInvoiceData ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")">
+                                    @(hasInvoiceData ? "Data Filled" : "Pending Input")
+                                </span>
+                            } else {
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                                    Waiting Pickup
+                                </span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (isMyPickups) {
+                                <a asp-action="Details" asp-route-id="@item.ProcurementId"
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-pencil"></i> Edit Invoice
+                                </a>
+                            } else {
+                                <a asp-action="Details" asp-route-id="@item.ProcurementId"
+                                   class="btn btn-outline-info btn-sm me-1" title="View Details">
+                                    <i class="bi bi-eye"></i> Details
+                                </a>
+                                <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                        <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

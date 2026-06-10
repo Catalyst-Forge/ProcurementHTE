@@ -1,0 +1,165 @@
+@Html.AntiForgeryToken()
+<script>
+    (function() {
+        const modal = document.getElementById('accrualModal');
+        const modalLoading = document.getElementById('modalLoading');
+        const modalContent = document.getElementById('modalContent');
+        const modalError = document.getElementById('modalError');
+        const btnSave = document.getElementById('btnSaveAccrual');
+
+        // Cleanup previous event listeners if any (for HTMX navigation)
+        if(modal) {
+            const newModal = modal.cloneNode(true);
+            modal.parentNode.replaceChild(newModal, modal);
+        }
+
+        // Re-get references after clone
+        const accrualModal = document.getElementById('accrualModal');
+        const accrualModalLoading = document.getElementById('modalLoading');
+        const accrualModalContent = document.getElementById('modalContent');
+        const accrualModalError = document.getElementById('modalError');
+        const accrualBtnSave = document.getElementById('btnSaveAccrual');
+
+        // Helper functions untuk format number
+        function formatNumber(value) {
+            if (!value) return '';
+            // Hapus semua karakter non-digit
+            const numStr = value.toString().replace(/\D/g, '');
+            if (!numStr) return '';
+            // Tambahkan titik setiap 3 digit dari belakang
+            return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function unformatNumber(value) {
+            if (!value) return null;
+            // Hapus semua titik pemisah
+            const numStr = value.toString().replace(/\./g, '');
+            const num = parseFloat(numStr);
+            return isNaN(num) ? null : num;
+        }
+
+        // Handle modal open - using Bootstrap event
+        if (accrualModal) {
+            accrualModal.addEventListener('show.bs.modal', async function(event) {
+                const button = event.relatedTarget;
+                if (!button) return;
+                
+                const procurementId = button.dataset.procurementId;
+                
+                // Reset state
+                accrualModalLoading.style.display = 'block';
+                accrualModalContent.style.display = 'none';
+                accrualModalError.style.display = 'none';
+
+                try {
+                    const response = await fetch(`/Accrual/GetDetails/${procurementId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    document.getElementById('modalProcurementId').value = data.procurementId;
+                    document.getElementById('modalProcInfo').innerHTML = `
+                        <div><strong>${data.wonum || '-'}</strong></div>
+                        <div class="small text-muted">${data.jobName || '-'}</div>
+                    `;
+                    document.getElementById('noAccrual').value = data.noAccrual || '';
+                    // Format nilai potensi accrual dengan pemisah titik
+                    document.getElementById('potensiAccrual').value = formatNumber(data.potensiAccrual);
+                    document.getElementById('statusAccrual').value = data.statusAccrual || '';
+
+                    accrualModalLoading.style.display = 'none';
+                    accrualModalContent.style.display = 'block';
+
+                    // Setup auto-format untuk input potensi accrual
+                    const potensiAccrualInput = document.getElementById('potensiAccrual');
+                    potensiAccrualInput.addEventListener('input', function(e) {
+                        const cursorPosition = e.target.selectionStart;
+                        const oldLength = e.target.value.length;
+                        const oldValue = e.target.value;
+
+                        // Format value
+                        e.target.value = formatNumber(e.target.value);
+
+                        // Adjust cursor position after formatting
+                        const newLength = e.target.value.length;
+                        const diff = newLength - oldLength;
+                        e.target.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
+                    });
+                } catch (error) {
+                    console.error('Error loading details:', error);
+                    accrualModalLoading.style.display = 'none';
+                    accrualModalError.style.display = 'block';
+                    if (accrualModalError.querySelector('.error-message')) {
+                        accrualModalError.querySelector('.error-message').textContent = error.message;
+                    }
+                }
+            });
+
+            // Reset modal when hidden
+            accrualModal.addEventListener('hidden.bs.modal', function() {
+                accrualModalLoading.style.display = 'block';
+                accrualModalContent.style.display = 'none';
+                accrualModalError.style.display = 'none';
+            });
+        }
+
+        // Handle save
+        if (accrualBtnSave) {
+            accrualBtnSave.addEventListener('click', async function() {
+                const procurementId = document.getElementById('modalProcurementId').value;
+                const noAccrual = document.getElementById('noAccrual').value;
+                const potensiAccrualFormatted = document.getElementById('potensiAccrual').value;
+                const statusAccrual = document.getElementById('statusAccrual').value;
+
+                // Unformat potensi accrual untuk dikirim ke backend
+                const potensiAccrual = unformatNumber(potensiAccrualFormatted);
+
+                accrualBtnSave.disabled = true;
+                accrualBtnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+
+                try {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+                    const response = await fetch('/Accrual/Save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({
+                            procurementId,
+                            noAccrual: noAccrual || null,
+                            potensiAccrual: potensiAccrual,
+                            statusAccrual: statusAccrual || null
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        if (typeof bootstrap !== 'undefined') {
+                            bootstrap.Modal.getInstance(accrualModal).hide();
+                        }
+                        location.reload();
+                    } else {
+                        alert(result.message || 'Gagal menyimpan data');
+                    }
+                } catch (error) {
+                    console.error('Error saving:', error);
+                    alert('Terjadi kesalahan saat menyimpan data');
+                } finally {
+                    accrualBtnSave.disabled = false;
+                    accrualBtnSave.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan';
+                }
+            });
+        }
+    })();
+</script>

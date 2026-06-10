@@ -1,0 +1,26 @@
+@model ProcurementDetailsPageViewModel
+
+@{
+    var pnl = Model.ProfitLoss;
+}
+
+<section class="tab-pane" id="pnl-tab-pane" role="tabpanel" aria-labelledby="pnl-tab" tabindex="0">
+    @if (pnl == null)
+    {
+        <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            No Profit &amp; Loss data is available for this procurement.
+        </div>
+
+        <a asp-action="CreateProfitLoss" asp-route-procurementId="@Model.Procurement.ProcurementId" class="btn btn-success">
+            <i class="bi bi-file-earmark-plus"></i> Buat Profit &amp; Loss
+        </a>
+    }
+    else
+    {
+        @await Html.PartialAsync("_ProcurementDetailsPnlVendorsCard", Model)
+        @await Html.PartialAsync("_ProcurementDetailsPnlSummaryCard", Model)
+        @await Html.PartialAsync("_ProcurementDetailsPnlItemsCard", Model)
+        @await Html.PartialAsync("_ProcurementDetailsPnlComparisonCard", Model)
+    }
+</section>

@@ -53,9 +53,45 @@ public class PurchaseRequisition : BaseEntity
     public DateTime? UpdatedAt { get; set; }
 
     // PR Tracking Status Fields
+    /// <summary>
+    /// Status stored in database. Will be automatically updated from DerivedStatus.
+    /// For display/logic, use DerivedStatus property instead.
+    /// </summary>
     [Required]
     [DisplayName("Status")]
     public PurchaseRequisitionStatus Status { get; set; } = PurchaseRequisitionStatus.OnCreateDP3;
+
+    /// <summary>
+    /// Derived/calculated status based on linked procurements.
+    /// Logic:
+    /// - If no procurements: return current Status
+    /// - If any procurement Rejected: PR = Rejected
+    /// - If all procurements DonePO: PR = DonePO
+    /// - Otherwise: return earliest (minimum) procurement status
+    /// </summary>
+    [NotMapped]
+    [DisplayName("Derived Status")]
+    public PurchaseRequisitionStatus DerivedStatus
+    {
+        get
+        {
+            // If no procurements linked, use current status
+            if (Procurements == null || !Procurements.Any())
+                return Status;
+
+            // Any rejected → PR rejected
+            if (Procurements.Any(p => p.ProcurementStatus == ProcurementStatus.Rejected))
+                return PurchaseRequisitionStatus.Rejected;
+
+            // All done → PR done
+            if (Procurements.All(p => p.ProcurementStatus == ProcurementStatus.DonePO))
+                return PurchaseRequisitionStatus.DonePO;
+
+            // Return minimum (earliest) status from procurements
+            var minStatus = Procurements.Min(p => (int)p.ProcurementStatus);
+            return (PurchaseRequisitionStatus)minStatus;
+        }
+    }
 
     [MaxLength(100)]
     [DisplayName("ISPA Number")]
@@ -81,6 +117,30 @@ public class PurchaseRequisition : BaseEntity
     [DisplayName("PO Submitted By")]
     public string? PoSubmittedByUserId { get; set; }
 
+    // Hardcopy Evidence Photo Fields
+    [MaxLength(255)]
+    [DisplayName("Hardcopy Evidence File Name")]
+    public string? HardcopyEvidenceFileName { get; set; }
+
+    [MaxLength(500)]
+    [DisplayName("Hardcopy Evidence File Path")]
+    public string? HardcopyEvidenceFilePath { get; set; }
+
+    [MaxLength(100)]
+    [DisplayName("Hardcopy Evidence Content Type")]
+    public string? HardcopyEvidenceContentType { get; set; }
+
+    [DisplayName("Hardcopy Evidence File Size")]
+    public long? HardcopyEvidenceFileSize { get; set; }
+
+    [DisplayName("Hardcopy Submitted At")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    public DateTime? HardcopySubmittedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("Hardcopy Submitted By")]
+    public string? HardcopySubmittedByUserId { get; set; }
+
     [MaxLength(1000)]
     [DisplayName("Rejection Note")]
     public string? RejectionNote { get; set; }
@@ -93,6 +153,19 @@ public class PurchaseRequisition : BaseEntity
     [DisplayName("Rejected By")]
     public string? RejectedByUserId { get; set; }
 
+    // Approval QR Code Fields
+    [MaxLength(100)]
+    [DisplayName("Approval Token")]
+    public string? ApprovalToken { get; set; }
+
+    [DisplayName("Approval Token Generated At")]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    public DateTime? ApprovalTokenGeneratedAt { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("Approval Sent By")]
+    public string? ApprovalSentByUserId { get; set; }
+
     // Navigation Properties
     [ForeignKey(nameof(IspaSubmittedByUserId))]
     public User? IspaSubmittedByUser { get; set; }
@@ -100,10 +173,17 @@ public class PurchaseRequisition : BaseEntity
     [ForeignKey(nameof(PoSubmittedByUserId))]
     public User? PoSubmittedByUser { get; set; }
 
+    [ForeignKey(nameof(HardcopySubmittedByUserId))]
+    public User? HardcopySubmittedByUser { get; set; }
+
     [ForeignKey(nameof(RejectedByUserId))]
     public User? RejectedByUser { get; set; }
+
     [ForeignKey(nameof(CreatedByUserId))]
     public User? CreatedByUser { get; set; }
+
+    [ForeignKey(nameof(ApprovalSentByUserId))]
+    public User? ApprovalSentByUser { get; set; }
 
     public ICollection<Procurement> Procurements { get; set; } = [];
     public ICollection<PurchaseRequisitionStatusHistory> StatusHistories { get; set; } = [];

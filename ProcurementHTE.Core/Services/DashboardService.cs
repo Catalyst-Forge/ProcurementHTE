@@ -31,8 +31,7 @@ namespace ProcurementHTE.Core.Services
             int take = 10
         ) => await _dashboardRepository.GetRecentActivitiesAsync(take);
 
-        public async Task<IReadOnlyList<ApprovalStatusCountDto>> GetApprovalStatusCountsAsync() =>
-            await _dashboardRepository.GetApprovalStatusCountsAsync();
+        // ApprovalStatusCountDto removed - approval per-document sudah dihapus
 
         // Dashboard Metrics - delegating to repository
         public async Task<int> GetActiveProcurementsCountAsync(CancellationToken ct = default) =>
@@ -104,5 +103,29 @@ namespace ProcurementHTE.Core.Services
             int take = 30,
             CancellationToken ct = default
         ) => await _dashboardRepository.GetUserActivityStatusAsync(take, ct);
+
+        // Admin Extended Metrics
+        public async Task<AccrualStatistics> GetAccrualStatisticsAsync(
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetAccrualStatisticsAsync(ct);
+
+        public async Task<List<RegionDistribution>> GetRegionDistributionAsync(
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetRegionDistributionAsync(ct);
+
+        // Pending Approvals per-user (based on assigned user)
+        public async Task<int> GetPendingApprovalCountByUserAsync(
+            string userId,
+            string[] userRoles,
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetPendingApprovalCountByUserAsync(userId, userRoles, ct);
+
+        public async Task<(List<PendingApprovalItem> Items, int TotalCount)> GetPendingApprovalsByUserAsync(
+            string userId,
+            string[] userRoles,
+            int skip = 0,
+            int take = 15,
+            CancellationToken ct = default
+        ) => await _dashboardRepository.GetPendingApprovalsByUserAsync(userId, userRoles, skip, take, ct);
     }
 }

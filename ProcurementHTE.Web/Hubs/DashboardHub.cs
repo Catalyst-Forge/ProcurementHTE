@@ -12,15 +12,10 @@ namespace ProcurementHTE.Web.Hubs
         private static readonly ConcurrentDictionary<string, UserConnectionInfo> OnlineUsers =
             new();
 
-        private readonly ILogger<DashboardHub> _logger;
         private readonly IUserActivityNotifier _userActivityNotifier;
 
-        public DashboardHub(
-            ILogger<DashboardHub> logger,
-            IUserActivityNotifier userActivityNotifier
-        )
+        public DashboardHub(IUserActivityNotifier userActivityNotifier)
         {
-            _logger = logger;
             _userActivityNotifier = userActivityNotifier;
         }
 
@@ -54,12 +49,6 @@ namespace ProcurementHTE.Web.Hubs
                     }
                 );
 
-                _logger.LogInformation(
-                    "User {UserId} ({UserName}) connected to dashboard hub",
-                    userId,
-                    username
-                );
-
                 // Notify all admins about user coming online
                 await _userActivityNotifier.NotifyUserActivityAsync(
                     userId,
@@ -89,12 +78,6 @@ namespace ProcurementHTE.Web.Hubs
                 // Remove user from in-memory tracking
                 OnlineUsers.TryRemove(userId, out _);
 
-                _logger.LogInformation(
-                    "User {UserId} ({UserName}) disconnected from dashboard hub",
-                    userId,
-                    username
-                );
-
                 // Notify all admins about user going offline
                 await _userActivityNotifier.NotifyUserActivityAsync(
                     userId,
@@ -119,7 +102,6 @@ namespace ProcurementHTE.Web.Hubs
             if (!string.IsNullOrEmpty(userId) && OnlineUsers.TryGetValue(userId, out var userInfo))
             {
                 userInfo.LastActivityAt = DateTime.Now;
-                _logger.LogDebug("Updated activity timestamp for user {UserId}", userId);
             }
 
             return Task.CompletedTask;
@@ -136,12 +118,6 @@ namespace ProcurementHTE.Web.Hubs
                 // Remove from online users immediately
                 OnlineUsers.TryRemove(userId, out _);
 
-                _logger.LogInformation(
-                    "User {UserId} ({UserName}) explicitly logging out - notifying all clients",
-                    userId,
-                    username
-                );
-
                 // Broadcast offline status to all clients
                 await _userActivityNotifier.NotifyUserActivityAsync(
                     userId,
@@ -155,6 +131,18 @@ namespace ProcurementHTE.Web.Hubs
         public async Task RequestDashboardUpdate()
         {
             await Clients.Caller.SendAsync("DashboardUpdateRequested");
+        }
+
+        // Client calls this when entering Dashboard page to receive UserActivityChanged events
+        public async Task JoinDashboardViewers()
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "dashboard_viewers");
+        }
+
+        // Client calls this when leaving Dashboard page
+        public async Task LeaveDashboardViewers()
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "dashboard_viewers");
         }
 
         // Static method to check if specific user is online (called from repository)

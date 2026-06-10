@@ -1,20 +1,30 @@
 using ProcurementHTE.Core.Common;
+using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Utils;
 
 namespace ProcurementHTE.Core.Services;
 
-public class PurchaseRequisitionService : IPurchaseRequisitionService
+public class PurchaseRequisitionService : IPurchaseRequisitionQueryService, IPurchaseRequisitionCommandService
 {
     private readonly IPurchaseRequisitionRepository _purchaseRequisitionRepository;
+    private readonly IProcurementTrackingService _procurementTrackingService;
+    private readonly TimeProvider _timeProvider;
     private const string PR_PREFIX = "PR";
 
-    public PurchaseRequisitionService(IPurchaseRequisitionRepository purchaseRequisitionRepository)
+    public PurchaseRequisitionService(
+        IPurchaseRequisitionRepository purchaseRequisitionRepository,
+        IProcurementTrackingService procurementTrackingService,
+        TimeProvider timeProvider)
     {
         _purchaseRequisitionRepository =
             purchaseRequisitionRepository
             ?? throw new ArgumentNullException(nameof(purchaseRequisitionRepository));
+        _procurementTrackingService =
+            procurementTrackingService
+            ?? throw new ArgumentNullException(nameof(procurementTrackingService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     #region Query Methods
@@ -65,6 +75,11 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         return _purchaseRequisitionRepository.CountAsync(ct);
     }
 
+    public Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default)
+    {
+        return _purchaseRequisitionRepository.IsPrNumberExistsAsync(prNumber, excludePrId, ct);
+    }
+
     #endregion
 
     #region Command Methods
@@ -84,7 +99,20 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
             purchaseRequisition.PrNumber = SequenceNumberGenerator.NumId(PR_PREFIX, lastPrNumber);
         }
 
-        purchaseRequisition.CreatedAt = DateTime.UtcNow;
+        purchaseRequisition.CreatedAt = _timeProvider.GetUtcNow().UtcDateTime;
+
+        // Set initial status
+        purchaseRequisition.Status = PurchaseRequisitionStatus.OnCreateDP3;
+
+        // Add initial status history - On Create DP3 (APPO)
+        // Don't set PrId explicitly - EF will set it from the navigation property
+        purchaseRequisition.StatusHistories.Add(new PurchaseRequisitionStatusHistory
+        {
+            Status = PurchaseRequisitionStatus.OnCreateDP3,
+            ChangedAt = purchaseRequisition.CreatedAt,
+            ChangedByUserId = purchaseRequisition.CreatedByUserId,
+            Note = "PR created"
+        });
 
         // Create the purchase requisition
         await _purchaseRequisitionRepository.CreateAsync(purchaseRequisition, ct);
@@ -98,6 +126,9 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
                 procIds,
                 ct
             );
+
+            // Recalculate PR status based on linked procurements
+            await _procurementTrackingService.RecalculatePrStatusAsync(purchaseRequisition.PrId, ct);
         }
 
         return purchaseRequisition;
@@ -125,7 +156,7 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         existing.DocumentFilePath = purchaseRequisition.DocumentFilePath;
         existing.DocumentContentType = purchaseRequisition.DocumentContentType;
         existing.DocumentFileSize = purchaseRequisition.DocumentFileSize;
-        existing.UpdatedAt = DateTime.UtcNow;
+        existing.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await _purchaseRequisitionRepository.UpdateAsync(existing, ct);
 
@@ -141,13 +172,19 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
             {
                 await _purchaseRequisitionRepository.LinkProcurementsAsync(existing.PrId, procIds, ct);
             }
+
+            // Recalculate PR status based on linked procurements
+            await _procurementTrackingService.RecalculatePrStatusAsync(existing.PrId, ct);
         }
     }
 
-    public async Task DeleteAsync(string id, CancellationToken ct = default)
+    public async Task DeleteAsync(string id, string deletedByUserId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("ID tidak boleh kosong", nameof(id));
+
+        if (string.IsNullOrWhiteSpace(deletedByUserId))
+            throw new ArgumentException("User ID tidak boleh kosong", nameof(deletedByUserId));
 
         var existing =
             await _purchaseRequisitionRepository.GetByIdAsync(id, ct)
@@ -159,7 +196,7 @@ public class PurchaseRequisitionService : IPurchaseRequisitionService
         await _purchaseRequisitionRepository.UnlinkAllProcurementsAsync(id, ct);
 
         // Delete the purchase requisition
-        await _purchaseRequisitionRepository.DeleteAsync(existing, ct);
+        await _purchaseRequisitionRepository.DeleteAsync(existing, deletedByUserId, ct);
     }
 
     #endregion

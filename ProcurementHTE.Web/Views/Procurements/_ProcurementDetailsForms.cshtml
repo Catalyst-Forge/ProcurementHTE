@@ -1,0 +1,15 @@
+@model ProcurementDetailsPageViewModel
+
+@if (Model.CanPublish)
+{
+    <form id="publishForm" method="post" asp-action="Publish" asp-route-id="@Model.Procurement.ProcurementId" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+}
+
+@if (Model.CanUnpublish)
+{
+    <form id="unpublishForm" method="post" asp-action="Unpublish" asp-route-id="@Model.Procurement.ProcurementId" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+}

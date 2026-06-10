@@ -5,6 +5,7 @@
     ViewData["Title"] = "Document Approval Rules";
     var docTypes = ViewBag.DocumentTypes as List<DocumentType> ?? new();
     var roleMap = ViewBag.RoleMap as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var userMap = ViewBag.UserMap as IDictionary<string, string> ?? new Dictionary<string, string>();
     var selectedDocType = Context.Request.Query["documentTypeId"].ToString();
     var docSelect = new SelectList(docTypes, "DocumentTypeId", "Name", selectedDocType);
 }
@@ -72,24 +73,42 @@
                     var submitterLabel = roleMap.TryGetValue(item.SubmitterRoleId, out var sName)
                         ? sName
                         : item.SubmitterRoleId;
+                    var submitterUserLabel = !string.IsNullOrWhiteSpace(item.SubmitterUserId) && userMap.TryGetValue(item.SubmitterUserId, out var suName)
+                        ? suName
+                        : null;
                     <tr>
                         <td>@item.DocumentType?.Name</td>
                         <td>@jobTypeLabel</td>
                         <td>@categoryLabel</td>
                         <td class="text-end">@(item.MinAmount.ToString("N0"))</td>
                         <td class="text-end">@(item.MaxAmount == decimal.MaxValue ? "Unlimited" : item.MaxAmount.ToString("N0"))</td>
-                        <td>@submitterLabel</td>
+                        <td>
+                            @submitterLabel
+                            @if (!string.IsNullOrWhiteSpace(submitterUserLabel))
+                            {
+                                <br /><small class="text-muted">@submitterUserLabel</small>
+                            }
+                        </td>
                         <td>
                             @{
                                 string approverLabel = "-";
+                                string? approverUserLabel = null;
                                 if (!string.IsNullOrWhiteSpace(item.ApproverRoleId))
                                 {
                                     approverLabel = roleMap.TryGetValue(item.ApproverRoleId, out var aName)
                                         ? aName
                                         : item.ApproverRoleId;
                                 }
+                                if (!string.IsNullOrWhiteSpace(item.ApproverUserId) && userMap.TryGetValue(item.ApproverUserId, out var auName))
+                                {
+                                    approverUserLabel = auName;
+                                }
                             }
                             @approverLabel
+                            @if (!string.IsNullOrWhiteSpace(approverUserLabel))
+                            {
+                                <br /><small class="text-muted">@approverUserLabel</small>
+                            }
                         </td>
                         <td class="text-center">@item.Sequence</td>
                         <td class="text-center">

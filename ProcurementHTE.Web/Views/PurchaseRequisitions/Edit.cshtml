@@ -2,9 +2,6 @@
 @model ProcurementHTE.Web.Models.ViewModels.PurchaseRequisitionEditViewModel
 @{
     ViewData["Title"] = "Edit Purchase Requisition";
-    var vendors = ViewBag.Vendors as List<SelectListItem> ?? new List<SelectListItem>();
-    var jobTypes = ViewBag.JobTypes as List<SelectListItem> ?? new List<SelectListItem>();
-    var categories = ViewBag.Categories as List<SelectListItem> ?? new List<SelectListItem>();
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
@@ -19,171 +16,37 @@
 
 @if (ViewData.ModelState.ErrorCount > 0)
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>Error!</strong> Please fix the following errors:
-        <ul class="mb-0 mt-2">
-            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-            {
-                <li>@error.ErrorMessage</li>
-            }
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    var errorMessages = ViewData.ModelState.Values
+        .SelectMany(v => v.Errors)
+        .Select(e => "• " + e.ErrorMessage);
+    var escapedMessages = System.Text.Json.JsonSerializer.Serialize(string.Join("<br/>", errorMessages));
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var msg = @Html.Raw(escapedMessages);
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                html: msg,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d6efd'
+            });
+        });
+    </script>
 }
 
-<form asp-action="Edit" asp-route-id="@Model.PrId" method="post" enctype="multipart/form-data">
+<form asp-action="Edit" 
+      asp-route-id="@Model.PrId" 
+      method="post" 
+      enctype="multipart/form-data"
+      hx-boost="false">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="PrId" />
 
-    <section class="card shadow-sm mb-3 p-2 rounded-4">
-        <div class="card-body">
-            <h5 class="card-title fw-semibold">PR Information</h5>
-            <hr />
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="PRNumber" class="form-label"></label>
-                    <input asp-for="PRNumber" type="text" class="form-control" placeholder="e.g. PR-2025-001" />
-                    <span asp-validation-for="PRNumber" class="text-danger"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="RequestDate" class="form-label"></label>
-                    <input asp-for="RequestDate" type="date" class="form-control" />
-                    <span asp-validation-for="RequestDate" class="text-danger"></span>
-                </div>
-                <div class="col-md-12">
-                    <label asp-for="Description" class="form-label"></label>
-                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter PR description..."></textarea>
-                    <span asp-validation-for="Description" class="text-danger"></span>
-                </div>
-            </div>
-        </div>
-    </section>
+    @await Html.PartialAsync("_EditPrInfo", Model)
 
-    <section class="card shadow-sm mb-3 p-2 rounded-4">
-        <div class="card-body">
-            <h5 class="card-title fw-semibold">PR Document</h5>
-            <hr />
-            <div class="row g-3">
-                @if (!string.IsNullOrEmpty(Model.ExistingDocumentFileName))
-                {
-                    <div class="col-md-12">
-                        <label class="form-label">Current Document</label>
-                        <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
-                            <i class="bi bi-file-earmark-text fs-4 text-primary"></i>
-                            <div class="flex-grow-1">
-                                <span class="fw-semibold">@Model.ExistingDocumentFileName</span>
-                            </div>
-                            <a asp-action="DownloadDocument" asp-route-id="@Model.PrId" class="btn btn-sm btn-outline-primary" target="_blank">
-                                <i class="bi bi-download"></i> Download
-                            </a>
-                        </div>
-                        <input type="hidden" asp-for="ExistingDocumentFileName" />
-                    </div>
-                }
-                <div class="col-md-12">
-                    <label asp-for="DocumentFile" class="form-label">
-                        @(string.IsNullOrEmpty(Model.ExistingDocumentFileName) ? "Upload Document" : "Replace Document (Optional)")
-                    </label>
-                    <input asp-for="DocumentFile" type="file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx" />
-                    <span asp-validation-for="DocumentFile" class="text-danger"></span>
-                    <small class="form-text text-muted">
-                        Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB). 
-                        @if (!string.IsNullOrEmpty(Model.ExistingDocumentFileName))
-                        {
-                            <span>Leave empty to keep the current document.</span>
-                        }
-                    </small>
-                </div>
-            </div>
-        </div>
-    </section>
+    @await Html.PartialAsync("_EditPrDocument", Model)
 
-    <section class="card shadow-sm mb-3 p-2 rounded-4">
-        <div class="card-body">
-            <h5 class="card-title fw-semibold">Link to Procurement</h5>
-            <hr />
-            <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                    <label class="form-label">Filter by Vendor</label>
-                    <select class="form-select" id="filterVendor">
-                        <option value="">-- All Vendors --</option>
-                        @foreach (var vendor in vendors)
-                        {
-                            <option value="@vendor.Value">@vendor.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Filter by Category</label>
-                    <select class="form-select" id="filterCategory">
-                        <option value="">-- All Categories --</option>
-                        @foreach (var category in categories)
-                        {
-                            <option value="@category.Value">@category.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Filter by Job Type</label>
-                    <select class="form-select" id="filterJobType">
-                        <option value="">-- All Job Types --</option>
-                        @foreach (var jobType in jobTypes)
-                        {
-                            <option value="@jobType.Value">@jobType.Text</option>
-                        }
-                    </select>
-                </div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-12">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <label class="form-label mb-0">Available Procurements</label>
-                        <div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefreshProcurements">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnClearFilters">
-                                <i class="bi bi-x-circle"></i> Clear Filters
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-12">
-                    <div class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-hover table-sm mb-0" id="procurementTable">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th style="width: 40px;">
-                                        <input type="checkbox" class="form-check-input" id="selectAll" title="Select All" />
-                                    </th>
-                                    <th>Proc Number</th>
-                                    <th>WO Number</th>
-                                    <th>Job Name</th>
-                                    <th>Start Date</th>
-                                    <th>Category</th>
-                                    <th>Job Type</th>
-                                    <th>Vendor</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="procurementTableBody">
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
-                                        <i class="bi bi-hourglass-split"></i> Loading procurements...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <small class="form-text text-muted">
-                        <span id="selectedCount">0</span> procurement(s) selected
-                    </small>
-                </div>
-            </div>
-        </div>
-    </section>
+    @await Html.PartialAsync("_EditPrProcurements", Model)
 
     <div class="d-flex justify-content-end gap-2 mb-3">
         <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
@@ -193,185 +56,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            'use strict';
-
-            const filterVendor = document.getElementById('filterVendor');
-            const filterCategory = document.getElementById('filterCategory');
-            const filterJobType = document.getElementById('filterJobType');
-            const procurementTableBody = document.getElementById('procurementTableBody');
-            const btnRefresh = document.getElementById('btnRefreshProcurements');
-            const btnClearFilters = document.getElementById('btnClearFilters');
-            const selectAll = document.getElementById('selectAll');
-            const selectedCountSpan = document.getElementById('selectedCount');
-
-            // Pre-selected procurement IDs from the model
-            const preSelectedIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProcurementIds));
-            const currentPrId = '@Model.PrId';
-
-            let procurements = [];
-
-            const loadProcurements = async () => {
-                const vendorId = filterVendor.value;
-                const category = filterCategory.value;
-                const jobTypeId = filterJobType.value;
-
-                procurementTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
-                            <div class="spinner-border spinner-border-sm" role="status"></div> Loading procurements...
-                        </td>
-                    </tr>`;
-
-                const params = new URLSearchParams();
-                if (vendorId) params.append('vendorId', vendorId);
-                if (category) params.append('category', category);
-                if (jobTypeId) params.append('jobTypeId', jobTypeId);
-
-                try {
-                    const response = await fetch(`@Url.Action("GetFilteredProcurements", "PurchaseRequisitions")?${params.toString()}`);
-                    const data = await response.json();
-                    console.log('Procurements loaded:', data);
-                    procurements = data;
-                    
-                    // Also fetch currently linked procurements for this PR
-                    await loadLinkedProcurements(data);
-                } catch (error) {
-                    console.error('Error loading procurements:', error);
-                    procurementTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center text-danger py-4">
-                                <i class="bi bi-exclamation-triangle"></i> Failed to load procurements. Check console for details.
-                            </td>
-                        </tr>`;
-                }
-            };
-
-            const loadLinkedProcurements = async (availableProcurements) => {
-                try {
-                    // Fetch linked procurements for current PR
-                    const response = await fetch(`@Url.Action("GetLinkedProcurements", "PurchaseRequisitions")?prId=${currentPrId}`);
-                    const linkedData = await response.json();
-                    console.log('Linked procurements:', linkedData);
-
-                    // Merge linked procurements with available ones (avoiding duplicates)
-                    const availableIds = new Set(availableProcurements.map(p => p.id));
-                    const linkedProcurements = linkedData.filter(p => !availableIds.has(p.id));
-                    
-                    // Combine both lists
-                    const combinedData = [...linkedProcurements, ...availableProcurements];
-                    
-                    renderProcurements(combinedData);
-                } catch (error) {
-                    console.error('Error loading linked procurements:', error);
-                    // If linked endpoint fails, just render available procurements
-                    renderProcurements(availableProcurements);
-                }
-            };
-
-            const renderProcurements = (data) => {
-                if (!data || data.length === 0) {
-                    procurementTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center text-muted py-4">
-                                <i class="bi bi-inbox"></i> No procurements found.
-                            </td>
-                        </tr>`;
-                    selectAll.checked = false;
-                    updateSelectedCount();
-                    return;
-                }
-
-                const html = data.map(proc => {
-                    const isPreSelected = preSelectedIds.includes(proc.id);
-                    const statusBadge = getStatusBadge(proc.status);
-                    const formattedStartDate = proc.startDate ? formatDate(proc.startDate) : '-';
-                    const linkedBadge = isPreSelected ? '<span class="badge bg-success ms-1"><i class="bi bi-link-45deg"></i></span>' : '';
-                    return `
-                        <tr class="${isPreSelected ? 'table-success' : ''}">
-                            <td><input type="checkbox" class="form-check-input procurement-checkbox" name="ProcurementIds" value="${proc.id}" ${isPreSelected ? 'checked' : ''} /></td>
-                            <td><strong>${proc.procNum || '-'}</strong>${linkedBadge}</td>
-                            <td>${proc.wonum || '-'}</td>
-                            <td>${proc.jobName || '-'}</td>
-                            <td>${formattedStartDate}</td>
-                            <td><span class="badge bg-info">${proc.category || '-'}</span></td>
-                            <td>${proc.jobType || '-'}</td>
-                            <td>${proc.vendorName || '-'}</td>
-                            <td>${statusBadge}</td>
-                        </tr>`;
-                }).join('');
-
-                procurementTableBody.innerHTML = html;
-
-                // Update select all checkbox state
-                const allCheckboxes = procurementTableBody.querySelectorAll('.procurement-checkbox');
-                const checkedCheckboxes = procurementTableBody.querySelectorAll('.procurement-checkbox:checked');
-                selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
-
-                allCheckboxes.forEach(cb => {
-                    cb.addEventListener('change', updateSelectedCount);
-                });
-
-                updateSelectedCount();
-            };
-
-            const formatDate = (dateString) => {
-                if (!dateString) return '-';
-                const date = new Date(dateString);
-                const day = date.getDate();
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const month = months[date.getMonth()];
-                const year = date.getFullYear();
-                return `${day} ${month} ${year}`;
-            };
-
-            const getStatusBadge = (status) => {
-                const statusMap = {
-                    'Created': 'bg-secondary',
-                    'Draft': 'bg-secondary',
-                    'In Progress': 'bg-primary',
-                    'Pending': 'bg-warning text-dark',
-                    'Approved': 'bg-success',
-                    'Rejected': 'bg-danger',
-                    'Completed': 'bg-success',
-                    'Cancelled': 'bg-dark'
-                };
-                const badgeClass = statusMap[status] || 'bg-secondary';
-                return `<span class="badge ${badgeClass}">${status || 'Unknown'}</span>`;
-            };
-
-            const updateSelectedCount = () => {
-                const checkboxes = procurementTableBody.querySelectorAll('.procurement-checkbox:checked');
-                selectedCountSpan.textContent = checkboxes.length;
-
-                // Update select all checkbox
-                const allCheckboxes = procurementTableBody.querySelectorAll('.procurement-checkbox');
-                selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkboxes.length;
-                selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
-            };
-
-            // Event listeners
-            filterVendor.addEventListener('change', loadProcurements);
-            filterCategory.addEventListener('change', loadProcurements);
-            filterJobType.addEventListener('change', loadProcurements);
-            btnRefresh.addEventListener('click', loadProcurements);
-
-            btnClearFilters.addEventListener('click', () => {
-                filterVendor.value = '';
-                filterCategory.value = '';
-                filterJobType.value = '';
-                loadProcurements();
-            });
-
-            selectAll.addEventListener('change', () => {
-                const checkboxes = procurementTableBody.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(cb => cb.checked = selectAll.checked);
-                updateSelectedCount();
-            });
-
-            // Initial load
-            loadProcurements();
-        })();
-    </script>
+    @await Html.PartialAsync("_EditPrScripts", Model)
 }

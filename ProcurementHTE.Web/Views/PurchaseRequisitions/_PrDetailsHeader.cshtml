@@ -1,0 +1,24 @@
+@model PurchaseRequisitionDetailsViewModel
+
+@{
+    var canEditDelete = ViewData["CanEditDelete"] is true;
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">Purchase Requisition Details</h1>
+        <p class="text-muted mb-0 small">View PR information and manage procurement documents</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        @if (canEditDelete)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.PrId" class="btn btn-outline-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</header>

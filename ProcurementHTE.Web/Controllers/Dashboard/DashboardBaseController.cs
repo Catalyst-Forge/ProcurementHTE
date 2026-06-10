@@ -9,21 +9,21 @@ using ProcurementHTE.Web.Models.ViewModels;
 namespace ProcurementHTE.Web.Controllers.Dashboard
 {
     [Authorize]
-    public abstract class DashboardBaseController : Controller
+    public abstract partial class DashboardBaseController : Controller
     {
-        protected readonly IProcurementService ProcurementService;
+        protected readonly IProcurementQueryService _procurementQueryService;
         protected readonly UserManager<User> UserManager;
-        protected readonly IProfitLossService ProfitLossService;
+        protected readonly IProfitLossQueryService ProfitLossService;
         protected readonly IDashboardService DashboardService;
 
         protected DashboardBaseController(
-            IProcurementService procurementService,
+            IProcurementQueryService procurementQueryService,
             UserManager<User> userManager,
-            IProfitLossService profitLossService,
+            IProfitLossQueryService profitLossService,
             IDashboardService dashboardService
         )
         {
-            ProcurementService = procurementService;
+            _procurementQueryService = procurementQueryService;
             UserManager = userManager;
             ProfitLossService = profitLossService;
             DashboardService = dashboardService;
@@ -41,7 +41,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             var totalUsers = UserManager.Users.Count();
             var activeUsers = UserManager.Users.Count(u => u.IsActive);
 
-            var recentProcurements = await ProcurementService.GetMyRecentProcurementAsync(
+            var recentProcurements = await _procurementQueryService.GetMyRecentProcurementAsync(
                 userId,
                 5,
                 ct
@@ -49,7 +49,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
             var totalRevenueThisMonth = await ProfitLossService.GetTotalRevenueThisMonthAsync();
             var procurementsByStatus = await DashboardService.GetProcurementStatusCountsAsync();
             var revenuePerMonth = await DashboardService.GetRevenuePerMonthAsync(DateTime.Now.Year);
-            var approvalStatus = await DashboardService.GetApprovalStatusCountsAsync();
+            // approvalStatus removed - approval per-document sudah dihapus
 
             // Fetch DTOs from service layer
             var recentProcsDto = await DashboardService.GetRecentProcurementsAsync(10, ct);
@@ -73,7 +73,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 TotalUsers = totalUsers,
                 ActiveUsers = activeUsers,
                 TotalRevenueThisMonth = totalRevenueThisMonth,
-                TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
+                TotalProcurements = await _procurementQueryService.CountAllProcurementsAsync(ct),
 
                 // Recent Procurements - using unified list
                 RecentProcurementsList = recentProcurements
@@ -90,7 +90,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 // Status Counts - DTOs only for chart data
                 ProcurementStatusCounts = procurementsByStatus,
                 RevenuePerMonth = revenuePerMonth,
-                ApprovalStatus = approvalStatus,
+                // ApprovalStatus removed - approval per-document sudah dihapus
 
                 // Core Metrics
                 ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
@@ -125,25 +125,30 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 var userActivityDto = await DashboardService.GetUserActivityStatusAsync(30, ct);
                 model.UserActivities = userActivityDto.ToViewModelList();
                 model.OnlineUsersCount = userActivityDto.Count(u => u.IsOnline);
+
+                // Accrual Statistics
+                var accrualStats = await DashboardService.GetAccrualStatisticsAsync(ct);
+                model.PendingAccrualCount = accrualStats.PendingCount;
+                model.FilledAccrualCount = accrualStats.FilledCount;
+                model.TotalPotensiAccrual = accrualStats.TotalPotensiAccrual;
+
+                // Role Distribution
+                var roleDistribution = await GetRoleDistributionAsync();
+                model.RoleDistribution = roleDistribution;
+
+                // Region Distribution
+                var regionDistribution = await DashboardService.GetRegionDistributionAsync(ct);
+                model.RegionDistribution = regionDistribution
+                    .Select(r => new RegionDistributionViewModel
+                    {
+                        RegionName = r.RegionName,
+                        Count = r.Count,
+                        TotalValue = r.TotalValue
+                    })
+                    .ToList();
             }
 
             return model;
-        }
-
-        protected async Task<IActionResult> RenderDashboardAsync(
-            string viewPath,
-            string roleName,
-            CancellationToken ct = default
-        )
-        {
-            var user = await UserManager.GetUserAsync(User);
-            if (user is null)
-            {
-                return Challenge();
-            }
-
-            var model = await BuildDashboardAsync(user, roleName, ct);
-            return View(viewPath, model);
         }
 
         protected async Task<DashboardViewModel> BuildFullDashboardAsync(
@@ -168,7 +173,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
 
             return new DashboardViewModel
             {
-                TotalProcurements = await ProcurementService.CountAllProcurementsAsync(ct),
+                TotalProcurements = await _procurementQueryService.CountAllProcurementsAsync(ct),
                 ActiveProcurements = await DashboardService.GetActiveProcurementsCountAsync(ct),
                 PendingApprovals = await DashboardService.GetPendingApprovalsCountAsync(ct),
                 TotalVendors = await DashboardService.GetTotalVendorsCountAsync(ct),

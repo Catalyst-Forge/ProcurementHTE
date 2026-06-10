@@ -1,0 +1,135 @@
+@using System.Text.Json
+@model DashboardViewModel
+
+<script>
+    async function updatePendingApprovals() {
+        try {
+            const response = await fetch('/api/approvals/pending-count');
+            const data = await response.json();
+            const badge = document.getElementById('pendingApprovalsCount');
+            if (badge && data.count > 0) {
+                badge.textContent = data.count;
+                badge.classList.remove('d-none');
+            } else if (badge) {
+                badge.classList.add('d-none');
+            }
+        } catch (error) {
+            console.error('Error fetching pending approvals:', error);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updatePendingApprovals);
+    } else {
+        updatePendingApprovals();
+    }
+
+    setInterval(updatePendingApprovals, 300000);
+
+    function updateDateTime() {
+        const now = new Date();
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        document.getElementById('currentDateTime').textContent =
+            now.toLocaleDateString('id-ID', options);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
+
+    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+    const statusData = @Html.Raw(JsonSerializer.Serialize(Model.ProcurementsByStatus, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    const statusChart = new Chart(document.getElementById('procurementStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(d => d.statusName),
+            datasets: [{
+                data: statusData.map(d => d.count),
+                backgroundColor: [
+                    '#0d6efd', '#198754', '#ffc107', '#dc3545',
+                    '#6c757d', '#0dcaf0', '#6f42c1', '#fd7e14'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { padding: 15, font: { size: 12 } }
+                }
+            }
+        }
+    });
+
+    const jobTypeData = @Html.Raw(JsonSerializer.Serialize(Model.JobTypeDistribution, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    const jobTypeChart = new Chart(document.getElementById('jobTypeChart'), {
+        type: 'bar',
+        data: {
+            labels: jobTypeData.map(d => d.jobTypeName),
+            datasets: [{
+                label: 'Count',
+                data: jobTypeData.map(d => d.count),
+                backgroundColor: '#0d6efd',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    const monthlyData = @Html.Raw(JsonSerializer.Serialize(Model.MonthlyProcurementTrend, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    const monthlyChart = new Chart(document.getElementById('monthlyTrendChart'), {
+        type: 'line',
+        data: {
+            labels: monthlyData.map(d => d.monthYear),
+            datasets: [{
+                label: 'Procurement Count',
+                data: monthlyData.map(d => d.count),
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    const prTrendData = @Html.Raw(JsonSerializer.Serialize(Model.MonthlyPurchaseRequisitionTrend, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    if (document.getElementById('purchaseRequisitionChart')) {
+        new Chart(document.getElementById('purchaseRequisitionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: prTrendData.map(item => item.monthYear),
+                datasets: [{
+                    label: 'Purchase Requisitions',
+                    data: prTrendData.map(item => item.count),
+                    backgroundColor: ['#6f42c1', '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6610f2', '#fd7e14', '#20c997', '#e83e8c', '#adb5bd', '#343a40'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+</script>

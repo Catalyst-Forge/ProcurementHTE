@@ -1,0 +1,46 @@
+@using ProcurementHTE.Web.Models.Admin
+@model UserManagementIndexViewModel
+
+<nav>
+    <ul class="pagination mb-0">
+        @{
+            var currentPage = Model.Filters.Page <= 0 ? 1 : Model.Filters.Page;
+        }
+
+        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="Index"
+               asp-route-page="@(currentPage - 1)"
+               asp-route-search="@Model.Filters.Search"
+               asp-route-role="@Model.Filters.Role"
+               asp-route-status="@Model.Filters.Status"
+               asp-route-twoFactor="@Model.Filters.TwoFactor">
+                &laquo;
+            </a>
+        </li>
+
+        @for (var i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == currentPage ? "active" : "")">
+                <a class="page-link" asp-action="Index"
+                   asp-route-page="@i"
+                   asp-route-search="@Model.Filters.Search"
+                   asp-route-role="@Model.Filters.Role"
+                   asp-route-status="@Model.Filters.Status"
+                   asp-route-twoFactor="@Model.Filters.TwoFactor">
+                    @i
+                </a>
+            </li>
+        }
+
+        <li class="page-item @(currentPage == Model.TotalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="Index"
+               asp-route-page="@(currentPage + 1)"
+               asp-route-search="@Model.Filters.Search"
+               asp-route-role="@Model.Filters.Role"
+               asp-route-status="@Model.Filters.Status"
+               asp-route-twoFactor="@Model.Filters.TwoFactor">
+                &raquo;
+            </a>
+        </li>
+    </ul>
+</nav>

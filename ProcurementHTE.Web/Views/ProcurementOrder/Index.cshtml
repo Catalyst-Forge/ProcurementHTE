@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Procurement Order";
     Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "waiting pickup" => "bg-info-subtle text-info-emphasis border border-info-subtle",
         "in progress" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
         "approved" => "bg-success-subtle text-success-emphasis border border-success-subtle",
         _ => "bg-light text-body border"
@@ -22,24 +23,8 @@
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Procurement Order List</h1>
+    <h1 class="h3 mb-0">Procurements</h1>
 </header>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
 
 <form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
     <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
@@ -121,10 +106,14 @@
                             </span>
                         </td>
                         <td class="text-center">
-                            <form method="post" asp-action="Approve" asp-route-id="@item.ProcurementId" style="display: inline;" class="approve-form">
+                            <a asp-action="Details" asp-route-id="@item.ProcurementId" 
+                               class="btn btn-outline-info btn-sm me-1" title="View Details">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                            <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
                                 @Html.AntiForgeryToken()
-                                <button type="button" class="btn btn-success btn-sm btn-approve" data-procnum="@item.ProcNum">
-                                    <i class="bi bi-check-circle"></i> Pick up
+                                <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                    <i class="bi bi-box-arrow-in-down"></i> Pickup
                                 </button>
                             </form>
                         </td>
@@ -186,21 +175,21 @@
             }, 500);
         });
 
-        // SweetAlert2 for Approve buttons
-        document.querySelectorAll('.btn-approve').forEach(btn => {
+        // SweetAlert2 for Pickup buttons
+        document.querySelectorAll('.btn-pickup').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const form = this.closest('form');
                 const procNum = this.dataset.procnum;
 
                 Swal.fire({
-                    title: 'Terima Procurement?',
-                    html: `Apakah Anda yakin ingin menerima procurement <strong>${procNum}</strong>?`,
+                    title: 'Pickup Procurement?',
+                    html: `Apakah Anda yakin ingin pickup procurement <strong>${procNum}</strong>?<br><small class="text-muted">Procurement akan masuk ke proses PR</small>`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#198754',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-check-circle"></i> Ya, Terima',
+                    confirmButtonText: '<i class="bi bi-box-arrow-in-down"></i> Ya, Pickup',
                     cancelButtonText: '<i class="bi bi-x"></i> Batal',
                     reverseButtons: true
                 }).then((result) => {

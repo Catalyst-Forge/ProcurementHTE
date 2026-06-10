@@ -1,0 +1,69 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
+@{
+    var jobTypeName = Model.JobTypeName ?? ViewBag.JobTypeName ?? "Angkutan";
+    var isPengangkutan = jobTypeName == "Angkutan";
+    var isSewaUnit = jobTypeName == "StandBy";
+    var isMoving = jobTypeName == "Moving";
+}
+
+<section class="col-12" aria-labelledby="financial-section-title">
+    <div class="card shadow-sm p-2">
+        <fieldset class="card-body">
+            <legend class="card-title fw-semibold" id="financial-section-title">
+                Financial Figures - JobType: <span class="badge bg-primary">@jobTypeName</span>
+            </legend>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="AccrualAmount" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="RealizationAmount" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
+                    </div>
+                </div>
+
+                @if (isPengangkutan)
+                {
+                    <div class="col-md-4">
+                        <label asp-for="Distance" class="form-label"></label>
+                        <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                        <span class="text-danger" asp-validation-for="Distance"></span>
+                    </div>
+                }
+                @if (isSewaUnit)
+                {
+                    <div class="col-md-4">
+                        <label asp-for="TglMulaiSewa" class="form-label">Tanggal Mulai Sewa</label>
+                        <input asp-for="TglMulaiSewa" type="date" class="form-control" />
+                        <span class="text-danger" asp-validation-for="TglMulaiSewa"></span>
+                    </div>
+                }
+                @if (isMoving)
+                {
+                    <div class="col-md-4">
+                        <label for="TglMulaiMoving" class="form-label">Tanggal Mulai Moving</label>
+                        <input type="date" id="TglMulaiMoving" name="TglMulaiMoving"
+                               value="@(Model.TglMulaiMoving?.ToString("yyyy-MM-dd"))"
+                               class="form-control" />
+                        <span class="text-danger" asp-validation-for="TglMulaiMoving"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Distance" class="form-label">Jarak (Km)</label>
+                        <div class="input-group">
+                            <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
+                            <span class="input-group-text">Km</span>
+                        </div>
+                        <small class="text-muted">Informasi saja, tidak mempengaruhi perhitungan</small>
+                    </div>
+                }
+            </div>
+        </fieldset>
+    </div>
+</section>

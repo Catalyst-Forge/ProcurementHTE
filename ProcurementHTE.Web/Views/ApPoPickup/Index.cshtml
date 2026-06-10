@@ -1,0 +1,46 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    ViewData["Title"] = "AP-PO Pickup";
+    var currentTab = ViewBag.CurrentTab as string ?? "waiting";
+    ViewData["CurrentTab"] = currentTab;
+    ViewData["IsMyPickups"] = currentTab == "mypickups";
+    
+    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
+        "waiting pickup" => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        "in progress" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        "approved" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        _ => "bg-light text-body border"
+    };
+    ViewData["BadgeClass"] = BadgeClass;
+
+    ViewData["CurrentSearch"] = Context.Request.Query["search"].ToString();
+    ViewData["CurrentFields"] = (Context.Request.Query["fields"].ToString() ?? "ProcNum,JobName")
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    ViewData["Columns"] = new (string Key, string Label)[] {
+        ("ProcNum","Procurement No."),
+        ("Wonum","WO Number"),
+        ("JobName","Job Name"),
+        ("JobType","Job Type"),
+    };
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">AP-PO Pickup</h1>
+</header>
+
+@await Html.PartialAsync("Partials/_Tabs")
+
+@await Html.PartialAsync("Partials/_FilterForm", Model)
+
+@await Html.PartialAsync("Partials/_Table", Model)
+
+@await Html.PartialAsync("Partials/_Pagination", Model)
+
+@section Scripts {
+    @await Html.PartialAsync("Partials/_Scripts")
+}

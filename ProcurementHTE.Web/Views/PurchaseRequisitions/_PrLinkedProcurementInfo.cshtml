@@ -1,0 +1,40 @@
+@model ProcurementWithDocsViewModel
+
+<article class="card shadow-sm mb-3 rounded-4">
+    <header class="card-header mt-2 fw-semibold bg-transparent border-bottom-0">
+        <h2 class="card-title mb-0 h6">
+            <i class="bi bi-clipboard2-minus-fill text-primary me-1"></i> Procurement Information
+        </h2>
+    </header>
+
+    <hr class="mx-3 my-2" />
+
+    <div class="card-body pt-0">
+        <div class="row mb-0">
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">WO Number</dt>
+                <dd class="fw-medium">@(Model.Wonum ?? "-")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Job Type</dt>
+                <dd><span class="badge bg-info-subtle text-info-emphasis border border-info rounded-5 p-2 px-3">@(Model.JobTypeName ?? "-")</span></dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Category</dt>
+                <dd class="fw-medium">@(Model.Category ?? "-")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Vendor</dt>
+                <dd class="fw-bold text-primary">@(Model.VendorName ?? "-")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Start Date</dt>
+                <dd class="fw-medium">@Model.StartDate.ToString("d MMM yyyy")</dd>
+            </dl>
+            <dl class="col-12 col-sm-6 col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">End Date</dt>
+                <dd class="fw-medium">@Model.EndDate.ToString("d MMM yyyy")</dd>
+            </dl>
+        </div>
+    </div>
+</article>

@@ -1,0 +1,16 @@
+@model ProcurementHTE.Web.Models.ViewModels.LdpIndexViewModel
+<form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-3">
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="search" id="searchBox" style="width: 25rem;" 
+               placeholder="Cari berdasarkan No WO, Job Name, No SPK..." 
+               value="@(Model.Search ?? "")" />
+    </div>
+
+    <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
+    <input type="hidden" name="pageSize" id="pageSizeHidden" value="@Model.PageSize" />
+</form>

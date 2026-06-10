@@ -1,0 +1,20 @@
+@model PurchaseRequisitionDocumentRowViewModel
+
+<div class="pt-1">
+    @if (Model.IsPending)
+    {
+        <i class="bi bi-hourglass-split text-warning fs-4"></i>
+    }
+    else if (Model.Document.Uploaded)
+    {
+        <i class="bi bi-file-earmark-check-fill text-success fs-4"></i>
+    }
+    else if (Model.Document.IsUploadRequired)
+    {
+        <i class="bi bi-file-earmark-medical-fill text-warning fs-4"></i>
+    }
+    else
+    {
+        <i class="bi bi-file-earmark text-secondary fs-4"></i>
+    }
+</div>

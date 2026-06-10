@@ -16,15 +16,18 @@ public class DocumentApprovalRulesController : Controller
 {
     private readonly IDocumentApprovalRuleService _service;
     private readonly RoleManager<Role> _roleManager;
+    private readonly UserManager<User> _userManager;
     private const string ActivePageName = "Index Document Approval Rules";
 
     public DocumentApprovalRulesController(
         IDocumentApprovalRuleService service,
-        RoleManager<Role> roleManager
+        RoleManager<Role> roleManager,
+        UserManager<User> userManager
     )
     {
         _service = service;
         _roleManager = roleManager;
+        _userManager = userManager;
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)
@@ -45,6 +48,8 @@ public class DocumentApprovalRulesController : Controller
         ViewBag.RoleMap = await _roleManager
             .Roles.Select(r => new { r.Id, r.Name })
             .ToDictionaryAsync(r => r.Id, r => r.Name ?? r.Id, ct);
+        ViewBag.UserMap = _userManager.Users
+            .ToDictionary(u => u.Id, u => u.FullName ?? u.UserName ?? u.Email ?? u.Id);
         return View(items);
     }
 
@@ -150,10 +155,15 @@ public class DocumentApprovalRulesController : Controller
         var docTypes = await _service.GetDocumentTypesAsync(ct);
         var jobTypes = await _service.GetJobTypesAsync(ct);
         var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync(ct);
+        var users = await _userManager.Users
+            .OrderBy(u => u.FullName ?? u.UserName)
+            .Select(u => new { u.Id, DisplayName = u.FullName ?? u.UserName ?? u.Email })
+            .ToListAsync(ct);
 
         ViewBag.DocumentTypeSelect = new SelectList(docTypes, "DocumentTypeId", "Name");
         ViewBag.JobTypeSelect = new SelectList(jobTypes, "JobTypeId", "TypeName");
         ViewBag.RoleSelect = new SelectList(roles, "Id", "Name");
+        ViewBag.UserSelect = new SelectList(users, "Id", "DisplayName");
         ViewBag.Categories = Enum.GetValues(typeof(ProcurementCategory))
             .Cast<ProcurementCategory>()
             .Select(c => new SelectListItem { Text = c.ToString(), Value = ((int)c).ToString() })

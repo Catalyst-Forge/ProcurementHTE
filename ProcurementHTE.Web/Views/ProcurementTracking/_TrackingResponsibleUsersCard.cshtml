@@ -1,0 +1,82 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-people me-2"></i>Responsible Users
+        </h6>
+    </div>
+    <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+            <tr>
+                <td class="text-muted" style="width: 45%">
+                    @(Model.AnalystHtePjs ? "Pjs. " : "")Analyst HTE
+                    @if (Model.AnalystHtePjs)
+                    {
+                        <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                    }
+                </td>
+                <td>@(Model.AnalystHteUserName ?? "-")</td>
+            </tr>
+            <tr>
+                <td class="text-muted">
+                    @(Model.AssistantManagerPjs ? "Pjs. " : "")Asst. Manager
+                    @if (Model.AssistantManagerPjs)
+                    {
+                        <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                    }
+                </td>
+                <td>@(Model.AssistantManagerUserName ?? "-")</td>
+            </tr>
+            <tr>
+                <td class="text-muted">
+                    @(Model.ManagerPjs ? "Pjs. " : "")Manager
+                    @if (Model.ManagerPjs)
+                    {
+                        <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                    }
+                </td>
+                <td>@(Model.ManagerUserName ?? "-")</td>
+            </tr>
+            @if (Model.RequiredApprovalLevel >= 5)
+            {
+                <tr>
+                    <td class="text-muted">
+                        @(Model.VicePresidentPjs ? "Pjs. " : "")Vice President
+                        @if (Model.VicePresidentPjs)
+                        {
+                            <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                        }
+                    </td>
+                    <td>@(Model.VicePresidentUserName ?? "-")</td>
+                </tr>
+            }
+            @if (Model.RequiredApprovalLevel >= 6)
+            {
+                <tr>
+                    <td class="text-muted">
+                        @(Model.OperationDirectorPjs ? "Pjs. " : "")Operation Director
+                        @if (Model.OperationDirectorPjs)
+                        {
+                            <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                        }
+                    </td>
+                    <td>@(Model.OperationDirectorUserName ?? "-")</td>
+                </tr>
+            }
+            @if (Model.RequiredApprovalLevel >= 7)
+            {
+                <tr>
+                    <td class="text-muted">
+                        @(Model.PresidentDirectorPjs ? "Pjs. " : "")President Director
+                        @if (Model.PresidentDirectorPjs)
+                        {
+                            <span class="badge bg-warning text-dark ms-1" title="Penanggung Jawab Sementara">Pjs</span>
+                        }
+                    </td>
+                    <td>@(Model.PresidentDirectorUserName ?? "-")</td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>

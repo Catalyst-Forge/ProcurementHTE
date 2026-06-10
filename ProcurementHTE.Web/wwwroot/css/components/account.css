@@ -1,0 +1,42 @@
+.account-hero {
+  background: linear-gradient(120deg, rgba(0, 204, 255, 0.12), rgba(13, 110, 253, 0.08));
+}
+
+.account-chip {
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background-color: rgba(13, 110, 253, 0.12);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.mini-stat {
+  padding: 0.65rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  background: rgba(255, 255, 255, 0.7);
+  min-width: 140px;
+}
+
+.contact-tile {
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.65);
+}
+
+.contact-tile .icon-lg {
+  font-size: 1.75rem;
+}
+
+.security-log .timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+}
+
+.security-log li:last-child {
+  margin-bottom: 0;
+}

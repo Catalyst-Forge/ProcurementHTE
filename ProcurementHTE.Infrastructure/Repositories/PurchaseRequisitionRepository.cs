@@ -56,7 +56,6 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
     {
         return await _context
             .PurchaseRequisitions.Include(pr => pr.CreatedByUser)
-            .AsNoTracking()
             .FirstOrDefaultAsync(pr => pr.PrId == id, ct);
     }
 
@@ -108,6 +107,19 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             .FirstOrDefaultAsync(ct);
     }
 
+    public async Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default)
+    {
+        var query = _context.PurchaseRequisitions
+            .Where(pr => pr.PrNumber == prNumber && !pr.IsDeleted);
+
+        if (!string.IsNullOrEmpty(excludePrId))
+        {
+            query = query.Where(pr => pr.PrId != excludePrId);
+        }
+
+        return await query.AnyAsync(ct);
+    }
+
     #endregion
 
     #region Command Methods
@@ -126,12 +138,13 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         CancellationToken ct = default
     )
     {
-        _context.Entry(purchaseRequisition).State = EntityState.Modified;
+        // Entity is already tracked from GetByIdAsync, just save changes
         await _context.SaveChangesAsync(ct);
     }
 
     public async Task DeleteAsync(
         PurchaseRequisition purchaseRequisition,
+        string deletedByUserId,
         CancellationToken ct = default
     )
     {
@@ -145,7 +158,13 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         {
             entityToDelete.IsDeleted = true;
             entityToDelete.DeletedAt = DateTime.UtcNow;
-            // Note: DeletedBy should be set by the service layer with current user ID
+            entityToDelete.DeletedBy = deletedByUserId;
+
+            // Append deletion timestamp to PrNumber to allow reuse of the same PR number
+            // Format: DELETED_<original>_<timestamp> to ensure uniqueness
+            var timestamp = entityToDelete.DeletedAt.Value.ToString("yyyyMMddHHmmssfff");
+            entityToDelete.PrNumber = $"DELETED_{entityToDelete.PrNumber}_{timestamp}";
+
             await _context.SaveChangesAsync(ct);
         }
     }
@@ -171,7 +190,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         foreach (var procurement in procurements)
         {
             procurement.PrId = prId;
-            
+
             // Update status to "In Progress" when linked to PR
             if (inProgressStatus != null)
             {
@@ -189,18 +208,18 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         if (procurements.Count == 0)
             return;
 
-        // Get "Created" status to revert procurement status
-        var createdStatus = await _context.Statuses
-            .FirstOrDefaultAsync(s => s.StatusName == "Created", ct);
+        // Get "Waiting Pickup" status to revert procurement status
+        var waitingPickupStatus = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.StatusName == "Waiting Pickup", ct);
 
         foreach (var procurement in procurements)
         {
             procurement.PrId = null;
-            
-            // Revert status back to "Created" when unlinked from PR
-            if (createdStatus != null)
+
+            // Revert status back to "Waiting Pickup" when unlinked from PR
+            if (waitingPickupStatus != null)
             {
-                procurement.StatusId = createdStatus.StatusId;
+                procurement.StatusId = waitingPickupStatus.StatusId;
             }
         }
 

@@ -5,14 +5,14 @@ using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Core.Models;
 
-public class Procurement : BaseEntity
+public partial class Procurement : BaseEntity
 {
     [Key]
     public string ProcurementId { get; set; } = Guid.NewGuid().ToString();
 
-    [Required, MaxLength(100)]
+    [MaxLength(100)]
     [DisplayName("Procurement No.")]
-    public string ProcNum { get; set; } = null!;
+    public string? ProcNum { get; set; }
 
     [MaxLength(100)]
     [DisplayName("SPK Number")]
@@ -22,31 +22,25 @@ public class Procurement : BaseEntity
     [DisplayName("WO Number")]
     public string? Wonum { get; set; }
 
-    [Required]
     [DisplayName("Contract Type")]
     public ContractType ContractType { get; set; }
 
-    [Required]
     [MaxLength(255)]
     [DisplayName("Job Name")]
-    public string JobName { get; set; } = null!;
+    public string? JobName { get; set; }
 
-    [Required]
     [DisplayName("Document Date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime DocumentDate { get; set; }
 
-    [Required]
     [DisplayName("Start Date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime StartDate { get; set; }
 
-    [Required]
     [DisplayName("End Date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime EndDate { get; set; }
 
-    [Required]
     [DisplayName("Project Region")]
     public ProjectRegion ProjectRegion { get; set; }
 
@@ -81,31 +75,62 @@ public class Procurement : BaseEntity
     [MaxLength(1000)]
     public string? Note { get; set; }
 
-    [Required]
     [MaxLength(450)]
     [DisplayName("PIC User")]
-    public string PicOpsUserId { get; set; } = null!;
+    public string? PicOpsUserId { get; set; }
 
-    [Required]
     [MaxLength(450)]
     [DisplayName("Analyst HTE User")]
-    public string AnalystHteUserId { get; set; } = null!;
+    public string? AnalystHteUserId { get; set; }
 
-    [Required]
     [MaxLength(450)]
     [DisplayName("Assistant Manager User")]
-    public string AssistantManagerUserId { get; set; } = null!;
+    public string? AssistantManagerUserId { get; set; }
 
-    [Required]
     [MaxLength(450)]
     [DisplayName("Manager User")]
-    public string ManagerUserId { get; set; } = null!;
+    public string? ManagerUserId { get; set; }
+
+    // Higher Level Approvers (assigned dynamically based on CT value)
+    [MaxLength(450)]
+    [DisplayName("Vice President User")]
+    public string? VicePresidentUserId { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("Operation Director User")]
+    public string? OperationDirectorUserId { get; set; }
+
+    [MaxLength(450)]
+    [DisplayName("President Director User")]
+    public string? PresidentDirectorUserId { get; set; }
+
+    // Pjs (Penanggung Jawab Sementara / Acting) flags
+    [DisplayName("Analyst HTE Pjs")]
+    public bool AnalystHtePjs { get; set; }
+
+    [DisplayName("Assistant Manager Pjs")]
+    public bool AssistantManagerPjs { get; set; }
+
+    [DisplayName("Manager Pjs")]
+    public bool ManagerPjs { get; set; }
+
+    [DisplayName("Vice President Pjs")]
+    public bool VicePresidentPjs { get; set; }
+
+    [DisplayName("Operation Director Pjs")]
+    public bool OperationDirectorPjs { get; set; }
+
+    [DisplayName("President Director Pjs")]
+    public bool PresidentDirectorPjs { get; set; }
 
     [MaxLength(450)]
     [DisplayName("AP-PO User")]
     public string? AppoUserId { get; set; }
 
-    [Required]
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
+    [DisplayName("Picked Up At")]
+    public DateTime? PickedUpAt { get; set; }
+
     [DisplayName("Jenis Pengadaan")]
     public ProcurementCategory ProcurementCategory { get; set; }
 
@@ -121,30 +146,12 @@ public class Procurement : BaseEntity
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
     public DateTime? CompletedAt { get; set; }
 
-    // Foreign Key
-    [Required]
-    public string JobTypeId { get; set; } = null!;
-    public int StatusId { get; set; }
-    public string? UserId { get; set; }
-    public string? PrId { get; set; }
+    // Rig & HTE Number (diisi saat create procurement)
+    [MaxLength(100)]
+    [DisplayName("No. Rig")]
+    public string? NoRig { get; set; }
 
-    // Nav
-    [ForeignKey(nameof(JobTypeId))]
-    public JobTypes? JobType { get; set; }
-
-    [ForeignKey(nameof(StatusId))]
-    public Status? Status { get; set; }
-
-    [ForeignKey(nameof(UserId))]
-    public User? User { get; set; }
-
-    [ForeignKey(nameof(PrId))]
-    public PurchaseRequisition? PurchaseRequisition { get; set; }
-
-    public ICollection<ProcOffer> ProcOffers { get; set; } = [];
-    public ICollection<ProcDocuments>? ProcDocuments { get; set; } = [];
-    public ICollection<ProcDetail>? ProcDetails { get; set; } = [];
-    public ICollection<VendorOffer> VendorOffers { get; set; } = [];
-    public ICollection<ProcDocumentApprovals> DocumentApprovals { get; set; } = [];
-    public ICollection<ProfitLoss> ProfitLosses { get; set; } = [];
+    [MaxLength(100)]
+    [DisplayName("No. HTE")]
+    public string? NoHte { get; set; }
 }

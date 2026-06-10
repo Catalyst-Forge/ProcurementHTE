@@ -1,0 +1,19 @@
+@model ProcurementHTE.Web.Models.ViewModels.AccrualIndexViewModel
+@{
+    ViewData["Title"] = "Data Accrual";
+}
+
+<header class="hstack justify-content-between mb-3">
+    <div>
+        <h2 class="mb-1">@ViewData["Title"]</h2>
+        <p class="text-muted mb-0">Input data accrual untuk setiap procurement</p>
+    </div>
+</header>
+
+@await Html.PartialAsync("Partials/_AccrualFilter", Model)
+@await Html.PartialAsync("Partials/_AccrualTable", Model)
+@await Html.PartialAsync("Partials/_AccrualModal")
+
+@section Scripts {
+    @await Html.PartialAsync("Partials/_AccrualScripts")
+}

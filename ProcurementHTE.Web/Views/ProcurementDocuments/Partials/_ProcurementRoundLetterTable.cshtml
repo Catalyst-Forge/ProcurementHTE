@@ -1,0 +1,47 @@
+@model IReadOnlyList<ProcurementHTE.Core.Models.VendorRoundLetter>
+
+@{
+    var showRound = Model.Any(r => r.Round > 1);
+    var procurementId = ViewData["ProcurementId"]?.ToString();
+}
+
+<div class="table-responsive">
+    <table class="table align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Vendor</th>
+                @if (showRound)
+                {
+                    <th class="text-center">Ronde</th>
+                }
+                <th>No Surat</th>
+                <th>Dokumen</th>
+                <th class="text-end">Diunggah</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var letter in Model)
+            {
+                <tr>
+                    <td>@(letter.Vendor?.VendorName ?? letter.VendorId)</td>
+                    @if (showRound)
+                    {
+                        <td class="text-center">@($"R{letter.Round}")</td>
+                    }
+                    <td>@(string.IsNullOrWhiteSpace(letter.LetterNumber) ? "-" : letter.LetterNumber)</td>
+                    <td>
+                        <a asp-controller="ProcurementDocuments"
+                           asp-action="Download"
+                           asp-route-id="@letter.ProcDocumentId"
+                           asp-route-procurementId="@procurementId"
+                           class="btn btn-sm btn-outline-primary"
+                           hx-boost="false">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                    </td>
+                    <td class="text-end">@letter.CreatedAt.ToLocalTime()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

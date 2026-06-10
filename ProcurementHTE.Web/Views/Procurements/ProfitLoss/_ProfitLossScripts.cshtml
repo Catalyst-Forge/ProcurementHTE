@@ -1,0 +1,77 @@
+@model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
+@using System.Text.Json
+@using ProcurementHTE.Core.Models
+@using ProcurementHTE.Web.Models.ViewModels
+@{
+    var isEdit = Model is ProfitLossEditViewModel;
+    var jobTypeName = Model.JobTypeName ?? ViewBag.JobTypeName ?? "Angkutan";
+    var unitTypes = ((IEnumerable<UnitType>)ViewBag.UnitTypes ?? new List<UnitType>())
+        .Select(unit => new { unit.Code, unit.Name })
+        .ToList();
+    var vendorChoices = (Model.VendorChoices ?? Enumerable.Empty<VendorChoiceViewModel>())
+        .Select(vendor => new { id = vendor.Id, name = vendor.Name });
+    var procItems = (Model.OfferItems ?? new List<ProcOfferLiteVm>())
+        .Select(item => new
+        {
+            procOfferId = item.ProcOfferId,
+            itemPenawaran = item.ItemPenawaran,
+            quantity = item.Quantity
+        });
+    var vendorPresets = (Model.Vendors ?? new List<VendorItemOfferInputVm>())
+        .Where(vendor => !string.IsNullOrWhiteSpace(vendor.VendorId))
+        .Select(vendor => new
+        {
+            vendorId = vendor.VendorId,
+            letters = vendor.Letters ?? new List<string>(),
+            letterDocIds = vendor.LetterDocIds ?? new List<string>(),
+            items = (vendor.Items ?? new List<VendorOfferPerItemInputVm>())
+                .Select(item => new
+                {
+                    procOfferId = item.ProcOfferId,
+                    quantity = item.Quantity,
+                    trip = item.Trip,
+                    prices = item.Prices ?? new List<decimal>(),
+                    isIncluded = item.IsIncluded
+                })
+                .ToList()
+        });
+    var modelStateErrors = ViewData.ModelState
+        .Where(kvp => kvp.Value?.Errors?.Count > 0)
+        .ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value!.Errors.Select(error => error.ErrorMessage).FirstOrDefault() ?? string.Empty
+        );
+    var docPreviewUrlTemplate = Url.Action(
+        "PreviewUrl",
+        "ProcurementDocuments",
+        new { id = "__DOC_ID__", procurementId = Model.ProcurementId }
+    );
+}
+
+<script>
+    window.PHTEProfitLossConfig = {
+        vendorsAll: @Html.Raw(JsonSerializer.Serialize(vendorChoices)),
+        procItems: @Html.Raw(JsonSerializer.Serialize(procItems)),
+        presetVendors: @Html.Raw(JsonSerializer.Serialize(vendorPresets)),
+        modelStateErrors: @Html.Raw(JsonSerializer.Serialize(modelStateErrors)),
+        unitTypes: @Html.Raw(JsonSerializer.Serialize(unitTypes)),
+        isEditMode: @isEdit.ToString().ToLowerInvariant(),
+        jobTypeName: @Html.Raw(JsonSerializer.Serialize(jobTypeName)),
+        docPreviewUrlTemplate: @Html.Raw(JsonSerializer.Serialize(docPreviewUrlTemplate))
+    };
+</script>
+<script src="~/js/profit-loss/profit-loss.core.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.currency.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.units.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.vendor-select.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.letters-core.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.letters-rows.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.vendor-items.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.vendor-cards.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.indexing.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.summary.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.revenue.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.validation.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.events.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.events-extended.js" asp-append-version="true"></script>
+<script src="~/js/profit-loss/profit-loss.main.js" asp-append-version="true"></script>

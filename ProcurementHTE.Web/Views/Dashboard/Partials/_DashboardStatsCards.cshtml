@@ -1,0 +1,65 @@
+@model ProcurementHTE.Web.Models.ViewModels.DashboardViewModel
+<div class="row g-3 mb-4">
+    <!-- Total Procurements -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Procurement</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalProcurements</h3>
+                        <small class="text-success">
+                            <i class="bi bi-activity"></i>
+                            @Model.ActiveProcurements Active
+                        </small>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-cart-check fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Approvals -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Pending Approvals</p>
+                        <h3 class="mb-0 fw-bold">@Model.PendingApprovals</h3>
+                        <small class="text-warning">
+                            <i class="bi bi-hourglass-split"></i>
+                            Memerlukan Persetujuan
+                        </small>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-clipboard-check fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Purchase Requisitions -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Purchase Requisitions</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalPurchaseRequisitions</h3>
+                        <small class="text-primary">
+                            <i class="bi bi-file-earmark-text"></i>
+                            Total PR
+                        </small>
+                    </div>
+                    <div class="bg-purple bg-opacity-10 rounded-3 p-3" style="background-color: rgba(111, 66, 193, 0.1);">
+                        <i class="bi bi-file-earmark-ruled fs-2" style="color: #6f42c1;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

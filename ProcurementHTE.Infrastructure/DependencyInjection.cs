@@ -33,6 +33,7 @@ public static class DependencyInjection
         // ------------- Storage & Utilities -------------
         services.AddSingleton<IObjectStorage, MinioStorage>();
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+        services.AddHttpClient("Resend");
         services.AddHttpClient("SmsProvider");
 
         // ------------- Repositories -------------
@@ -46,9 +47,10 @@ public static class DependencyInjection
         services.AddScoped<IVendorRoundLetterRepository, VendorRoundLetterRepository>();
         services.AddScoped<IProcDocumentRepository, ProcDocumentRepository>();
         services.AddScoped<IJobTypeDocumentRepository, JobTypeDocumentRepository>();
-        services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();
-        services.AddScoped<IProcDocApprovalFlowRepository, ProcDocApprovalFlowRepository>();
-        services.AddScoped<IApprovalRepository, ApprovalRepository>();
+        // Approval per-document removed - approval sekarang hanya di level PR
+        // services.AddScoped<IProcDocumentApprovalRepository, ProcDocumentApprovalRepository>();
+        // services.AddScoped<IProcDocApprovalFlowRepository, ProcDocApprovalFlowRepository>();
+        // services.AddScoped<IApprovalRepository, ApprovalRepository>();
         services.AddScoped<IDocumentApprovalRuleRepository, DocumentApprovalRuleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
@@ -58,14 +60,16 @@ public static class DependencyInjection
         services.AddScoped<IDocumentApprovalsRepository, DocumentApprovalsRepository>();
         services.AddScoped<IJobTypeDocumentAdminRepository, JobTypeDocumentAdminRepository>();
         services.AddScoped<IUnitTypeRepository, UnitTypeRepository>();
+        services.AddScoped<ILdpRepository, LdpRepository>();
         services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IDocumentGenerator, DocumentGenerator>();
-
-        // ------------- Query Services -------------
+        services.AddSingleton<IQrCodeGenerator, QrCodeGeneratorService>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProcurementDocumentQuery, ProcurementDocumentQuery>();
-
-        // ------------- PR Tracking Service -------------
-        services.AddScoped<IPurchaseRequisitionTrackingService, PurchaseRequisitionTrackingService>();
+        services.AddScoped<
+            IPurchaseRequisitionTrackingRepository,
+            PurchaseRequisitionTrackingRepository
+        >();
 
         // ------------- Cross-cutting Infrastructure -------------
         services.AddSingleton<IEmailSender>(sp =>
@@ -73,6 +77,8 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<EmailSenderOptions>>().Value;
             if (opts.UseDevelopmentMode)
                 return ActivatorUtilities.CreateInstance<ConsoleEmailSender>(sp);
+            if (string.Equals(opts.Provider, "Resend", StringComparison.OrdinalIgnoreCase))
+                return ActivatorUtilities.CreateInstance<ResendEmailSender>(sp);
             return ActivatorUtilities.CreateInstance<SmtpEmailSender>(sp);
         });
 

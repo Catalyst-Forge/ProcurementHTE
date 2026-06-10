@@ -1,0 +1,17 @@
+@model ProcurementDetailsPageViewModel
+
+<section class="tab-pane show active" id="procurement-tab-pane" role="tabpanel" aria-labelledby="procurement-tab" tabindex="0">
+    <div class="d-grid gap-md-3 mt-2 procurement-content">
+        <div>
+            @await Html.PartialAsync("_ProcurementDetailsJobInfoCard", Model)
+            @await Html.PartialAsync("_ProcurementDetailsReferenceCard", Model)
+            @await Html.PartialAsync("_ProcurementDetailsScheduleCard", Model)
+            @await Html.PartialAsync("_ProcurementDetailsOffersCard", Model)
+            @await Html.PartialAsync("_ProcurementDetailsJobDescriptionCard", Model)
+        </div>
+        <div>
+            @await Html.PartialAsync("_ProcurementDetailsStatusCard", Model)
+            @await Html.PartialAsync("_ProcurementDetailsApproversCard", Model)
+        </div>
+    </div>
+</section>

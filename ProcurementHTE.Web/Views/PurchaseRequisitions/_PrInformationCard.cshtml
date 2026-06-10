@@ -1,0 +1,54 @@
+@model PurchaseRequisitionDetailsViewModel
+
+<section class="card shadow-sm mb-4 rounded-4">
+    <div class="card-header bg-primary-subtle text-primary-emphasis rounded-top-4">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-file-earmark-text"></i> PR Information
+        </h5>
+    </div>
+
+    <div class="card-body">
+        <div class="row g-3">
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">PR Number</dt>
+                <dd class="fw-semibold mb-0">@Model.PrNumber</dd>
+            </dl>
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Request Date</dt>
+                <dd class="mb-0">@Model.RequestDate.ToString("d MMM yyyy")</dd>
+            </dl>
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Created By</dt>
+                <dd class="mb-0">@(Model.CreatedByUserName ?? "-")</dd>
+            </dl>
+            <dl class="col-md-12 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Description</dt>
+                <dd class="mb-0">@(Model.Description ?? "-")</dd>
+            </dl>
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Document</dt>
+                @if (!string.IsNullOrEmpty(Model.DocumentFileName))
+                {
+                    <dd class="d-flex align-items-center gap-2">
+                        <span><i class="bi bi-file-earmark-pdf"></i> @Model.DocumentFileName</span>
+                        <a asp-action="DownloadDocument" asp-route-id="@Model.PrId" class="btn btn-sm btn-outline-primary" hx-boost="false">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </dd>
+                }
+                else
+                {
+                    <dd class="text-muted mb-0">No document</dd>
+                }
+            </dl>
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Created At</dt>
+                <dd class="mb-0">@Model.CreatedAt.ToString("d MMM yyyy")</dd>
+            </dl>
+            <dl class="col-md-4 mb-2">
+                <dt class="fw-semibold text-uppercase text-secondary small">Last Updated</dt>
+                <dd class="mb-0">@(Model.UpdatedAt?.ToString("d MMM yyyy") ?? "-")</dd>
+            </dl>
+        </div>
+    </div>
+</section>

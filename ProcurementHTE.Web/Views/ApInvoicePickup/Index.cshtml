@@ -1,0 +1,62 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Core.Models
+@model PagedResult<Procurement>
+@{
+    ViewData["Title"] = "Invoice Processing";
+}
+
+@await Html.PartialAsync("Partials/_Tabs")
+@await Html.PartialAsync("Partials/_Filter", Model)
+@await Html.PartialAsync("Partials/_Table", Model)
+@await Html.PartialAsync("Partials/_Pagination", Model)
+
+@section Scripts {
+    <script>
+        (function() {
+            var btnRefresh = document.getElementById('btnRefresh');
+            if (btnRefresh) {
+                btnRefresh.addEventListener('click', function() {
+                    location.reload();
+                });
+            }
+
+            var searchBox = document.getElementById('searchBox');
+            if (searchBox) {
+                var timeout;
+                searchBox.addEventListener('input', function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(function() {
+                        document.getElementById('pageHidden').value = '1';
+                        document.getElementById('filterForm').submit();
+                    }, 500);
+                });
+            }
+
+            // SweetAlert2 for Pickup buttons
+            var pickupButtons = document.querySelectorAll('.btn-pickup');
+            pickupButtons.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var form = this.closest('form');
+                    var procNum = this.dataset.procnum;
+
+                    Swal.fire({
+                        title: 'Pickup Procurement?',
+                        html: 'Apakah Anda yakin ingin pickup procurement <strong>' + procNum + '</strong> untuk invoice processing?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-box-arrow-in-down"></i> Ya, Pickup',
+                        cancelButtonText: '<i class="bi bi-x"></i> Batal',
+                        reverseButtons: true
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
+}

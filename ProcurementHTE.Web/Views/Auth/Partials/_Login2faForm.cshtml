@@ -1,0 +1,62 @@
+@using ProcurementHTE.Core.Enums
+@model LoginWith2faViewModel
+@{
+    var isAuthenticator = Model.Method == TwoFactorMethod.AuthenticatorApp;
+    var requireEmailVerification = (ViewBag.RequireEmailVerification as bool?) ?? false;
+    var requirePhoneVerification = (ViewBag.RequirePhoneVerification as bool?) ?? false;
+    var blockOtp = !isAuthenticator && (requireEmailVerification || requirePhoneVerification);
+    var loginEmailCooldown = ViewBag.LoginEmailCooldown as int? ?? 0;
+    var loginSmsCooldown = ViewBag.LoginSmsCooldown as int? ?? 0;
+    var resendCooldown = Model.Method == TwoFactorMethod.Email
+        ? loginEmailCooldown
+        : Model.Method == TwoFactorMethod.Sms
+            ? loginSmsCooldown
+            : 0;
+}
+@if (!blockOtp)
+{
+    <form asp-action="LoginWith2fa" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]" data-otp-form>
+        <div class="text-danger" asp-validation-summary="All"></div>
+        <input type="hidden" asp-for="RememberMe" />
+
+        <div class="mb-3">
+            <label asp-for="TwoFactorCode" class="form-label"></label>
+            <input asp-for="TwoFactorCode" type="hidden" data-otp-hidden="TwoFactorCode" />
+            <div class="d-flex gap-2 otp-input-wrapper" data-otp-container="TwoFactorCode">
+                @for (var i = 0; i < 6; i++)
+                {
+                    <input type="text"
+                           inputmode="numeric"
+                           maxlength="1"
+                           class="form-control text-center otp-input"
+                           autocomplete="one-time-code"
+                           data-otp-input />
+                }
+            </div>
+            @if (!isAuthenticator)
+            {
+                <div class="text-end mt-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            id="btnSendLoginCode"
+                            data-method="@Model.Method"
+                            data-cooldown-button
+                            data-label="Kirim ulang kode"
+                            data-status-target="#loginCodeStatus"
+                            data-cooldown-seconds="@resendCooldown">
+                        Kirim ulang kode
+                    </button>
+                    <div class="small text-muted mt-1" id="loginCodeStatus"></div>
+                </div>
+            }
+            <span asp-validation-for="TwoFactorCode" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="RememberMachine" class="form-check-input" />
+            <label asp-for="RememberMachine" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-2">Verifikasi &amp; Masuk</button>
+    </form>
+}

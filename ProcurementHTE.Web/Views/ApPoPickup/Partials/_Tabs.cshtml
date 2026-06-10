@@ -1,0 +1,19 @@
+@{
+    var currentTab = ViewData["CurrentTab"] as string ?? "waiting";
+}
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link @(currentTab == "waiting" ? "active" : "")" 
+           href="@Url.Action("Index", new { tab = "waiting" })">
+            <i class="bi bi-hourglass-split"></i> Waiting Pickup
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(currentTab == "mypickups" ? "active" : "")" 
+           href="@Url.Action("Index", new { tab = "mypickups" })">
+            <i class="bi bi-person-check"></i> My Pickups
+        </a>
+    </li>
+</ul>

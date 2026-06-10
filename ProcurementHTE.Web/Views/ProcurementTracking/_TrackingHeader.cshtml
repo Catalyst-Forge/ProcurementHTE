@@ -1,0 +1,34 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+@{
+    var statusColor = ViewData["TrackingStatusColor"]?.ToString() ?? "primary";
+    var canModify = ViewData["CanModify"] is true;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-2">
+            <i class="bi bi-arrow-left me-1"></i>Kembali
+        </a>
+        <h4 class="fw-bold mb-1">@Model.ProcNum</h4>
+        <span class="badge bg-@statusColor">@Model.CurrentStatusDescription</span>
+        @if (!string.IsNullOrEmpty(Model.PrNumber))
+        {
+            <a asp-controller="PurchaseRequisitions" asp-action="Details" asp-route-id="@Model.PrId" class="badge bg-secondary text-decoration-none ms-2">
+                <i class="bi bi-link-45deg"></i> PR: @Model.PrNumber
+            </a>
+        }
+    </div>
+    <div>
+        @if (Model.CanSendApproval && canModify)
+        {
+            <form asp-action="SendApproval" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="procurementId" value="@Model.ProcurementId" />
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-1"></i>Send for Approval
+                </button>
+            </form>
+        }
+    </div>
+</div>

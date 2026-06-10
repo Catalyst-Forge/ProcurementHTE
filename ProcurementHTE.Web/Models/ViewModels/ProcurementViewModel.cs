@@ -85,6 +85,14 @@ public class ProcurementEditViewModel
     [DisplayName("RA Number")]
     public string? RaNumber { get; set; }
 
+    [DisplayName("No. Rig")]
+    [MaxLength(100)]
+    public string? NoRig { get; set; }
+
+    [DisplayName("No. HTE")]
+    [MaxLength(100)]
+    public string? NoHte { get; set; }
+
     [DisplayName("Project Code")]
     public string? ProjectCode { get; set; }
 
@@ -108,6 +116,25 @@ public class ProcurementEditViewModel
 
     [DisplayName("Manager User Id")]
     public string? ManagerUserId { get; set; }
+
+    // Pjs (Penanggung Jawab Sementara / Acting) flags
+    [DisplayName("Analyst HTE Pjs")]
+    public bool AnalystHtePjs { get; set; }
+
+    [DisplayName("Assistant Manager Pjs")]
+    public bool AssistantManagerPjs { get; set; }
+
+    [DisplayName("Manager Pjs")]
+    public bool ManagerPjs { get; set; }
+
+    [DisplayName("Vice President Pjs")]
+    public bool VicePresidentPjs { get; set; }
+
+    [DisplayName("Operation Director Pjs")]
+    public bool OperationDirectorPjs { get; set; }
+
+    [DisplayName("President Director Pjs")]
+    public bool PresidentDirectorPjs { get; set; }
 
     public List<ProcDetail> Details { get; set; } = [];
     public List<ProcOffer> Offers { get; set; } = [];

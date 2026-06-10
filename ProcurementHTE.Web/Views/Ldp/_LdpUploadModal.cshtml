@@ -1,0 +1,36 @@
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="uploadLdpForm" enctype="multipart/form-data">
+                <input type="hidden" name="procurementId" id="uploadProcurementId" value="" />
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
+                        <i class="bi bi-upload me-2"></i>Upload Dokumen LDP
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ldpFile" class="form-label">Pilih File Dokumen LDP</label>
+                        <input type="file" class="form-control" id="ldpFile" name="ldpFile" 
+                               accept="application/pdf,.pdf" required />
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Format: PDF. Maksimal: 50MB. 
+                            <br/>
+                            <small class="text-muted">Dokumen ini berisi rekapan seluruh ProcDocuments yang sudah ditanda tangan basah.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitUpload">
+                        <i class="bi bi-upload me-1"></i>Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

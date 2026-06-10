@@ -1,0 +1,41 @@
+.avatar-xl {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+}
+
+.hero-avatar {
+  width: 140px;
+  height: 140px;
+  border: 4px solid rgba(255, 255, 255, 0.6);
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.cropper-area {
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cropper-area img {
+  max-width: 100%;
+}
+
+.avatar-live-preview {
+  width: 160px;
+  height: 160px;
+  border: 1px dashed var(--bs-border-color);
+  background-color: var(--bs-body-bg);
+  overflow: hidden;
+}

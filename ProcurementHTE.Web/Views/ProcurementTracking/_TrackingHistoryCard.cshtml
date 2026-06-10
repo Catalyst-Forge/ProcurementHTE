@@ -1,0 +1,40 @@
+@model ProcurementHTE.Core.Models.DTOs.ProcurementTrackingDto
+
+@if (Model.StatusHistory.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-clock-history me-2"></i>Status History
+            </h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="small text-muted">Date</th>
+                        <th class="small text-muted">Status</th>
+                        <th class="small text-muted">Changed By</th>
+                        <th class="small text-muted">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var history in Model.StatusHistory.OrderByDescending(h => h.ChangedAt))
+                    {
+                        <tr>
+                            <td>
+                                <div>@history.ChangedAt.ToString("dd MMM yyyy")</div>
+                                <small class="text-muted">@history.ChangedAt.ToString("HH:mm")</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">@history.StatusDescription</span>
+                            </td>
+                            <td>@history.ChangedByFullName</td>
+                            <td class="text-muted">@(string.IsNullOrEmpty(history.Note) ? "-" : history.Note)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

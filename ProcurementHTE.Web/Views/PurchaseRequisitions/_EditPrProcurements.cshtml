@@ -1,0 +1,94 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model ProcurementHTE.Web.Models.ViewModels.PurchaseRequisitionEditViewModel
+@{
+    var vendors = ViewBag.Vendors as List<SelectListItem> ?? new List<SelectListItem>();
+    var jobTypes = ViewBag.JobTypes as List<SelectListItem> ?? new List<SelectListItem>();
+    var categories = ViewBag.Categories as List<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<section class="card shadow-sm mb-3 p-2 rounded-4">
+    <div class="card-body">
+        <h5 class="card-title fw-semibold">Link to Procurement</h5>
+        <hr />
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Filter by Vendor</label>
+                <select class="form-select" id="filterVendor">
+                    <option value="">-- All Vendors --</option>
+                    @foreach (var vendor in vendors)
+                    {
+                        <option value="@vendor.Value">@vendor.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Filter by Category</label>
+                <select class="form-select" id="filterCategory">
+                    <option value="">-- All Categories --</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category.Value">@category.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Filter by Job Type</label>
+                <select class="form-select" id="filterJobType">
+                    <option value="">-- All Job Types --</option>
+                    @foreach (var jobType in jobTypes)
+                    {
+                        <option value="@jobType.Value">@jobType.Text</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <label class="form-label mb-0">Available Procurements</label>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefreshProcurements">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnClearFilters">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-12">
+                <div class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover table-sm mb-0" id="procurementTable">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll" title="Select All" />
+                                </th>
+                                <th>Proc Number</th>
+                                <th>WO Number</th>
+                                <th>Job Name</th>
+                                <th>Start Date</th>
+                                <th>Category</th>
+                                <th>Job Type</th>
+                                <th>Vendor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="procurementTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-hourglass-split"></i> Loading procurements...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <small class="form-text text-muted">
+                    <span id="selectedCount">0</span> procurement(s) selected
+                </small>
+            </div>
+        </div>
+    </div>
+</section>

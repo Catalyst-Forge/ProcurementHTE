@@ -1,0 +1,74 @@
+@model DashboardViewModel
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Procurement Terbaru</h5>
+                <a asp-controller="Procurements" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                    Lihat Semua <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Proc Number</th>
+                                <th>Job Type</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var proc in Model.RecentProcurements.Take(5))
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@proc.ProcNum</strong><br>
+                                        <small class="text-muted">@proc.CreatedDate.ToString("dd MMM yyyy")</small>
+                                    </td>
+                                    <td><small>@proc.JobTypeName</small></td>
+                                    <td><span class="badge bg-@DashboardDisplayHelper.StatusBadgeClass(proc.StatusName)">@proc.StatusName</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i>Pending Approvals</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Procurement</th>
+                                <th class="text-center">Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var approval in Model.PendingApprovalsDetail.Take(5))
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@approval.ProcNum</strong><br>
+                                        <small class="text-muted">@approval.DocumentName</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-@(approval.DaysWaiting > 3 ? "danger" : "warning")">@approval.DaysWaiting</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

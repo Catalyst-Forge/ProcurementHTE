@@ -1,16 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Utils;
 
-public class VendorService : IVendorService
+public class VendorService : IVendorQueryService, IVendorCommandService
 {
     private readonly IVendorRepository _vendorRepository;
+    private readonly TimeProvider _timeProvider;
     private const string VendorPrefix = "VND";
 
-    public VendorService(IVendorRepository vendorRepository) =>
+    public VendorService(IVendorRepository vendorRepository, TimeProvider timeProvider)
+    {
         _vendorRepository = vendorRepository;
+        _timeProvider = timeProvider;
+    }
 
     public async Task<IEnumerable<Vendor>> GetAllVendorsAsync()
     {
@@ -52,7 +56,7 @@ public class VendorService : IVendorService
 
         var lastCode = await _vendorRepository.GetLastCodeAsync(VendorPrefix);
         vendor.VendorCode = SequenceNumberGenerator.NumId(VendorPrefix, lastCode);
-        vendor.CreatedAt = DateTime.Now;
+        vendor.CreatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         try
         {
@@ -109,14 +113,16 @@ public class VendorService : IVendorService
         }
     }
 
-    public async Task DeleteVendorAsync(Vendor vendor)
+    public async Task DeleteVendorAsync(Vendor vendor, string deletedByUserId)
     {
         if (vendor == null)
             throw new ArgumentException("Vendor or ID cannot be null");
+        if (string.IsNullOrWhiteSpace(deletedByUserId))
+            throw new ArgumentException("User ID cannot be null", nameof(deletedByUserId));
 
         try
         {
-            await _vendorRepository.DropVendorAsync(vendor);
+            await _vendorRepository.DeleteAsync(vendor, deletedByUserId);
         }
         catch (DbUpdateConcurrencyException)
         {
