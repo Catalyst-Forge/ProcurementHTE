@@ -2,6 +2,10 @@
   "devDependencies": {
     "cz-conventional-changelog": "^3.3.0"
   },
+  "overrides": {
+    "lodash": "4.18.1",
+    "tmp": "0.2.7"
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
