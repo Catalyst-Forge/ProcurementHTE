@@ -13,8 +13,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Tenders");
+            migrationBuilder.Sql(
+                """
+                IF OBJECT_ID(N'[Tenders]', N'U') IS NOT NULL
+                    DROP TABLE [Tenders];
+                """
+            );
 
             migrationBuilder.DropColumn(
                 name: "Quantity",
