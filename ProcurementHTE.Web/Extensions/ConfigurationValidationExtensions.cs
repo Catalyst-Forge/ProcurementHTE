@@ -105,6 +105,15 @@ public static class ConfigurationValidationExtensions
             return;
         }
 
+        var bypassContactVerification = configuration.GetValue<bool>(
+            "SecurityBypass:BypassContactVerification"
+        );
+        var bypassPhoneVerification = configuration.GetValue<bool>(
+            "SecurityBypass:BypassPhoneVerification"
+        );
+        if (bypassContactVerification || bypassPhoneVerification)
+            return;
+
         RequireNotPlaceholder(failures, configuration["SmsSender:ProviderUrl"], "SmsSender:ProviderUrl");
         RequireNotPlaceholder(failures, configuration["SmsSender:ApiKey"], "SmsSender:ApiKey");
     }

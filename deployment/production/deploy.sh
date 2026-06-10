@@ -58,6 +58,8 @@ if [ "${FORCE_DEPLOY:-0}" != "1" ] && [ "$NEW_SHA" = "$OLD_SHA" ]; then
 fi
 
 log "Deploying $BRANCH@$NEW_SHA"
+git -C "$REPO_DIR" reset --hard
+git -C "$REPO_DIR" clean -fdx
 git -C "$REPO_DIR" checkout -B "$BRANCH" "origin/$BRANCH"
 git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
 git -C "$REPO_DIR" clean -fdx
