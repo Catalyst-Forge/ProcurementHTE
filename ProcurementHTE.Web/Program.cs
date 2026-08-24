@@ -89,8 +89,24 @@ app.MapControllerRoute(name: "default", pattern: "{controller=Dashboard}/{action
 app.MapHub<ProcurementHTE.Web.Hubs.DashboardHub>("/hubs/dashboard");
 
 // ===== Migrate & Seed =====
-using (var scope = app.Services.CreateScope())
+// Default: hanya di Production. Bisa dipaksa lewat Database:MigrateOnStartup.
+// Tanpa penjagaan ini, menjalankan app secara lokal sambil menembus tunnel ke
+// database produksi akan menerapkan migrasi dan seeding langsung ke produksi.
+var migrateOnStartup =
+    app.Configuration.GetValue<bool?>("Database:MigrateOnStartup")
+    ?? app.Environment.IsProduction();
+
+if (!migrateOnStartup)
 {
+    app.Logger.LogInformation(
+        "Migrasi & seeding saat startup dilewati (environment {Environment}). "
+            + "Set Database:MigrateOnStartup=true untuk memaksanya.",
+        app.Environment.EnvironmentName
+    );
+}
+else
+{
+    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     var context = services.GetRequiredService<AppDbContext>();
