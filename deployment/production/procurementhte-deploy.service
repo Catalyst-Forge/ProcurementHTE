@@ -1,5 +1,5 @@
 [Unit]
-Description=Deploy Procurement HTE from master
+Description=Deploy Procurement Transport & Logistic from master
 After=network-online.target
 Wants=network-online.target
 

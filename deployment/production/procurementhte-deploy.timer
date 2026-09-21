@@ -1,5 +1,5 @@
 [Unit]
-Description=Poll master and deploy Procurement HTE
+Description=Poll master and deploy Procurement Transport & Logistic
 
 [Timer]
 OnBootSec=2min

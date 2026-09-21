@@ -35,7 +35,7 @@ public partial class AccountService
             .AppendLine("<p>Abaikan jika Anda tidak meminta verifikasi ini.</p>")
             .ToString();
 
-        await _emailSender.SendAsync(user.Email, "Verifikasi Email Procurement HTE", body, ct);
+        await _emailSender.SendAsync(user.Email, "Verifikasi Email Procurement Transport & Logistic", body, ct);
     }
 
     public async Task ConfirmEmailAsync(
@@ -81,7 +81,7 @@ public partial class AccountService
         if (string.IsNullOrWhiteSpace(user.PhoneNumber))
             throw new InvalidOperationException("Nomor HP belum diisi.");
 
-        var message = $"Kode verifikasi Procurement HTE: {code}";
+        var message = $"Kode verifikasi Procurement Transport & Logistic: {code}";
         await _smsSender.SendAsync(user.PhoneNumber, message, ct);
     }
 

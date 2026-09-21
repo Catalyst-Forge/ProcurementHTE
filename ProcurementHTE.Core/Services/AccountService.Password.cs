@@ -80,7 +80,7 @@ public partial class AccountService
             .AppendLine("<p>Kode berlaku terbatas. Jangan bagikan ke siapapun.</p>")
             .ToString();
 
-        await _emailSender.SendAsync(user.Email, "Kode Reset Password Procurement HTE", body, ct);
+        await _emailSender.SendAsync(user.Email, "Kode Reset Password Procurement Transport & Logistic", body, ct);
     }
 
     public async Task ResetPasswordWithEmailCodeAsync(
@@ -135,7 +135,7 @@ public partial class AccountService
         if (string.IsNullOrWhiteSpace(user.PhoneNumber))
             throw new InvalidOperationException("Nomor HP belum diisi.");
 
-        await _smsSender.SendAsync(user.PhoneNumber, $"Kode reset password Procurement HTE: {code}", ct);
+        await _smsSender.SendAsync(user.PhoneNumber, $"Kode reset password Procurement Transport & Logistic: {code}", ct);
     }
 
     public async Task ResetPasswordWithSmsCodeAsync(

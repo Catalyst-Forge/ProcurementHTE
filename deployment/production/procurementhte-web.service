@@ -1,5 +1,5 @@
 [Unit]
-Description=Procurement HTE ASP.NET Core web app
+Description=Procurement Transport & Logistic ASP.NET Core web app
 After=network-online.target docker.service
 Wants=network-online.target
 

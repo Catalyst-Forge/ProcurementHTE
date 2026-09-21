@@ -1,9 +1,9 @@
 @{
     var activePage = ViewBag.ActivePage as string ?? string.Empty;
-    var title = ViewData["Title"]?.ToString() ?? "Procurement HTE";
+    var title = ViewData["Title"]?.ToString() ?? "Procurement Transport & Logistic";
     var documentTitle = string.IsNullOrWhiteSpace(title)
-        ? "Procurement HTE"
-        : $"{title} - Procurement HTE";
+        ? "Procurement Transport & Logistic"
+        : $"{title} - Procurement Transport & Logistic";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
 }
