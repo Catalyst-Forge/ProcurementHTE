@@ -29,12 +29,28 @@
     <link rel="stylesheet" href="~/lib/cropperjs/cropper.min.css" asp-append-version="true" />
 }
 
-@await Html.PartialAsync("_SettingsHeader", page)
-@await Html.PartialAsync("_SettingsHero", page)
-@await Html.PartialAsync("_SettingsAvatarForm")
-@await Html.PartialAsync("_SettingsContactVerification", page)
-@await Html.PartialAsync("_SettingsProfileCard", Model)
-@await Html.PartialAsync("_SettingsSecurityArea", page)
+<div class="account-settings">
+    @await Html.PartialAsync("_SettingsHeader", page)
+    @await Html.PartialAsync("_SettingsHero", page)
+    @await Html.PartialAsync("_SettingsAvatarForm")
+    @await Html.PartialAsync("_SettingsTabs", page)
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-profil" role="tabpanel" aria-labelledby="tab-profil-btn" tabindex="0">
+            @await Html.PartialAsync("_SettingsProfileCard", Model)
+            @await Html.PartialAsync("_SettingsContactVerification", page)
+        </div>
+        <div class="tab-pane fade" id="tab-keamanan" role="tabpanel" aria-labelledby="tab-keamanan-btn" tabindex="0">
+            @await Html.PartialAsync("_SettingsSecurityArea", page)
+        </div>
+        <div class="tab-pane fade" id="tab-perangkat" role="tabpanel" aria-labelledby="tab-perangkat-btn" tabindex="0">
+            @await Html.PartialAsync("_SettingsSessionsCard", Model)
+        </div>
+        <div class="tab-pane fade" id="tab-riwayat" role="tabpanel" aria-labelledby="tab-riwayat-btn" tabindex="0">
+            @await Html.PartialAsync("_SettingsSecurityLogsCard", Model)
+        </div>
+    </div>
+</div>
 @await Html.PartialAsync("_SettingsAvatarModal")
 
 @section Scripts {
@@ -47,4 +63,5 @@
     <script src="~/js/account/settings/two-factor.js" asp-append-version="true"></script>
     <script src="~/js/account/settings/cooldown.js" asp-append-version="true"></script>
     <script src="~/js/account/settings/otp.js" asp-append-version="true"></script>
+    <script src="~/js/account/settings/tabs.js" asp-append-version="true"></script>
 }

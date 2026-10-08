@@ -1,0 +1,40 @@
+@model UserSessionViewModel
+@{
+    var device = Model.Device ?? string.Empty;
+    var icon = device.Contains("Mobile", StringComparison.OrdinalIgnoreCase) || device.Contains("Phone", StringComparison.OrdinalIgnoreCase)
+        ? "bi-phone"
+        : device.Contains("Tablet", StringComparison.OrdinalIgnoreCase) ? "bi-tablet" : "bi-laptop";
+}
+
+<li class="session-row @(Model.IsActive ? string.Empty : "is-inactive")">
+    <span class="session-icon" aria-hidden="true"><i class="bi @icon"></i></span>
+    <div class="session-main">
+        <div class="fw-semibold">
+            @Model.Browser <span class="text-muted fw-normal">· @Model.Device</span>
+        </div>
+        <small class="text-muted">
+            @(Model.IpAddress ?? "IP tidak diketahui") · @(Model.Location ?? "Lokasi tidak diketahui") · login @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+        </small>
+    </div>
+    <div class="session-action">
+        @if (Model.IsCurrent)
+        {
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">Perangkat ini</span>
+        }
+        else if (Model.IsActive)
+        {
+            <form asp-action="RevokeSession" method="post" class="delete-form"
+                  data-confirm-title="Akhiri sesi ini?"
+                  data-confirm-message="@($"{Model.Browser} di {Model.Device} akan langsung logout.")"
+                  data-confirm-confirm="Akhiri sesi"
+                  data-confirm-cancel="Batal">
+                <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                <button type="submit" class="btn btn-sm btn-outline-danger">Akhiri sesi</button>
+            </form>
+        }
+        else
+        {
+            <span class="badge rounded-pill bg-body-secondary text-body-secondary">Berakhir</span>
+        }
+    </div>
+</li>

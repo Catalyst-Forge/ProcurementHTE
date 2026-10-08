@@ -1,28 +1,29 @@
 @model AccountSettingsPageViewModel
+@{
+    var confirmed = Model.Settings.Overview.EmailConfirmed;
+}
 
 <div class="contact-tile">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <p class="text-muted small mb-1">Email</p>
-            <div class="d-flex align-items-center gap-2">
-                <h6 class="mb-1">@Model.Settings.Overview.Email</h6>
-                @if (Model.Settings.Overview.EmailConfirmed)
-                {
-                    <i class="bi bi-check-circle-fill text-primary fs-5"></i>
-                }
-            </div>
-            <small class="text-muted">Status: @(Model.Settings.Overview.EmailConfirmed ? "Terverifikasi" : "Belum terverifikasi")</small>
+    <div class="contact-tile-head">
+        <span class="contact-tile-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+        <div class="min-w-0">
+            <p class="contact-tile-label">Email</p>
+            <p class="contact-tile-value text-break">@Model.Settings.Overview.Email</p>
         </div>
-        <i class="bi bi-envelope-paper icon-lg text-primary"></i>
+        <span class="badge rounded-pill ms-auto @(confirmed ? "bg-success-subtle text-success-emphasis" : "bg-warning-subtle text-warning-emphasis")">
+            @(confirmed ? "Terverifikasi" : "Belum diverifikasi")
+        </span>
     </div>
-    @if (!Model.Settings.Overview.EmailConfirmed)
+
+    @if (!confirmed)
     {
-        <form asp-action="SendEmailVerification" method="post" class="mt-3">
-            <button type="submit" class="btn btn-outline-primary w-100" data-cooldown-button data-label="Kirim Magic Link" data-cooldown-seconds="@Model.EmailVerificationCooldown" data-status-target="#emailVerificationStatus">
-                <i class="bi bi-link-45deg"></i> Kirim Magic Link
+        <p class="small text-muted mt-3 mb-2">Kami kirim tautan verifikasi ke email ini. Buka tautannya dari perangkat mana saja.</p>
+        <form asp-action="SendEmailVerification" method="post">
+            <button type="submit" class="btn btn-outline-primary w-100" data-cooldown-button data-label="Kirim tautan verifikasi" data-cooldown-seconds="@Model.EmailVerificationCooldown" data-status-target="#emailVerificationStatus">
+                <i class="bi bi-link-45deg" aria-hidden="true"></i> Kirim tautan verifikasi
             </button>
         </form>
-        <div class="small text-muted mt-2" id="emailVerificationStatus"></div>
+        <div class="small text-muted mt-2" id="emailVerificationStatus" aria-live="polite"></div>
         @if (!string.IsNullOrWhiteSpace(Model.DevMagicLink))
         {
             <div class="alert alert-info mt-2 mb-0 small">

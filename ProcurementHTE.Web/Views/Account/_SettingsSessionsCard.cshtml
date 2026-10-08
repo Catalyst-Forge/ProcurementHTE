@@ -1,66 +1,59 @@
 @model AccountSettingsViewModel
+@{
+    const int initiallyShown = 5;
+    var ordered = Model.Sessions
+        .OrderByDescending(s => s.IsCurrent)
+        .ThenByDescending(s => s.IsActive)
+        .ThenByDescending(s => s.CreatedAt)
+        .ToList();
+    var activeCount = ordered.Count(s => s.IsActive);
+    var otherActiveCount = ordered.Count(s => s.IsActive && !s.IsCurrent);
+    var firstRows = ordered.Take(initiallyShown).ToList();
+    var moreRows = ordered.Skip(initiallyShown).ToList();
+}
 
-<div class="card h-100 shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center">
+<section class="card settings-card mb-4" id="perangkat" aria-labelledby="perangkat-title">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-2">
         <div>
-            <h5 class="mb-0">Perangkat & Sesi Aktif</h5>
-            <small class="text-muted">Pantau akses yang masih login.</small>
+            <h5 class="mb-0" id="perangkat-title">Perangkat &amp; Sesi</h5>
+            <small class="text-muted">@activeCount sesi aktif. Akhiri sesi yang tidak Anda kenali.</small>
         </div>
-        <form asp-action="LogoutAllSessions" method="post">
-            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle"></i> Logout semua</button>
-        </form>
-    </div>
-    <div class="card-body table-responsive">
-        @if (!Model.Sessions.Any())
+        @if (otherActiveCount > 0)
         {
-            <p class="text-muted mb-0">Belum ada data sesi.</p>
+            <form asp-action="LogoutAllSessions" method="post" class="delete-form"
+                  data-confirm-title="Logout dari semua perangkat?"
+                  data-confirm-message="Semua sesi aktif akan diakhiri, termasuk perangkat ini. Anda perlu login ulang."
+                  data-confirm-confirm="Logout semua"
+                  data-confirm-cancel="Batal">
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Logout semua perangkat</button>
+            </form>
         }
-        else
+    </div>
+
+    @if (!ordered.Any())
+    {
+        <div class="card-body"><p class="text-muted mb-0">Belum ada data sesi.</p></div>
+    }
+    else
+    {
+        <ul class="session-list list-unstyled mb-0">
+            @foreach (var session in firstRows)
+            {
+                @await Html.PartialAsync("_SettingsSessionRow", session)
+            }
+        </ul>
+        @if (moreRows.Count > 0)
         {
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Perangkat</th>
-                        <th>IP / Lokasi</th>
-                        <th>Login</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var session in Model.Sessions)
+            <details class="session-more">
+                <summary>Tampilkan @moreRows.Count sesi lainnya</summary>
+                <ul class="session-list list-unstyled mb-0">
+                    @foreach (var session in moreRows)
                     {
-                        var rowClass = !session.IsActive ? "opacity-50" : session.IsCurrent ? "table-primary" : string.Empty;
-                        <tr class="@rowClass">
-                            <td>
-                                <div class="fw-semibold">@session.Browser</div>
-                                <small class="text-muted">@session.Device</small>
-                            </td>
-                            <td>
-                                <div>@(session.IpAddress ?? "-")</div>
-                                <small class="text-muted">@((session.Location ?? "Tidak diketahui"))</small>
-                            </td>
-                            <td><small class="text-muted">@session.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</small></td>
-                            <td class="text-end">
-                                @if (session.IsCurrent)
-                                {
-                                    <span class="badge text-bg-info-subtle">Perangkat ini</span>
-                                }
-                                else if (session.IsActive)
-                                {
-                                    <form asp-action="RevokeSession" method="post" class="d-inline">
-                                        <input type="hidden" name="sessionId" value="@session.SessionId" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <span class="badge text-bg-light">Nonaktif</span>
-                                }
-                            </td>
-                        </tr>
+                        @await Html.PartialAsync("_SettingsSessionRow", session)
                     }
-                </tbody>
-            </table>
+                </ul>
+            </details>
         }
-    </div>
-</div>
+    }
+</section>
+

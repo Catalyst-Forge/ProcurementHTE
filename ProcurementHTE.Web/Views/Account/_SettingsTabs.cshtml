@@ -1,0 +1,37 @@
+@model AccountSettingsPageViewModel
+@{
+    var activeSessions = Model.Settings.Sessions.Count(s => s.IsActive);
+    var tabs = new[]
+    {
+        (Key: "profil", Label: "Profil", Icon: "bi-person", Alert: !Model.ContactVerificationComplete, AlertText: "kontak belum terverifikasi", Count: (int?)null),
+        (Key: "keamanan", Label: "Keamanan", Icon: "bi-shield-lock", Alert: !Model.Settings.TwoFactor.IsEnabled, AlertText: "2FA belum aktif", Count: (int?)null),
+        (Key: "perangkat", Label: "Perangkat", Icon: "bi-laptop", Alert: false, AlertText: "", Count: (int?)activeSessions),
+        (Key: "riwayat", Label: "Riwayat", Icon: "bi-clock-history", Alert: false, AlertText: "", Count: (int?)null),
+    };
+}
+
+<div class="settings-tabs-wrap mb-4">
+    <ul class="nav settings-tabs" role="tablist" aria-label="Bagian pengaturan akun">
+        @for (var i = 0; i < tabs.Length; i++)
+        {
+            var tab = tabs[i];
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(i == 0 ? "active" : string.Empty)" id="tab-@(tab.Key)-btn" type="button" role="tab"
+                        data-bs-toggle="tab" data-bs-target="#tab-@tab.Key" data-settings-tab="@tab.Key"
+                        aria-controls="tab-@tab.Key" aria-selected="@(i == 0 ? "true" : "false")">
+                    <i class="bi @tab.Icon" aria-hidden="true"></i>
+                    <span>@tab.Label</span>
+                    @if (tab.Count.HasValue)
+                    {
+                        <span class="settings-tab-count">@tab.Count</span>
+                    }
+                    @if (tab.Alert)
+                    {
+                        <span class="settings-tab-alert" title="Perlu perhatian: @tab.AlertText"></span>
+                        <span class="visually-hidden">(perlu perhatian: @tab.AlertText)</span>
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+</div>

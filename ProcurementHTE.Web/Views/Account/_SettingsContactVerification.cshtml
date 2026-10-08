@@ -1,13 +1,14 @@
 @model AccountSettingsPageViewModel
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+<section class="card settings-card mb-4" id="kontak" aria-labelledby="kontak-title">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-2">
         <div>
-            <h5 class="mb-0">Verifikasi Kontak</h5>
-            <small class="text-muted">Pastikan email terverifikasi. Verifikasi nomor HP akan aktif setelah gateway SMS/WhatsApp tersedia.</small>
+            <h5 class="mb-0" id="kontak-title">Verifikasi Kontak</h5>
+            <small class="text-muted">Kontak terverifikasi dipakai untuk reset password dan kode 2FA.</small>
         </div>
-        <span class="badge @(Model.ContactVerificationComplete ? "text-bg-success" : "text-bg-warning")">
-            @(Model.ContactVerificationComplete ? "Kontak utama tervalidasi" : "Butuh verifikasi")
+        <span class="badge rounded-pill @(Model.ContactVerificationComplete ? "bg-success-subtle text-success-emphasis" : "bg-warning-subtle text-warning-emphasis")">
+            <i class="bi @(Model.ContactVerificationComplete ? "bi-check-circle" : "bi-exclamation-circle")" aria-hidden="true"></i>
+            @(Model.ContactVerificationComplete ? "Semua terverifikasi" : "Perlu verifikasi")
         </span>
     </div>
     <div class="card-body">
@@ -20,4 +21,4 @@
             </div>
         </div>
     </div>
-</div>
+</section>

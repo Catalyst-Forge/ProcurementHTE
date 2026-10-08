@@ -1,32 +1,42 @@
 @model AccountSettingsViewModel
 
-<div class="card mt-4 shadow-sm">
+<section class="card settings-card mb-4" id="riwayat" aria-labelledby="riwayat-title">
     <div class="card-header">
-        <h5 class="mb-0">Riwayat Keamanan</h5>
-        <small class="text-muted">Login, perubahan password, dan aktivitas penting.</small>
+        <h5 class="mb-0" id="riwayat-title">Riwayat Keamanan</h5>
+        <small class="text-muted">Aktivitas penting terbaru di akun Anda. Laporkan ke admin kalau ada yang tidak Anda kenali.</small>
     </div>
-    <div class="card-body">
-        @if (!Model.SecurityLogs.Any())
-        {
-            <p class="text-muted mb-0">Belum ada aktivitas terekam.</p>
-        }
-        else
-        {
-            <ul class="list-unstyled security-log mb-0">
-                @foreach (var log in Model.SecurityLogs)
-                {
-                    <li class="d-flex gap-3 mb-3">
-                        <div class="timeline-dot @(log.IsSuccess ? "bg-success-subtle" : "bg-danger-subtle")"></div>
-                        <div>
-                            <div class="fw-semibold">@log.EventType</div>
-                            <div class="text-muted small">
-                                @log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm") &bull; @(log.IpAddress ?? "IP tidak diketahui")
-                            </div>
-                            <div>@(log.Description ?? "-")</div>
+    @if (!Model.SecurityLogs.Any())
+    {
+        <div class="card-body"><p class="text-muted mb-0">Belum ada aktivitas terekam.</p></div>
+    }
+    else
+    {
+        <ol class="security-log list-unstyled mb-0">
+            @foreach (var log in Model.SecurityLogs)
+            {
+                <li class="security-log-row @(log.IsSuccess ? string.Empty : "is-failed")">
+                    <span class="security-log-icon" aria-hidden="true">
+                        <i class="bi @AccountDisplayText.IconForSecurityEvent(log.EventType)"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <div class="fw-semibold">
+                            @AccountDisplayText.ForSecurityEvent(log.EventType)
+                            @if (!log.IsSuccess)
+                            {
+                                <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis ms-1">Gagal</span>
+                            }
                         </div>
-                    </li>
-                }
-            </ul>
-        }
-    </div>
-</div>
+                        @if (!string.IsNullOrWhiteSpace(log.Description))
+                        {
+                            <div class="small text-break">@log.Description</div>
+                        }
+                    </div>
+                    <div class="security-log-meta small text-muted">
+                        <time datetime="@log.CreatedAt.ToString("o")">@log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</time>
+                        <div>@(log.IpAddress ?? "IP tidak diketahui")</div>
+                    </div>
+                </li>
+            }
+        </ol>
+    }
+</section>
