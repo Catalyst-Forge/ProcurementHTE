@@ -1,0 +1,510 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T00:00:00Z",
+  "title": "Design System: Docutrax",
+  "extensions": {
+    "colorMeta": {
+      "navy-900": {
+        "role": "tertiary",
+        "displayName": "Stage Navy",
+        "canonical": "oklch(23.0% 0.074 263.9)",
+        "tonalRamp": [
+          "oklch(15% 0.069 263.9)",
+          "oklch(26% 0.072 263.9)",
+          "oklch(37% 0.066 263.9)",
+          "oklch(48% 0.059 263.9)",
+          "oklch(60% 0.052 263.9)",
+          "oklch(72% 0.045 263.9)",
+          "oklch(84% 0.038 263.9)",
+          "oklch(95% 0.031 263.9)"
+        ]
+      },
+      "navy-800": {
+        "role": "tertiary",
+        "displayName": "Stage Navy Light",
+        "canonical": "oklch(30.6% 0.111 263.2)",
+        "tonalRamp": [
+          "oklch(15% 0.097 263.2)",
+          "oklch(26% 0.107 263.2)",
+          "oklch(37% 0.105 263.2)",
+          "oklch(48% 0.095 263.2)",
+          "oklch(60% 0.085 263.2)",
+          "oklch(72% 0.074 263.2)",
+          "oklch(84% 0.063 263.2)",
+          "oklch(95% 0.054 263.2)"
+        ]
+      },
+      "blue-600": {
+        "role": "primary",
+        "displayName": "Docutrax Blue",
+        "canonical": "oklch(54.6% 0.215 262.9)",
+        "tonalRamp": [
+          "oklch(15% 0.147 262.9)",
+          "oklch(26% 0.166 262.9)",
+          "oklch(37% 0.185 262.9)",
+          "oklch(48% 0.204 262.9)",
+          "oklch(60% 0.206 262.9)",
+          "oklch(72% 0.185 262.9)",
+          "oklch(84% 0.165 262.9)",
+          "oklch(95% 0.146 262.9)"
+        ]
+      },
+      "blue-700": {
+        "role": "primary",
+        "displayName": "Pressed Blue",
+        "canonical": "oklch(48.8% 0.217 264.4)",
+        "tonalRamp": [
+          "oklch(15% 0.158 264.4)",
+          "oklch(26% 0.178 264.4)",
+          "oklch(37% 0.197 264.4)",
+          "oklch(48% 0.216 264.4)",
+          "oklch(60% 0.198 264.4)",
+          "oklch(72% 0.177 264.4)",
+          "oklch(84% 0.156 264.4)",
+          "oklch(95% 0.137 264.4)"
+        ]
+      },
+      "teal-500": {
+        "role": "secondary",
+        "displayName": "Track Teal",
+        "canonical": "oklch(70.4% 0.123 182.5)",
+        "tonalRamp": [
+          "oklch(15% 0.069 182.5)",
+          "oklch(26% 0.079 182.5)",
+          "oklch(37% 0.090 182.5)",
+          "oklch(48% 0.101 182.5)",
+          "oklch(60% 0.113 182.5)",
+          "oklch(72% 0.121 182.5)",
+          "oklch(84% 0.110 182.5)",
+          "oklch(95% 0.099 182.5)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(22.5% 0.050 262.9)",
+        "tonalRamp": [
+          "oklch(15% 0.047 262.9)",
+          "oklch(26% 0.049 262.9)",
+          "oklch(37% 0.044 262.9)",
+          "oklch(48% 0.040 262.9)",
+          "oklch(60% 0.035 262.9)",
+          "oklch(72% 0.030 262.9)",
+          "oklch(84% 0.025 262.9)",
+          "oklch(95% 0.021 262.9)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "oklch(45.9% 0.046 262.6)",
+        "tonalRamp": [
+          "oklch(15% 0.035 262.6)",
+          "oklch(26% 0.039 262.6)",
+          "oklch(37% 0.043 262.6)",
+          "oklch(48% 0.045 262.6)",
+          "oklch(60% 0.041 262.6)",
+          "oklch(72% 0.037 262.6)",
+          "oklch(84% 0.032 262.6)",
+          "oklch(95% 0.028 262.6)"
+        ]
+      },
+      "placeholder": {
+        "role": "neutral",
+        "displayName": "Placeholder Slate",
+        "canonical": "oklch(51.5% 0.042 261.2)",
+        "tonalRamp": [
+          "oklch(15% 0.030 261.2)",
+          "oklch(26% 0.033 261.2)",
+          "oklch(37% 0.037 261.2)",
+          "oklch(48% 0.041 261.2)",
+          "oklch(60% 0.039 261.2)",
+          "oklch(72% 0.035 261.2)",
+          "oklch(84% 0.031 261.2)",
+          "oklch(95% 0.027 261.2)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(89.2% 0.020 257.5)",
+        "tonalRamp": [
+          "oklch(15% 0.008 257.5)",
+          "oklch(26% 0.010 257.5)",
+          "oklch(37% 0.012 257.5)",
+          "oklch(48% 0.014 257.5)",
+          "oklch(60% 0.016 257.5)",
+          "oklch(72% 0.018 257.5)",
+          "oklch(84% 0.019 257.5)",
+          "oklch(95% 0.019 257.5)"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Firm Hairline",
+        "canonical": "oklch(81.7% 0.032 258.9)",
+        "tonalRamp": [
+          "oklch(15% 0.015 258.9)",
+          "oklch(26% 0.018 258.9)",
+          "oklch(37% 0.020 258.9)",
+          "oklch(48% 0.023 258.9)",
+          "oklch(60% 0.026 258.9)",
+          "oklch(72% 0.029 258.9)",
+          "oklch(84% 0.031 258.9)",
+          "oklch(95% 0.028 258.9)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Blue-Grey Ground",
+        "canonical": "oklch(95.9% 0.010 252.8)",
+        "tonalRamp": [
+          "oklch(15% 0.003 252.8)",
+          "oklch(26% 0.004 252.8)",
+          "oklch(37% 0.005 252.8)",
+          "oklch(48% 0.006 252.8)",
+          "oklch(60% 0.007 252.8)",
+          "oklch(72% 0.008 252.8)",
+          "oklch(84% 0.009 252.8)",
+          "oklch(95% 0.010 252.8)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field Wash",
+        "canonical": "oklch(97.9% 0.006 264.5)",
+        "tonalRamp": [
+          "oklch(15% 0.002 264.5)",
+          "oklch(26% 0.002 264.5)",
+          "oklch(37% 0.003 264.5)",
+          "oklch(48% 0.003 264.5)",
+          "oklch(60% 0.004 264.5)",
+          "oklch(72% 0.005 264.5)",
+          "oklch(84% 0.005 264.5)",
+          "oklch(95% 0.006 264.5)"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(60% 0.000 89.9)",
+          "oklch(72% 0.000 89.9)",
+          "oklch(84% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "on-stage": {
+        "role": "neutral",
+        "displayName": "On-Stage White",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(60% 0.000 89.9)",
+          "oklch(72% 0.000 89.9)",
+          "oklch(84% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "doc-fold": {
+        "role": "neutral",
+        "displayName": "Fold Grey",
+        "canonical": "oklch(87.2% 0.031 258.9)",
+        "tonalRamp": [
+          "oklch(15% 0.013 258.9)",
+          "oklch(26% 0.016 258.9)",
+          "oklch(37% 0.019 258.9)",
+          "oklch(48% 0.021 258.9)",
+          "oklch(60% 0.024 258.9)",
+          "oklch(72% 0.027 258.9)",
+          "oklch(84% 0.030 258.9)",
+          "oklch(95% 0.029 258.9)"
+        ]
+      },
+      "danger": {
+        "role": "error",
+        "displayName": "Danger",
+        "canonical": "oklch(50.0% 0.182 29.5)",
+        "tonalRamp": [
+          "oklch(15% 0.131 29.5)",
+          "oklch(26% 0.147 29.5)",
+          "oklch(37% 0.163 29.5)",
+          "oklch(48% 0.179 29.5)",
+          "oklch(60% 0.168 29.5)",
+          "oklch(72% 0.150 29.5)",
+          "oklch(84% 0.133 29.5)",
+          "oklch(95% 0.117 29.5)"
+        ]
+      },
+      "danger-ground": {
+        "role": "error",
+        "displayName": "Danger Wash",
+        "canonical": "oklch(96.6% 0.015 27.3)",
+        "tonalRamp": [
+          "oklch(15% 0.005 27.3)",
+          "oklch(26% 0.007 27.3)",
+          "oklch(37% 0.008 27.3)",
+          "oklch(48% 0.009 27.3)",
+          "oklch(60% 0.011 27.3)",
+          "oklch(72% 0.012 27.3)",
+          "oklch(84% 0.014 27.3)",
+          "oklch(95% 0.015 27.3)"
+        ]
+      },
+      "danger-line": {
+        "role": "error",
+        "displayName": "Danger Line",
+        "canonical": "oklch(85.8% 0.059 26.1)",
+        "tonalRamp": [
+          "oklch(15% 0.026 26.1)",
+          "oklch(26% 0.031 26.1)",
+          "oklch(37% 0.036 26.1)",
+          "oklch(48% 0.041 26.1)",
+          "oklch(60% 0.047 26.1)",
+          "oklch(72% 0.053 26.1)",
+          "oklch(84% 0.059 26.1)",
+          "oklch(95% 0.055 26.1)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single statement line on the navy stage; hidden below 992px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Card title."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Lede, input text, help copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, inline links, stage pills (fluid size)."
+      },
+      "label-action": {
+        "displayName": "Label Action",
+        "purpose": "Primary button text at variable weight 650."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Captcha question; tabular figures."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0 2px 6px rgba(15,27,51,0.05), 0 24px 48px -24px rgba(15,27,51,0.28)",
+        "purpose": "Login card, with a 6% ink hairline border."
+      },
+      {
+        "name": "action-glow",
+        "value": "0 10px 20px -10px rgba(37,99,235,0.7)",
+        "purpose": "Primary button at rest."
+      },
+      {
+        "name": "action-glow-hover",
+        "value": "0 12px 24px -10px rgba(29,78,216,0.75)",
+        "purpose": "Primary button hover."
+      },
+      {
+        "name": "pill-lift",
+        "value": "0 8px 18px -10px rgba(0,0,0,0.6)",
+        "purpose": "Stage pills on navy."
+      },
+      {
+        "name": "token-shadow",
+        "value": "drop-shadow(0 6px 8px rgba(4,12,32,0.45))",
+        "purpose": "Document tokens on the track (filter)."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px rgba(37,99,235,0.18)",
+        "purpose": "Focused input, with border shifted to blue-600."
+      },
+      {
+        "name": "focus-ring-error",
+        "value": "0 0 0 3px rgba(180,35,24,0.16)",
+        "purpose": "Focused invalid input."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Entrance easing (--dx-ease-out): track draw and pill rise."
+      },
+      {
+        "name": "track-draw",
+        "value": "1.8s",
+        "purpose": "One-time draw-in of the infinity track."
+      },
+      {
+        "name": "pill-rise",
+        "value": "0.9s, staggered 150ms from 0.5s, 8px rise",
+        "purpose": "One-time entrance of stage pills."
+      },
+      {
+        "name": "doc-travel",
+        "value": "16s linear loop, 3 tokens phased by 1/3 (SMIL animateMotion)",
+        "purpose": "Ambient document travel, centre -> left loop -> right loop. Paused via pauseAnimations() under reduced motion."
+      },
+      {
+        "name": "state",
+        "value": "0.15s ease",
+        "purpose": "Border, fill, shadow and colour transitions on controls."
+      },
+      {
+        "name": "spin",
+        "value": "0.6s-0.7s linear infinite",
+        "purpose": "Busy spinner and captcha refresh."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "1199.98px"
+      },
+      {
+        "name": "stacked",
+        "value": "991.98px"
+      },
+      {
+        "name": "narrow",
+        "value": "479.98px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single blue action; full card width.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Masuk</button>",
+      "css": ".ds-btn-primary{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);width:280px;height:50px;border:0;border-radius:var(--dx-radius-field,10px);background:var(--dx-blue-600,#2563EB);color:#fff;font-size:15.5px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:0 10px 20px -10px rgba(37,99,235,.7);transition:background-color .15s ease,box-shadow .15s ease,transform .1s ease}.ds-btn-primary:hover{background:var(--dx-blue-700,#1D4ED8);box-shadow:0 12px 24px -10px rgba(29,78,216,.75)}.ds-btn-primary:active{transform:translateY(1px)}.ds-btn-primary:focus-visible{outline:2px solid var(--dx-blue-600,#2563EB);outline-offset:2px}"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "Square refresh/toggle button; blue plate on hover.",
+      "html": "<button class=\"ds-btn-icon\" type=\"button\" aria-label=\"Ganti soal\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2zM8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466\"/></svg></button>",
+      "css": ".ds-btn-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid var(--dx-line,#D3DCE9);border-radius:var(--dx-radius-field,10px);background:var(--dx-field,#F6F8FC);color:var(--dx-ink-muted,#4A5872);cursor:pointer;transition:color .15s ease,background-color .15s ease}.ds-btn-icon:hover{background:rgba(37,99,235,.08);color:var(--dx-blue-600,#2563EB)}.ds-btn-icon:focus-visible{outline:2px solid var(--dx-blue-600,#2563EB);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "48px field with leading icon; white fill and blue ring on focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Password</span><span class=\"ds-field-control\"><span class=\"ds-field-icon\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1\"/></svg></span><input class=\"ds-input\" type=\"password\" placeholder=\"Masukkan password\"></span></label>",
+      "css": ".ds-field{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);display:grid;gap:7px;width:320px;color:var(--dx-ink,#0F1B33)}.ds-field-label{font-size:13.5px;font-weight:600}.ds-field-control{position:relative;display:flex;align-items:center}.ds-field-icon{position:absolute;left:14px;display:flex;color:var(--dx-ink-muted,#4A5872);pointer-events:none}.ds-input{width:100%;height:48px;padding:0 14px 0 42px;border:1px solid var(--dx-line,#D3DCE9);border-radius:var(--dx-radius-field,10px);background:var(--dx-field,#F6F8FC);color:var(--dx-ink,#0F1B33);font:inherit;font-size:15px;transition:border-color .15s ease,box-shadow .15s ease,background-color .15s ease}.ds-input::placeholder{color:var(--dx-placeholder,#5A6880);opacity:1}.ds-input:hover{border-color:#B7C4D8}.ds-input:focus{outline:none;border-color:var(--dx-blue-600,#2563EB);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.18)}"
+    },
+    {
+      "name": "Text Field (error)",
+      "kind": "input",
+      "refersTo": "input-field-error",
+      "description": "Invalid state: danger border and wash, message below.",
+      "html": "<label class=\"ds-field-err\"><input class=\"ds-input-err\" value=\"12\" aria-invalid=\"true\"><span class=\"ds-field-msg\">Jawaban captcha salah, coba soal yang baru.</span></label>",
+      "css": ".ds-field-err{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);display:grid;gap:7px;width:320px}.ds-input-err{height:48px;padding:0 14px;border:1px solid var(--dx-danger,#B42318);border-radius:var(--dx-radius-field,10px);background:var(--dx-danger-ground,#FEF0EE);color:var(--dx-ink,#0F1B33);font:inherit;font-size:15px}.ds-input-err:focus{outline:none;box-shadow:0 0 0 3px rgba(180,35,24,.16)}.ds-field-msg{color:var(--dx-danger,#B42318);font-size:13px;font-weight:500}"
+    },
+    {
+      "name": "Error Alert",
+      "kind": "custom",
+      "refersTo": "alert-error",
+      "description": "Form-level error above the form.",
+      "html": "<div class=\"ds-alert\" role=\"alert\"><p>NIP/email atau password salah.</p></div>",
+      "css": ".ds-alert{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);width:320px;padding:12px 14px;border:1px solid var(--dx-danger-line,#F5C2BC);border-radius:var(--dx-radius-field,10px);background:var(--dx-danger-ground,#FEF0EE);color:var(--dx-danger,#B42318);font-size:14px;font-weight:500}.ds-alert p{margin:0}"
+    },
+    {
+      "name": "Login Card",
+      "kind": "card",
+      "refersTo": "card-login",
+      "description": "White card on the blue-grey ground; soft lift.",
+      "html": "<div class=\"ds-ground\"><div class=\"ds-card\"><h1 class=\"ds-card-title\">Masuk ke Docutrax</h1><p class=\"ds-card-lede\">Gunakan NIP atau email kantor Anda.</p></div></div>",
+      "css": ".ds-ground{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);padding:32px;background:var(--dx-ground,#EDF2F8)}.ds-card{max-width:440px;padding:40px 40px 36px;border:1px solid rgba(15,27,51,.06);border-radius:var(--dx-radius-card,16px);background:#fff;box-shadow:0 2px 6px rgba(15,27,51,.05),0 24px 48px -24px rgba(15,27,51,.28);text-align:center;color:var(--dx-ink,#0F1B33)}.ds-card-title{margin:0;font-size:24px;font-weight:700;line-height:1.25;letter-spacing:-.01em}.ds-card-lede{margin:6px 0 0;color:var(--dx-ink-muted,#4A5872);font-size:15px}"
+    },
+    {
+      "name": "Captcha Question",
+      "kind": "custom",
+      "description": "Dashed, pale-blue tile with tabular navy numerals; generated, not editable.",
+      "html": "<output class=\"ds-captcha-q\">8 &minus; 6 = ?</output>",
+      "css": ".ds-captcha-q{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);display:grid;place-items:center;width:150px;height:48px;border:1px dashed #B7C4D8;border-radius:var(--dx-radius-field,10px);background:#E9F0FB;color:var(--dx-navy-800,#0F2A66);font-size:17px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Stage Pill (provisional)",
+      "kind": "chip",
+      "refersTo": "stage-pill",
+      "description": "Procurement stage label anchored to a track node on the navy stage. Part of the unconfirmed left-panel world.",
+      "html": "<div class=\"ds-stage\"><span class=\"ds-pill\">Purchase Requisition</span><span class=\"ds-pill\">Vendor</span></div>",
+      "css": ".ds-stage{font-family: var(--dx-font, Montserrat, system-ui, sans-serif);display:flex;gap:16px;padding:28px;background:radial-gradient(circle at 1px 1px,rgba(185,199,228,.16) 1px,transparent 0) 0 0/26px 26px,linear-gradient(160deg,var(--dx-navy-900,#0A1A3F),var(--dx-navy-800,#0F2A66))}.ds-pill{padding:6px 14px;border:1px solid rgba(15,42,102,.18);border-radius:999px;background:#fff;color:var(--dx-navy-900,#0A1A3F);font-size:13.5px;font-weight:600;letter-spacing:.01em;white-space:nowrap;box-shadow:0 8px 18px -10px rgba(0,0,0,.6)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Unbroken Track",
+    "overview": "**Creative North Star: \"The Unbroken Track\"**\n\nDocutrax is drawn as a track that never breaks. The brand mark, a blue-to-teal infinity, becomes the stage: on a deep navy field with a faint dot grid, the mark is drawn at large scale as a road, and small white document tokens travel along it past the procurement stages. Next to it, the working side is quiet and light: a pale blue-grey ground, one white card, one blue action. The world splits cleanly. Navy holds the brand, light holds the task, and the two never mix.\n\nThe density is that of a daily tool, not a marketing page. One family (Montserrat) carries the whole hierarchy through weight alone. Shapes are softly rounded (10px fields, 16px card, full pills). Depth is soft, diffuse lift and never a hard offset. Motion has two registers: a single entrance (the track draws itself, the stage pills rise in sequence) and one continuous, slow ambient loop (three documents moving along the track). Both stop completely under reduced motion.\n\n**Scope and status.** This system is derived from a single shipped surface, the login page. The dashboard, the procurement screens, and the other auth pages that use `_AuthenticationLayout` (including Forgot Password, which the login links to) still use the older Bootstrap look and have **not adopted** this world yet. Tokens live only in `login.css` as `--dx-*`. Nothing here has been checked against a data-dense screen.\n\n**Open decision: the left-panel world is not confirmed.** The client pinned the split composition (visual panel on the left, white login card on the right) and the form contents. The left-panel world, the logo-as-track illustration, was the one free axis. It was not rolled and the user has not yet confirmed it. Treat the Track Stage component and everything derived from it (navy stage, dot grid, document tokens, stage pills) as provisional until it is confirmed. The light working side, the palette roles, the type, and the form components rest on the brand mark and the client's pins, so they are firmer.",
+    "keyCharacteristics": [
+      "Two grounds: a deep navy brand stage and a pale blue-grey task ground.",
+      "The infinity mark as the only source of the blue-to-teal gradient.",
+      "One action colour (blue), used sparingly.",
+      "One typeface, Montserrat, self-hosted, with hierarchy carried by weight.",
+      "Soft, diffuse elevation. No hard shadows.",
+      "A one-time entrance plus one slow ambient loop, with everything paused under reduced motion."
+    ],
+    "rules": [
+      {
+        "name": "The One Blue Rule",
+        "body": "Blue-600 is the only colour that means \"act here\". Hover deepens it to blue-700. No other hue fills a button or marks focus.",
+        "section": "colors"
+      },
+      {
+        "name": "The Gradient Belongs to the Mark Rule",
+        "body": "The blue-to-teal gradient appears only on the infinity: the logo and the track drawn from it. Never apply it to buttons, headings, borders, or backgrounds.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Grounds Rule",
+        "body": "Navy is the brand's stage. The task always sits on the light ground inside a white card. Form controls never sit on navy.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Montserrat is the only face. Do not add a second display or mono family. Reach for weight (400 / 600 / 650 / 700) before size.",
+        "section": "typography"
+      },
+      {
+        "name": "The Soft Lift Rule",
+        "body": "Every shadow has a negative spread or a large blur and a tint drawn from the palette. If a shadow reads as an offset copy of the shape, it is wrong.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep blue-600 as the single action colour, with blue-700 for hover and busy states.",
+      "**Do** keep the blue-to-teal gradient on the infinity mark and the track drawn from it, and nowhere else.",
+      "**Do** put tasks on the blue-grey ground inside white cards with 16px corners and the card lift.",
+      "**Do** use Montserrat for everything, and build hierarchy with weight (400 / 600 / 650 / 700).",
+      "**Do** give every field the 48px height, 10px radius, field-wash fill, and the blue border-plus-ring focus.",
+      "**Do** pair every animation with a reduced-motion stop, and pause SMIL explicitly with `pauseAnimations()`.",
+      "**Do** use tabular figures wherever numbers are compared or typed (the captcha)."
+    ],
+    "donts": [
+      "**Don't** fill buttons, focus rings, or states with teal. Teal lives in the brand gradient.",
+      "**Don't** place form controls or body copy on the navy stage.",
+      "**Don't** use hard, offset, or untinted heavy shadows. Lift is soft and diffuse.",
+      "**Don't** add a second typeface or fall back to a system-only display stack.",
+      "**Don't** add the Pertamina PDC logo to Docutrax surfaces until the client confirms it.",
+      "**Don't** invent taglines, statistics, or claims on the stage. Docutrax has no official tagline or illustration library yet.",
+      "**Don't** treat this world as already adopted elsewhere. Pages that still use `_AuthenticationLayout` and the Bootstrap app shell are the old look, not drift from this system."
+    ]
+  }
+}
