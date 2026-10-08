@@ -22,6 +22,7 @@
     <title>@ViewData["Title"] - Procurement Transport &amp; Logistic</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
+    <partial name="_ComponentStyles" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ProcurementHTE.Web.styles.css" asp-append-version="true" />
     @* (Opsional) kalau butuh section khusus di <head> *@
@@ -80,7 +81,7 @@
             {
                 <footer class="border-top footer text-muted">
                     <div class="container">
-                        &copy; 2025 - Procurement Transport &amp; Logistic
+                        &copy; @DateTime.Now.Year - Procurement Transport &amp; Logistic
                     </div>
                 </footer>
             }

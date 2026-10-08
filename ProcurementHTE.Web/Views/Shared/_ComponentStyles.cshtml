@@ -1,0 +1,12 @@
+@* Component stylesheets, linked individually so asp-append-version busts the
+   browser cache on every change (CSS @import URLs carry no version). Keep this
+   before site.css: these used to be @import-ed at its top. *@
+<link rel="stylesheet" href="~/css/components/twofactor.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/twofactor-layout.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/error-page.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/notifications.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/loading-overlay.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/avatar.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/account.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/nav.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components/mobile-table.css" asp-append-version="true" />

@@ -1,13 +1,3 @@
-@import url('./components/twofactor.css');
-@import url('./components/twofactor-layout.css');
-@import url('./components/error-page.css');
-@import url('./components/notifications.css');
-@import url('./components/loading-overlay.css');
-@import url('./components/avatar.css');
-@import url('./components/account.css');
-@import url('./components/nav.css');
-@import url('./components/mobile-table.css');
-
 :root {
   --bs-primary: #00ccff;
 }
