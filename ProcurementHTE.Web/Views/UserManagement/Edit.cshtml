@@ -46,6 +46,12 @@
                 </div>
 
                 <div class="col-md-6">
+                    <label asp-for="Form.Nip" class="form-label"></label>
+                    <input asp-for="Form.Nip" class="form-control" autocomplete="off" />
+                    <div class="form-text">Dipakai untuk login. Kosongkan bila belum ada.</div>
+                    <span asp-validation-for="Form.Nip" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
                     <label asp-for="Form.JobTitle" class="form-label"></label>
                     <input asp-for="Form.JobTitle" class="form-control" />
                     <span asp-validation-for="Form.JobTitle" class="text-danger"></span>

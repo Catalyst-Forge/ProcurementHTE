@@ -12,8 +12,12 @@ public partial class AuthController
             return Redirect("~/");
 
         ViewData["ReturnUrl"] = returnUrl;
-        return View();
+        return LoginView(null);
     }
+
+    [HttpGet]
+    public IActionResult LoginCaptcha() =>
+        Json(new { question = Utils.LoginCaptcha.Issue(HttpContext.Session) });
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -22,13 +26,22 @@ public partial class AuthController
         ViewData["ReturnUrl"] = returnUrl;
 
         if (!ModelState.IsValid)
-            return View(model);
+            return LoginView(model);
 
-        var user = await FindUserAsync(model.Email);
+        if (!Utils.LoginCaptcha.Verify(HttpContext.Session, model.CaptchaAnswer))
+        {
+            ModelState.AddModelError(
+                nameof(LoginViewModel.CaptchaAnswer),
+                "Jawaban captcha salah, coba soal yang baru."
+            );
+            return LoginView(model);
+        }
+
+        var user = await FindUserAsync(model.Login);
         if (user == null || !user.IsActive)
         {
             ModelState.AddModelError(string.Empty, "Akun tidak ditemukan atau tidak aktif");
-            return View(model);
+            return LoginView(model);
         }
 
         var result = await _signInManager.PasswordSignInAsync(
@@ -87,14 +100,21 @@ public partial class AuthController
                 user.Id,
                 SecurityLogEventType.LoginFailed,
                 false,
-                "Email atau password salah.",
+                "NIP/email atau password salah.",
                 GetRemoteIp(),
                 GetUserAgent(),
                 HttpContext.RequestAborted
             );
-            ModelState.AddModelError(string.Empty, "Email atau Password salah");
+            ModelState.AddModelError(string.Empty, "NIP/email atau password salah");
         }
 
-        return View(model);
+        return LoginView(model);
+    }
+
+    // Every render of the form gets a fresh question; an answer is never reused.
+    private ViewResult LoginView(LoginViewModel? model)
+    {
+        ViewData["CaptchaQuestion"] = Utils.LoginCaptcha.Issue(HttpContext.Session);
+        return View(nameof(Login), model);
     }
 }

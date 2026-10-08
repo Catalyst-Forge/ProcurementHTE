@@ -13,6 +13,9 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .Property(u => u.FullName)
             .HasComputedColumnSql("CONCAT([FirstName], ' ', [LastName])");
 
+        entity.Property(u => u.Nip).HasMaxLength(30);
+        entity.HasIndex(u => u.Nip).IsUnique().HasFilter("[Nip] IS NOT NULL");
+
         entity
             .Property(u => u.TwoFactorMethod)
             .HasConversion<string>()

@@ -70,6 +70,11 @@ namespace ProcurementHTE.Web.Models.Admin
         [StringLength(50, MinimumLength = 3)]
         public string UserName { get; set; } = null!;
 
+        [Display(Name = "NIP")]
+        [StringLength(30)]
+        [RegularExpression(@"^[A-Za-z0-9.\-]+$", ErrorMessage = "NIP hanya boleh berisi huruf, angka, titik, atau tanda hubung")]
+        public string? Nip { get; set; }
+
         [Display(Name = "Jabatan")]
         [StringLength(200)]
         public string? JobTitle { get; set; }

@@ -24,6 +24,7 @@ public partial class UserManagementController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(UserFormPageViewModel model)
     {
+        await ValidateNipIsUniqueAsync(model.Form, excludeUserId: null);
         if (!ModelState.IsValid)
         {
             model.Roles = await GetRoleOptionsAsync();
@@ -40,6 +41,7 @@ public partial class UserManagementController
                 Email = model.Form.Email,
                 FirstName = model.Form.FirstName,
                 LastName = model.Form.LastName ?? string.Empty,
+                Nip = NormalizeNip(model.Form.Nip),
                 JobTitle = model.Form.JobTitle,
                 PhoneNumber = model.Form.PhoneNumber,
                 IsActive = model.Form.IsActive,

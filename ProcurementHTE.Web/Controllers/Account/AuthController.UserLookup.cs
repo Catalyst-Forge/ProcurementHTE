@@ -6,20 +6,8 @@ namespace ProcurementHTE.Web.Controllers.Account;
 
 public partial class AuthController
 {
-    private async Task<User?> FindUserAsync(string identifier)
-    {
-        if (string.IsNullOrWhiteSpace(identifier))
-            return null;
-
-        var normalized = identifier.Trim();
-        User? user = null;
-
-        if (normalized.Contains('@'))
-            user = await _userManager.FindByEmailAsync(normalized);
-
-        user ??= await _userManager.FindByNameAsync(normalized);
-        return user;
-    }
+    private Task<User?> FindUserAsync(string identifier) =>
+        UserIdentifierLookup.FindAsync(_userManager, identifier);
 
     private async Task<User?> FindUserByPhoneAsync(string rawPhone)
     {

@@ -26,6 +26,7 @@ public partial class UserManagementController
                 LastName = user.LastName,
                 Email = user.Email ?? string.Empty,
                 UserName = user.UserName ?? string.Empty,
+                Nip = user.Nip,
                 JobTitle = user.JobTitle,
                 PhoneNumber = user.PhoneNumber,
                 IsActive = user.IsActive,
@@ -44,6 +45,7 @@ public partial class UserManagementController
         if (id != model.Form.Id)
             return BadRequest();
 
+        await ValidateNipIsUniqueAsync(model.Form, excludeUserId: id);
         if (!ModelState.IsValid)
         {
             model.Roles = await GetRoleOptionsAsync();
@@ -58,9 +60,10 @@ public partial class UserManagementController
         {
             var wasActive = user.IsActive;
             user.FirstName = model.Form.FirstName;
-            string? LastName = model.Form.LastName;
+            user.LastName = model.Form.LastName ?? string.Empty;
             user.Email = model.Form.Email;
             user.UserName = model.Form.UserName;
+            user.Nip = NormalizeNip(model.Form.Nip);
             user.JobTitle = model.Form.JobTitle;
             user.PhoneNumber = model.Form.PhoneNumber;
             user.IsActive = model.Form.IsActive;

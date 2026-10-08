@@ -18,6 +18,9 @@ namespace ProcurementHTE.Core.Models
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
 
+        [StringLength(30)]
+        public string? Nip { get; set; }
+
         [StringLength(200)]
         public string? JobTitle { get; set; }
 

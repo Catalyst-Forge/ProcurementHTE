@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A1A3F" />
+    <title>@ViewBag.Title - Docutrax</title>
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+  </head>
+
+  <body class="login-body">
+    @RenderBody()
+
+    <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
+    @await Html.PartialAsync("_SweetAlerts")
+    <script src="~/js/login.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+  </body>
+</html>

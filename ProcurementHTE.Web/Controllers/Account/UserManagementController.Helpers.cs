@@ -7,6 +7,21 @@ namespace ProcurementHTE.Web.Controllers.Account;
 
 public partial class UserManagementController
 {
+    private static string? NormalizeNip(string? nip) =>
+        string.IsNullOrWhiteSpace(nip) ? null : nip.Trim();
+
+    // NIP doubles as a login identifier, so two accounts must never share one.
+    private async Task ValidateNipIsUniqueAsync(UserFormInputModel form, string? excludeUserId)
+    {
+        var nip = NormalizeNip(form.Nip);
+        if (nip == null)
+            return;
+
+        var taken = await _userManager.Users.AnyAsync(u => u.Nip == nip && u.Id != excludeUserId);
+        if (taken)
+            ModelState.AddModelError("Form.Nip", "NIP ini sudah dipakai user lain.");
+    }
+
     private async Task<IReadOnlyList<RoleOptionViewModel>> GetRoleOptionsAsync()
     {
         var roles = await _roleManager
