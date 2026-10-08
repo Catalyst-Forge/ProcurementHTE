@@ -1,189 +1,75 @@
-<aside class="bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top" hx-boost="true" hx-target="#app-content" hx-push-url="true" hx-indicator="#content-loading">
-    @{
-        // Dashboard controllers - include all role-specific dashboard controllers
-        var dashboardControllers = new[] { 
-            "Dashboard", 
-            "AdminDashboard", 
-            "OperationDashboard", 
-            "ManagerTransportDashboard", 
-            "AnalystHteDashboard", 
-            "HteDashboard", 
-            "AssistantManagerHteDashboard", 
-            "VicePresidentDashboard", 
-            "HseDashboard", 
-            "SupplyChainManagementDashboard" 
-        };
+@using ProcurementHTE.Web.Navigation
+@{
+    // Menu groups and their role rules live in Navigation/SidebarMenu.cs.
+    var sections = SidebarMenu.For(User);
+}
 
-    }
-
+<aside class="sidebar-panel bg-body-tertiary text-dark-emphasis d-flex flex-column align-items-start px-3 pt-4 border-end h-100 sticky-top overflow-y-auto overflow-x-hidden" hx-boost="true" hx-target="#app-content" hx-push-url="true" hx-indicator="#content-loading">
     <div class="d-flex w-100 justify-content-between">
-        <a href="@(Url.Content("~/"))" class="h4 text-decoration-none d-flex align-items-center pb-3 me-md-0 me-md-auto">HTE</a>
+        <a href="@(Url.Content("~/"))" class="sidebar-brand text-decoration-none d-flex align-items-center gap-2 ps-1 pb-3 me-md-0 me-md-auto" aria-label="Docutrax, ke beranda">
+            <picture>
+                <source srcset="~/images/docutrax-symbol.webp" type="image/webp" />
+                <img class="sidebar-brand-symbol" src="~/images/docutrax-symbol.png" alt="" width="48" height="24" />
+            </picture>
+            <picture>
+                <source srcset="~/images/docutrax-wordmark.webp" type="image/webp" />
+                <img class="sidebar-brand-wordmark" src="~/images/docutrax-wordmark.png" alt="Docutrax" width="105" height="13" />
+            </picture>
+        </a>
         <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
     </div>
 
-    <small class="text-muted opacity-75 ms-3 mb-2">Menu</small>
+    <nav class="sidebar-nav d-flex flex-column flex-grow-1 w-100" aria-label="Menu utama">
+        @for (var s = 0; s < sections.Count; s++)
+        {
+            var menuGroup = sections[s];
+            var labelId = $"sidebar-section-{s}";
 
-    <ul class="nav flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100 h-100">
-        <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: dashboardControllers))"
-               data-nav-controller="Dashboard"
-               asp-controller="Dashboard"
-               asp-action="Index"
-               data-page="Dashboard"
-               hx-boost="false">
-                <i class="bi bi-grid"></i> <span class="ms-1">Dashboard</span>
-            </a>
-        </li>
-
-        @if (User.IsInRole("Admin") || User.IsInRole("Operation") || User.IsInRole("Analyst HTE & LTS")) {
-            @* Procurement Menu *@
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Procurements" }))"
-                data-nav-controller="Procurements"
-                asp-controller="Procurements"
-                asp-action="Index"
-                data-page="Index Procurements">
-                    <i class="bi bi-briefcase"></i>
-                    <span class="ms-1">Procurements</span>
-                </a>
-            </li>
+            <div class="sidebar-section">
+                @if (menuGroup.Label != null)
+                {
+                    <p class="sidebar-section-label" id="@labelId">@(menuGroup.Label)</p>
+                }
+                <ul class="nav flex-column flex-nowrap w-100" aria-labelledby="@(menuGroup.Label != null ? labelId : null)">
+                    @foreach (var item in menuGroup.Items)
+                    {
+                        <li class="nav-item w-100">
+                            <a class="nav-link link-secondary rounded-1 d-flex align-items-center @(Html.ActiveClass(controllers: item.MatchControllers, actions: item.ActiveActions))"
+                               data-nav-controller="@string.Join(",", item.MatchControllers)"
+                               data-nav-action="@(item.ActiveActions != null ? string.Join(",", item.ActiveActions) : null)"
+                               asp-controller="@item.Controller"
+                               asp-action="@item.Action"
+                               data-page="@item.DataPage"
+                               hx-boost="@(item.HxBoost ? null : "false")">
+                                <i class="bi @item.Icon" aria-hidden="true"></i>
+                                <span class="ms-1">@item.Label</span>
+                                @if (item.ShowPendingApprovalBadge)
+                                {
+                                    @* Filled in live by notifications-core.js via SignalR. *@
+                                    <span class="badge rounded-pill bg-danger ms-auto pending-approval-badge" style="display: none;">0</span>
+                                }
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
         }
 
-        @if (User.IsInRole("Admin") || User.IsInRole("AP-PO")) {
-            @* AP-PO Pickup Menu *@
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ApPoPickup" }))"
-                data-nav-controller="ApPoPickup"
-                asp-controller="ApPoPickup"
-                asp-action="Index"
-                data-page="AP-PO Pickup">
-                    <i class="bi bi-clipboard-check"></i>
-                    <span class="ms-1">AP-PO Pickup</span>
-                </a>
-            </li>
-
-            @* PR Service *@
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "PurchaseRequisitions" }))"
-                data-nav-controller="PurchaseRequisitions"
-                asp-controller="PurchaseRequisitions"
-                asp-action="Index"
-                data-page="Index PR Service">
-                    <i class="bi bi-clipboard-check"></i>
-                    <span class="ms-1">PR Service</span>
-                </a>
-            </li>
-
-            @await Html.PartialAsync("Partials/_SidebarSettingsMenu")
-        }
-
-        @* LDP Menu - Accessible by all roles *@
-        <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Ldp" }))"
-            data-nav-controller="Ldp"
-            asp-controller="Ldp"
-            asp-action="Index"
-            data-page="LDP Data">
-                <i class="bi bi-table"></i> <span class="ms-1">LDP</span>
-            </a>
-        </li>
-
-        @* Pending Approvals - Only for approver roles *@
-        @if (User.IsInRole("Admin") || User.IsInRole("Analyst HTE & LTS") || User.IsInRole("Assistant Manager HTE") || User.IsInRole("Manager Transport & Logistic")) {
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 d-flex align-items-center @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }, actions: new[] { "PendingApprovals" }))"
-                data-nav-controller="ProcurementTracking"
-                data-nav-action="PendingApprovals"
-                asp-controller="ProcurementTracking"
-                asp-action="PendingApprovals"
-                data-page="Pending Approvals">
-                    <i class="bi bi-hourglass-split"></i>
-                    <span class="ms-1">Pending Approvals</span>
-                    <span class="badge bg-danger ms-auto pending-approval-badge" style="display: none;">0</span>
-                </a>
-            </li>
-        }
-
-        @* Procurement Tracking - Accessible by all roles *@
-        <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ProcurementTracking" }, actions: new[] { "Index", "Search", "Details", "TrackingResult" }))"
-            data-nav-controller="ProcurementTracking"
-            data-nav-action="Index,Search,Details,TrackingResult"
-            asp-controller="ProcurementTracking"
-            asp-action="Index"
-            data-page="Procurement Tracking">
-                <i class="bi bi-graph-up-arrow"></i>
-                <span class="ms-1">Procurement Tracking</span>
-            </a>
-        </li>
-
-        @* Data Accrual - Accessible by all roles (view-only, AR/Admin can edit) *@
-        <li class="nav-item w-100">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Accrual" }))"
-            data-nav-controller="Accrual"
-            asp-controller="Accrual"
-            asp-action="Index"
-            data-page="Data Accrual">
-                <i class="bi bi-calculator"></i> <span class="ms-1">Data Accrual</span>
-            </a>
-        </li>
-
-        @* AP-Invoice Pickup Menu *@
-        @if (User.IsInRole("Admin") || User.IsInRole("AP-Invoice")) {
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ApInvoicePickup" }))"
-                data-nav-controller="ApInvoicePickup"
-                asp-controller="ApInvoicePickup"
-                asp-action="Index"
-                data-page="AP-Invoice Pickup">
-                    <i class="bi bi-receipt"></i> <span class="ms-1">AP-Invoice Pickup</span>
-                </a>
-            </li>
-        }
-
-        @* AR Pickup Menu *@
-        @if (User.IsInRole("Admin") || User.IsInRole("AR")) {
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "ArPickup" }))"
-                data-nav-controller="ArPickup"
-                asp-controller="ArPickup"
-                asp-action="Index"
-                data-page="AR Pickup">
-                    <i class="bi bi-box-arrow-in-down"></i> <span class="ms-1">AR Pickup</span>
-                </a>
-            </li>
-        }
-
-        @* Hanya Admin yang lihat menu ini *@
-        @if (User.IsInRole("Admin")) {
-            <li class="nav-item w-100">
-                <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "UserManagement" }))"
-                   data-nav-controller="UserManagement"
-                   asp-controller="UserManagement"
-                   asp-action="Index"
-                   data-page="User Management">
-                    <i class="bi bi-people"></i> <span class="ms-1">User Management</span>
-                </a>
-            </li>
-        }
-
-        <hr class="mt-auto w-100" />
-
-        <li class="nav-item w-100 pb-4">
-            <a class="nav-link link-secondary rounded-1 @(Html.ActiveClass(controllers: new[] { "Account" }, actions: new[] { "Settings" }))"
-               data-nav-controller="Account"
-               data-nav-action="Settings"
-               asp-controller="Account"
-               asp-action="Settings"
-               data-page="Settings">
-                <i class="bi bi-gear"></i> <span class="ms-1">Settings</span>
-            </a>
-        </li>
-
-        @* <li class="nav-item w-100 pb-4">
-      <a class="nav-link link-secondary rounded-1" asp-controller="Home" asp-action="Privacy" data-page="Privacy">
-        <i class="bi bi-shield-check"></i> <span class="ms-1">Privacy</span>
-      </a>
-    </li> *@
-    </ul>
+        <div class="sidebar-footer mt-auto w-100">
+            <hr class="w-100" />
+            <ul class="nav flex-column flex-nowrap w-100 pb-4">
+                <li class="nav-item w-100">
+                    <a class="nav-link link-secondary rounded-1 d-flex align-items-center @(Html.ActiveClass(controllers: new[] { "Account" }, actions: new[] { "Settings" }))"
+                       data-nav-controller="Account"
+                       data-nav-action="Settings"
+                       asp-controller="Account"
+                       asp-action="Settings"
+                       data-page="Settings">
+                        <i class="bi bi-gear" aria-hidden="true"></i>
+                        <span class="ms-1">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
 </aside>

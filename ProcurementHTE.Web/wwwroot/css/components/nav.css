@@ -2,6 +2,77 @@
   transition: all 300ms ease-in-out;
 }
 
+.sidebar-brand {
+  min-height: 48px;
+}
+
+.sidebar-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 27, 51, 0.25) transparent;
+}
+
+.sidebar-brand img {
+  display: block;
+  height: auto;
+}
+
+.sidebar-brand-symbol {
+  width: 48px;
+}
+
+.sidebar-brand-wordmark {
+  width: 105px;
+}
+
+/* Grouped sidebar: tight rows inside a group, clear air between groups. */
+.sidebar-nav .nav {
+  gap: 2px;
+}
+
+.sidebar-section + .sidebar-section {
+  margin-top: 1.25rem;
+}
+
+.sidebar-section-label {
+  margin: 0 0 0.375rem;
+  padding: 0 0.75rem;
+  color: #5f6b7a;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sidebar-nav .nav-link {
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.sidebar-nav .nav-link > .bi:first-child {
+  width: 1.25rem;
+  text-align: center;
+}
+
+.sidebar-nav .nav-link:hover:not(.active) {
+  background-color: rgba(37, 99, 235, 0.07);
+}
+
+.sidebar-nav .nav-link.active {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+.sidebar-nav .pending-approval-badge {
+  min-width: 1.5rem;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.sidebar-footer hr {
+  margin: 1rem 0 0.75rem;
+}
+
 .nav {
   gap: 0.75rem;
 }
