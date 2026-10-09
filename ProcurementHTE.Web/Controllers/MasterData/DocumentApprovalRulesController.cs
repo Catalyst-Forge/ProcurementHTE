@@ -38,10 +38,15 @@ public class DocumentApprovalRulesController : Controller
 
     // GET: DocumentApprovalRules
     public async Task<IActionResult> Index(
+        [FromServices] IInProgressProcurementQuery usageQuery,
+        
         string? documentTypeId = null,
         CancellationToken ct = default
     )
     {
+        // Document config is read live, so the delete dialogs warn how many running procurements change.
+        ViewBag.InProgressUsage = await usageQuery.GetUsageAsync(ct);
+
         var items = await _service.GetAllAsync(documentTypeId, ct);
 
         ViewBag.DocumentTypes = await _service.GetDocumentTypesAsync(ct);

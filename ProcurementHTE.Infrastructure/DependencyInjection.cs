@@ -43,6 +43,7 @@ public static class DependencyInjection
         // ------------- Repositories -------------
         services.AddScoped<IProcurementRepository, ProcurementRepository>();
         services.AddScoped<IDeletedRecordsService, DeletedRecordsService>();
+        services.AddScoped<IInProgressProcurementQuery, InProgressProcurementQuery>();
         services.AddScoped<IPurchaseRequisitionRepository, PurchaseRequisitionRepository>();
         services.AddScoped<IVendorRepository, VendorRepository>();
         services.AddScoped<IJobTypeRepository, JobTypesRepository>();

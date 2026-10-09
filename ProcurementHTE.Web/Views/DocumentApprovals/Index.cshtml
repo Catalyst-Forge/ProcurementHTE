@@ -4,6 +4,8 @@
     ViewData["Title"] = "Document Approvals";
     var jobTypes = ViewBag.JobTypes as List<JobTypes> ?? new();
     var selectedJobType = Context.Request.Query["jobTypeId"].ToString();
+    var inProgress = ViewBag.InProgressUsage as ProcurementHTE.Core.Models.DTOs.InProgressProcurementUsage
+        ?? ProcurementHTE.Core.Models.DTOs.InProgressProcurementUsage.Empty;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -114,8 +116,14 @@
                                 </a>
                                 @{
                                     var deleteTitle = "Delete this approval step?";
+                                    var running = item.JobTypeDocument == null
+                                        ? 0
+                                        : inProgress.Count(item.JobTypeDocument.JobTypeId, item.JobTypeDocument.ProcurementCategory);
                                     var deleteMessage =
-                                        $"Job Type: {item.JobTypeDocument?.JobType?.TypeName ?? "-"}, Document: {item.JobTypeDocument?.DocumentType?.Name ?? "-"}, Role: {item.Role?.Name ?? "-"}, Level: {item.Level}";
+                                        $"Job Type: {item.JobTypeDocument?.JobType?.TypeName ?? "-"}, Document: {item.JobTypeDocument?.DocumentType?.Name ?? "-"}, Role: {item.Role?.Name ?? "-"}, Level: {item.Level}."
+                                        + (running > 0
+                                            ? $" Perhatian: {running} procurement yang sedang berjalan langsung memakai urutan approval tanpa langkah ini."
+                                            : string.Empty);
                                 }
                                 <form asp-action="Delete"
                                       method="post"

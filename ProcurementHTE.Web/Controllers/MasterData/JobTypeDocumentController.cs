@@ -34,8 +34,13 @@ public class JobTypeDocumentController : Controller
     }
 
     // GET: JobTypeDocument
-    public async Task<IActionResult> Index(string? jobTypeId = null, CancellationToken ct = default)
+    public async Task<IActionResult> Index(
+        [FromServices] IInProgressProcurementQuery usageQuery,
+        string? jobTypeId = null, CancellationToken ct = default)
     {
+        // Document config is read live, so the delete dialogs warn how many running procurements change.
+        ViewBag.InProgressUsage = await usageQuery.GetUsageAsync(ct);
+
         var items = await _service.GetAllAsync(jobTypeId, ct);
         ViewBag.JobTypes = await _service.GetJobTypesAsync(ct);
         return View(items);

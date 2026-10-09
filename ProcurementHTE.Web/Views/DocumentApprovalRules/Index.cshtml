@@ -6,6 +6,8 @@
     var docTypes = ViewBag.DocumentTypes as List<DocumentType> ?? new();
     var roleMap = ViewBag.RoleMap as IDictionary<string, string> ?? new Dictionary<string, string>();
     var userMap = ViewBag.UserMap as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var inProgress = ViewBag.InProgressUsage as ProcurementHTE.Core.Models.DTOs.InProgressProcurementUsage
+        ?? ProcurementHTE.Core.Models.DTOs.InProgressProcurementUsage.Empty;
     var selectedDocType = Context.Request.Query["documentTypeId"].ToString();
     var docSelect = new SelectList(docTypes, "DocumentTypeId", "Name", selectedDocType);
 }
@@ -121,11 +123,22 @@
                                 <a asp-action="Edit" asp-route-id="@item.DocumentApprovalRuleId" class="btn btn-outline-secondary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form asp-action="Delete" method="post" class="d-inline">
+                                @{
+                                    // A rule without a procurement type applies to every type.
+                                    var running = inProgress.Count(item.JobTypeId, item.ProcurementCategory);
+                                    var ruleDeleteMessage = "Admin can restore it from Deleted Records."
+                                        + (running > 0
+                                            ? $" Perhatian: aturan ini berlaku untuk tipe dan kategori yang dipakai {running} procurement yang sedang berjalan. Dokumen yang dibuat setelah ini memakai aturan yang tersisa."
+                                            : string.Empty);
+                                }
+                                <form asp-action="Delete" method="post" class="d-inline delete-form"
+                                      data-confirm-title="Delete this rule?"
+                                      data-confirm-message="@ruleDeleteMessage"
+                                      data-confirm-confirm="Yes, delete"
+                                      data-confirm-cancel="Cancel">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.DocumentApprovalRuleId" />
-                                    <button type="submit" class="btn btn-outline-danger"
-                                            onclick="return confirm('Delete this rule?')">
+                                    <button type="submit" class="btn btn-outline-danger" aria-label="Delete rule">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>

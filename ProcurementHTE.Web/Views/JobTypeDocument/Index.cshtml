@@ -4,6 +4,8 @@
     ViewData["Title"] = "Job Type Documents";
     var jobTypes = ViewBag.JobTypes as List<JobTypes> ?? new();
     var selectedJobType = Context.Request.Query["jobTypeId"].ToString();
+    var inProgress = ViewBag.InProgressUsage as ProcurementHTE.Core.Models.DTOs.InProgressProcurementUsage
+        ?? ProcurementHTE.Core.Models.DTOs.InProgressProcurementUsage.Empty;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -138,8 +140,12 @@
                                 </a>
                                 @{
                                     var deleteTitle = "Delete this mapping?";
+                                    var running = inProgress.Count(item.JobTypeId, item.ProcurementCategory);
                                     var deleteMessage =
-                                        $"Job Type: {item.JobType?.TypeName ?? "-"}, Document: {item.DocumentType?.Name ?? "-"}";
+                                        $"Job Type: {item.JobType?.TypeName ?? "-"}, Document: {item.DocumentType?.Name ?? "-"}."
+                                        + (running > 0
+                                            ? $" Perhatian: {running} procurement yang sedang berjalan memakai konfigurasi ini, dan dokumen ini langsung hilang dari daftar dokumen wajib mereka."
+                                            : string.Empty);
                                 }
                                 <form asp-action="Delete"
                                       method="post"
