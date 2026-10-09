@@ -9,7 +9,7 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers.MasterData
 {
-    [Authorize]
+    [Authorize(Roles = "Admin, AP-PO")]
     public class VendorsController : Controller
     {
         private readonly IVendorQueryService _vendorQueryService;

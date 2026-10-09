@@ -7,7 +7,7 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers.MasterData
 {
-    [Authorize]
+    [Authorize(Roles = "Admin, AP-PO")]
     public class JobTypeController : Controller
     {
         private readonly IJobTypeService _jobTypeService;

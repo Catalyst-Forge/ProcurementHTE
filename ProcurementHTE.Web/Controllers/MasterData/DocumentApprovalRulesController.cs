@@ -11,7 +11,7 @@ using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
-[Authorize]
+[Authorize(Roles = "Admin, AP-PO")]
 public class DocumentApprovalRulesController : Controller
 {
     private readonly IDocumentApprovalRuleService _service;

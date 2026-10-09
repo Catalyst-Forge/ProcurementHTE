@@ -9,7 +9,7 @@ using ProcurementHTE.Web.Extensions;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
-[Authorize]
+[Authorize(Roles = "Admin, AP-PO")]
 public class JobTypeDocumentController : Controller
 {
     private readonly IJobTypeDocumentAdminService _service;
