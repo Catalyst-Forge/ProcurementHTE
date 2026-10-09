@@ -136,7 +136,11 @@ else
         }
 
         // 2️⃣ Jalankan seeder
-        await DataSeeder.SeedAsync(services);
+        // Sample data is opt-in and off in Production unless Database:SeedSampleData=true.
+        var seedSampleData =
+            app.Configuration.GetValue<bool?>("Database:SeedSampleData")
+            ?? !app.Environment.IsProduction();
+        await DataSeeder.SeedAsync(services, seedSampleData);
         logger.LogInformation("Data seeding completed.");
     }
     catch (Exception ex)
