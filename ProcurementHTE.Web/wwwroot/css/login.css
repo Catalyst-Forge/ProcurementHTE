@@ -545,7 +545,8 @@ html {
 
 @media (max-width: 991.98px) {
   .login {
-    grid-template-columns: 1fr;
+    /* minmax(0, …): a plain 1fr grows to fit unbreakable content such as a tab row. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
   }
 
@@ -594,5 +595,139 @@ html {
 
   .login-lede {
     margin-bottom: 22px;
+  }
+}
+
+/* ── Other sign-in steps (_AuthenticationLayout) ───────── */
+
+.auth-panel {
+  justify-content: center;
+}
+
+.auth-content {
+  width: min(100%, 520px);
+  min-width: 0;
+}
+
+.auth-wordmark {
+  display: block;
+  width: 140px;
+  height: auto;
+  margin: 0 auto 24px;
+}
+
+/* The step pages ship Bootstrap cards with fixed inline widths; let them fill
+   the panel and match the login card. */
+.auth-content .card {
+  width: 100% !important;
+  border: 1px solid rgba(15, 27, 51, 0.06);
+  border-radius: var(--dx-radius-card);
+  background: var(--dx-card);
+  box-shadow:
+    0 2px 6px rgba(15, 27, 51, 0.05),
+    0 24px 48px -24px rgba(15, 27, 51, 0.28);
+}
+
+.auth-content .d-flex.justify-content-center > .card {
+  margin: 0 auto;
+}
+
+.auth-content h1,
+.auth-content h2,
+.auth-content h3,
+.auth-content .h1,
+.auth-content .h2,
+.auth-content .fs-3 {
+  font-family: var(--dx-font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--dx-ink);
+}
+
+.auth-content h4,
+.auth-content h5,
+.auth-content .card-title {
+  font-weight: 600;
+  color: var(--dx-ink);
+}
+
+.auth-content .form-control {
+  min-height: 46px;
+  border-color: var(--dx-line);
+  border-radius: var(--dx-radius-field);
+  background: var(--dx-field);
+}
+
+.auth-content .form-control:focus {
+  border-color: var(--dx-blue-600);
+  background: var(--dx-card);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.auth-content .btn-primary {
+  --bs-btn-bg: var(--dx-blue-600);
+  --bs-btn-border-color: var(--dx-blue-600);
+  --bs-btn-hover-bg: var(--dx-blue-700);
+  --bs-btn-hover-border-color: var(--dx-blue-700);
+  --bs-btn-active-bg: var(--dx-blue-700);
+  --bs-btn-active-border-color: var(--dx-blue-700);
+  border-radius: var(--dx-radius-field);
+  font-weight: 600;
+}
+
+.auth-content .nav-pills,
+.auth-content .nav-tabs {
+  flex-wrap: nowrap;
+  justify-content: safe center !important;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.auth-content .nav-pills .nav-link,
+.auth-content .nav-tabs .nav-link {
+  color: var(--dx-ink-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.auth-content .nav-pills .nav-link {
+  border-radius: 999px;
+}
+
+.auth-content .nav-pills .nav-link:hover,
+.auth-content .nav-tabs .nav-link:hover {
+  color: var(--dx-blue-700);
+}
+
+.auth-content .nav-pills .nav-link.active {
+  background: var(--dx-blue-600);
+  color: #ffffff;
+}
+
+.auth-content .nav-tabs .nav-link.active {
+  color: var(--dx-blue-700);
+}
+
+@media (max-width: 991.98px) {
+  .auth-panel {
+    justify-content: flex-start;
+    padding-top: 28px;
+  }
+
+  .auth-wordmark {
+    display: none;
+  }
+}
+
+@media (max-width: 479.98px) {
+  .auth-content .nav-pills,
+  .auth-content .nav-tabs {
+    gap: 0.25rem !important;
+  }
+
+  .auth-content .nav-pills .nav-link,
+  .auth-content .nav-tabs .nav-link {
+    padding: 0.4rem 0.6rem;
+    font-size: 13px;
   }
 }

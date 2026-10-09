@@ -85,7 +85,8 @@
   background-color: rgba(0, 191, 255, 0.25);
 }
 
-.nav-link.active {
+/* Sidebar only: unscoped, this forced black text onto every active pill/tab in the app. */
+#sidebar .nav-link.active {
   color: #000 !important;
   font-weight: 700;
 }

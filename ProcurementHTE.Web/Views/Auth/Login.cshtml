@@ -10,57 +10,7 @@
 }
 
 <div class="login">
-  <section class="login-stage">
-    <figure class="loop" aria-hidden="true">
-      <svg class="loop-svg" viewBox="-60 -70 1120 630" focusable="false">
-        <defs>
-          <linearGradient id="dx-track" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0">
-            <stop offset="0" stop-color="#2563EB" />
-            <stop offset="0.5" stop-color="#0EA5D6" />
-            <stop offset="1" stop-color="#14B8A6" />
-          </linearGradient>
-          <path id="dx-motion" d="M500,245 C410,140 320,40 217,40 C110,40 40,130 40,245 C40,360 110,450 217,450 C320,450 410,350 500,245 C590,140 680,40 783,40 C890,40 960,130 960,245 C960,360 890,450 783,450 C680,450 590,350 500,245 Z" />
-          <g id="dx-doc">
-            <path d="M-24,-26 Q-24,-31 -19,-31 L9,-31 L24,-16 L24,26 Q24,31 19,31 L-19,31 Q-24,31 -24,26 Z" fill="#FFFFFF" />
-            <path d="M9,-31 L24,-16 L13,-16 Q9,-16 9,-20 Z" fill="#C9D6EA" />
-            <rect x="-14" y="-7" width="28" height="5" rx="2.5" fill="#2563EB" />
-            <rect x="-14" y="4" width="28" height="5" rx="2.5" fill="#C9D6EA" />
-            <rect x="-14" y="15" width="18" height="5" rx="2.5" fill="#C9D6EA" />
-          </g>
-        </defs>
-
-        <path class="loop-track" pathLength="1"
-              d="M556,180 C626,100 700,40 783,40 C890,40 960,130 960,245 C960,360 890,450 783,450 C680,450 590,350 500,245 C410,140 320,40 217,40 C110,40 40,130 40,245 C40,360 110,450 217,450 C310,450 380,385 444,310" />
-
-        <g class="loop-nodes">
-          <circle cx="783" cy="40" r="15" />
-          <circle cx="783" cy="450" r="15" />
-          <circle cx="217" cy="40" r="15" />
-          <circle cx="217" cy="450" r="15" />
-        </g>
-
-        <g class="loop-docs">
-          @foreach (var begin in new[] { "0s", "-5.333s", "-10.667s" })
-          {
-            <use href="#dx-doc">
-              <animateMotion dur="16s" begin="@begin" repeatCount="indefinite">
-                <mpath href="#dx-motion" />
-              </animateMotion>
-            </use>
-          }
-        </g>
-      </svg>
-
-      <span class="loop-stage loop-stage--top" style="--x: 24.73%; --y: 17.46%">Purchase Requisition</span>
-      <span class="loop-stage loop-stage--bottom" style="--x: 24.73%; --y: 82.54%">Approval berjenjang</span>
-      <span class="loop-stage loop-stage--top" style="--x: 75.27%; --y: 17.46%">Vendor</span>
-      <span class="loop-stage loop-stage--bottom" style="--x: 75.27%; --y: 82.54%">Purchase Order</span>
-    </figure>
-
-    <div class="login-stage-copy">
-      <p class="login-tagline">Transport &amp; Logistic</p>
-    </div>
-  </section>
+  <partial name="_LoginStage" />
 
   <main class="login-panel">
     <div class="login-card">

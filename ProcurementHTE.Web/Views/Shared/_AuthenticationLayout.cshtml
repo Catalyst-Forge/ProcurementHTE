@@ -1,25 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A1A3F" />
     <title>@ViewBag.Title - Docutrax</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
     <partial name="_ComponentStyles" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
   </head>
 
-  <body class="mb-0 min-vh-100 container auth-container bg-body-secondary" style="place-content: center;">
-    <main role="main">
-      @RenderBody()
-    </main>
-    
+  @* Same frame as the login page so 2FA, recovery and reset steps feel like one flow. *@
+  <body class="login-body">
+    <div class="login">
+      <partial name="_LoginStage" />
+
+      <main class="login-panel auth-panel" role="main">
+        <div class="auth-content">
+          <picture>
+            <source srcset="~/images/docutrax-wordmark.webp" type="image/webp" />
+            <img class="auth-wordmark" src="~/images/docutrax-wordmark.png" alt="Docutrax" width="140" height="17" />
+          </picture>
+          @RenderBody()
+        </div>
+      </main>
+    </div>
+
     <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
     @await Html.PartialAsync("_SweetAlerts")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/login.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
   </body>
 </html>
