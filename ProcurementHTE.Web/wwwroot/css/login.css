@@ -153,11 +153,14 @@ html {
 .loop-stage:nth-of-type(3) { animation-delay: 0.8s; }
 .loop-stage:nth-of-type(4) { animation-delay: 0.95s; }
 
-.login-tagline {
+.login-stage-copy {
   width: min(100%, 760px);
   margin: 0 auto;
-  /* The loop's viewBox starts 60 units left of the stroke; align with the drawn edge. */
-  padding-inline: 5.36%;
+  text-align: center;
+}
+
+.login-tagline {
+  margin: 0;
   font-family: var(--dx-font-display);
   font-size: clamp(28px, 2.6vw, 44px);
   font-weight: 700;
@@ -556,7 +559,7 @@ html {
   }
 
   .loop-stage,
-  .login-tagline {
+  .login-stage-copy {
     display: none;
   }
 
