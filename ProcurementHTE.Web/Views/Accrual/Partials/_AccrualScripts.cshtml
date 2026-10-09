@@ -150,11 +150,11 @@
                         }
                         location.reload();
                     } else {
-                        alert(result.message || 'Gagal menyimpan data');
+                        Swal.fire({ icon: 'error', title: 'Gagal menyimpan', text: result.message || 'Gagal menyimpan data accrual.' });
                     }
                 } catch (error) {
                     console.error('Error saving:', error);
-                    alert('Terjadi kesalahan saat menyimpan data');
+                    Swal.fire({ icon: 'error', title: 'Gagal menyimpan', text: 'Terjadi kesalahan saat menyimpan data. Coba lagi.' });
                 } finally {
                     accrualBtnSave.disabled = false;
                     accrualBtnSave.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan';

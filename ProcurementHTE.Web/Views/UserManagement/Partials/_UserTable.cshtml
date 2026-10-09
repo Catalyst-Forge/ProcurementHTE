@@ -67,20 +67,27 @@
                                 <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary" title="Edit user">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
-                                <form asp-action="ToggleActive" asp-route-id="@user.Id" method="post" class="d-inline">
+                                <form asp-action="ToggleActive" asp-route-id="@user.Id" method="post" class="d-inline delete-form"
+                                      data-confirm-title="@(user.IsActive ? $"Nonaktifkan {user.DisplayName}?" : $"Aktifkan {user.DisplayName}?")"
+                                      data-confirm-message="@(user.IsActive ? "User langsung tidak bisa login dan semua sesinya diakhiri." : "User bisa login lagi.")"
+                                      data-confirm-confirm="@(user.IsActive ? "Nonaktifkan" : "Aktifkan")"
+                                      data-confirm-confirm-color="@(user.IsActive ? "#dc3545" : "#2563eb")"
+                                      data-confirm-cancel="Batal">
                                     <button type="submit" class="btn btn-outline-warning"
-                                            title="Aktif/Nonaktif"
-                                            onclick="return confirm('Ubah status aktif user ini?');">
+                                            title="@(user.IsActive ? "Nonaktifkan user" : "Aktifkan user")">
                                         <i class="bi bi-power"></i>
                                     </button>
                                 </form>
-                                <form asp-action="Delete" asp-route-id="@user.Id" method="post" class="d-inline">
+                                <form asp-action="Delete" asp-route-id="@user.Id" method="post" class="d-inline delete-form"
+                                      data-confirm-title="Hapus @user.DisplayName?"
+                                      data-confirm-message="User langsung tidak bisa login. Admin bisa memulihkannya dari menu Data Terhapus."
+                                      data-confirm-confirm="Hapus user"
+                                      data-confirm-cancel="Batal">
                                     @Html.AntiForgeryToken()
                                     <button type="submit"
                                             class="btn btn-outline-danger"
                                             title="Hapus user"
-                                            @(isSelf ? "disabled" : "")
-                                            onclick="return confirm('Hapus user ini? User langsung tidak bisa login. Admin bisa memulihkannya dari menu Data Terhapus.');">
+                                            @(isSelf ? "disabled" : "")>
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>

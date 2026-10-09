@@ -5,7 +5,12 @@
     window.printQrCode = function(qrUrl, procNum) {
         var w = window.open('', '_blank', 'width=400,height=500');
         if (!w) {
-            alert('Popup blocked. Mohon izinkan popup untuk mencetak QR.');
+            var message = 'Popup diblokir browser. Izinkan popup untuk situs ini, lalu cetak QR lagi.';
+            if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({ icon: 'warning', title: 'Popup diblokir', text: message });
+            } else {
+                window.alert(message);
+            }
             return;
         }
         var htmlContent = '<!DOCTYPE html><html><head><title>QR Code - ' + procNum + '</title>' +
