@@ -95,9 +95,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 {
                     VendorCode = v.VendorCode,
                     VendorName = v.VendorName,
-                    OfferCount = _context.VendorOffers.Count(vo => vo.VendorId == v.VendorId),
+                    // Offers and selections only count while their procurement still exists.
+                    OfferCount = _context.VendorOffers.Count(vo =>
+                        vo.VendorId == v.VendorId
+                        && !vo.Procurement.IsDeleted
+                        && !vo.ProfitLoss.IsDeleted
+                    ),
                     SelectedCount = _context.ProfitLosses.Count(pl =>
-                        pl.SelectedVendorId == v.VendorId
+                        pl.SelectedVendorId == v.VendorId && !pl.Procurement.IsDeleted
                     ),
                 })
                 .Where(v => v.OfferCount > 0)

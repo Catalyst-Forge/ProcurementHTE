@@ -22,6 +22,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             var docs = await _context
                 .ProcDocuments.AsNoTracking()
+                .Where(doc => !doc.Procurement.IsDeleted)
                 .OrderByDescending(doc => doc.CreatedAt)
                 .Take(50)
                 .Select(doc => new RecentActivityDto
@@ -35,6 +36,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             var pnl = await _context
                 .ProfitLosses.AsNoTracking()
+                .Where(pnl => !pnl.Procurement.IsDeleted)
                 .OrderByDescending(pnl => pnl.CreatedAt)
                 .Take(50)
                 .Select(pnl => new RecentActivityDto
