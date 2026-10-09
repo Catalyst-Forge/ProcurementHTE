@@ -12,10 +12,11 @@ namespace ProcurementHTE.Infrastructure.Data
         {
             try
             {
-                // Clear existing rules first (as requested by user)
-                // Hard delete on purpose: removals of soft-deletable entities are
-                // otherwise turned into soft deletes and would pile up every start.
-                await context.DocumentApprovalRules.IgnoreQueryFilters().ExecuteDeleteAsync();
+                // Seed only an empty table. This used to wipe and recreate every rule on
+                // each startup, which silently reverted admin edits on every deploy.
+                // Deleted rules count as existing so a deliberate delete is respected.
+                if (await context.DocumentApprovalRules.IgnoreQueryFilters().AnyAsync())
+                    return;
 
                 var targetDocs = new[]
                 {
