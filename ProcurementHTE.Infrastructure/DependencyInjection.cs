@@ -67,7 +67,6 @@ public static class DependencyInjection
         services.AddScoped<IJobTypeDocumentAdminRepository, JobTypeDocumentAdminRepository>();
         services.AddScoped<IUnitTypeRepository, UnitTypeRepository>();
         services.AddScoped<ILdpRepository, LdpRepository>();
-        services.AddScoped<IPdfGenerator, PdfGeneratorService>();
         services.AddScoped<IDocumentGenerator, DocumentGenerator>();
         services.AddSingleton<IQrCodeGenerator, QrCodeGeneratorService>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
