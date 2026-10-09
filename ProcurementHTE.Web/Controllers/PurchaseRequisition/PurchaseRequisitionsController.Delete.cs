@@ -40,9 +40,7 @@ public partial class PurchaseRequisitionsController
                 return RedirectToAction(nameof(Index));
             }
 
-            if (!string.IsNullOrEmpty(pr.DocumentFilePath))
-                await SafeDeleteFromStorageAsync(pr.DocumentFilePath);
-
+            // Soft delete keeps the document file so an admin can restore the PR intact.
             await _purchaseRequisitionCommandService.DeleteAsync(id, currentUserId);
 
             TempData["SuccessMessage"] =

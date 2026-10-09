@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Exceptions;
 ﻿using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -62,6 +63,10 @@ namespace ProcurementHTE.Core.Services
             try
             {
                 await _jobTypeRepository.DropJobTypeAsync(jobTypes);
+            }
+            catch (EntityInUseException)
+            {
+                throw; // already a user-facing message
             }
             catch (Exception e)
             {

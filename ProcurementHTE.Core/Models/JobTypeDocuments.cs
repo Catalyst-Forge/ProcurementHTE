@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ProcurementHTE.Core.Models;
 
-public class JobTypeDocuments
+public class JobTypeDocuments : BaseEntity
 {
     [Key]
     public string JobTypeDocumentId { get; set; } = Guid.NewGuid().ToString();

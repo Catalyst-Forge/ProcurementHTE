@@ -136,8 +136,8 @@
                                 ? "Delete procurement?"
                                 : $"Delete {item.Wonum}?";
                                 var deleteMessage = string.IsNullOrWhiteSpace(item.JobName)
-                                ? "This action cannot be undone."
-                                : $"You are about to delete \"{item.JobName}\". This action cannot be undone.";
+                                ? "Admin can restore it from Deleted Records."
+                                : $"You are about to delete \"{item.JobName}\". Admin can restore it from Deleted Records.";
                                 <form asp-action="Delete"
                                       method="post"
                                       class="d-inline delete-form"

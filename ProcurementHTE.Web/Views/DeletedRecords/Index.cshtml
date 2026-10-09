@@ -1,0 +1,90 @@
+@using ProcurementHTE.Web.Models.Admin
+@model DeletedRecordsViewModel
+@{
+    ViewData["Title"] = "Data Terhapus";
+    var activeLabel = DeletedRecordsViewModel.Tabs.First(t => t.Kind == Model.Kind).Label;
+}
+
+<div class="account-settings">
+    <header class="settings-header mb-4">
+        <h2 class="mb-1">Data Terhapus</h2>
+        <p class="text-muted mb-0">Data yang dihapus tidak hilang, cuma disembunyikan. Pulihkan dari sini kalau terhapus tidak sengaja.</p>
+    </header>
+
+    <div class="settings-tabs-wrap mb-4">
+        <ul class="nav settings-tabs" aria-label="Jenis data terhapus">
+            @foreach (var tab in DeletedRecordsViewModel.Tabs)
+            {
+                var count = Model.Counts.TryGetValue(tab.Kind, out var c) ? c : 0;
+                var active = tab.Kind == Model.Kind;
+                <li class="nav-item">
+                    <a class="nav-link @(active ? "active" : string.Empty)" asp-action="Index" asp-route-kind="@tab.Kind"
+                       aria-current="@(active ? "page" : null)">
+                        <span>@tab.Label</span>
+                        @if (count > 0)
+                        {
+                            <span class="settings-tab-count">@count</span>
+                        }
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <section class="card settings-card" aria-label="@activeLabel terhapus">
+        @if (Model.Items.Count == 0)
+        {
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox fs-2 text-muted" aria-hidden="true"></i>
+                <p class="fw-semibold mt-2 mb-1">Tidak ada @activeLabel yang terhapus</p>
+                <p class="text-muted small mb-0">Data yang dihapus dari halaman @activeLabel akan muncul di sini.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-4">Data</th>
+                            <th scope="col">Dihapus</th>
+                            <th scope="col">Oleh</th>
+                            <th scope="col" class="text-end pe-4"><span class="visually-hidden">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-semibold text-break">@item.Title</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.Detail))
+                                    {
+                                        <small class="text-muted text-break">@item.Detail</small>
+                                    }
+                                </td>
+                                <td class="text-nowrap">
+                                    @(item.DeletedAt == DateTime.MinValue ? "-" : item.DeletedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm"))
+                                </td>
+                                <td>@(item.DeletedByName ?? "-")</td>
+                                <td class="text-end pe-4">
+                                    <form asp-action="Restore" method="post" class="delete-form d-inline"
+                                          data-confirm-title="Pulihkan data ini?"
+                                          data-confirm-message="@($"\"{item.Title}\" akan aktif dan tampil lagi seperti sebelum dihapus.")"
+                                          data-confirm-confirm="Pulihkan"
+                                          data-confirm-cancel="Batal">
+                                        <input type="hidden" name="kind" value="@Model.Kind" />
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Pulihkan
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

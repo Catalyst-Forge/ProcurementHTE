@@ -49,6 +49,11 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<ProcDocuments>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<PurchaseRequisition>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<Vendor>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<JobTypes>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<DocumentType>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<JobTypeDocuments>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<DocumentApprovals>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<DocumentApprovalRule>().HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }

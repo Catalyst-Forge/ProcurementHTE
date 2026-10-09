@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProcurementHTE.Core.Models;
 
-public class JobTypes
+public class JobTypes : BaseEntity
 {
     [Key]
     public string JobTypeId { get; set; } = Guid.NewGuid().ToString();

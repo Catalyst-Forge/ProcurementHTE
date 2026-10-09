@@ -12,7 +12,7 @@ public partial class UserManagementController
             return NotFound();
 
         var user = await _userManager.FindByIdAsync(id);
-        if (user == null)
+        if (user == null || user.IsDeleted)
             return NotFound();
 
         var roles = await GetRoleOptionsAsync();
@@ -53,7 +53,7 @@ public partial class UserManagementController
         }
 
         var user = await _userManager.FindByIdAsync(id);
-        if (user == null)
+        if (user == null || user.IsDeleted)
             return NotFound();
 
         try

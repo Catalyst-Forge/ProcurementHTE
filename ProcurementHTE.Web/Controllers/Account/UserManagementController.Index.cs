@@ -9,7 +9,8 @@ public partial class UserManagementController
     [HttpGet]
     public async Task<IActionResult> Index(UserFiltersViewModel filters)
     {
-        var query = _userManager.Users.AsQueryable();
+        // Deleted accounts live on the Deleted Records page, not here.
+        var query = _userManager.Users.Where(u => !u.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(filters.Search))
         {

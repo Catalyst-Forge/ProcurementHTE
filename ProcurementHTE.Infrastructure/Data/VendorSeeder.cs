@@ -7,7 +7,7 @@ public static class VendorSeeder
 {
     public static async Task SeedAsync(AppDbContext db)
     {
-        if (await db.Vendors.AnyAsync())
+        if (await db.Vendors.IgnoreQueryFilters().AnyAsync())
             return;
 
         var vendors = new (string Code, string Name)[]

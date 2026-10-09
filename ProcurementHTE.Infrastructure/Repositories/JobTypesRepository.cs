@@ -21,7 +21,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task DropJobTypeAsync(JobTypes jobType)
         {
-            _context.JobTypes.Remove(jobType);
+            await MasterDataDeletion.DeleteJobTypeAsync(_context, jobType.JobTypeId);
             await _context.SaveChangesAsync();
         }
 

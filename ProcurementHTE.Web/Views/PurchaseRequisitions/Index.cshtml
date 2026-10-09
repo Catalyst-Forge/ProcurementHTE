@@ -80,8 +80,8 @@
                     
                     var deleteTitle = $"Delete {item.PrNumber}?";
                     var deleteMessage = string.IsNullOrWhiteSpace(item.Description)
-                        ? "This action cannot be undone."
-                        : $"You are about to delete \"{item.Description}\". This action cannot be undone.";
+                        ? "Admin can restore it from Deleted Records."
+                        : $"You are about to delete \"{item.Description}\". Admin can restore it from Deleted Records.";
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="PR Number">
                             <span class="fw-semibold">@item.PrNumber</span>

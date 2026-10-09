@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ProcurementHTE.Core.Models
 {
-    public class DocumentApprovals
+    public class DocumentApprovals : BaseEntity
     {
         [Key]
         public string DocumentApprovalId { get; set; } = Guid.NewGuid().ToString();

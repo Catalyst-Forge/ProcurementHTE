@@ -160,11 +160,6 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             entityToDelete.DeletedAt = DateTime.UtcNow;
             entityToDelete.DeletedBy = deletedByUserId;
 
-            // Append deletion timestamp to PrNumber to allow reuse of the same PR number
-            // Format: DELETED_<original>_<timestamp> to ensure uniqueness
-            var timestamp = entityToDelete.DeletedAt.Value.ToString("yyyyMMddHHmmssfff");
-            entityToDelete.PrNumber = $"DELETED_{entityToDelete.PrNumber}_{timestamp}";
-
             await _context.SaveChangesAsync(ct);
         }
     }

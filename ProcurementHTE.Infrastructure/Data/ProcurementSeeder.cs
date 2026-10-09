@@ -7,7 +7,7 @@ public static partial class ProcurementSeeder
 {
     public static async Task SeedAsync(AppDbContext db)
     {
-        if (await db.Procurements.AnyAsync())
+        if (await db.Procurements.IgnoreQueryFilters().AnyAsync())
             return;
 
         var users = await LoadSeedUsersAsync(db);

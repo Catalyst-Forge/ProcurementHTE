@@ -8,11 +8,11 @@ namespace ProcurementHTE.Infrastructure.Data
     {
         public static async Task SeedAsync(AppDbContext context, RoleManager<Role> roleManager)
         {
-            if (await context.JobTypes.AnyAsync())
+            if (await context.JobTypes.IgnoreQueryFilters().AnyAsync())
                 return;
 
             // Check if there is any Typename is same
-            var existingTypeNames = await context.JobTypes.Select(w => w.TypeName).ToListAsync();
+            var existingTypeNames = await context.JobTypes.IgnoreQueryFilters().Select(w => w.TypeName).ToListAsync();
 
             var types = new List<JobTypes>
             {

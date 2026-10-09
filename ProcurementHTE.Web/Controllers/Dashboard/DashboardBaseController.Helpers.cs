@@ -25,7 +25,9 @@ public abstract partial class DashboardBaseController
         var result = new List<RoleDistributionViewModel>();
         foreach (var role in roles)
         {
-            var usersInRole = await UserManager.GetUsersInRoleAsync(role.Name);
+            var usersInRole = (await UserManager.GetUsersInRoleAsync(role.Name))
+                .Where(u => !u.IsDeleted)
+                .ToList();
             if (usersInRole.Count > 0)
             {
                 result.Add(new RoleDistributionViewModel

@@ -21,8 +21,12 @@ public static class DependencyInjection
     )
     {
         // ---------------- DB ----------------
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
+        services.AddScoped<SoftDeleteInterceptor>();
+        services.AddDbContext<AppDbContext>(
+            (sp, options) =>
+                options
+                    .UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
+                    .AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>())
         );
 
         // ------------- Options Binding -------------
@@ -38,6 +42,7 @@ public static class DependencyInjection
 
         // ------------- Repositories -------------
         services.AddScoped<IProcurementRepository, ProcurementRepository>();
+        services.AddScoped<IDeletedRecordsService, DeletedRecordsService>();
         services.AddScoped<IPurchaseRequisitionRepository, PurchaseRequisitionRepository>();
         services.AddScoped<IVendorRepository, VendorRepository>();
         services.AddScoped<IJobTypeRepository, JobTypesRepository>();

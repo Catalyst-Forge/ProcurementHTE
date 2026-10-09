@@ -137,9 +137,6 @@ namespace ProcurementHTE.Infrastructure.Repositories
             entityToDelete.DeletedAt = DateTime.UtcNow;
             entityToDelete.DeletedBy = deletedByUserId;
 
-            if (!string.IsNullOrEmpty(entityToDelete.ProcNum))
-                entityToDelete.ProcNum = $"-{entityToDelete.ProcNum}";
-
             await _context.SaveChangesAsync();
         }
 

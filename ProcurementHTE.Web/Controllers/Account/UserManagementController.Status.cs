@@ -12,7 +12,7 @@ public partial class UserManagementController
             return NotFound();
 
         var user = await _userManager.FindByIdAsync(id);
-        if (user == null)
+        if (user == null || user.IsDeleted)
             return NotFound();
 
         user.IsActive = !user.IsActive;
@@ -32,7 +32,7 @@ public partial class UserManagementController
             return NotFound();
 
         var user = await _userManager.FindByIdAsync(id);
-        if (user == null)
+        if (user == null || user.IsDeleted)
             return NotFound();
 
         var currentUserId = _userManager.GetUserId(User);
@@ -45,24 +45,24 @@ public partial class UserManagementController
             return RedirectToAction(nameof(Index));
         }
 
-        try
+        // Soft delete: the account stops working at once but stays in the database,
+        // so procurement and approval history keep its name and an admin can restore it.
+        user.IsDeleted = true;
+        user.IsActive = false;
+        user.DeletedAt = DateTime.UtcNow;
+        user.DeletedBy = currentUserId;
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
         {
-            var result = await _userManager.DeleteAsync(user);
-            if (!result.Succeeded)
-            {
-                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-                TempData["ErrorMessage"] = $"Gagal menghapus user: {errors}";
-            }
-            else
-            {
-                TempData["SuccessMessage"] = $"User {user.UserName} berhasil dihapus.";
-            }
+            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            TempData["ErrorMessage"] = $"Gagal menghapus user: {errors}";
+            return RedirectToAction(nameof(Index));
         }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] =
-                $"Gagal menghapus user. Pastikan user tidak dipakai di data lain. Detail: {ex.Message}";
-        }
+
+        await RefreshUserSessionStateAsync(user, false);
+        TempData["SuccessMessage"] =
+            $"User {user.UserName} dihapus dan tidak bisa login lagi. Admin bisa memulihkannya dari menu Data Terhapus.";
 
         return RedirectToAction(nameof(Index));
     }

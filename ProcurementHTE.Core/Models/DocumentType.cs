@@ -2,7 +2,7 @@
 
 namespace ProcurementHTE.Core.Models
 {
-    public class DocumentType
+    public class DocumentType : BaseEntity
     {
         [Key]
         public string DocumentTypeId { get; set; } = Guid.NewGuid().ToString();

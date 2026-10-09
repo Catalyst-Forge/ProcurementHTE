@@ -82,11 +82,7 @@ public class JobTypeDocumentAdminRepository : IJobTypeDocumentAdminRepository
 
     public async Task DeleteAsync(string id, CancellationToken ct = default)
     {
-        var entity = await _db.JobTypeDocuments.FindAsync(new object?[] { id }, ct);
-        if (entity is null)
-            return;
-
-        _db.JobTypeDocuments.Remove(entity);
+        await MasterDataDeletion.DeleteJobTypeDocumentAsync(_db, id, ct);
         await _db.SaveChangesAsync(ct);
     }
 

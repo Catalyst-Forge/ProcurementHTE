@@ -57,7 +57,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task DropDocumentTypeAsync(DocumentType documentType)
         {
-            _context.DocumentTypes.Remove(documentType);
+            await MasterDataDeletion.DeleteDocumentTypeAsync(_context, documentType.DocumentTypeId);
             await _context.SaveChangesAsync();
         }
     }

@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -128,7 +129,9 @@ namespace ProcurementHTE.Web.Controllers.MasterData
             }
         }
 
-        // GET: DocumentType/Delete/5
+        // POST: DocumentType/Delete/5 (was a GET, so a plain link or prefetch could delete)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
             try
@@ -141,6 +144,10 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 }
                 await _documentTypeService.DeleteDocumentTypeAsync(documentType);
                 TempData["SuccessMessage"] = "Document type deleted successfully.";
+            }
+            catch (EntityInUseException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
             }
             catch (DbUpdateException ex)
             {

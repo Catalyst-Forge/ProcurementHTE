@@ -14,11 +14,11 @@ namespace ProcurementHTE.Infrastructure.Data
             var typeName = "Angkutan";
             var LegacyTypeName = "Angkutan";
             var description = "Konfigurasi dokumen untuk pengadaan Angkutan";
-            var jobType = await context.JobTypes.FirstOrDefaultAsync(t => t.TypeName == typeName);
+            var jobType = await context.JobTypes.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TypeName == typeName);
 
             if (jobType == null)
             {
-                await context.JobTypes.FirstOrDefaultAsync(t => t.TypeName == LegacyTypeName);
+                await context.JobTypes.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.TypeName == LegacyTypeName);
             }
 
             if (jobType == null)
@@ -47,6 +47,19 @@ namespace ProcurementHTE.Infrastructure.Data
                 }
             }
 
+            // An admin soft-deleted this type: keep it deleted instead of re-seeding its setup.
+
+            if (jobType.IsDeleted)
+
+            {
+
+                await tx.CommitAsync();
+
+                return;
+
+            }
+
+
             var docNames = new[]
             {
                 "Memorandum",
@@ -64,7 +77,7 @@ namespace ProcurementHTE.Infrastructure.Data
             };
 
             var existingDocs = await context
-                .DocumentTypes.Where(d => docNames.Contains(d.Name))
+                .DocumentTypes.IgnoreQueryFilters().Where(d => docNames.Contains(d.Name))
                 .ToListAsync();
 
             foreach (var name in docNames.Except(existingDocs.Select(d => d.Name)))
@@ -101,7 +114,11 @@ namespace ProcurementHTE.Infrastructure.Data
                     continue;
 
                 var dt = DT(config.Name);
-                bool exists = await wtdSet.AnyAsync(x =>
+
+                if (dt.IsDeleted)
+
+                    continue;
+                bool exists = await wtdSet.IgnoreQueryFilters().AnyAsync(x =>
                     x.JobTypeId == jobType.JobTypeId && x.DocumentTypeId == dt.DocumentTypeId
                 );
 
@@ -137,13 +154,15 @@ namespace ProcurementHTE.Infrastructure.Data
                 var wtd = await wtdSet
                     .Include(x => x.DocumentType)
                     .Where(x => x.JobTypeId == jobType.JobTypeId && x.DocumentType.Name == docName)
-                    .FirstAsync();
+                    .FirstOrDefaultAsync();
+                if (wtd == null)
+                    return; // mapping or its document type was deleted
 
                 var roleId = await GetRoleIdOrNullAsync(roleName);
                 if (roleId == null)
                     return;
 
-                bool exists = await context.DocumentApprovals.AnyAsync(a =>
+                bool exists = await context.DocumentApprovals.IgnoreQueryFilters().AnyAsync(a =>
                     a.JobTypeDocumentId == wtd.JobTypeDocumentId
                     && a.RoleId == roleId
                     && a.Level == level

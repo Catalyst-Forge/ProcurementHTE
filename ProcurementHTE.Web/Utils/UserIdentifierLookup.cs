@@ -24,6 +24,6 @@ public static class UserIdentifierLookup
             user = await userManager.Users.FirstOrDefaultAsync(u => u.Nip == normalized);
 
         user ??= await userManager.FindByNameAsync(normalized);
-        return user;
+        return user is { IsDeleted: false } ? user : null;
     }
 }

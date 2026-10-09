@@ -80,6 +80,20 @@ public class UserIdentifierLookupTests : IAsyncLifetime
         Assert.Null(await UserIdentifierLookup.FindAsync(_userManager, identifier));
     }
 
+    [Theory]
+    [InlineData("11112222")]
+    [InlineData("hapus@pdc.test")]
+    [InlineData("terhapus")]
+    public async Task FindAsync_IgnoresDeletedUsers(string identifier)
+    {
+        await CreateAsync("terhapus", "hapus@pdc.test", nip: "11112222");
+        var user = await _userManager.FindByNameAsync("terhapus");
+        user!.IsDeleted = true;
+        await _userManager.UpdateAsync(user);
+
+        Assert.Null(await UserIdentifierLookup.FindAsync(_userManager, identifier));
+    }
+
     [Fact]
     public void Model_NipHasUniqueFilteredIndex_SoUsersWithoutNipDoNotCollide()
     {

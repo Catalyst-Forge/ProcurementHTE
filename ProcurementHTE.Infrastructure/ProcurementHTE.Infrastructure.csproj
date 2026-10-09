@@ -39,4 +39,7 @@
   <ItemGroup>
     <Folder Include="Migrations\" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ProcurementHTE.Tests" />
+  </ItemGroup>
 </Project>

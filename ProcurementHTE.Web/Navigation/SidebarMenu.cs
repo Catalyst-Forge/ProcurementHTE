@@ -129,6 +129,7 @@ public static class SidebarMenu
             "Admin",
             [
                 new("User Management", "bi-people", "UserManagement", "User Management", [Admin]),
+                new("Data Terhapus", "bi-trash3", "DeletedRecords", "Data Terhapus", [Admin]),
             ]
         ),
     ];

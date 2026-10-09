@@ -44,7 +44,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         )
         {
             var users = await _userManager.GetUsersInRoleAsync(roleName);
-            return users.Select(u => u.Id).ToList();
+            return users.Where(u => !u.IsDeleted).Select(u => u.Id).ToList();
         }
 
         public async Task<IList<UserBasicInfo>> GetUsersByRoleAsync(
@@ -54,6 +54,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             var users = await _userManager.GetUsersInRoleAsync(roleName);
             return users
+                .Where(u => !u.IsDeleted)
                 .Select(u => new UserBasicInfo
                 {
                     UserId = u.Id,

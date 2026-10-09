@@ -14,6 +14,7 @@ public partial class ProcurementsController
     {
         var users = await _userManager.GetUsersInRoleAsync(roleName);
         return users
+            .Where(user => !user.IsDeleted)
             .OrderBy(user => user.FirstName)
             .ThenBy(user => user.LastName)
             .Select(user => new SelectListItem

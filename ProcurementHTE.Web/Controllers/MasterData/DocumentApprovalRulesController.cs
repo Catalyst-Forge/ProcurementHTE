@@ -156,6 +156,7 @@ public class DocumentApprovalRulesController : Controller
         var jobTypes = await _service.GetJobTypesAsync(ct);
         var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync(ct);
         var users = await _userManager.Users
+            .Where(u => !u.IsDeleted)
             .OrderBy(u => u.FullName ?? u.UserName)
             .Select(u => new { u.Id, DisplayName = u.FullName ?? u.UserName ?? u.Email })
             .ToListAsync(ct);

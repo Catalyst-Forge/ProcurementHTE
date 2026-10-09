@@ -5,7 +5,7 @@ using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Core.Models
 {
-    public class User : IdentityUser
+    public class User : IdentityUser, ISoftDeletable
     {
         [Required(ErrorMessage = "Username wajib diisi")]
         [StringLength(30, MinimumLength = 3, ErrorMessage = "Username harus antara 3-30 karakter")]
@@ -43,6 +43,13 @@ namespace ProcurementHTE.Core.Models
         public DateTime? RecoveryCodesGeneratedAt { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        public bool IsDeleted { get; set; }
+
+        public DateTime? DeletedAt { get; set; }
+
+        [StringLength(450)]
+        public string? DeletedBy { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

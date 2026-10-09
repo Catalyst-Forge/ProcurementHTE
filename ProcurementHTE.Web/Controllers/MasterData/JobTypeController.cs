@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -141,6 +142,10 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 await _jobTypeService.DeleteJobTypesAsync(jobType);
 
                 TempData["SuccessMessage"] = "Job type deleted successfully.";
+            }
+            catch (EntityInUseException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
             }
             catch (DbUpdateException ex)
             {

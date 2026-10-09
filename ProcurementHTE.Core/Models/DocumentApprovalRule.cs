@@ -8,7 +8,7 @@ namespace ProcurementHTE.Core.Models
     /// Approval rule per dokumen berdasarkan rentang nilai (CT PNL).
     /// </summary>
     [Table("DocumentApprovalRules")]
-    public class DocumentApprovalRule
+    public class DocumentApprovalRule : BaseEntity
     {
         [Key]
         public string DocumentApprovalRuleId { get; set; } = Guid.NewGuid().ToString();

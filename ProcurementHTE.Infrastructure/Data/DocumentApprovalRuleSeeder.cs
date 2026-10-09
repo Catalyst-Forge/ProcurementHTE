@@ -13,12 +13,9 @@ namespace ProcurementHTE.Infrastructure.Data
             try
             {
                 // Clear existing rules first (as requested by user)
-                var existingRules = await context.DocumentApprovalRules.ToListAsync();
-                if (existingRules.Count > 0)
-                {
-                    context.DocumentApprovalRules.RemoveRange(existingRules);
-                    await context.SaveChangesAsync();
-                }
+                // Hard delete on purpose: removals of soft-deletable entities are
+                // otherwise turned into soft deletes and would pile up every start.
+                await context.DocumentApprovalRules.IgnoreQueryFilters().ExecuteDeleteAsync();
 
                 var targetDocs = new[]
                 {
