@@ -65,7 +65,6 @@ window.DashboardUI = {
     }
 
     this.updateOnlineUsersCount();
-    console.log(? User  status updated to );
   },
 
   refreshUserActivityTable: function() {

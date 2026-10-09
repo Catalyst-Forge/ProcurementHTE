@@ -45,7 +45,7 @@ public partial class ProcurementTrackingController
         ViewBag.CurrentPage = page;
         ViewBag.PageSize = pageSize;
         ViewBag.TotalCount = totalCount;
-        ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+        ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / pageSize));
 
         var isHtmxRequest = Request.Headers["HX-Request"].Count > 0;
         var isBoosted = Request.Headers["HX-Boosted"].Count > 0;

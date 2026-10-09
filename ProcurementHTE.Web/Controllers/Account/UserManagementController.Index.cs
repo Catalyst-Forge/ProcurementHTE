@@ -102,7 +102,7 @@ public partial class UserManagementController
             ActiveCount = activeCount,
             InactiveCount = inactiveCount,
             TwoFactorEnabledCount = twoFactorEnabledCount,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)),
         };
 
         return View(viewModel);

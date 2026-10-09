@@ -14,7 +14,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         public string? Search { get; set; }
 
-        public int TotalPages => (int)Math.Ceiling((double)Total / PageSize);
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)Total / PageSize));
 
         public bool HasPrev => Page > 1;
 

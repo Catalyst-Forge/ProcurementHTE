@@ -55,7 +55,7 @@
                                         <small class="text-muted">-</small>
                                     }
                                 </td>
-                                <td>@await Html.PartialAsync("_AdminDashboardUserStatusBadge", user)</td>
+                                <td>@await Html.PartialAsync("_AdminDashboardUserStatusBadge.cshtml", user)</td>
                                 <td class="text-end">
                                     <small class="@(user.IsOnline ? "text-success" : "text-muted") user-last-activity">
                                         <i class="bi bi-clock"></i> @user.StatusTime

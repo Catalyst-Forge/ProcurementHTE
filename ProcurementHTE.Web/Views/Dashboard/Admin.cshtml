@@ -12,15 +12,15 @@
 }
 
 <div class="container-fluid py-4" data-dashboard-realtime="true">
-    @await Html.PartialAsync("_AdminDashboardHeader", Model)
-    @await Html.PartialAsync("_AdminDashboardStats", Model)
-    @await Html.PartialAsync("_AdminDashboardAccrualOverview", Model)
-    @await Html.PartialAsync("_AdminDashboardFinancialSummary", Model)
-    @await Html.PartialAsync("_AdminDashboardProcurementTables", Model)
-    @await Html.PartialAsync("_AdminDashboardCharts", Model)
-    @await Html.PartialAsync("_AdminDashboardUserActivity", Model)
-    @await Html.PartialAsync("_AdminDashboardTopVendors", Model)
-    @await Html.PartialAsync("_AdminDashboardRecentPurchaseRequisitions", Model)
+    @await Html.PartialAsync("_AdminDashboardHeader.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardStats.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardAccrualOverview.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardFinancialSummary.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardProcurementTables.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardCharts.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardUserActivity.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardTopVendors.cshtml", Model)
+    @await Html.PartialAsync("_AdminDashboardRecentPurchaseRequisitions.cshtml", Model)
 </div>
 
 @section Scripts {

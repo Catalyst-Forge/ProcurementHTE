@@ -96,7 +96,6 @@
     console.log("UserName:", data.userName);
     console.log("FullName:", data.fullName);
     console.log("===========================================");
-    updateUserActivityUI(data);
     window.DashboardUI.updateUserActivityUI(data);
   });
 
