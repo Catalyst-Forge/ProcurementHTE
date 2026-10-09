@@ -4,7 +4,7 @@ namespace ProcurementHTE.Core.Options
     {
         public bool UseDevelopmentMode { get; set; } = true;
         public string Provider { get; set; } = "Smtp";
-        public string FromName { get; set; } = "Procurement Transport & Logistic";
+        public string FromName { get; set; } = "Docutrax Transport & Logistic";
         public string FromAddress { get; set; } = "noreply@procurementhte.local";
         public string? ApiKey { get; set; }
         public string? ApiUrl { get; set; }

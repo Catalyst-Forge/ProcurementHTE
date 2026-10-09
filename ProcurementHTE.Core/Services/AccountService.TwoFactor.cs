@@ -70,7 +70,7 @@ public partial class AccountService
                 ValidateTwoFactorContact(user.PhoneNumber, user.PhoneNumberConfirmed, method, method);
                 await _smsSender.SendAsync(
                     user.PhoneNumber!,
-                    $"Kode verifikasi login Procurement Transport & Logistic: {code}",
+                    $"Kode verifikasi login Docutrax Transport & Logistic: {code}",
                     ct
                 );
                 break;
@@ -172,7 +172,7 @@ public partial class AccountService
             .AppendLine("<p>Kode hanya berlaku sementara. Jangan bagikan kepada siapapun.</p>")
             .ToString();
 
-        await _emailSender.SendAsync(email, "Kode Verifikasi Two-Factor Procurement Transport & Logistic", body, ct);
+        await _emailSender.SendAsync(email, "Kode Verifikasi Two-Factor Docutrax Transport & Logistic", body, ct);
     }
 
     private static void ValidateTwoFactorContact(

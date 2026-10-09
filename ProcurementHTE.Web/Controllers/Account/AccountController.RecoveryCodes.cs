@@ -41,7 +41,7 @@ public partial class AccountController
         }
 
         var builder = new StringBuilder();
-        builder.AppendLine("Procurement Transport & Logistic - Recovery Codes");
+        builder.AppendLine("Docutrax Transport & Logistic - Recovery Codes");
         builder.AppendLine("Simpan file ini di tempat aman. Jangan bagikan ke siapapun.");
         builder.AppendLine();
         foreach (var code in codes)
