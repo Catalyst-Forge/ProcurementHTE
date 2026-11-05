@@ -35,6 +35,19 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// Compress static text assets. UseStaticFiles serves wwwroot before MapStaticAssets can
+// hand out its precompressed copies, so without this every CSS/JS file went out raw
+// (~780 KB of shared assets per cold page load). HTML and JSON are left out on purpose:
+// they carry antiforgery tokens and user data, and compressing those over HTTPS opens
+// the door to BREACH-style attacks.
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+    options.MimeTypes = ["text/css", "text/javascript", "application/javascript", "image/svg+xml"];
+});
+
 // SignalR for real-time updates
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<
@@ -72,7 +85,29 @@ app.UseForwardedHeaders();
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseResponseCompression();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // asp-append-version adds ?v=<hash>, so those URLs change whenever the file does
+        // and can be cached for good. Vendored libraries, images and fonts change rarely
+        // and keep a week. Anything else unversioned revalidates every time (via ETag),
+        // so a deploy never leaves browsers on stale app code.
+        var request = ctx.Context.Request;
+        var path = request.Path.Value ?? string.Empty;
+        string cacheControl;
+        if (request.Query.ContainsKey("v"))
+            cacheControl = "public, max-age=31536000, immutable";
+        else if (path.StartsWith("/lib/", StringComparison.OrdinalIgnoreCase)
+                 || path.StartsWith("/images/", StringComparison.OrdinalIgnoreCase)
+                 || path.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase))
+            cacheControl = "public, max-age=604800";
+        else
+            cacheControl = "no-cache";
+        ctx.Context.Response.Headers.CacheControl = cacheControl;
+    },
+});
 app.UseSession();
 app.UseRouting();
 

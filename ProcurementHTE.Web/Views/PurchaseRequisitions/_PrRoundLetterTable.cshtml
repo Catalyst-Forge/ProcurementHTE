@@ -23,7 +23,7 @@
                 }
                 <td>@(letter.LetterNumber ?? "-")</td>
                 <td class="text-center">
-                    <a asp-controller="ProcurementDocuments"
+                    <a aria-label="Unduh" asp-controller="ProcurementDocuments"
                        asp-action="Download"
                        asp-route-id="@letter.ProcDocumentId"
                        asp-route-procurementId="@Model.ProcurementId"

@@ -31,7 +31,7 @@
                 {
                     <dd class="d-flex align-items-center gap-2">
                         <span><i class="bi bi-file-earmark-pdf"></i> @Model.DocumentFileName</span>
-                        <a asp-action="DownloadDocument" asp-route-id="@Model.PrId" class="btn btn-sm btn-outline-primary" hx-boost="false">
+                        <a aria-label="Unduh" asp-action="DownloadDocument" asp-route-id="@Model.PrId" class="btn btn-sm btn-outline-primary" hx-boost="false">
                             <i class="bi bi-download"></i>
                         </a>
                     </dd>

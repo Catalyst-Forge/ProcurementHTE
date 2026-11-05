@@ -7,7 +7,10 @@
         if (!toggleButton || !buttonGroup || toggleButton.dataset.boundToggle) return;
 
         toggleButton.dataset.boundToggle = '1';
-        toggleButton.addEventListener('click', () => buttonGroup.classList.toggle('show'));
+        toggleButton.addEventListener('click', () => {
+            const open = buttonGroup.classList.toggle('show');
+            toggleButton.setAttribute('aria-expanded', String(open));
+        });
     }
 
     function initTabs() {

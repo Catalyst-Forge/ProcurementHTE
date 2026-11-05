@@ -1,8 +1,11 @@
-/* --- Tampilan Mobile (Pola Card Stack) ---
-   Add `mobile-table` to a <table>: below 576px each row becomes a card and each cell
-   a "label : value" line. Labels come from the cell's data-label, which
-   js/mobile-table.js fills in from the table header when the view does not set it. */
-@media screen and (max-width: 575.98px) {
+/* --- Card stack for data tables (phones and tablets) ---
+   Add `mobile-table` to a <table>: below 992px, where the sidebar is an offcanvas and a
+   wide table would push its status and action columns off screen, each row becomes a
+   card and each cell a "label : value" line. Labels come from the cell's data-label,
+   which js/mobile-table.js fills in from the table header when the view does not set it.
+   From 576px the cards flow into as many 320px-plus columns as the container holds, so a
+   full-width list gets two columns on a tablet while a table inside a narrow card keeps one. */
+@media screen and (max-width: 991.98px) {
   .mobile-table thead {
     display: none;
   }
@@ -43,15 +46,31 @@
     text-align: right !important;
     white-space: normal !important;
     overflow-wrap: anywhere;
+    text-wrap: pretty;
   }
 
   .mobile-table td:last-child {
     border-bottom: 0;
   }
 
+  /* With wrapping on, a long value jumps to its own line before it would shrink. A cell
+     holding plain text or a single element keeps its value beside the label and wraps
+     inside the remaining width; cells with several items (badges, buttons) may still
+     flow onto a second line. */
+  .mobile-table td:not(:has(> :nth-child(2))) {
+    flex-wrap: nowrap;
+  }
+
+  .mobile-table td:not(:has(> :nth-child(2))) > * {
+    min-width: 0;
+  }
+
   .mobile-table td[data-label]::before {
     content: attr(data-label);
-    flex: 1 0 40%;
+    /* The label keeps its natural width (capped), so the value gets the rest of the
+       row; values are right-aligned, so labels of different lengths still line up. */
+    flex: 0 0 auto;
+    max-width: 45%;
     margin-right: auto;
     padding-right: 0.5rem;
     font-weight: 600;
@@ -68,5 +87,23 @@
 
   .mobile-table td[colspan]::before {
     content: none;
+  }
+}
+
+@media screen and (min-width: 576px) and (max-width: 991.98px) {
+  .mobile-table tbody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .mobile-table tr {
+    margin-bottom: 0;
+  }
+
+  /* An empty-state row spans the grid instead of sitting in one column. */
+  .mobile-table tr:has(> td[colspan]) {
+    grid-column: 1 / -1;
   }
 }

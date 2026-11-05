@@ -4,9 +4,9 @@
         <i class="bi bi-arrow-clockwise"></i> Refresh
     </button>
 
-    <div class="input-group w-auto">
+    <div class="input-group flex-grow-1" style="max-width: 28rem;">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input class="form-control" type="search" name="search" id="searchBox" style="width: 25rem;" 
+        <input aria-label="Cari" class="form-control" type="search" name="search" id="searchBox"
                placeholder="Cari berdasarkan No WO, Job Name, No SPK..." 
                value="@(Model.Search ?? "")" />
     </div>

@@ -122,7 +122,7 @@
                         @if (currentPage > 1)
                         {
                             <li class="page-item">
-                                <button type="button" class="page-link" 
+                                <button aria-label="Halaman sebelumnya" type="button" class="page-link" 
                                     hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { page = currentPage - 1, pageSize = pageSize, partial = true })"
                                     hx-target="#pending-approvals-container"
                                     hx-swap="innerHTML"
@@ -164,7 +164,7 @@
                         @if (currentPage < totalPages)
                         {
                             <li class="page-item">
-                                <button type="button" class="page-link" 
+                                <button aria-label="Halaman berikutnya" type="button" class="page-link" 
                                     hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { page = currentPage + 1, pageSize = pageSize, partial = true })"
                                     hx-target="#pending-approvals-container"
                                     hx-swap="innerHTML"

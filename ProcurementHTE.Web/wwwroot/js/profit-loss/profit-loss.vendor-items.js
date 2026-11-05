@@ -74,7 +74,7 @@
                     </div>
                 </div>
                 <div class="hstack gap-1">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle-item><i class="bi bi-chevron-up"></i></button>
+                    <button aria-label="Tampilkan atau sembunyikan item" type="button" class="btn btn-outline-secondary btn-sm" data-toggle-item><i class="bi bi-chevron-up"></i></button>
                     <button type="button" class="btn btn-outline-primary btn-sm" data-add-round><i class="bi bi-plus-circle"></i> Round</button>
                 </div>
             </div>

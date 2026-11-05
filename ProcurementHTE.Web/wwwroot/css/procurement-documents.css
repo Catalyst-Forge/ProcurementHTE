@@ -10,13 +10,16 @@
     max-width: 98%;
 }
 
-.btn-sm {
-    font-size: 0.8125rem;
-    padding: 0.25rem 0.625rem;
+/* Compact buttons only for a mouse; touch screens keep site.css's 44px targets. */
+@media (pointer: fine) and (min-width: 576px) {
+    .btn-sm {
+        font-size: 0.8125rem;
+        padding: 0.25rem 0.625rem;
+    }
 }
 
 .upload-input-stack {
-    min-width: 230px;
+    min-width: min(230px, 100%);
 }
 
 .upload-dropzone {

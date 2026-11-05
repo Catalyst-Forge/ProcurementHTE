@@ -30,7 +30,7 @@
         const actionsCell = row.querySelector('td[data-actions-row]');
 
         if (statusCell) {
-            statusCell.innerHTML = '<span class="badge rounded-pill bg-success bg-opacity-25 text-success py-2 px-3"><i class="bi bi-check-lg"></i> Uploaded</span>';
+            statusCell.innerHTML = '<span class="badge rounded-pill bg-success bg-opacity-25 text-success-emphasis py-2 px-3"><i class="bi bi-check-lg"></i> Uploaded</span>';
         }
         if (fileCell) fileCell.innerHTML = renderFileCell(payload.document);
         if (!actionsCell) return;

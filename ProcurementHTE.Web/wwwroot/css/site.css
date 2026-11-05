@@ -1,19 +1,122 @@
+/* Palette roles for the Bootstrap app shell. Primary and links take Docutrax Blue from
+   DESIGN.md. Bootstrap's info (#0dcaf0, 1.96:1 on white) and warning text (#ffc107,
+   1.63:1) fail WCAG AA as text, so info is deepened to a cyan that passes (5.4:1) and
+   warning text/outlines use a dark amber (5.0:1). Warning stays yellow as a fill, where
+   it carries dark text. */
 :root {
-  --bs-primary: #00ccff;
+  --bs-primary: #2563eb;
+  --bs-primary-rgb: 37, 99, 235;
+  --bs-link-color: #2563eb;
+  --bs-link-color-rgb: 37, 99, 235;
+  --bs-link-hover-color: #1d4ed8;
+  --bs-link-hover-color-rgb: 29, 78, 216;
+  --bs-info: #0e7490;
+  --bs-info-rgb: 14, 116, 144;
+  /* Bootstrap's #6c757d drops to 4.45:1 on light-grey panels; this grey holds AA there. */
+  --bs-secondary: #5c636a;
+  --bs-secondary-rgb: 92, 99, 106;
+  --dx-warning-ink: #b45309;
+  --dx-warning-ink-rgb: 180, 83, 9;
 }
 
 html {
-  font-size: 14px;
   interpolate-size: allow-keywords;
   position: relative;
   min-height: 100%;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+/* Badges are .75em of their parent, so inside small text they shrank to ~10px. */
+.badge {
+  font-size: max(0.75em, 0.75rem);
 }
+
+.btn-primary {
+  --bs-btn-bg: #2563eb;
+  --bs-btn-border-color: #2563eb;
+  --bs-btn-hover-bg: #1d4ed8;
+  --bs-btn-hover-border-color: #1d4ed8;
+  --bs-btn-active-bg: #1e40af;
+  --bs-btn-active-border-color: #1e40af;
+  --bs-btn-disabled-bg: #2563eb;
+  --bs-btn-disabled-border-color: #2563eb;
+  --bs-btn-focus-shadow-rgb: 37, 99, 235;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #2563eb;
+  --bs-btn-border-color: #2563eb;
+  --bs-btn-hover-bg: #2563eb;
+  --bs-btn-hover-border-color: #2563eb;
+  --bs-btn-active-bg: #1d4ed8;
+  --bs-btn-active-border-color: #1d4ed8;
+  --bs-btn-disabled-color: #2563eb;
+  --bs-btn-disabled-border-color: #2563eb;
+  --bs-btn-focus-shadow-rgb: 37, 99, 235;
+}
+
+.btn-info {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #0e7490;
+  --bs-btn-border-color: #0e7490;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #155e75;
+  --bs-btn-hover-border-color: #155e75;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #164e63;
+  --bs-btn-active-border-color: #164e63;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #0e7490;
+  --bs-btn-disabled-border-color: #0e7490;
+  --bs-btn-focus-shadow-rgb: 14, 116, 144;
+}
+
+.btn-outline-info {
+  --bs-btn-color: #0e7490;
+  --bs-btn-border-color: #0e7490;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #0e7490;
+  --bs-btn-hover-border-color: #0e7490;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #155e75;
+  --bs-btn-active-border-color: #155e75;
+  --bs-btn-disabled-color: #0e7490;
+  --bs-btn-disabled-border-color: #0e7490;
+  --bs-btn-focus-shadow-rgb: 14, 116, 144;
+}
+
+.btn-outline-warning {
+  --bs-btn-color: var(--dx-warning-ink);
+  --bs-btn-border-color: #d97706;
+  --bs-btn-hover-color: #000;
+  --bs-btn-hover-bg: #ffc107;
+  --bs-btn-hover-border-color: #ffc107;
+  --bs-btn-active-color: #000;
+  --bs-btn-active-bg: #ffc107;
+  --bs-btn-active-border-color: #ffc107;
+  --bs-btn-disabled-color: var(--dx-warning-ink);
+  --bs-btn-disabled-border-color: #d97706;
+  --bs-btn-focus-shadow-rgb: 217, 119, 6;
+}
+
+.text-warning {
+  color: rgba(var(--dx-warning-ink-rgb), var(--bs-text-opacity, 1)) !important;
+}
+
+.link-warning,
+.link-warning:hover,
+.link-warning:focus {
+  color: rgba(var(--dx-warning-ink-rgb), var(--bs-link-opacity, 1)) !important;
+  text-decoration-color: rgba(var(--dx-warning-ink-rgb), var(--bs-link-underline-opacity, 1)) !important;
+}
+
+/* Subtle badges paired text-{color} with bg-{color}-subtle (about 3.4:1); the emphasis
+   tone is what Bootstrap designs for that ground. */
+.badge.bg-primary-subtle { color: var(--bs-primary-text-emphasis) !important; }
+.badge.bg-secondary-subtle { color: var(--bs-secondary-text-emphasis) !important; }
+.badge.bg-success-subtle { color: var(--bs-success-text-emphasis) !important; }
+.badge.bg-danger-subtle { color: var(--bs-danger-text-emphasis) !important; }
+.badge.bg-warning-subtle { color: var(--bs-warning-text-emphasis) !important; }
+.badge.bg-info-subtle { color: var(--bs-info-text-emphasis) !important; }
 
 body {
   margin-bottom: 60px;
@@ -25,10 +128,6 @@ body {
 .form-control:focus,
 .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-a {
-  color: #00bfff;
 }
 
 .btn-outline-secondary {
@@ -93,5 +192,74 @@ a {
 
   .procurement-content {
     grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* Touch sizing. On touch screens, and on phone widths, every control gets a 44px target
+   (WCAG 2.5.5); a mouse keeps the denser desktop sizes. Padding grows rather than
+   min-height so labels stay vertically centred in inline-block buttons. */
+@media (pointer: coarse), (max-width: 575.98px) {
+  .btn {
+    --bs-btn-padding-y: 0.5625rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .nav-link {
+    --bs-nav-link-padding-y: 0.625rem;
+  }
+
+  .btn-sm,
+  .btn-group-sm > .btn {
+    --bs-btn-padding-y: 0.6875rem;
+    --bs-btn-padding-x: 0.75rem;
+  }
+
+  .btn-link.p-0 {
+    min-height: 44px;
+  }
+
+  /* Badges used as links (e.g. the PR chip on tracking details). */
+  a.badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .form-control,
+  .form-select {
+    min-height: 44px;
+  }
+
+  .pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .dropdown-item {
+    padding-block: 0.625rem;
+  }
+
+  #sidebar .nav-link {
+    padding-block: 0.625rem;
+  }
+
+  /* Icon-only links in table rows (edit/delete) were 18px squares. */
+  td a:not(.btn):has(> .bi),
+  td .btn-link:has(> .bi) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Detail pages park their actions behind a floating button; keep the end of the page
+     clear of it. */
+  main:has(#buttonNavToggle) {
+    padding-bottom: 6rem !important;
   }
 }
