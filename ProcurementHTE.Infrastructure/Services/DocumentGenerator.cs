@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using ProcurementHTE.Core.Interfaces;
@@ -95,6 +97,7 @@ public partial class DocumentGenerator : IDocumentGenerator
         );
         var page = await browser.NewPageAsync();
 
+        html = InlineLocalAssets(html);
         await page.SetContentAsync(html, new() { WaitUntil = WaitUntilState.NetworkIdle });
 
         var pdf = await page.PdfAsync(
@@ -118,6 +121,55 @@ public partial class DocumentGenerator : IDocumentGenerator
         );
 
         return pdf;
+    }
+
+    // Templates reference bundled assets with relative paths such as
+    // "../wwwroot/lib/bootstrap/dist/css/bootstrap.min.css". SetContentAsync loads the
+    // HTML into about:blank, where those URLs resolve to nothing, so the PDF lost all
+    // Bootstrap styling. The assets are read from the app's wwwroot and inlined.
+    private static readonly Regex LocalStylesheetLink = new(
+        "<link\\b[^>]*?\\bhref\\s*=\\s*[\"'](?:\\.\\./)+wwwroot/(?<path>[^\"']+?\\.css)[\"'][^>]*>",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled
+    );
+
+    private static readonly Regex LocalScriptTag = new(
+        "<script\\b[^>]*?\\bsrc\\s*=\\s*[\"'](?:\\.\\./)+wwwroot/(?<path>[^\"']+?\\.js)[\"'][^>]*>\\s*</script>",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled
+    );
+
+    private static readonly ConcurrentDictionary<string, string?> AssetCache = new();
+
+    private static string InlineLocalAssets(string html)
+    {
+        html = LocalStylesheetLink.Replace(
+            html,
+            m => ReadLocalAsset(m.Groups["path"].Value) is { } css
+                ? $"<style>\n{css}\n</style>"
+                : m.Value
+        );
+
+        return LocalScriptTag.Replace(
+            html,
+            m => ReadLocalAsset(m.Groups["path"].Value) is { } js
+                ? $"<script>\n{js.Replace("</script", "<\\/script", StringComparison.OrdinalIgnoreCase)}\n</script>"
+                : m.Value
+        );
+    }
+
+    private static string? ReadLocalAsset(string webRootRelativePath)
+    {
+        var webRoot =
+            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"))
+            + Path.DirectorySeparatorChar;
+        var fullPath = Path.GetFullPath(Path.Combine(webRoot, webRootRelativePath));
+
+        if (!fullPath.StartsWith(webRoot, StringComparison.Ordinal))
+            return null;
+
+        return AssetCache.GetOrAdd(
+            fullPath,
+            p => File.Exists(p) ? File.ReadAllText(p) : null
+        );
     }
 
     private string ApplyCommonTokens(string html)
