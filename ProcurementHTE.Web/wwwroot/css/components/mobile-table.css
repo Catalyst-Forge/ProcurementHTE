@@ -1,13 +1,15 @@
-/* --- Tampilan Mobile (Pola Card Stack) --- */
-@media screen and (max-width: 575px) {
+/* --- Tampilan Mobile (Pola Card Stack) ---
+   Add `mobile-table` to a <table>: below 576px each row becomes a card and each cell
+   a "label : value" line. Labels come from the cell's data-label, which
+   js/mobile-table.js fills in from the table header when the view does not set it. */
+@media screen and (max-width: 575.98px) {
   .mobile-table thead {
     display: none;
   }
 
   .mobile-table,
   .mobile-table tbody,
-  .mobile-table tr,
-  .mobile-table td {
+  .mobile-table tr {
     display: block;
     width: 100%;
   }
@@ -17,17 +19,30 @@
   }
 
   .mobile-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid #ddd;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--bs-border-color);
     border-radius: 0.5rem;
     overflow: hidden;
   }
 
+  .mobile-table tr:last-child {
+    margin-bottom: 0;
+  }
+
   .mobile-table td {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem 0.5rem;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
     border: none;
-    border-bottom: 1px solid #eee;
-    position: relative;
-    text-align: right;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
   }
 
   .mobile-table td:last-child {
@@ -36,12 +51,22 @@
 
   .mobile-table td[data-label]::before {
     content: attr(data-label);
+    flex: 1 0 40%;
     margin-right: auto;
-    position: sticky;
-    left: 0;
-    width: 45%;
-    padding-right: 10px;
-    font-weight: bold;
+    padding-right: 0.5rem;
+    font-weight: 600;
     text-align: left;
+    color: var(--bs-secondary-color);
+  }
+
+  /* Cells without a header label (e.g. an action column) and empty-state rows. */
+  .mobile-table td:not([data-label]),
+  .mobile-table td[colspan] {
+    justify-content: center;
+    text-align: center !important;
+  }
+
+  .mobile-table td[colspan]::before {
+    content: none;
   }
 }

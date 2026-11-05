@@ -70,10 +70,14 @@
       document.body.style.paddingRight = '';
     }
     
-    const clickBlockers = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop, [style*="pointer-events: none"]');
-    if (clickBlockers.length > 0) {
-      clickBlockers.forEach(b => b.remove());
-    }
+    // Leave the offcanvas backdrop alone while an offcanvas is still open or closing:
+    // it is what closes the mobile sidebar on an outside tap, and Bootstrap removes it
+    // itself once the offcanvas has hidden.
+    const offcanvasOpen = document.querySelector('.offcanvas.show, .offcanvas.showing, .offcanvas.hiding');
+    const blockerSelector = offcanvasOpen
+      ? '.modal-backdrop, [style*="pointer-events: none"]'
+      : '.modal-backdrop, .offcanvas-backdrop, [style*="pointer-events: none"]';
+    document.querySelectorAll(blockerSelector).forEach(b => b.remove());
     
     const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
     dropdowns.forEach(function(dropdownToggle) {
@@ -121,14 +125,25 @@
       } catch (e) {}
     });
     
+    // The sidebar offcanvas lives outside #app-content and is never swapped, so keep its
+    // instance. Disposing and recreating it while open left a fresh instance that thought
+    // it was closed, with the menu stuck open over the page.
     document.querySelectorAll('.offcanvas').forEach(function(offcanvasElement) {
       try {
-        const existingInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
-        if (existingInstance) existingInstance.dispose();
-        new bootstrap.Offcanvas(offcanvasElement);
+        bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
       } catch (e) {}
     });
   };
+
+  // On phones the sidebar is an offcanvas over the page: close it as soon as a menu link
+  // is chosen so the new page is visible when it loads.
+  document.addEventListener("click", function (event) {
+    const link = event.target.closest('#sidebar a[href]');
+    if (!link || typeof bootstrap === 'undefined') return;
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar || !sidebar.classList.contains('show')) return;
+    bootstrap.Offcanvas.getOrCreateInstance(sidebar).hide();
+  });
   
   document.addEventListener("DOMContentLoaded", function() {
     if(window.SiteApp.reinitializeBootstrapComponents) window.SiteApp.reinitializeBootstrapComponents();
