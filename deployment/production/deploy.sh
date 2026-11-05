@@ -77,6 +77,23 @@ log "Publishing release to $RELEASE_DIR"
   --output "$RELEASE_DIR"
 
 chown -R procurementhte:procurementhte "$RELEASE_DIR"
+
+# Pastikan browser Playwright sesuai versi paket di rilis ini sudah terpasang.
+# Idempoten: cepat jika sudah ada. Jika gagal, deploy batal sebelum symlink
+# dipindah sehingga rilis lama tetap berjalan.
+PLAYWRIGHT_CLI="$RELEASE_DIR/.playwright/package/cli.js"
+PLAYWRIGHT_NODE="$RELEASE_DIR/.playwright/node/linux-x64/node"
+if [ -f "$PLAYWRIGHT_CLI" ] && [ -x "$PLAYWRIGHT_NODE" ]; then
+  log "Ensuring Playwright Chromium is installed"
+  if ! sudo -u procurementhte -H env HOME="$BASE_DIR" \
+      "$PLAYWRIGHT_NODE" "$PLAYWRIGHT_CLI" install chromium; then
+    log "Playwright install failed; checking/installing system dependencies"
+    "$PLAYWRIGHT_NODE" "$PLAYWRIGHT_CLI" install-deps chromium
+    sudo -u procurementhte -H env HOME="$BASE_DIR" \
+      "$PLAYWRIGHT_NODE" "$PLAYWRIGHT_CLI" install chromium
+  fi
+fi
+
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK.tmp"
 mv -Tf "$CURRENT_LINK.tmp" "$CURRENT_LINK"
 
