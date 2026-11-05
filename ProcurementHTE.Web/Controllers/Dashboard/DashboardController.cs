@@ -33,10 +33,18 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 return Challenge();
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
-            foreach (var role in roles)
+            // Pick the role from the signed-in claims, not the database: each
+            // role dashboard is guarded by [Authorize(Roles = ...)], which only
+            // sees the claims. A role granted after sign-in is in the database
+            // but not yet in the cookie, and redirecting to it ends in a 403.
+            // Admin goes first so a multi-role admin lands on the admin view.
+            string[] candidates = [DashboardRoleHelper.AdminRole, .. DashboardRoleHelper.GeneralRoles];
+            foreach (var role in candidates)
             {
-                if (DashboardRoleHelper.TryGetControllerForRole(role, out var controller))
+                if (
+                    User.IsInRole(role)
+                    && DashboardRoleHelper.TryGetControllerForRole(role, out var controller)
+                )
                 {
                     return RedirectToAction("Index", controller);
                 }
