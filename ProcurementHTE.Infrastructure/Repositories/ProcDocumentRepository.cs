@@ -22,7 +22,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
         public async Task<IReadOnlyList<ProcDocuments>> GetByProcurementAsync(string procurementId)
         {
             return await _context
-                .ProcDocuments.Where(d => d.ProcurementId == procurementId)
+                .ProcDocuments.Include(d => d.DocumentType)
+                .Where(d => d.ProcurementId == procurementId)
                 .OrderByDescending(d => d.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();

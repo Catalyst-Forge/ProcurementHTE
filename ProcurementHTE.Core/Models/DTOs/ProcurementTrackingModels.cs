@@ -34,7 +34,7 @@ namespace ProcurementHTE.Core.Models.DTOs
     }
 
     /// <summary>
-    /// Request DTO untuk submit ISPA per procurement
+    /// Request DTO untuk submit INPRO per procurement
     /// </summary>
     public class SubmitProcurementIspaRequest
     {

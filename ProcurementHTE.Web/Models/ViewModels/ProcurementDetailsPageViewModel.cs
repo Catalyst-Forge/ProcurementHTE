@@ -11,6 +11,7 @@ public sealed class ProcurementDetailsPageViewModel
     public string? AnalystName { get; init; }
     public string? AssistantManagerName { get; init; }
     public string? ManagerName { get; init; }
+    public bool CanManage { get; init; }
     public bool CanEditDelete { get; init; }
     public bool CanPublish { get; init; }
     public bool CanUnpublish { get; init; }

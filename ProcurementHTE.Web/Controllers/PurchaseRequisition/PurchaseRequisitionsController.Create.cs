@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Models;
@@ -7,12 +9,14 @@ namespace ProcurementHTE.Web.Controllers.PR;
 
 public partial class PurchaseRequisitionsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     public async Task<ActionResult> Create()
     {
         await PopulateViewBagForCreate();
         return View(new PurchaseRequisitionCreateViewModel());
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<ActionResult> Create(PurchaseRequisitionCreateViewModel model)
@@ -67,7 +71,7 @@ public partial class PurchaseRequisitionsController
 
             TempData["SuccessMessage"] =
                 $"Purchase Requisition {purchaseRequisition.PrNumber} created successfully.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = purchaseRequisition.PrId });
         }
         catch (Exception ex)
         {

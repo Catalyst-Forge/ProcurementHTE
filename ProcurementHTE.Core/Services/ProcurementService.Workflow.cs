@@ -133,6 +133,21 @@ public partial class ProcurementService
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
 
+    public async Task UpdateRaNumberAsync(string procurementId, string raNumber)
+    {
+        if (string.IsNullOrWhiteSpace(raNumber))
+            throw new ArgumentException("Nomor RA tidak boleh kosong", nameof(raNumber));
+
+        var procurement = await GetProcurementForWorkflowAsync(procurementId);
+
+        if (!procurement.CanChangeRaNumber)
+            throw new InvalidOperationException("Nomor RA pekerjaan ini tidak bisa diubah");
+
+        procurement.RaNumber = raNumber.Trim();
+        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
+        await _procurementRepository.UpdateProcurementAsync(procurement);
+    }
+
     private async Task<Procurement> GetProcurementForWorkflowAsync(string procurementId)
     {
         return await _procurementRepository.GetByIdAsync(procurementId)

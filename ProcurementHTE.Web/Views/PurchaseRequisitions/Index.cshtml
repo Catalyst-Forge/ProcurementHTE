@@ -7,7 +7,7 @@
 @inject IAuthorizationService AuthZ
 @{
     ViewData["Title"] = "Purchase Requisition (PR) Data";
-    var canCreate = true;
+    var canCreate = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApPo);
     
     // Get current user info for per-item authorization
     var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);

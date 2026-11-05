@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpGet]
     [Authorize(Policy = Permissions.Procurement.Create)]
     public async Task<IActionResult> Create(
@@ -24,6 +26,7 @@ public partial class ProcurementsController
         return View("CreateByType", viewModel);
     }
 
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = Permissions.Procurement.Create)]
@@ -100,7 +103,9 @@ public partial class ProcurementsController
             TempData["SuccessMessage"] = isDraft
                 ? "Procurement saved as draft successfully"
                 : "Procurement created successfully";
-            return RedirectToAction(nameof(Index));
+            return isDraft
+                ? RedirectToAction(nameof(Index))
+                : RedirectToAction(nameof(CreateProfitLoss), new { procurementId = proc.ProcurementId });
         }
         catch (ArgumentException ex)
         {

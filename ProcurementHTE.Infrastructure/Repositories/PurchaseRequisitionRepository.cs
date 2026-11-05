@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
@@ -187,7 +188,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             procurement.PrId = prId;
 
             // Update status to "In Progress" when linked to PR
-            if (inProgressStatus != null)
+            if (inProgressStatus != null && procurement.ProcurementStatus != ProcurementStatus.Cancelled)
             {
                 procurement.StatusId = inProgressStatus.StatusId;
             }
@@ -212,7 +213,7 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             procurement.PrId = null;
 
             // Revert status back to "Waiting Pickup" when unlinked from PR
-            if (waitingPickupStatus != null)
+            if (waitingPickupStatus != null && procurement.ProcurementStatus != ProcurementStatus.Cancelled)
             {
                 procurement.StatusId = waitingPickupStatus.StatusId;
             }

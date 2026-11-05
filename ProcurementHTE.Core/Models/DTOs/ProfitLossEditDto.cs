@@ -28,9 +28,6 @@ namespace ProcurementHTE.Core.Models.DTOs
         )]
         public decimal? RealizationAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? Distance { get; set; }
-
         public DateTime? TglMulaiSewa { get; set; }
 
         public DateTime? TglMulaiMoving { get; set; }

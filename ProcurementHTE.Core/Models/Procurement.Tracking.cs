@@ -63,41 +63,41 @@ public partial class Procurement
     [DisplayName("Procurement Status")]
     public ProcurementStatus ProcurementStatus { get; set; } = ProcurementStatus.OnCreateDP3;
 
-    // ISPA Tracking Fields
+    // INPRO Tracking Fields
     [MaxLength(100)]
-    [DisplayName("ISPA Number")]
+    [DisplayName("INPRO Number")]
     public string? IspaNumber { get; set; }
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
-    [DisplayName("Tanggal ISPA")]
+    [DisplayName("Tanggal INPRO")]
     public DateTime? IspaDate { get; set; }
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", ApplyFormatInEditMode = false)]
-    [DisplayName("Tanggal Submit ISPA")]
+    [DisplayName("Tanggal Submit INPRO")]
     public DateTime? IspaSubmitDate { get; set; }
 
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
-    [DisplayName("ISPA Submitted At")]
+    [DisplayName("INPRO Submitted At")]
     public DateTime? IspaSubmittedAt { get; set; }
 
     [MaxLength(450)]
-    [DisplayName("ISPA Submitted By")]
+    [DisplayName("INPRO Submitted By")]
     public string? IspaSubmittedByUserId { get; set; }
 
-    // ISPA File Fields
+    // INPRO File Fields
     [MaxLength(255)]
-    [DisplayName("ISPA File Name")]
+    [DisplayName("INPRO File Name")]
     public string? IspaFileName { get; set; }
 
     [MaxLength(500)]
-    [DisplayName("ISPA File Path")]
+    [DisplayName("INPRO File Path")]
     public string? IspaFileObjectKey { get; set; }
 
     [MaxLength(100)]
-    [DisplayName("ISPA File Content Type")]
+    [DisplayName("INPRO File Content Type")]
     public string? IspaFileContentType { get; set; }
 
-    [DisplayName("ISPA File Size")]
+    [DisplayName("INPRO File Size")]
     public long? IspaFileSize { get; set; }
 
     // PO Tracking Fields

@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Procurement)]
     [Authorize(Policy = Permissions.Procurement.Delete)]
     public async Task<IActionResult> Delete(string id)
     {
@@ -26,6 +28,7 @@ public partial class ProcurementsController
         }
     }
 
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = Permissions.Procurement.Delete)]

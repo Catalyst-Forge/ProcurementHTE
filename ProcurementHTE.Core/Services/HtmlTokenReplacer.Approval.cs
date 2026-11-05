@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services
@@ -53,7 +54,7 @@ namespace ProcurementHTE.Core.Services
             var needExtraApprove =
                 !string.IsNullOrWhiteSpace(approveRole)
                 && approveRole != "-"
-                && (!isPnlDoc || grandTotal >= 500_000_000m);
+                && (!isPnlDoc || ApprovalConstants.RequiresVpApproval(grandTotal));
 
             var approveRoleWithPjs = approveRole switch
             {

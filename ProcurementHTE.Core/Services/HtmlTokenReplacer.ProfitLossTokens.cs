@@ -51,8 +51,7 @@ namespace ProcurementHTE.Core.Services
                 GenerateSidebarAdditionalRows(
                     context.JobTypeName,
                     pnl,
-                    FormatDate,
-                    FormatDecimal
+                    FormatDate
                 )
             );
             context.Replace("TglMulaiSewa", FormatDate(pnl.TglMulaiSewa));

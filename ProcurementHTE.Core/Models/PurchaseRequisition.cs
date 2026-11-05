@@ -79,30 +79,37 @@ public class PurchaseRequisition : BaseEntity
             if (Procurements == null || !Procurements.Any())
                 return Status;
 
+            // Cancelled jobs stay linked but no longer drive the PR
+            var live = Procurements
+                .Where(p => p.ProcurementStatus != ProcurementStatus.Cancelled)
+                .ToList();
+            if (live.Count == 0)
+                return PurchaseRequisitionStatus.Cancelled;
+
             // Any rejected → PR rejected
-            if (Procurements.Any(p => p.ProcurementStatus == ProcurementStatus.Rejected))
+            if (live.Any(p => p.ProcurementStatus == ProcurementStatus.Rejected))
                 return PurchaseRequisitionStatus.Rejected;
 
             // All done → PR done
-            if (Procurements.All(p => p.ProcurementStatus == ProcurementStatus.DonePO))
+            if (live.All(p => p.ProcurementStatus == ProcurementStatus.DonePO))
                 return PurchaseRequisitionStatus.DonePO;
 
             // Return minimum (earliest) status from procurements
-            var minStatus = Procurements.Min(p => (int)p.ProcurementStatus);
+            var minStatus = live.Min(p => (int)p.ProcurementStatus);
             return (PurchaseRequisitionStatus)minStatus;
         }
     }
 
     [MaxLength(100)]
-    [DisplayName("ISPA Number")]
+    [DisplayName("INPRO Number")]
     public string? IspaNumber { get; set; }
 
-    [DisplayName("ISPA Submitted At")]
+    [DisplayName("INPRO Submitted At")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy HH:mm}", ApplyFormatInEditMode = false)]
     public DateTime? IspaSubmittedAt { get; set; }
 
     [MaxLength(450)]
-    [DisplayName("ISPA Submitted By")]
+    [DisplayName("INPRO Submitted By")]
     public string? IspaSubmittedByUserId { get; set; }
 
     [MaxLength(100)]

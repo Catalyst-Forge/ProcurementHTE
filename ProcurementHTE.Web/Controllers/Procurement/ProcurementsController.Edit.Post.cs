@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = Permissions.Procurement.Edit)]

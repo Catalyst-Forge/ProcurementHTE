@@ -33,12 +33,7 @@
                 <label asp-for="Procurement.ProcurementCategory" class="form-label">Jenis Pengadaan</label>
                 <select asp-for="Procurement.ProcurementCategory"
                         class="form-select"
-                        asp-items="categoryOptions"
-                        hx-get="@Url.Action("RenderRaNumberField", "Procurements")"
-                        hx-trigger="change"
-                        hx-target="#raNumberWrapper"
-                        hx-swap="innerHTML"
-                        hx-vals="js:{category: event.target.value, raNumber: document.getElementById('Procurement_RaNumber')?.value || ''}"></select>
+                        asp-items="categoryOptions"></select>
                 <span class="text-danger" asp-validation-for="Procurement.ProcurementCategory"></span>
             </div>
         </div>

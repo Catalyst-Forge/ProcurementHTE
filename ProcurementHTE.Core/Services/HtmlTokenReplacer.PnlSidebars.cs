@@ -8,8 +8,7 @@ namespace ProcurementHTE.Core.Services
         private static string GenerateSidebarAdditionalRows(
             string? jobTypeName,
             ProfitLoss pnl,
-            Func<DateTime?, string> formatDate,
-            Func<decimal?, string, string> formatDecimal
+            Func<DateTime?, string> formatDate
         )
         {
             var sb = new StringBuilder();
@@ -29,17 +28,8 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine("  <td>Tgl Mulai Moving</td>");
                 sb.AppendLine($"  <td class='text-end'>{formatDate(pnl.TglMulaiMoving)}</td>");
                 sb.AppendLine("</tr>");
-                sb.AppendLine("<tr>");
-                sb.AppendLine("  <td>Jarak</td>");
-                sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} Km</td>");
-                sb.AppendLine("</tr>");
-                return sb.ToString();
             }
 
-            sb.AppendLine("<tr>");
-            sb.AppendLine("  <td>Jarak</td>");
-            sb.AppendLine($"  <td class='text-end'>{formatDecimal(pnl.Distance, "N0")} KM</td>");
-            sb.AppendLine("</tr>");
             return sb.ToString();
         }
 

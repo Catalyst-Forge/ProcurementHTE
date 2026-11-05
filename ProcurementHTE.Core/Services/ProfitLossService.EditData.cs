@@ -66,10 +66,7 @@ namespace ProcurementHTE.Core.Services
                     ProcOfferId = item.ProcOfferId,
                     Quantity = item.Quantity.HasValue ? (int)item.Quantity.Value : item.UnitQty,
                     QtyItems = item.UnitQty,
-                    TarifAwal = item.BasePrice,
-                    TarifAdd = item.TarifAdd ?? 0,
-                    KmPer25 = item.KmPer25 ?? 0,
-                    OperatorCost = item.OperatorCost ?? 0,
+                    Revenue = item.Revenue,
                 })
                 .ToList();
 
@@ -79,7 +76,6 @@ namespace ProcurementHTE.Core.Services
                 ProcurementId = pnl.ProcurementId,
                 AccrualAmount = pnl.AccrualAmount,
                 RealizationAmount = pnl.RealizationAmount,
-                Distance = pnl.Distance ?? 0,
                 TglMulaiSewa = pnl.TglMulaiSewa,
                 TglMulaiMoving = pnl.TglMulaiMoving,
                 Items = items,

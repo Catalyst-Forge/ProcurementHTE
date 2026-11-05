@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Enums;
@@ -6,6 +8,7 @@ namespace ProcurementHTE.Web.Controllers.PR;
 
 public partial class PurchaseRequisitionsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpGet]
     public async Task<JsonResult> GetFilteredProcurements(
         string? vendorId = null,
@@ -98,6 +101,7 @@ public partial class PurchaseRequisitionsController
         );
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendApproval(string procurementId, string prId, CancellationToken ct)

@@ -16,6 +16,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var isAnalyst = userRoles.Contains("Analyst HTE & LTS");
             var isAsstManager = userRoles.Contains("Assistant Manager HTE");
             var isManager = userRoles.Contains("Manager Transport & Logistic");
+            var isVicePresident = userRoles.Contains("Vice President");
             var query = _context.Procurements.AsQueryable();
 
             if (isAdmin)
@@ -24,6 +25,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     p.ProcurementStatus == ProcurementStatus.WaitingApprovalAnalyst
                     || p.ProcurementStatus == ProcurementStatus.WaitingApprovalAsstManager
                     || p.ProcurementStatus == ProcurementStatus.WaitingApprovalManager
+                    || p.ProcurementStatus == ProcurementStatus.WaitingApprovalVP
                 );
             }
             else
@@ -43,6 +45,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         isManager
                         && p.ProcurementStatus == ProcurementStatus.WaitingApprovalManager
                         && p.ManagerUserId == userId
+                    )
+                    || (
+                        isVicePresident
+                        && p.ProcurementStatus == ProcurementStatus.WaitingApprovalVP
+                        && p.VicePresidentUserId == userId
                     )
                 );
             }
@@ -65,14 +72,17 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var isAnalyst = userRoles.Contains("Analyst HTE & LTS");
             var isAsstManager = userRoles.Contains("Assistant Manager HTE");
             var isManager = userRoles.Contains("Manager Transport & Logistic");
+            var isVicePresident = userRoles.Contains("Vice President");
+            var seesEveryApproval = isAdmin || !(isAnalyst || isAsstManager || isManager || isVicePresident);
             var query = _context.Procurements.AsQueryable();
 
-            if (isAdmin)
+            if (seesEveryApproval)
             {
                 query = query.Where(p =>
                     p.ProcurementStatus == ProcurementStatus.WaitingApprovalAnalyst
                     || p.ProcurementStatus == ProcurementStatus.WaitingApprovalAsstManager
                     || p.ProcurementStatus == ProcurementStatus.WaitingApprovalManager
+                    || p.ProcurementStatus == ProcurementStatus.WaitingApprovalVP
                 );
             }
             else
@@ -92,6 +102,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         isManager
                         && p.ProcurementStatus == ProcurementStatus.WaitingApprovalManager
                         && p.ManagerUserId == userId
+                    )
+                    || (
+                        isVicePresident
+                        && p.ProcurementStatus == ProcurementStatus.WaitingApprovalVP
+                        && p.VicePresidentUserId == userId
                     )
                 );
             }

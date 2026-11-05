@@ -31,14 +31,14 @@
                     <div class="row g-1 align-items-end">
                         <div class="col-md-10">
                             <div class="row g-1">
-                                <div class="col-md-6">
+                                <div class="col-md-5">
                                     <label class="form-label">Item <span class="text-danger">*</span></label>
                                     <input class="form-control" 
                                            name="Offers[@(idx)].ItemPenawaran" 
                                            value="@offer.ItemPenawaran" />
                                     @Html.ValidationMessage($"Offers[{idx}].ItemPenawaran", new { @class = "text-danger" })
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">Qty Items <span class="text-danger">*</span></label>
                                     <input type="number" min="1" step="1"
                                            class="form-control text-end"
@@ -46,13 +46,21 @@
                                            value="@(offer.Qty > 0 ? offer.Qty : "")" />
                                     @Html.ValidationMessage($"Offers[{idx}].Qty", new { @class = "text-danger" })
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">Unit Items <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" 
                                            name="Offers[@(idx)].Unit" 
                                            value="@offer.Unit"
                                            placeholder="Pcs, Unit, Set..." />
                                     @Html.ValidationMessage($"Offers[{idx}].Unit", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Jarak</label>
+                                    <input type="text" class="form-control"
+                                           name="Offers[@(idx)].Distance"
+                                           value="@offer.Distance"
+                                           maxlength="100"
+                                           placeholder="Contoh: 100 km" />
                                 </div>
                             </div>
                         </div>

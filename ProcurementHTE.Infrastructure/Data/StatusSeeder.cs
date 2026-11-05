@@ -14,7 +14,8 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Waiting Pickup",
                 "In Progress",
                 "Completed",
-                "Closed"
+                "Closed",
+                "Cancelled"
             };
 
             var existingStatuses = await db.Statuses

@@ -48,7 +48,7 @@ namespace ProcurementHTE.Core.Services
                     targetUserId = prInfo.AppoUserId ?? "";
                     title = "Approval Selesai";
                     message =
-                        $"PR {prNumber} telah diapprove oleh {approverUserName} (Manager). Semua approval selesai, silakan lanjutkan ke ISPA.";
+                        $"PR {prNumber} telah diapprove oleh {approverUserName} (Manager). Semua approval selesai, silakan lanjutkan ke INPRO.";
                 }
                 else
                 {

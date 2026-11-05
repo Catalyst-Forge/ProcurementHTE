@@ -3,7 +3,7 @@
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Invoice Processing</h1>
+    <h1 class="h3 mb-0">Account Payable Invoice</h1>
 </header>
 
 <!-- Tab Navigation -->
@@ -14,10 +14,13 @@
             <i class="bi bi-hourglass-split"></i> Waiting Pickup
         </a>
     </li>
+    @if (ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApInvoice))
+    {
     <li class="nav-item">
         <a class="nav-link @(currentTab == "mypickups" ? "active" : "")" 
            href="@Url.Action("Index", new { tab = "mypickups" })">
             <i class="bi bi-person-check"></i> My Pickups
         </a>
     </li>
+    }
 </ul>

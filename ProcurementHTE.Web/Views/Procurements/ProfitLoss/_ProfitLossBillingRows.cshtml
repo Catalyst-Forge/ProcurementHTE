@@ -1,7 +1,6 @@
 @model ProcurementHTE.Web.Models.ViewModels.ProfitLossInputViewModel
 @using ProcurementHTE.Web.Models.ViewModels
 @{
-    var isEdit = Model is ProfitLossEditViewModel;
     var jobTypeName = Model.JobTypeName ?? ViewBag.JobTypeName ?? "Angkutan";
     var isPengangkutan = jobTypeName == "Angkutan";
 }
@@ -25,41 +24,7 @@
             <input type="hidden" name="Items[@i].UnitRevenue" value="TRIP" />
             <input type="hidden" data-qty-items value="@quantityItem" />
             <td class="text-end">
-                <div class="input-group input-group-sm">
-                    @if (isEdit)
-                    {
-                        <input class="form-control text-end" asp-for="Items[@i].Quantity" data-unit-qty />
-                    }
-                    else
-                    {
-                        <input class="form-control text-end" name="Items[@i].Quantity" data-unit-qty value="@quantityItem" />
-                    }
-                </div>
-                <span class="text-danger small field-validation-valid" asp-validation-for="Items[@i].Quantity"></span>
-            </td>
-            <td class="text-end">
-                <input type="text" class="form-control form-control-sm text-end" value="@unitItem" readonly />
-            </td>
-            <td class="text-end">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">Rp</span>
-                    <input class="form-control text-end" asp-for="Items[@i].TarifAwal" asp-format="{0:0}" data-tarif-awal data-format-currency autocomplete="off" inputmode="numeric" />
-                </div>
-            </td>
-            <td class="text-end">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">Rp</span>
-                    <input class="form-control text-end" asp-for="Items[@i].TarifAdd" asp-format="{0:0}" data-tarif-add data-format-currency autocomplete="off" inputmode="numeric" />
-                </div>
-            </td>
-            <td class="text-end">
-                <input class="form-control form-control-sm text-end" asp-for="Items[@i].KmPer25" data-km readonly />
-            </td>
-            <td class="text-end">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">Rp</span>
-                    <input class="form-control form-control-sm text-end" data-operator readonly />
-                </div>
+                <input class="form-control form-control-sm text-end" name="Items[@i].Quantity" value="@quantityItem" data-unit-qty readonly />
             </td>
         }
         else
@@ -68,10 +33,19 @@
                 <input type="hidden" name="Items[@i].QtyItems" value="@quantityItem" />
                 <input type="text" class="form-control form-control-sm text-end" value="@quantityItem" data-qty-items readonly />
             </td>
-            <td class="text-end">
+        }
+        <td class="text-end">
+            @if (!isPengangkutan)
+            {
                 <input type="hidden" name="Items[@i].UnitItems" value="@unitItem" />
-                <input type="text" class="form-control form-control-sm text-end" value="@unitItem" data-unit-items readonly />
-            </td>
+            }
+            <input type="text" class="form-control form-control-sm text-end" value="@unitItem" data-unit-items readonly />
+        </td>
+        <td class="text-end">
+            <input type="text" class="form-control form-control-sm text-end" value="@offerItem?.Distance" readonly />
+        </td>
+        @if (!isPengangkutan)
+        {
             <td class="text-end">
                 <div class="input-group input-group-sm">
                     <input class="form-control text-end" asp-for="Items[@i].Quantity" data-quantity-durasi inputmode="numeric" />
@@ -82,19 +56,14 @@
                     <option value="">-- Pilih --</option>
                 </select>
             </td>
-            <td class="text-end">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">Rp</span>
-                    <input class="form-control text-end" asp-for="Items[@i].TarifAwal" asp-format="{0:0}" data-base-price data-format-currency autocomplete="off" inputmode="numeric" />
-                </div>
-            </td>
         }
 
         <td class="text-end">
             <div class="input-group input-group-sm">
                 <span class="input-group-text">Rp</span>
-                <input class="form-control form-control-sm text-end fw-semibold" data-rev readonly />
+                <input class="form-control text-end fw-semibold" name="Items[@i].Revenue" value="@Model.Items[i].Revenue?.ToString("0")" data-rev data-format-currency autocomplete="off" inputmode="numeric" />
             </div>
+            <span class="text-danger small field-validation-valid" asp-validation-for="Items[@i].Revenue"></span>
         </td>
     </tr>
 }

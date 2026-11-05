@@ -28,8 +28,6 @@ namespace ProcurementHTE.Web.Models.ViewModels
         )]
         public decimal? RealizationAmount { get; set; }
 
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? Distance { get; set; }
 
         public DateTime? TglMulaiSewa { get; set; }
 
@@ -65,6 +63,8 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         public string? Unit { get; set; }
 
+        public string? Distance { get; set; }
+
         public string? UnitRevenue { get; set; }
     }
 
@@ -88,21 +88,9 @@ namespace ProcurementHTE.Web.Models.ViewModels
 
         public string? UnitRevenue { get; set; }
 
-        [DisplayName("400 KM Tariff")]
+        [DisplayName("Revenue")]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? TarifAwal { get; set; }
-
-        [DisplayName("Additional Tariff")]
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? TarifAdd { get; set; }
-
-        [DisplayName("KM per 25 km")]
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? KmPer25 { get; set; }
-
-        [DisplayName("Biaya Operator (Item)")]
-        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? OperatorCost { get; set; }
+        public decimal? Revenue { get; set; }
     }
 
     public class VendorItemOfferInputVm
@@ -179,8 +167,6 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [DisplayName("Realization Amount")]
         public decimal? RealizationAmount { get; set; }
 
-        public decimal? Distance { get; set; }
-
         [Required, StringLength(450)]
         public string SelectedVendorId { get; set; } = null!;
         public string? SelectedVendorName { get; set; }
@@ -194,10 +180,7 @@ namespace ProcurementHTE.Web.Models.ViewModels
             string ProcOfferId,
             string ItemName,
             int UnitQty,
-            decimal BasePrice,
-            decimal? TarifAdd,
-            decimal? KmPer25,
-            decimal? OperatorCost,
+            string? Distance,
             decimal Revenue,
             int? Quantity,
             string? UnitRevenue,

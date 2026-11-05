@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Models.ViewModels;
@@ -6,6 +8,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementDocumentsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpGet("ProcurementDocuments/Index/{procurementId}")]
     public async Task<IActionResult> Index(string procurementId)
     {

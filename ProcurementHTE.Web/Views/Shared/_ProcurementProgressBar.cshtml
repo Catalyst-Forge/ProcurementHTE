@@ -47,7 +47,7 @@
     }
 
     // Post-approval steps (always present)
-    steps.Add((stepOrder++, "OnSubmitISPA", "On Submit ISPA", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName, false));
+    steps.Add((stepOrder++, "OnSubmitISPA", "On Submit INPRO", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName, false));
     steps.Add((stepOrder++, "OnSubmitHardcopy", "On Submit Hardcopy", Model.HardcopySubmittedAt, Model.HardcopySubmittedByUserName, false));
     steps.Add((stepOrder++, "OnSubmitPO", "On Submit PO", Model.PoSubmittedAt, Model.PoSubmittedByUserName, false));
     steps.Add((stepOrder++, "DonePO", "Done PO", null, null, false));
@@ -57,7 +57,8 @@
 
     // Calculate current step position
     // We need to map the status value to the visual step position
-    int statusValue = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected
+    bool isCancelled = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled;
+    int statusValue = Model.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Rejected || isCancelled
         ? 0
         : (int)Model.CurrentStatus;
     
@@ -73,7 +74,7 @@
         }
         else
         {
-            // For statuses beyond approval (ISPA=8, Hardcopy=9, PO=10, Done=11)
+            // For statuses beyond approval (INPRO=8, Hardcopy=9, PO=10, Done=11)
             // Map to the correct visual step
             currentStep = Model.ProgressStep;
         }
@@ -84,6 +85,10 @@
 }
 
 <div class="procurement-progress-container">
+    @if (isCancelled)
+    {
+        <div class="alert alert-secondary mb-4">Procurement ini sudah di-cancel oleh Operation.</div>
+    }
     @if (isRejected)
     {
         <div class="alert alert-danger mb-4">

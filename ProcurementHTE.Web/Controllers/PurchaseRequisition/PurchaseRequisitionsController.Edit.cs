@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Web.Models.ViewModels;
@@ -6,6 +8,7 @@ namespace ProcurementHTE.Web.Controllers.PR;
 
 public partial class PurchaseRequisitionsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     public async Task<ActionResult> Edit(string id)
     {
         var pr = await _purchaseRequisitionQueryService.GetByIdWithProcurementsAsync(id);
@@ -34,6 +37,7 @@ public partial class PurchaseRequisitionsController
         );
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<ActionResult> Edit(string id, PurchaseRequisitionEditViewModel model)

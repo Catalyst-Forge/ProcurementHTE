@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Utils;
 
 namespace ProcurementHTE.Core.Services
@@ -24,7 +25,7 @@ namespace ProcurementHTE.Core.Services
             decimal contractTotal
         )
         {
-            if (contractTotal < 500_000_000m)
+            if (!ApprovalConstants.RequiresVpApproval(contractTotal))
             {
                 context.Replace("SubmitterName", names.AnalystHteName);
                 context.Replace("Approver1Name", names.AssistantManagerName);

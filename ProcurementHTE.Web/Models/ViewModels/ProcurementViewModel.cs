@@ -82,9 +82,6 @@ public class ProcurementEditViewModel
     [DisplayName("OE Number")]
     public string? OeNumber { get; set; }
 
-    [DisplayName("RA Number")]
-    public string? RaNumber { get; set; }
-
     [DisplayName("No. Rig")]
     [MaxLength(100)]
     public string? NoRig { get; set; }

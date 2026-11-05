@@ -17,7 +17,6 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         public decimal? AccrualAmount { get; set; }
         public decimal? RealizationAmount { get; set; }
-        public decimal? Distance { get; set; }
 
         [Required, StringLength(450)]
         public string SelectedVendorId { get; set; } = null!;
@@ -39,10 +38,7 @@ namespace ProcurementHTE.Core.Models.DTOs
             string ProcOfferId,
             string ItemName,
             int UnitQty,
-            decimal BasePrice,
-            decimal? TarifAdd,
-            decimal? KmPer25,
-            decimal? OperatorCost,
+            string? Distance,
             decimal Revenue,
             int? Quantity,
             string? UnitRevenue,

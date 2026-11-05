@@ -64,6 +64,17 @@ public partial class Procurement : BaseEntity
     [DisplayName("RA Number")]
     public string? RaNumber { get; set; }
 
+    /// <summary>LTC and RO contracts carry no Risk Assessment.</summary>
+    public bool RequiresRaNumber => ContractType is ContractType.Spot or ContractType.STB;
+
+    /// <summary>A finished or cancelled job keeps the number it ended with.</summary>
+    public bool CanChangeRaNumber =>
+        RequiresRaNumber
+        && ProcurementStatus is not (ProcurementStatus.DonePO or ProcurementStatus.Cancelled);
+
+    /// <summary>LTC and RO record only the winning vendor, revenue and cost.</summary>
+    public bool UsesSimpleProfitLoss => ContractType is ContractType.LTC or ContractType.RO;
+
     [MaxLength(64)]
     [DisplayName("Project Code")]
     public string? ProjectCode { get; set; }

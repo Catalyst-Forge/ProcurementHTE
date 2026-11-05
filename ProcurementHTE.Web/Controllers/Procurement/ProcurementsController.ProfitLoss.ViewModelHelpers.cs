@@ -30,6 +30,7 @@ public partial class ProcurementsController
                 ItemPenawaran = offer.ItemPenawaran,
                 Quantity = offer.Qty,
                 Unit = offer.Unit,
+                Distance = offer.Distance,
                 UnitRevenue = offer.UnitRevenue,
             })
             .ToList();
@@ -44,10 +45,6 @@ public partial class ProcurementsController
             {
                 ProcOfferId = offer.ProcOfferId,
                 Quantity = (int)Math.Round(offer.Quantity),
-                TarifAwal = null,
-                TarifAdd = null,
-                KmPer25 = null,
-                OperatorCost = null,
             })
             .ToList();
     }

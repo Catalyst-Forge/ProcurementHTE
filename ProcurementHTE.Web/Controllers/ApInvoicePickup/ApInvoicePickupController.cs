@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers.ApInvoicePickup
 {
-    [Authorize(Roles = "Admin, AP-Invoice")]
+    [Authorize]
     [Route("ApInvoicePickup")]
     public class ApInvoicePickupController : Controller
     {
@@ -80,6 +81,7 @@ namespace ProcurementHTE.Web.Controllers.ApInvoicePickup
             return View(procurements);
         }
 
+        [Authorize(Roles = ActionRoles.ApInvoice)]
         [HttpPost("Pickup/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Pickup(string id)
@@ -125,6 +127,7 @@ namespace ProcurementHTE.Web.Controllers.ApInvoicePickup
             }
         }
 
+        [Authorize(Roles = ActionRoles.ApInvoice)]
         [HttpPost("UpdateInvoiceData/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateInvoiceData(

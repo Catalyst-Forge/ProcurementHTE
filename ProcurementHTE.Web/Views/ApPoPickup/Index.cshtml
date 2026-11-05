@@ -2,7 +2,7 @@
 @using ProcurementHTE.Core.Models
 @model PagedResult<Procurement>
 @{
-    ViewData["Title"] = "AP-PO Pickup";
+    ViewData["Title"] = "Account Payable Purchase Order";
     var currentTab = ViewBag.CurrentTab as string ?? "waiting";
     ViewData["CurrentTab"] = currentTab;
     ViewData["IsMyPickups"] = currentTab == "mypickups";
@@ -30,7 +30,7 @@
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">AP-PO Pickup</h1>
+    <h1 class="h3 mb-0">Account Payable Purchase Order</h1>
 </header>
 
 @await Html.PartialAsync("Partials/_Tabs")
@@ -40,6 +40,11 @@
 @await Html.PartialAsync("Partials/_Table", Model)
 
 @await Html.PartialAsync("Partials/_Pagination", Model)
+
+@if (currentTab == "mypickups" && ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApPo))
+{
+    @await Html.PartialAsync("Partials/_SubmitModals")
+}
 
 @section Scripts {
     @await Html.PartialAsync("Partials/_Scripts")

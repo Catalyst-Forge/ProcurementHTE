@@ -21,7 +21,7 @@ namespace ProcurementHTE.Core.Enums
         [Description("Waiting Approval Manager")]
         WaitingApprovalManager = 4,
 
-        [Description("On Submit ISPA")]
+        [Description("On Submit INPRO")]
         OnSubmitISPA = 5,
 
         [Description("On Submit Hardcopy")]
@@ -39,6 +39,9 @@ namespace ProcurementHTE.Core.Enums
         /// </summary>
         [Description("Returned from Procurement")]
         ReturnedFromProcurement = 10,
+
+        [Description("Cancelled")]
+        Cancelled = 98,
 
         [Description("Rejected")]
         Rejected = 99

@@ -2,7 +2,8 @@
 @using ProcurementHTE.Core.Models
 @model PagedResult<Procurement>
 @{
-    ViewData["Title"] = "AR Pickup";
+    var canPickup = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Ar);
+    ViewData["Title"] = "Account Receivable";
     var currentTab = ViewBag.CurrentTab as string ?? "waiting";
     var isMyPickups = currentTab == "mypickups";
     
@@ -18,7 +19,7 @@
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">AR Pickup</h1>
+    <h1 class="h3 mb-0">Account Receivable</h1>
 </header>
 
 <!-- Tab Navigation -->
@@ -29,12 +30,15 @@
             <i class="bi bi-hourglass-split"></i> Waiting Pickup
         </a>
     </li>
+    @if (ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Ar))
+    {
     <li class="nav-item">
         <a class="nav-link @(currentTab == "mypickups" ? "active" : "")" 
            href="@Url.Action("Index", new { tab = "mypickups" })">
             <i class="bi bi-person-check"></i> My Pickups
         </a>
     </li>
+    }
 </ul>
 
 <form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
@@ -121,12 +125,14 @@
                                    class="btn btn-outline-info btn-sm me-1" title="View Details">
                                     <i class="bi bi-eye"></i> Details
                                 </a>
-                                <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
-                                    @Html.AntiForgeryToken()
-                                    <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
-                                        <i class="bi bi-box-arrow-in-down"></i> Pickup
-                                    </button>
-                                </form>
+                                @if (canPickup) {
+                                    <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                            <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                        </button>
+                                    </form>
+                                }
                             }
                         </td>
                     </tr>

@@ -8,8 +8,14 @@ public class SidebarMenuTests
     private static readonly string[] EveryoneSees =
     [
         "Dashboard",
-        "LDP",
+        "Procurements",
+        "PR Service",
+        "Laporan Data Procurement",
+        "Pending Approvals",
         "Procurement Tracking",
+        "Account Payable Purchase Order",
+        "Account Payable Invoice",
+        "Account Receivable",
         "Data Accrual",
     ];
 
@@ -24,34 +30,19 @@ public class SidebarMenuTests
             .ToArray();
 
     [Theory]
-    [InlineData("Operation", new[] { "Procurements" })]
-    [InlineData("Analyst HTE & LTS", new[] { "Procurements", "Pending Approvals" })]
-    [InlineData("Assistant Manager HTE", new[] { "Pending Approvals" })]
-    [InlineData("Manager Transport & Logistic", new[] { "Pending Approvals" })]
-    [InlineData(
-        "AP-PO",
-        new[]
-        {
-            "PR Service",
-            "AP-PO Pickup",
-            "Vendors",
-            "Procurement Types",
-            "Document Types",
-            "Job Type Documents",
-            "Document Approvals",
-            "Document Approval Rules",
-        }
-    )]
-    [InlineData("AP-Invoice", new[] { "AP-Invoice Pickup" })]
-    [InlineData("AR", new[] { "AR Pickup" })]
-    [InlineData("Vice President", new string[0])]
-    [InlineData("Dewan Direksi", new string[0])]
-    [InlineData("HSE", new string[0])]
-    public void For_Role_ShowsSharedMenusPlusItsOwn(string role, string[] roleSpecific)
+    [InlineData("Operation")]
+    [InlineData("Analyst HTE & LTS")]
+    [InlineData("Assistant Manager HTE")]
+    [InlineData("Manager Transport & Logistic")]
+    [InlineData("AP-PO")]
+    [InlineData("AP-Invoice")]
+    [InlineData("AR")]
+    [InlineData("Vice President")]
+    [InlineData("Dewan Direksi")]
+    [InlineData("HSE")]
+    public void For_EveryRoleButAdmin_SeesTheWorkflowMenusOnly(string role)
     {
-        var expected = EveryoneSees.Concat(roleSpecific).OrderBy(x => x);
-
-        Assert.Equal(expected, VisibleLabels(role).OrderBy(x => x));
+        Assert.Equal(EveryoneSees.OrderBy(x => x), VisibleLabels(role).OrderBy(x => x));
     }
 
     [Fact]
@@ -67,8 +58,8 @@ public class SidebarMenuTests
     {
         var labels = VisibleLabels("AP-Invoice", "AR");
 
-        Assert.Contains("AP-Invoice Pickup", labels);
-        Assert.Contains("AR Pickup", labels);
+        Assert.Contains("Account Payable Invoice", labels);
+        Assert.Contains("Account Receivable", labels);
         Assert.Equal(labels.Length, labels.Distinct().Count());
     }
 
@@ -92,7 +83,7 @@ public class SidebarMenuTests
             {
                 null,
                 "Pengadaan",
-                "Approval & Pelacakan",
+                "Persetujuan & Pelacakan",
                 "Keuangan",
                 "Master Data",
                 "Rules & Mapping",

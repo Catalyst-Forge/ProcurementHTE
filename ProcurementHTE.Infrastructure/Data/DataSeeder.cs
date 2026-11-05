@@ -26,6 +26,7 @@ namespace ProcurementHTE.Infrastructure.Data
             await JobTypeMovingMobilizationSeeder.SeedAsync(db, roleManager);
             await JobTypeAngkutanSeeder.SeedAsync(db, roleManager);
             await JobTypeStandBySeeder.SeedAsync(db, roleManager);
+            await FinancialStatementSeeder.SeedAsync(db);
             await DocumentApprovalRuleSeeder.SeedAsync(db, roleManager);
             if (seedSampleData)
             {

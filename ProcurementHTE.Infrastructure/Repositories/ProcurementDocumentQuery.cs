@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ProcurementHTE.Core.Constants;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions; // ⬅️ tambahkan
 using ProcurementHTE.Core.Interfaces;
@@ -24,7 +25,7 @@ public sealed class ProcurementDocumentQuery : IProcurementDocumentQuery
         var procurement = await _db
             .Procurements.AsNoTracking()
             .Where(x => x.ProcurementId == procurementId)
-            .Select(x => new { x.ProcurementId, x.JobTypeId, x.ProcurementCategory })
+            .Select(x => new { x.ProcurementId, x.JobTypeId, x.ProcurementCategory, x.ContractType })
             .FirstOrDefaultAsync();
 
         if (procurement is null)
@@ -127,7 +128,14 @@ public sealed class ProcurementDocumentQuery : IProcurementDocumentQuery
                 // Status removed - tracking sekarang di level PR
             };
 
-        var items = await q.ToListAsync();
+        var items = (await q.ToListAsync())
+            .Where(d => ContractDocumentRules.Applies(procurement.ContractType, d.DocumentTypeName))
+            .ToList();
+        foreach (var doc in items)
+        {
+            if (ContractDocumentRules.IsOptional(procurement.ContractType, doc.DocumentTypeName))
+                doc.IsMandatory = false;
+        }
 
         return new ProcurementRequiredDocsDto
         {

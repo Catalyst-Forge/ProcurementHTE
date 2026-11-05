@@ -83,14 +83,4 @@ public partial class ProcurementsController
         }
     }
 
-    [HttpGet]
-    [Authorize(Policy = Permissions.Procurement.Create)]
-    public IActionResult RenderRaNumberField(ProcurementCategory category, string? raNumber)
-    {
-        if (category != ProcurementCategory.Jasa)
-            return Content(string.Empty);
-
-        ViewBag.RaNumberValue = raNumber;
-        return PartialView("_RaNumberField");
-    }
 }

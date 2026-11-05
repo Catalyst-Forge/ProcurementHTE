@@ -8,6 +8,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task PublishAsync(string procurementId);
         Task UnpublishAsync(string procurementId);
         Task PickupAsync(string procurementId, string appoUserId);
+        Task UpdateRaNumberAsync(string procurementId, string raNumber);
         Task UpdateAccrualDataAsync(
             string procurementId,
             string? noAccrual,

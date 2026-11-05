@@ -8,7 +8,7 @@
 
 <header class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Procurements</h1>
-    @if (canCreate.Succeeded) {
+    @if (canCreate.Succeeded && ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Procurement)) {
         <a asp-action="Create" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i> Create New</a>
     }
 </header>

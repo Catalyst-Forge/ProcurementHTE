@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 
@@ -5,6 +7,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementDocumentsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete([FromForm] string id, [FromForm] string procurementId)
@@ -26,6 +29,7 @@ public partial class ProcurementDocumentsController
         return RedirectToAction(nameof(Index), new { procurementId });
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteAjax(
@@ -63,6 +67,7 @@ public partial class ProcurementDocumentsController
         }
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost("SendApprovalPerDoc")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendApprovalPerDoc(

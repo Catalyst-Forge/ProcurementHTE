@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 
@@ -5,6 +7,7 @@ namespace ProcurementHTE.Web.Controllers.PR;
 
 public partial class PurchaseRequisitionsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     public async Task<ActionResult> Delete(string id)
     {
         var pr = await _purchaseRequisitionQueryService.GetByIdWithProcurementsAsync(id);
@@ -22,6 +25,7 @@ public partial class PurchaseRequisitionsController
         return View(pr);
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<ActionResult> DeleteConfirmed(string id)

@@ -23,7 +23,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string? PrId { get; set; }
         public string? PrNumber { get; set; }
 
-        // ISPA Info
+        // INPRO Info
         public string? IspaNumber { get; set; }
         public DateTime? IspaSubmittedAt { get; set; }
         public string? IspaSubmittedByUserName { get; set; }
@@ -83,12 +83,12 @@ namespace ProcurementHTE.Core.Models.DTOs
         {
             get
             {
-                if (CurrentStatus == ProcurementStatus.Rejected)
+                if (CurrentStatus is ProcurementStatus.Rejected or ProcurementStatus.Cancelled)
                     return 0;
 
                 int statusValue = (int)CurrentStatus;
 
-                // For statuses after approval (ISPA=8, Hardcopy=9, PO=10, Done=11)
+                // For statuses after approval (INPRO=8, Hardcopy=9, PO=10, Done=11)
                 // We need to adjust based on which approval levels were skipped
                 if (statusValue >= 8)
                 {
@@ -111,12 +111,12 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         /// <summary>
         /// Total steps based on required approval level
-        /// Base: 8 steps (Create + 3 approvals + ISPA + Hardcopy + PO + Done)
+        /// Base: 8 steps (Create + 3 approvals + INPRO + Hardcopy + PO + Done)
         /// With VP: 9, With OpDir: 10, With PresDir: 11
         /// </summary>
         public int TotalSteps => Constants.ApprovalConstants.GetTotalSteps(RequiredApprovalLevel);
 
-        public decimal ProgressPercentage => CurrentStatus == ProcurementStatus.Rejected
+        public decimal ProgressPercentage => CurrentStatus is ProcurementStatus.Rejected or ProcurementStatus.Cancelled
             ? 0
             : TotalSteps > 0 ? ((decimal)ProgressStep / TotalSteps) * 100 : 0;
 
@@ -151,11 +151,11 @@ namespace ProcurementHTE.Core.Models.DTOs
         // Profit & Loss Summary
         public PnLSummaryCardDto? PnLSummary { get; set; }
 
-        // ISPA Date Fields
+        // INPRO Date Fields
         public DateTime? IspaDate { get; set; }
         public DateTime? IspaSubmitDate { get; set; }
 
-        // ISPA File Info
+        // INPRO File Info
         public string? IspaFileName { get; set; }
         public string? IspaFileObjectKey { get; set; }
 

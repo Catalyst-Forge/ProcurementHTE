@@ -52,4 +52,30 @@ public class SidebarAuthorizationTests
             $"{controller.Name} allows [{string.Join(", ", authorizedRoles)}] but its menu shows to [{string.Join(", ", item.Roles!)}]."
         );
     }
+
+    public static TheoryData<string> ViewableByEveryone() =>
+        new()
+        {
+            "ApPoPickup",
+            "ApInvoicePickup",
+            "ArPickup",
+            "PurchaseRequisitions",
+            "ProcurementDocuments",
+        };
+
+    [Theory]
+    [MemberData(nameof(ViewableByEveryone))]
+    public void ControllerOpenToEveryone_KeepsEveryWriteActionRoleLimited(string controllerName)
+    {
+        var controller = Controllers.Single(t => t.Name == $"{controllerName}Controller");
+
+        var unguarded = controller
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Where(m => m.GetCustomAttributes<HttpPostAttribute>().Any())
+            .Where(m => !m.GetCustomAttributes<AuthorizeAttribute>().Any(a => !string.IsNullOrWhiteSpace(a.Roles)))
+            .Select(m => m.Name)
+            .ToArray();
+
+        Assert.Empty(unguarded);
+    }
 }

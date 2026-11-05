@@ -24,7 +24,6 @@ namespace ProcurementHTE.Core.Services
             _jobTypeCalc.ValidateRequiredFields(
                 new ProfitLoss
                 {
-                    Distance = dto.Distance,
                     ProcurementId = dto.ProcurementId,
                     TglMulaiSewa = dto.TglMulaiSewa,
                     TglMulaiMoving = dto.TglMulaiMoving,
@@ -32,10 +31,9 @@ namespace ProcurementHTE.Core.Services
                 jobTypeName
             );
 
-            var (_, revTotal, items) = ComputeItems(
+            var (revTotal, items) = BuildItems(
                 dto.Items,
-                jobTypeName,
-                dto.Distance
+                !_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName)
             );
             if (items.Count == 0)
                 throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
@@ -65,7 +63,6 @@ namespace ProcurementHTE.Core.Services
                 Profit = profit,
                 ProfitPercent = revTotal > 0 ? (profit / revTotal) * 100m : 0m,
                 AccrualAmount = dto.AccrualAmount,
-                Distance = dto.Distance,
                 RealizationAmount = dto.RealizationAmount,
                 TglMulaiSewa = dto.TglMulaiSewa,
                 TglMulaiMoving = dto.TglMulaiMoving,

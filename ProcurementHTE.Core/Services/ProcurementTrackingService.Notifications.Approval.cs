@@ -64,7 +64,7 @@ public partial class ProcurementTrackingService
             ProcurementStatus.WaitingApprovalVP => "Menunggu approval Vice President",
             ProcurementStatus.WaitingApprovalOpDir => "Menunggu approval Operation Director",
             ProcurementStatus.WaitingApprovalPresDir => "Menunggu approval President Director",
-            ProcurementStatus.OnSubmitISPA => "Semua approval selesai, siap submit ISPA",
+            ProcurementStatus.OnSubmitISPA => "Semua approval selesai, siap submit INPRO",
             _ => "Proses berlanjut",
         };
 
@@ -87,7 +87,7 @@ public partial class ProcurementTrackingService
 
         await _notificationService.SendNotificationAsync(
             userId: procurement.AppoUserId,
-            title: $"Procurement {procurement.ProcNum} siap untuk submit ISPA",
+            title: $"Procurement {procurement.ProcNum} siap untuk submit INPRO",
             message: $"WO: {procurement.Wonum} - Semua approval telah selesai",
             notificationType: "ReadyForISPA",
             actionUrl: $"/Procurements/Details/{procurement.ProcurementId}",

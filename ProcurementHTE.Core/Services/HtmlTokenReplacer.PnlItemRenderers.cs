@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using ProcurementHTE.Core.Models;
 
@@ -37,9 +38,9 @@ namespace ProcurementHTE.Core.Services
         {
             if (docType == "OwnerEstimate")
             {
-                var price = item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0));
+                var price = ProfitLossCalculator.UnitPrice(item);
                 sb.AppendLine($"  <td class='text-end'>{price.ToString("C0", Id)}</td>");
-                sb.AppendLine($"  <td class='text-end'>{(price * item.UnitQty).ToString("C0", Id)}</td>");
+                sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
                 return;
             }
 
@@ -52,17 +53,10 @@ namespace ProcurementHTE.Core.Services
                 var unitRevenue = item.ProcOffer?.UnitRevenue ?? "-";
                 sb.AppendLine($"  <td class='text-center'>{quantity.ToString("0.##", Id)}</td>");
                 sb.AppendLine($"  <td class='text-center'>{unitRevenue}</td>");
-                sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
-                sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
-                return;
             }
 
-            sb.AppendLine($"  <td class='text-end'>{item.BasePrice.ToString("N0", Id)}</td>");
-            sb.AppendLine($"  <td class='text-end'>{(item.TarifAdd ?? 0).ToString("N0", Id)}</td>");
-            sb.AppendLine($"  <td class='text-center'>{item.KmPer25 ?? 0}</td>");
-            sb.AppendLine($"  <td class='text-end'>{(item.OperatorCost ?? 0).ToString("N0", Id)}</td>");
-            var revenue = (item.BasePrice + ((item.TarifAdd ?? 0) * (item.KmPer25 ?? 0))) * item.UnitQty;
-            sb.AppendLine($"  <td class='text-end'>{revenue.ToString("C0", Id)}</td>");
+            sb.AppendLine($"  <td class='text-center'>{WebUtility.HtmlEncode(item.ProcOffer?.Distance) ?? "-"}</td>");
+            sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
         }
 
         private static string GenerateItemsTableHeader(string? jobTypeName)
@@ -93,10 +87,7 @@ namespace ProcurementHTE.Core.Services
 
         private static void AppendAngkutanHeader(StringBuilder sb)
         {
-            sb.AppendLine("  <th scope='col' style='width: 7rem'>Tarif 400 km</th>");
-            sb.AppendLine("  <th scope='col' style='width: 6rem'>Tarif Add</th>");
-            sb.AppendLine("  <th scope='col' style='width: 4rem'>KM / 25 Km</th>");
-            sb.AppendLine("  <th scope='col' style='width: 7rem'>Operator Cost</th>");
+            sb.AppendLine("  <th scope='col' style='width: 7rem'>Jarak</th>");
             sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
         }
 
@@ -104,7 +95,7 @@ namespace ProcurementHTE.Core.Services
         {
             sb.AppendLine($"  <th scope='col' style='width: 4rem'>{quantityLabel}</th>");
             sb.AppendLine("  <th scope='col' style='width: 5rem'>Unit Revenue</th>");
-            sb.AppendLine("  <th scope='col' style='width: 7rem'>Base Price</th>");
+            sb.AppendLine("  <th scope='col' style='width: 7rem'>Jarak</th>");
             sb.AppendLine("  <th scope='col' style='width: 7rem'>Jumlah</th>");
         }
 
@@ -112,7 +103,7 @@ namespace ProcurementHTE.Core.Services
         {
             return jobTypeName == "StandBy" || jobTypeName == "Sewa Unit" || jobTypeName == "Moving"
                 ? 7
-                : 8;
+                : 5;
         }
     }
 }

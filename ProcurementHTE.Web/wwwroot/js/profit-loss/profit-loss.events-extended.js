@@ -36,14 +36,6 @@
         });
     };
 
-    app.wireDistance = function (ctx) {
-        if (!ctx.distanceInput) {
-            return;
-        }
-        app.bind(ctx, ctx.distanceInput, 'input', () => app.recalcKmPer25FromDistance(ctx));
-        app.bind(ctx, ctx.distanceInput, 'change', () => app.recalcKmPer25FromDistance(ctx));
-    };
-
     app.wireLetterModal = function (ctx) {
         app.bind(ctx, ctx.letterPreviewModal, 'hidden.bs.modal', () => {
             if (ctx.letterPreviewFrame) {

@@ -7,7 +7,7 @@ public partial class ProcurementTrackingController
 {
     [HttpPost("Reject")]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin, Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic")]
+    [Authorize(Roles = "Admin, Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic, Vice President")]
     public async Task<IActionResult> Reject(
         string procurementId,
         string rejectionNote,

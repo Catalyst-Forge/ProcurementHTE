@@ -515,6 +515,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("ProcOfferId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Distance")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("ItemPenawaran")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

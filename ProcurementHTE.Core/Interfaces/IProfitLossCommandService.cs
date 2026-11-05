@@ -7,5 +7,6 @@ public interface IProfitLossCommandService
 {
     Task<ProfitLoss> SaveInputAndCalculateAsync(ProfitLossInputDto dto);
     Task<ProfitLoss> EditProfitLossAsync(ProfitLossUpdateDto dto);
+    Task<ProfitLoss> SaveSimpleAsync(SimpleProfitLossDto dto);
     Task<bool> DeleteByProcurementAsync(string procurementId, string deletedByUserId);
 }

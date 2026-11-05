@@ -25,31 +25,7 @@ namespace ProcurementHTE.Core.Models.DTOs
             "79228162514264337593543950335",
             ErrorMessage = "The field {0} must be a valid non-negative number."
         )]
-        public decimal TarifAwal { get; set; }
-
-        [Range(
-            typeof(decimal),
-            "0",
-            "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number."
-        )]
-        public decimal TarifAdd { get; set; }
-
-        [Range(
-            typeof(decimal),
-            "0",
-            "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number."
-        )]
-        public decimal KmPer25 { get; set; }
-
-        [Range(
-            typeof(decimal),
-            "0",
-            "79228162514264337593543950335",
-            ErrorMessage = "The field {0} must be a valid non-negative number."
-        )]
-        public decimal OperatorCost { get; set; }
+        public decimal Revenue { get; set; }
 
         /// <summary>
         /// Unit Revenue - satuan untuk perhitungan revenue (TRIP, HARI, JAM, LSP, KALI)

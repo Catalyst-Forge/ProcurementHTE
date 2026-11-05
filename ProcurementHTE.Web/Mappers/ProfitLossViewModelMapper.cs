@@ -16,7 +16,6 @@ public static class ProfitLossViewModelMapper
             TotalRevenue = dto.TotalRevenue,
             AccrualAmount = dto.AccrualAmount,
             RealizationAmount = dto.RealizationAmount,
-            Distance = dto.Distance,
 
             SelectedVendorId = dto.SelectedVendorId,
             SelectedVendorName = dto.SelectedVendorName,
@@ -58,10 +57,7 @@ public static class ProfitLossViewModelMapper
                     x.QtyItems > 0
                         ? x.QtyItems
                         : (qtyMap.TryGetValue(x.ProcOfferId, out var qi) ? (int)qi : 1),
-                TarifAwal = x.TarifAwal ?? 0m,
-                TarifAdd = x.TarifAdd ?? 0m,
-                KmPer25 = x.KmPer25 ?? 0m,
-                OperatorCost = x.OperatorCost ?? 0m,
+                Revenue = x.Revenue ?? 0m,
                 UnitRevenue = x.UnitRevenue,
             })
             .ToList();
@@ -73,7 +69,6 @@ public static class ProfitLossViewModelMapper
             ProcurementId = vm.ProcurementId,
             AccrualAmount = vm.AccrualAmount,
             RealizationAmount = vm.RealizationAmount,
-            Distance = vm.Distance,
             TglMulaiSewa = vm.TglMulaiSewa,
             TglMulaiMoving = vm.TglMulaiMoving,
             Items = items,

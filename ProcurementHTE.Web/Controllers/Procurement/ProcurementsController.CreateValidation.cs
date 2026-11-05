@@ -31,8 +31,6 @@ public partial class ProcurementsController
             ModelState.AddModelError($"{prefix}.{nameof(proc.EndDate)}", "Tanggal selesai wajib diisi");
         if (proc.StartDate != default && proc.EndDate != default && proc.EndDate < proc.StartDate)
             ModelState.AddModelError($"{prefix}.{nameof(proc.EndDate)}", "Tanggal selesai harus setelah tanggal mulai");
-        if (proc.ProcurementCategory == ProcurementCategory.Jasa && string.IsNullOrWhiteSpace(proc.RaNumber))
-            ModelState.AddModelError($"{prefix}.{nameof(proc.RaNumber)}", "RA Number wajib diisi untuk jenis pengadaan jasa");
 
         ValidateCreateOffers(vm);
     }

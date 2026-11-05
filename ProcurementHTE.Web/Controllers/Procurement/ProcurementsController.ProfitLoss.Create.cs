@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Web.Mappers;
@@ -7,6 +9,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpGet("Procurements/{procurementId}/CreateProfitLoss")]
     public async Task<IActionResult> CreateProfitLoss(string procurementId)
     {
@@ -24,6 +27,9 @@ public partial class ProcurementsController
                 TempData["ErrorMessage"] = "Procurement tidak ditemukan";
                 return RedirectToAction(nameof(Index));
             }
+
+            if (procurement.UsesSimpleProfitLoss)
+                return RedirectToAction(nameof(SimpleProfitLoss), new { procurementId });
 
             var existingPnl = await _pnlQueryService.GetByProcurementAsync(procurementId);
             if (existingPnl != null)
@@ -59,6 +65,7 @@ public partial class ProcurementsController
         }
     }
 
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateProfitLossPost(

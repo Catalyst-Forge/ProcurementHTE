@@ -6,10 +6,8 @@ namespace ProcurementHTE.Core.Enums
     /// Status tracking untuk Procurement (per-item level)
     /// Flow: OnCreateDP3 → WaitingApproval (3-6 levels based on CT) → OnSubmitISPA → OnSubmitHardcopy → OnSubmitPO → DonePO
     /// Approval levels based on CT (Contract Total / Final Offer PNL):
-    /// - CT ≤ 500M: Analyst → Asst Manager → Manager
-    /// - CT ≤ 5B: + VP
-    /// - CT ≤ 10B: + VP → OpDir
-    /// - CT > 10B: + VP → OpDir → PresDir
+    /// - CT ≤ 300M: Analyst → Asst Manager → Manager
+    /// - CT > 300M: + VP
     /// Rejected: Status akhir jika approval ditolak
     /// </summary>
     public enum ProcurementStatus
@@ -35,7 +33,7 @@ namespace ProcurementHTE.Core.Enums
         [Description("Waiting Approval President Director")]
         WaitingApprovalPresDir = 7,
 
-        [Description("On Submit ISPA")]
+        [Description("On Submit INPRO")]
         OnSubmitISPA = 8,
 
         [Description("On Submit Hardcopy")]
@@ -58,6 +56,9 @@ namespace ProcurementHTE.Core.Enums
         /// </summary>
         [Description("Needs Revision (PR/Dokumen)")]
         NeedsRevisionPR = 21,
+
+        [Description("Cancelled")]
+        Cancelled = 98,
 
         [Description("Rejected")]
         Rejected = 99

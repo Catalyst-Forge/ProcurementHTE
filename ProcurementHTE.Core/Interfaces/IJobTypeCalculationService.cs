@@ -18,21 +18,6 @@ public interface IJobTypeCalculationService
     string GetDefaultUnitTypeId(string jobTypeName);
 
     /// <summary>
-    /// Menghitung Revenue untuk ProfitLossItem berdasarkan JobType
-    /// </summary>
-    decimal CalculateItemRevenue(ProfitLossItem item, string jobTypeName, decimal? distance);
-
-    /// <summary>
-    /// Menghitung KmPer25 untuk PENGANGKUTAN
-    /// </summary>
-    decimal CalculateKmPer25(decimal distance);
-
-    /// <summary>
-    /// Menghitung OperatorCost untuk PENGANGKUTAN
-    /// </summary>
-    decimal CalculateOperatorCost(decimal tarifAdd, decimal kmPer25);
-
-    /// <summary>
     /// Menghitung total vendor cost dari list VendorOffer
     /// </summary>
     decimal CalculateVendorTotal(List<VendorOffer> offers);

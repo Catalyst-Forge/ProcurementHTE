@@ -12,7 +12,7 @@ public sealed class InProgressProcurementQuery(AppDbContext db) : IInProgressPro
     {
         var rows = await db.Procurements
             .AsNoTracking()
-            .Where(p => p.ProcurementStatus != ProcurementStatus.DonePO && p.ProcurementStatus != ProcurementStatus.Rejected)
+            .Where(p => p.ProcurementStatus != ProcurementStatus.Cancelled && p.ProcurementStatus != ProcurementStatus.DonePO && p.ProcurementStatus != ProcurementStatus.Rejected)
             .GroupBy(p => new { p.JobTypeId, p.ProcurementCategory })
             .Select(g => new { g.Key.JobTypeId, g.Key.ProcurementCategory, Count = g.Count() })
             .ToListAsync(ct);

@@ -121,25 +121,4 @@
         }
     };
 
-    app.setKmDisplay = function (input, value) {
-        if (!input) {
-            return;
-        }
-        const numeric = Number(value ?? 0);
-        const sanitized = Number.isFinite(numeric) ? numeric : 0;
-        input.dataset.rawValue = sanitized.toString();
-        input.value = app.formatInteger(sanitized);
-    };
-
-    app.getKmValue = function (input) {
-        if (!input) {
-            return 0;
-        }
-        if (input.dataset?.rawValue) {
-            const parsed = parseFloat(input.dataset.rawValue);
-            return Number.isFinite(parsed) ? parsed : 0;
-        }
-        const parsed = parseFloat((input.value ?? '0').toString().replace(',', '.'));
-        return Number.isFinite(parsed) ? parsed : 0;
-    };
 })(window.PHTEProfitLoss = window.PHTEProfitLoss || {});

@@ -98,10 +98,7 @@ namespace ProcurementHTE.Core.Services
                         item.ProcOfferId,
                         itemName,
                         item.UnitQty,
-                        item.BasePrice,
-                        item.TarifAdd,
-                        item.KmPer25,
-                        item.OperatorCost,
+                        procOffer?.Distance,
                         item.Revenue,
                         quantity,
                         unitRevenue,
@@ -118,7 +115,6 @@ namespace ProcurementHTE.Core.Services
                 TotalRevenue = totalRevenue,
                 AccrualAmount = pnl.AccrualAmount ?? totalRevenue,
                 RealizationAmount = pnl.RealizationAmount ?? totalOperatorCost,
-                Distance = pnl.Distance ?? 0,
                 SelectedVendorId = pnl.SelectedVendorId ?? "",
                 SelectedVendorName =
                     vendorComparisons.FirstOrDefault(vendor => vendor.IsSelected)?.VendorName

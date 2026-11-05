@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers.ArPickup
 {
-    [Authorize(Roles = "Admin, AR")]
+    [Authorize]
     [Route("ArPickup")]
     public class ArPickupController : Controller
     {
@@ -79,6 +80,7 @@ namespace ProcurementHTE.Web.Controllers.ArPickup
             return View(procurements);
         }
 
+        [Authorize(Roles = ActionRoles.Ar)]
         [HttpPost("Pickup/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Pickup(string id)

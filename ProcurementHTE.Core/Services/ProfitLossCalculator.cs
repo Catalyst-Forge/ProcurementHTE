@@ -4,6 +4,10 @@ namespace ProcurementHTE.Core.Services
 {
     public static class ProfitLossCalculator
     {
+        /// <summary>Revenue is typed per line, so the unit price comes from it.</summary>
+        public static decimal UnitPrice(ProfitLossItem item) =>
+            item.UnitQty > 0 ? item.Revenue / item.UnitQty : 0m;
+
         public static (
             string vendorId,
             decimal totalFinal,

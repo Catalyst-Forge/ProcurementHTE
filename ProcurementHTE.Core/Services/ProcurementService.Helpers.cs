@@ -50,7 +50,6 @@ public partial class ProcurementService
         existing.SpmpNumber = updated.SpmpNumber;
         existing.MemoNumber = updated.MemoNumber;
         existing.OeNumber = updated.OeNumber;
-        existing.RaNumber = updated.RaNumber;
         existing.ProjectCode = updated.ProjectCode;
         existing.LtcName = updated.LtcName;
         existing.Note = updated.Note;

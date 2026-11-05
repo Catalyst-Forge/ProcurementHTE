@@ -85,6 +85,10 @@
                             {
                                 <span class="badge bg-success">Manager</span>
                             }
+                            @if (User.IsInRole("Vice President"))
+                            {
+                                <span class="badge bg-warning text-dark">Vice President</span>
+                            }
                         </div>
                     </div>
                 </div>

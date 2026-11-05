@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using ProcurementHTE.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Authorization;
@@ -6,6 +8,24 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Cancel)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(string id, CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrEmpty(userId))
+        {
+            TempData["ErrorMessage"] = "Procurement tidak valid";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var result = await _trackingService.CancelProcurementAsync(id, userId, ct);
+        TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = Permissions.Procurement.Edit)]
@@ -50,6 +70,7 @@ public partial class ProcurementsController
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = Permissions.Procurement.Edit)]

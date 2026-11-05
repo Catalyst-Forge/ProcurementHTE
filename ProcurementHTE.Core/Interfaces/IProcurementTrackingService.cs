@@ -32,41 +32,49 @@ namespace ProcurementHTE.Core.Interfaces
         );
 
         /// <summary>
-        /// Submit No ISPA untuk procurement (status: OnSubmitISPA → OnSubmitHardcopy)
+        /// Tahap submit yang sedang terbuka untuk PR ini (null kalau belum bisa submit)
         /// </summary>
-        Task<ProcurementTrackingResponse> SubmitIspaAsync(
-            string procurementId,
-            string ispaNumber,
-            string submittedByUserId,
-            DateTime ispaDate,
-            DateTime ispaSubmitDate,
-            string ispaFileName,
-            string ispaContentType,
-            long ispaFileSize,
-            Stream fileStream,
+        Task<PrSubmitState?> GetPrSubmitStateAsync(string prId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Submit INPRO sekali untuk semua pekerjaan di PR (OnSubmitISPA → OnSubmitHardcopy)
+        /// </summary>
+        Task<ProcurementTrackingResponse> SubmitInproAsync(
+            string prId,
+            PrSubmitActor actor,
+            string inproNumber,
+            DateTime inproDate,
+            DateTime inproSubmitDate,
+            PrFileUpload file,
             CancellationToken ct = default
         );
 
         /// <summary>
-        /// Submit Justification document with hardcopy evidence untuk procurement (status: OnSubmitHardcopy → OnSubmitPO)
+        /// Upload hardcopy evidence sekali untuk semua pekerjaan di PR (OnSubmitHardcopy → OnSubmitPO)
         /// </summary>
-        Task<ProcurementTrackingResponse> SubmitJustificationAsync(
-            string procurementId,
-            string submittedByUserId,
-            string hardcopyEvidenceFileName,
-            string hardcopyEvidenceContentType,
-            long hardcopyEvidenceFileSize,
-            Stream fileStream,
+        Task<ProcurementTrackingResponse> SubmitHardcopyAsync(
+            string prId,
+            PrSubmitActor actor,
+            PrFileUpload file,
             CancellationToken ct = default
         );
 
         /// <summary>
-        /// Submit No PO dari SCM untuk procurement (status: OnSubmitPO → DonePO)
+        /// Submit nomor PO sekali untuk semua pekerjaan di PR (OnSubmitPO → DonePO)
         /// </summary>
         Task<ProcurementTrackingResponse> SubmitPoAsync(
-            string procurementId,
+            string prId,
+            PrSubmitActor actor,
             string poNumber,
-            string submittedByUserId,
+            CancellationToken ct = default
+        );
+
+        /// <summary>
+        /// Cancel pekerjaan kapan saja sebelum selesai; data tetap tercatat
+        /// </summary>
+        Task<ProcurementTrackingResponse> CancelProcurementAsync(
+            string procurementId,
+            string cancelledByUserId,
             CancellationToken ct = default
         );
 
@@ -125,7 +133,7 @@ namespace ProcurementHTE.Core.Interfaces
         /// Trigger status change dari approval (digunakan oleh ApprovalService)
         /// Workflow (dynamic based on CT):
         /// - Base: WaitingApprovalAnalyst → WaitingApprovalAsstManager → WaitingApprovalManager → OnSubmitISPA
-        /// - CT > 500M: ... → WaitingApprovalVP → OnSubmitISPA
+        /// - CT > 300M: ... → WaitingApprovalVP → OnSubmitISPA
         /// - CT > 5B: ... → WaitingApprovalVP → WaitingApprovalOpDir → OnSubmitISPA
         /// - CT > 10B: ... → WaitingApprovalVP → WaitingApprovalOpDir → WaitingApprovalPresDir → OnSubmitISPA
         /// </summary>
@@ -154,7 +162,7 @@ namespace ProcurementHTE.Core.Interfaces
         Task<string?> GetHardcopyEvidenceUrlAsync(string procurementId, CancellationToken ct = default);
 
         /// <summary>
-        /// Get presigned URL for ISPA file from MinIO
+        /// Get presigned URL for INPRO file from MinIO
         /// </summary>
         Task<string?> GetIspaFileUrlAsync(string procurementId, CancellationToken ct = default);
     }

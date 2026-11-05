@@ -22,7 +22,6 @@ public partial class ProcurementsController
             JobTypeName = procurement.JobType?.TypeName,
             AccrualAmount = dto.AccrualAmount,
             RealizationAmount = dto.RealizationAmount,
-            Distance = dto.Distance,
             TglMulaiSewa = dto.TglMulaiSewa,
             TglMulaiMoving = dto.TglMulaiMoving,
             Items = BuildProfitLossEditItems(dto.Items ?? [], offerItems),
@@ -80,10 +79,7 @@ public partial class ProcurementsController
                 ProcOfferId = existingItem.ProcOfferId,
                 Quantity = existingItem.Quantity,
                 QtyItems = existingItem.QtyItems,
-                TarifAwal = existingItem.TarifAwal,
-                TarifAdd = existingItem.TarifAdd,
-                KmPer25 = existingItem.KmPer25,
-                OperatorCost = existingItem.OperatorCost,
+                Revenue = existingItem.Revenue,
                 UnitRevenue = offer.UnitRevenue,
             };
         }
@@ -93,10 +89,6 @@ public partial class ProcurementsController
             ProcOfferId = offer.ProcOfferId,
             Quantity = (int)offer.Quantity,
             QtyItems = (int)offer.Quantity,
-            TarifAwal = 0m,
-            TarifAdd = 0m,
-            KmPer25 = 0m,
-            OperatorCost = 0m,
             UnitRevenue = offer.UnitRevenue,
         };
     }

@@ -12,7 +12,7 @@
             <th class="text-end">Unit Items</th>
             <th class="text-end">Quantity</th>
             <th class="text-end">Unit Revenue</th>
-            <th class="text-end">Base Price</th>
+            <th class="text-end">Jarak</th>
             <th class="text-end">Revenue</th>
         </tr>
     </thead>
@@ -25,7 +25,7 @@
                 <td class="text-end">@(it.UnitItems ?? "-")</td>
                 <td class="text-end">@(it.Quantity?.ToString() ?? "-")</td>
                 <td class="text-end">@(it.UnitRevenue ?? "-")</td>
-                <td class="text-end">@it.BasePrice.ToIDR()</td>
+                <td class="text-end">@(it.Distance ?? "-")</td>
                 <td class="text-end fw-semibold">@it.Revenue.ToIDR()</td>
             </tr>
         }

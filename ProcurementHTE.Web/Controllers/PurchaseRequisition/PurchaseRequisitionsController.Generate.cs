@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Models.DTOs;
@@ -6,6 +8,7 @@ namespace ProcurementHTE.Web.Controllers.PR;
 
 public partial class PurchaseRequisitionsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GenerateDocument(
@@ -53,6 +56,7 @@ public partial class PurchaseRequisitionsController
         return RedirectToAction(nameof(Details), new { id = prId });
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GenerateDocumentAjax(

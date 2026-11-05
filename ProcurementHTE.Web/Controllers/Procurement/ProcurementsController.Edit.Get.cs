@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Authorization;
@@ -9,6 +10,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Procurement)]
     [Authorize(Policy = Permissions.Procurement.Edit)]
     public async Task<IActionResult> Edit(string id)
     {
@@ -56,7 +58,6 @@ public partial class ProcurementsController
             SpmpNumber = ProcurementReferenceNumberFormatter.RemoveSuffixIfNeeded(procurement.SpmpNumber),
             MemoNumber = procurement.MemoNumber,
             OeNumber = ProcurementReferenceNumberFormatter.RemoveSuffixIfNeeded(procurement.OeNumber),
-            RaNumber = procurement.RaNumber,
             NoRig = procurement.NoRig,
             NoHte = procurement.NoHte,
             ProjectCode = procurement.ProjectCode,

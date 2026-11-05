@@ -1,3 +1,4 @@
+using ProcurementHTE.Web.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementDocumentsController
 {
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -70,6 +72,7 @@ public partial class ProcurementDocumentsController
         }
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> PreviewGenerated(string procurementId, string documentTypeId)

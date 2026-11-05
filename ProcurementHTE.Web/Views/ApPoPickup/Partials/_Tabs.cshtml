@@ -10,10 +10,13 @@
             <i class="bi bi-hourglass-split"></i> Waiting Pickup
         </a>
     </li>
+    @if (ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApPo))
+    {
     <li class="nav-item">
         <a class="nav-link @(currentTab == "mypickups" ? "active" : "")" 
            href="@Url.Action("Index", new { tab = "mypickups" })">
             <i class="bi bi-person-check"></i> My Pickups
         </a>
     </li>
+    }
 </ul>

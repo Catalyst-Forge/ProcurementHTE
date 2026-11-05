@@ -5,7 +5,7 @@ using ProcurementHTE.Core.Interfaces;
 
 namespace ProcurementHTE.Web.Controllers.PR;
 
-[Authorize(Roles = "Admin, AP-PO")]
+[Authorize]
 public partial class PurchaseRequisitionsController : Controller
 {
     private const string ActivePageName = "Index PR Service";

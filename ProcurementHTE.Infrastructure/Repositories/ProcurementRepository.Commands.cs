@@ -166,6 +166,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             existing.ItemPenawaran = updated.ItemPenawaran;
             existing.Qty = updated.Qty;
             existing.Unit = updated.Unit;
+            existing.Distance = updated.Distance;
             existing.UnitRevenue = updated.UnitRevenue;
             _context.Entry(existing).State = EntityState.Modified;
         }

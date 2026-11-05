@@ -21,6 +21,7 @@ public partial class ProcurementTrackingController
         var isAnalyst = User.IsInRole("Analyst HTE & LTS");
         var isAsstManager = User.IsInRole("Assistant Manager HTE");
         var isManager = User.IsInRole("Manager Transport & Logistic");
+        var isVicePresident = User.IsInRole("Vice President");
 
         if (isAdmin && tracking.IsWaitingApproval)
             return true;
@@ -30,6 +31,7 @@ public partial class ProcurementTrackingController
             ProcurementStatus.WaitingApprovalAnalyst => isAnalyst,
             ProcurementStatus.WaitingApprovalAsstManager => isAsstManager,
             ProcurementStatus.WaitingApprovalManager => isManager,
+            ProcurementStatus.WaitingApprovalVP => isVicePresident,
             _ => false,
         };
     }
@@ -39,7 +41,8 @@ public partial class ProcurementTrackingController
         return User.IsInRole("Admin")
             || User.IsInRole("Analyst HTE & LTS")
             || User.IsInRole("Assistant Manager HTE")
-            || User.IsInRole("Manager Transport & Logistic");
+            || User.IsInRole("Manager Transport & Logistic")
+            || User.IsInRole("Vice President");
     }
 
     private bool CanUserResubmitRevision(ProcurementTrackingDto tracking)

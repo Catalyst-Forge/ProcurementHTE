@@ -23,7 +23,6 @@ public partial class ProcurementsController
             ModelState.AddModelError(nameof(editViewModel.JobName), "Nama pekerjaan wajib diisi");
 
         ValidateEditDates(editViewModel);
-        ValidateEditRaNumber(editViewModel);
         ValidateEditApprovers(editViewModel);
 
         var status = await _queryService.GetStatusByNameAsync(submitAction ?? "Created");
@@ -48,20 +47,6 @@ public partial class ProcurementsController
         )
         {
             ModelState.AddModelError(nameof(editViewModel.EndDate), "Tanggal selesai harus setelah tanggal mulai");
-        }
-    }
-
-    private void ValidateEditRaNumber(ProcurementEditViewModel editViewModel)
-    {
-        if (
-            editViewModel.ProcurementCategory == ProcurementCategory.Jasa
-            && string.IsNullOrWhiteSpace(editViewModel.RaNumber)
-        )
-        {
-            ModelState.AddModelError(
-                nameof(editViewModel.RaNumber),
-                "RA Number wajib diisi untuk jenis pengadaan jasa"
-            );
         }
     }
 

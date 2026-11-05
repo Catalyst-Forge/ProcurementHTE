@@ -1,0 +1,54 @@
+@model ProcurementHTE.Web.Models.ViewModels.SimpleProfitLossViewModel
+@{
+    ViewData["Title"] = "Profit & Loss";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">Profit &amp; Loss</h1>
+        <p class="text-muted mb-0 small">@Model.ProcNum, kontrak @Model.ContractType</p>
+    </div>
+    <a asp-action="Details" asp-route-id="@Model.ProcurementId" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</header>
+
+<form asp-action="SimpleProfitLossPost" method="post" class="card shadow-sm" hx-boost="false">
+    <div class="card-body">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="ProcurementId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="SelectedVendorId" class="form-label"></label>
+                <select asp-for="SelectedVendorId" class="form-select"
+                        asp-items="@(new SelectList(Model.Vendors, "VendorId", "VendorName"))">
+                    <option value="">-- Pilih vendor --</option>
+                </select>
+                <span asp-validation-for="SelectedVendorId" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Revenue" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input asp-for="Revenue" asp-format="{0:0}" type="number" min="1" step="1" class="form-control text-end" />
+                </div>
+                <span asp-validation-for="Revenue" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Cost" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input asp-for="Cost" asp-format="{0:0}" type="number" min="1" step="1" class="form-control text-end" />
+                </div>
+                <span asp-validation-for="Cost" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer bg-transparent d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>Simpan
+        </button>
+    </div>
+</form>

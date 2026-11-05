@@ -5,43 +5,26 @@ namespace ProcurementHTE.Core.Services
 {
     public partial class ProfitLossService
     {
-        private (
-            decimal operatorCostTotal,
-            decimal revenueTotal,
-            List<ProfitLossItem> item
-        ) ComputeItems(List<ProfitLossItemInputDto> input, string jobTypeName, decimal? distance)
+        private static (decimal revenueTotal, List<ProfitLossItem> items) BuildItems(
+            List<ProfitLossItemInputDto> input,
+            bool usesDuration
+        )
         {
-            var items = new List<ProfitLossItem>();
-            decimal opTotal = 0m;
-            decimal revTotal = 0m;
-
-            foreach (var dto in input)
-            {
-                var (item, operatorCost, revenue) = BuildCalculatedItem(
-                    dto,
-                    jobTypeName,
-                    distance
-                );
-                items.Add(item);
-                opTotal += operatorCost;
-                revTotal += revenue;
-            }
-
-            return (opTotal, revTotal, items);
+            var items = input.Select(dto => BuildItem(dto, usesDuration)).ToList();
+            return (items.Sum(item => item.Revenue), items);
         }
 
-        private (decimal operatorCostTotal, decimal revenueTotal) ApplyUpdatedItems(
+        private static decimal ApplyUpdatedItems(
             ProfitLoss pnl,
             ProfitLossUpdateDto dto,
-            string jobTypeName
+            bool usesDuration
         )
         {
             var itemsByOffer = pnl.Items.ToDictionary(
                 x => x.ProcOfferId,
                 StringComparer.OrdinalIgnoreCase
             );
-            decimal opTotal = 0m;
-            decimal revTotal = 0m;
+            decimal revenueTotal = 0m;
 
             foreach (var input in dto.Items)
             {
@@ -57,68 +40,31 @@ namespace ProcurementHTE.Core.Services
                     itemsByOffer[input.ProcOfferId] = entity;
                 }
 
-                var (calculated, operatorCost, revenue) = BuildCalculatedItem(
-                    input,
-                    jobTypeName,
-                    dto.Distance
-                );
-                entity.UnitQty = calculated.UnitQty;
-                entity.BasePrice = calculated.BasePrice;
-                entity.TarifAdd = calculated.TarifAdd;
-                entity.KmPer25 = calculated.KmPer25;
-                entity.OperatorCost = calculated.OperatorCost;
-                entity.Quantity = calculated.Quantity;
-                entity.Revenue = revenue;
+                var updated = BuildItem(input, usesDuration);
+                entity.UnitQty = updated.UnitQty;
+                entity.BasePrice = updated.BasePrice;
+                entity.TarifAdd = updated.TarifAdd;
+                entity.KmPer25 = updated.KmPer25;
+                entity.OperatorCost = updated.OperatorCost;
+                entity.Quantity = updated.Quantity;
+                entity.Revenue = updated.Revenue;
 
-                opTotal += operatorCost;
-                revTotal += revenue;
+                revenueTotal += updated.Revenue;
             }
 
-            return (opTotal, revTotal);
+            return revenueTotal;
         }
 
-        private (ProfitLossItem item, decimal operatorCost, decimal revenue) BuildCalculatedItem(
-            ProfitLossItemInputDto input,
-            string jobTypeName,
-            decimal? distance
-        )
+        private static ProfitLossItem BuildItem(ProfitLossItemInputDto input, bool usesDuration)
         {
-            var usesQuantityForCalc = !_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName);
-            var unitQty = usesQuantityForCalc ? input.QtyItems : input.Quantity;
-            var quantityDurasi = usesQuantityForCalc ? input.Quantity : (decimal?)null;
-
-            var item = new ProfitLossItem
+            return new ProfitLossItem
             {
                 ProcOfferId = input.ProcOfferId,
-                UnitQty = unitQty,
-                BasePrice = input.TarifAwal,
-                TarifAdd = input.TarifAdd,
-                KmPer25 = input.KmPer25,
-                Quantity = quantityDurasi,
+                UnitQty = usesDuration ? input.QtyItems : input.Quantity,
+                Quantity = usesDuration ? input.Quantity : null,
+                Revenue = input.Revenue,
                 ItemName = "",
             };
-
-            var revenue = _jobTypeCalc.CalculateItemRevenue(item, jobTypeName, distance);
-            decimal operatorCost;
-
-            if (_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName))
-            {
-                var kmPer25 = _jobTypeCalc.CalculateKmPer25(distance ?? 0);
-                operatorCost = _jobTypeCalc.CalculateOperatorCost(input.TarifAdd, kmPer25);
-                item.KmPer25 = kmPer25;
-                item.OperatorCost = operatorCost;
-                item.Quantity = null;
-            }
-            else
-            {
-                operatorCost = 0m;
-                item.TarifAdd = null;
-                item.KmPer25 = null;
-                item.OperatorCost = null;
-            }
-
-            item.Revenue = revenue;
-            return (item, operatorCost, revenue);
         }
     }
 }

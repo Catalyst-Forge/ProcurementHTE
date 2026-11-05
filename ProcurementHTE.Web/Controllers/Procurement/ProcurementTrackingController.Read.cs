@@ -18,12 +18,6 @@ public partial class ProcurementTrackingController
         CancellationToken ct = default
     )
     {
-        if (!HasApproverRole())
-        {
-            TempData["Error"] = "Anda tidak memiliki akses untuk melihat pending approvals.";
-            return RedirectToAction(nameof(Index));
-        }
-
         var userId = _userManager.GetUserId(User);
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");

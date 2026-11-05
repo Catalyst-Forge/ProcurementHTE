@@ -10,10 +10,7 @@
             <th>Offer Item</th>
             <th class="text-end">Qty Items</th>
             <th class="text-end">Unit Items</th>
-            <th class="text-end">Base Price (400km)</th>
-            <th class="text-end">Additional Rate</th>
-            <th class="text-end">KM/25</th>
-            <th class="text-end">Operator Cost</th>
+            <th class="text-end">Jarak</th>
             <th class="text-end">Revenue</th>
         </tr>
     </thead>
@@ -24,17 +21,14 @@
                 <td class="w-25">@it.ItemName</td>
                 <td class="text-end">@it.UnitQty</td>
                 <td class="text-end">@(it.UnitItems ?? "-")</td>
-                <td class="text-end">@it.BasePrice.ToIDR()</td>
-                <td class="text-end">@(it.TarifAdd?.ToIDR() ?? "-")</td>
-                <td class="text-end">@(it.KmPer25?.ToString("N2") ?? "-")</td>
-                <td class="text-end">@(it.OperatorCost?.ToIDR() ?? "-")</td>
+                <td class="text-end">@(it.Distance ?? "-")</td>
                 <td class="text-end fw-semibold">@it.Revenue.ToIDR()</td>
             </tr>
         }
     </tbody>
     <tfoot>
         <tr class="table-light">
-            <th class="text-end" colspan="7">Total</th>
+            <th class="text-end" colspan="4">Total</th>
             <th class="text-end fw-bold">@items.Sum(x => x.Revenue).ToIDR()</th>
         </tr>
     </tfoot>

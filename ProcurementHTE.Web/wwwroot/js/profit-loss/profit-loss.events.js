@@ -7,7 +7,6 @@
         wireSubmit(ctx);
         app.wireHtmxDebug(ctx);
         wireDocumentInputs(ctx);
-        app.wireDistance(ctx);
         app.wireLetterModal(ctx);
     };
 
@@ -149,7 +148,7 @@
             if (!target) return;
             if (target.matches(ctx.currencySelector)) {
                 app.updateCurrencyInput(ctx, target, true);
-            } else if (target.matches('[data-unit-qty],[data-quantity-durasi],[data-km]')) {
+            } else if (target.matches('[data-unit-qty],[data-quantity-durasi]')) {
                 app.recalcHeader(ctx);
             } else if (target.matches('[data-quantity-input],[data-trip-input]')) {
                 app.recalcSummary(ctx);

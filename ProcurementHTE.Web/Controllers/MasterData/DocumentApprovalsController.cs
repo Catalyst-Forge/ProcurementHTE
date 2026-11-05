@@ -7,7 +7,7 @@ using ProcurementHTE.Web.Extensions;
 
 namespace ProcurementHTE.Web.Controllers.MasterData;
 
-[Authorize(Roles = "Admin, AP-PO")]
+[Authorize(Roles = "Admin")]
 public class DocumentApprovalsController : Controller
 {
     private readonly IDocumentApprovalsService _service;

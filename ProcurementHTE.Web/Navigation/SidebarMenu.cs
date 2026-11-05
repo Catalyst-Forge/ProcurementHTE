@@ -37,13 +37,6 @@ public sealed record SidebarSection(string? Label, IReadOnlyList<SidebarItem> It
 public static class SidebarMenu
 {
     private const string Admin = "Admin";
-    private const string Operation = "Operation";
-    private const string Analyst = "Analyst HTE & LTS";
-    private const string AssistantManager = "Assistant Manager HTE";
-    private const string ManagerTransport = "Manager Transport & Logistic";
-    private const string ApPo = "AP-PO";
-    private const string ApInvoice = "AP-Invoice";
-    private const string Ar = "AR";
 
     private static readonly string[] DashboardControllers =
     [
@@ -74,20 +67,19 @@ public static class SidebarMenu
         new(
             "Pengadaan",
             [
-                new("Procurements", "bi-briefcase", "Procurements", "Index Procurements", [Admin, Operation, Analyst]),
-                new("PR Service", "bi-journal-text", "PurchaseRequisitions", "Index PR Service", [Admin, ApPo]),
-                new("LDP", "bi-table", "Ldp", "LDP Data"),
+                new("Procurements", "bi-briefcase", "Procurements", "Index Procurements"),
+                new("PR Service", "bi-journal-text", "PurchaseRequisitions", "Index PR Service"),
+                new("Laporan Data Procurement", "bi-table", "Ldp", "LDP Data"),
             ]
         ),
         new(
-            "Approval & Pelacakan",
+            "Persetujuan & Pelacakan",
             [
                 new(
                     "Pending Approvals",
                     "bi-hourglass-split",
                     "ProcurementTracking",
-                    "Pending Approvals",
-                    [Admin, Analyst, AssistantManager, ManagerTransport]
+                    "Pending Approvals"
                 )
                 {
                     Action = "PendingApprovals",
@@ -103,26 +95,26 @@ public static class SidebarMenu
         new(
             "Keuangan",
             [
-                new("AP-PO Pickup", "bi-clipboard-check", "ApPoPickup", "AP-PO Pickup", [Admin, ApPo]),
-                new("AP-Invoice Pickup", "bi-receipt", "ApInvoicePickup", "AP-Invoice Pickup", [Admin, ApInvoice]),
-                new("AR Pickup", "bi-box-arrow-in-down", "ArPickup", "AR Pickup", [Admin, Ar]),
+                new("Account Payable Purchase Order", "bi-clipboard-check", "ApPoPickup", "AP-PO Pickup"),
+                new("Account Payable Invoice", "bi-receipt", "ApInvoicePickup", "AP-Invoice Pickup"),
+                new("Account Receivable", "bi-box-arrow-in-down", "ArPickup", "AR Pickup"),
                 new("Data Accrual", "bi-calculator", "Accrual", "Data Accrual"),
             ]
         ),
         new(
             "Master Data",
             [
-                new("Vendors", "bi-shop", "Vendors", "Vendors", [Admin, ApPo]),
-                new("Procurement Types", "bi-tags", "JobType", "Index Procurement Types", [Admin, ApPo]),
-                new("Document Types", "bi-file-earmark-text", "DocumentType", "Index Document Types", [Admin, ApPo]),
+                new("Vendors", "bi-shop", "Vendors", "Vendors", [Admin]),
+                new("Procurement Types", "bi-tags", "JobType", "Index Procurement Types", [Admin]),
+                new("Document Types", "bi-file-earmark-text", "DocumentType", "Index Document Types", [Admin]),
             ]
         ),
         new(
             "Rules & Mapping",
             [
-                new("Job Type Documents", "bi-diagram-3", "JobTypeDocument", "Index Job Type Documents", [Admin, ApPo]),
-                new("Document Approvals", "bi-check2-square", "DocumentApprovals", "Index Document Approvals", [Admin, ApPo]),
-                new("Document Approval Rules", "bi-sliders", "DocumentApprovalRules", "Index Document Approval Rules", [Admin, ApPo]),
+                new("Job Type Documents", "bi-diagram-3", "JobTypeDocument", "Index Job Type Documents", [Admin]),
+                new("Document Approvals", "bi-check2-square", "DocumentApprovals", "Index Document Approvals", [Admin]),
+                new("Document Approval Rules", "bi-sliders", "DocumentApprovalRules", "Index Document Approval Rules", [Admin]),
             ]
         ),
         new(

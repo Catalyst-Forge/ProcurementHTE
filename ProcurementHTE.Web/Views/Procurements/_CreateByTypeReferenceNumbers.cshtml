@@ -40,15 +40,6 @@
                 <small class="form-text text-muted">Masukkan prefix saja (contoh: OE-TRS)</small>
                 <span class="text-danger" asp-validation-for="Procurement.OeNumber"></span>
             </div>
-
-            <div class="col-md-6" id="raNumberWrapper">
-                @if (Model.Procurement?.ProcurementCategory == ProcurementCategory.Jasa)
-                {
-                    <label class="form-label" asp-for="Procurement.RaNumber"></label>
-                    <input class="form-control" asp-for="Procurement.RaNumber" />
-                    <span class="text-danger" asp-validation-for="Procurement.RaNumber"></span>
-                }
-            </div>
         </div>
 
         <div class="row g-3 mt-0">

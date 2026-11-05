@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models.DTOs;
@@ -8,6 +10,7 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpGet]
     public async Task<IActionResult> EditProfitLoss(string id)
     {
@@ -24,6 +27,7 @@ public partial class ProcurementsController
         }
     }
 
+    [Authorize(Roles = ActionRoles.Procurement)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditProfitLoss(ProfitLossEditViewModel viewModel)
@@ -103,7 +107,6 @@ public partial class ProcurementsController
             ProcurementId = viewModel.ProcurementId,
             AccrualAmount = viewModel.AccrualAmount,
             RealizationAmount = viewModel.RealizationAmount,
-            Distance = viewModel.Distance,
             TglMulaiSewa = viewModel.TglMulaiSewa,
             TglMulaiMoving = viewModel.TglMulaiMoving,
             Items = (viewModel.Items ?? []).Select(ToProfitLossItemInputDto).ToList(),
@@ -126,10 +129,7 @@ public partial class ProcurementsController
             ProcOfferId = item.ProcOfferId,
             Quantity = item.Quantity,
             QtyItems = item.QtyItems,
-            TarifAwal = item.TarifAwal ?? 0m,
-            TarifAdd = item.TarifAdd ?? 0m,
-            KmPer25 = item.KmPer25 ?? 0m,
-            OperatorCost = item.OperatorCost ?? 0m,
+            Revenue = item.Revenue ?? 0m,
             UnitRevenue = item.UnitRevenue,
         };
     }

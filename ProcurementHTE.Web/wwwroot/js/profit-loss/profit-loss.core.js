@@ -18,7 +18,6 @@
             vendorsHost: document.getElementById('vendors'),
             addVendorBtn: document.getElementById('btnAddVendor'),
             plForm: document.getElementById('pl-form'),
-            distanceInput: document.getElementById('Distance'),
             letterPreviewModal: document.getElementById('letterPreviewModal'),
             letterPreviewFrame: document.getElementById('letterPreviewFrame'),
             bootstrapModal: window.bootstrap?.Modal,

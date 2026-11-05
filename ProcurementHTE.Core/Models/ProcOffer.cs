@@ -21,6 +21,12 @@ public class ProcOffer
     public string Unit { get; set; } = null!;
 
     /// <summary>
+    /// Jarak - diisi manual apa adanya, tidak dipakai untuk perhitungan
+    /// </summary>
+    [MaxLength(100)]
+    public string? Distance { get; set; }
+
+    /// <summary>
     /// Unit of Revenue - satuan untuk perhitungan revenue (UnitType code: TRIP, HARI, JAM, LSP, KALI)
     /// Nullable karena diisi saat create/edit PNL
     /// </summary>

@@ -53,14 +53,8 @@ public partial class ProcurementsController
             if (item.Quantity <= 0)
                 ModelState.AddModelError($"Items[{i}].Quantity", "Quantity harus lebih dari 0");
 
-            if (item.TarifAwal < 0m)
-                ModelState.AddModelError($"Items[{i}].TarifAwal", "Tarif Awal tidak boleh negatif");
-
-            if (item.TarifAdd < 0m)
-                ModelState.AddModelError($"Items[{i}].TarifAdd", "Tarif Add tidak boleh negatif");
-
-            if (item.OperatorCost < 0m)
-                ModelState.AddModelError($"Items[{i}].OperatorCost", "Operator Cost tidak boleh negatif");
+            if (item.Revenue is null or <= 0m)
+                ModelState.AddModelError($"Items[{i}].Revenue", "Revenue wajib diisi");
         }
     }
 
@@ -71,8 +65,5 @@ public partial class ProcurementsController
 
         if (viewModel.RealizationAmount.HasValue && viewModel.RealizationAmount.Value < 0)
             ModelState.AddModelError(nameof(viewModel.RealizationAmount), "Realization Amount tidak boleh negatif");
-
-        if (viewModel.Distance < 0)
-            ModelState.AddModelError(nameof(viewModel.Distance), "Distance tidak boleh negatif");
     }
 }

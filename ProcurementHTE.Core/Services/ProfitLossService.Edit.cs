@@ -28,7 +28,6 @@ namespace ProcurementHTE.Core.Services
             _jobTypeCalc.ValidateRequiredFields(
                 new ProfitLoss
                 {
-                    Distance = dto.Distance,
                     ProcurementId = dto.ProcurementId,
                     TglMulaiSewa = dto.TglMulaiSewa,
                     TglMulaiMoving = dto.TglMulaiMoving,
@@ -38,7 +37,11 @@ namespace ProcurementHTE.Core.Services
 
             var newOffers = BuildVendorOffersMulti(dto.Vendors, dto.ProcurementId, jobTypeName);
             ValidateVendorOffers(newOffers);
-            var (_, revTotal) = ApplyUpdatedItems(pnl, dto, jobTypeName);
+            var revTotal = ApplyUpdatedItems(
+                pnl,
+                dto,
+                !_jobTypeCalc.IsDistanceRequiredForCalculation(jobTypeName)
+            );
 
             if (pnl.Items.Count == 0)
                 throw new InvalidOperationException("Minimal 1 item PnL diperlukan.");
@@ -61,7 +64,6 @@ namespace ProcurementHTE.Core.Services
             pnl.ProfitPercent = revTotal > 0 ? (pnl.Profit / revTotal) * 100m : 0m;
             pnl.AccrualAmount = dto.AccrualAmount ?? 0m;
             pnl.RealizationAmount = dto.RealizationAmount ?? 0m;
-            pnl.Distance = dto.Distance;
             pnl.TglMulaiSewa = dto.TglMulaiSewa;
             pnl.TglMulaiMoving = dto.TglMulaiMoving;
             pnl.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;

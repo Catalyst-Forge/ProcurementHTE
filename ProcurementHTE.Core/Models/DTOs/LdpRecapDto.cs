@@ -54,13 +54,9 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string? StatusAccrual { get; set; }
 
         // Document Dates (RKS, BOQ, Memo, RA)
-        public DateTime? RksTglMulai { get; set; }
         public DateTime? RksTglSelesai { get; set; }
-        public DateTime? BoqTglMulai { get; set; }
         public DateTime? BoqTglSelesai { get; set; }
-        public DateTime? MemoTglMulai { get; set; }
         public DateTime? MemoTglSelesai { get; set; }
-        public DateTime? RaTglMulai { get; set; }
         public DateTime? RaTglSelesai { get; set; }
 
         // Purchase Requisition
@@ -76,14 +72,8 @@ namespace ProcurementHTE.Core.Models.DTOs
         public DateTime? TanggalSubmitIspa { get; set; }
 
         // Approval Timeline (Mulai/Selesai for each level)
-        public DateTime? ManagerApprovalMulai { get; set; }
         public DateTime? ManagerApprovalSelesai { get; set; }
-        public DateTime? VpApprovalMulai { get; set; }
         public DateTime? VpApprovalSelesai { get; set; }
-        public DateTime? OpDirApprovalMulai { get; set; }
-        public DateTime? OpDirApprovalSelesai { get; set; }
-        public DateTime? PresDirApprovalMulai { get; set; }
-        public DateTime? PresDirApprovalSelesai { get; set; }
 
         // LDP Document Info
         public bool HasLdpDocument { get; set; }

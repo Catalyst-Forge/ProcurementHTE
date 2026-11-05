@@ -39,7 +39,7 @@ public partial class ProcurementTrackingController
         var url = await _trackingService.GetIspaFileUrlAsync(procurementId, ct);
         if (string.IsNullOrEmpty(url))
         {
-            TempData["Error"] = "File ISPA tidak ditemukan.";
+            TempData["Error"] = "File INPRO tidak ditemukan.";
             return RedirectToAction("Details", new { procurementId });
         }
 

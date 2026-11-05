@@ -44,59 +44,6 @@ namespace ProcurementHTE.Core.Services
             };
         }
 
-        public decimal CalculateItemRevenue(
-            ProfitLossItem item,
-            string jobTypeName,
-            decimal? distance
-        )
-        {
-            if (jobTypeName == JOBTYPE_PENGANGKUTAN)
-            {
-                // DISTANCE_BASED formula: (BasePrice + OperatorCost) × UnitQty
-                // OperatorCost = TarifAdd × KmPer25
-                // KmPer25 = (Distance - 400) / 25
-
-                if (!distance.HasValue || distance.Value <= 0)
-                {
-                    throw new InvalidOperationException(
-                        $"Distance wajib diisi untuk JobType {JOBTYPE_PENGANGKUTAN}"
-                    );
-                }
-
-                var kmPer25 = CalculateKmPer25(distance.Value);
-                var tarifAdd = item.TarifAdd ?? 0;
-                var operatorCost = tarifAdd * kmPer25;
-                var basePrice = item.BasePrice;
-
-                return (basePrice + operatorCost) * item.UnitQty;
-            }
-            else // SEWA_UNIT or MOVING - SIMPLE formula
-            {
-                // SIMPLE formula: BasePrice × Quantity × UnitQty
-                if (!item.Quantity.HasValue || item.Quantity.Value <= 0)
-                {
-                    throw new InvalidOperationException(
-                        $"Quantity/Durasi wajib diisi untuk JobType {jobTypeName}"
-                    );
-                }
-
-                return item.BasePrice * item.Quantity.Value * item.UnitQty;
-            }
-        }
-
-        public decimal CalculateKmPer25(decimal distance)
-        {
-            if (distance <= 400)
-                return 0;
-
-            return (distance - 400) / 25;
-        }
-
-        public decimal CalculateOperatorCost(decimal tarifAdd, decimal kmPer25)
-        {
-            return tarifAdd * kmPer25;
-        }
-
         public decimal CalculateVendorTotal(List<VendorOffer> offers)
         {
             return offers
@@ -115,13 +62,6 @@ namespace ProcurementHTE.Core.Services
         {
             switch (jobTypeName)
             {
-                case JOBTYPE_PENGANGKUTAN:
-                    if (!profitLoss.Distance.HasValue || profitLoss.Distance.Value <= 0)
-                    {
-                        throw new InvalidOperationException("Distance wajib diisi untuk Angkutan");
-                    }
-                    break;
-
                 case JOBTYPE_SEWA_UNIT:
                     if (!profitLoss.TglMulaiSewa.HasValue)
                     {

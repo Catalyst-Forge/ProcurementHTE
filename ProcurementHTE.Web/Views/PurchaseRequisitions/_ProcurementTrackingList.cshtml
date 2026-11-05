@@ -34,6 +34,7 @@
                             var statusColor = proc.CurrentStatus switch
                             {
                                 ProcurementHTE.Core.Enums.ProcurementStatus.Rejected => "danger",
+                                ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled => "secondary",
                                 ProcurementHTE.Core.Enums.ProcurementStatus.DonePO => "success",
                                 ProcurementHTE.Core.Enums.ProcurementStatus.OnCreateDP3 => "secondary",
                                 _ when proc.IsWaitingApproval => "warning",
@@ -118,7 +119,7 @@
 
         <div class="card-footer bg-light text-muted small">
             <i class="bi bi-info-circle me-1"></i>
-            Click "Track" to view detailed procurement tracking including QR code, status history, and ISPA/PO submission.
+            Click "Track" to view detailed procurement tracking including QR code, status history, and INPRO/PO submission.
         </div>
     </section>
 }

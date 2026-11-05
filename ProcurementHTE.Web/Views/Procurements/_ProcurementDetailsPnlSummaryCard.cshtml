@@ -37,13 +37,6 @@
                 <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(m => m.Procurement.Status)</dt>
                 <dd class="fw-medium text-secondary-emphasis">@Html.DisplayFor(m => m.Procurement.Status!.StatusName)</dd>
             </dl>
-            @if (Model.IsPengangkutan)
-            {
-                <dl class="col-12 col-sm-6 col-md-3">
-                    <dt class="fw-semibold text-uppercase text-secondary">@Html.DisplayNameFor(m => pnl.Distance)</dt>
-                    <dd class="fw-medium text-secondary-emphasis">@pnl.Distance KM</dd>
-                </dl>
-            }
             <dl class="col-12 col-sm-6 col-md-3">
                 <dt class="fw-semibold text-uppercase text-secondary">Job Type</dt>
                 <dd class="fw-medium text-secondary-emphasis">@Model.JobTypeName</dd>
@@ -58,9 +51,21 @@
 
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="card-title mb-0 h6">Summary</h3>
-            <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-repeat"></i> Recount
-            </a>
+            @if (Model.CanManage)
+            {
+                @if (Model.Procurement.UsesSimpleProfitLoss)
+                {
+                    <a asp-action="SimpleProfitLoss" asp-route-procurementId="@Model.Procurement.ProcurementId" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="EditProfitLoss" asp-route-id="@pnl.ProfitLossId" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-repeat"></i> Recount
+                    </a>
+                }
+            }
         </div>
 
         <div class="row g-3">

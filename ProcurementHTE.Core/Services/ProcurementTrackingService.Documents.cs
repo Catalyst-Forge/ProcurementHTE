@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services;
@@ -36,6 +37,10 @@ public partial class ProcurementTrackingService
                 .Where(jtd =>
                     jtd.ProcurementCategory == null
                     || jtd.ProcurementCategory == procurement.ProcurementCategory
+                )
+                .Where(jtd =>
+                    ContractDocumentRules.Applies(procurement.ContractType, jtd.DocumentType?.Name)
+                    && !ContractDocumentRules.IsOptional(procurement.ContractType, jtd.DocumentType?.Name)
                 )
                 .ToList()
             ?? new List<JobTypeDocuments>();

@@ -7,26 +7,21 @@ namespace ProcurementHTE.Infrastructure.Repositories
 {
     public partial class LdpRepository
     {
+        private static string? BuildKeterangan(Core.Models.Procurement p)
+        {
+            if (p.ProcurementStatus != ProcurementStatus.Cancelled)
+                return p.Note;
+
+            return string.IsNullOrWhiteSpace(p.Note) ? "Cancel" : $"Cancel - {p.Note}";
+        }
+
         private static LdpRecapDto MapToDto(Core.Models.Procurement p, List<Core.Models.VendorRoundLetter> vendorRoundLetters)
         {
             var profitLoss = p.ProfitLosses.FirstOrDefault();
             var selectedVendor = profitLoss?.SelectedVendor;
             var pr = p.PurchaseRequisition;
 
-            // Get document dates by type name
             var procDocs = p.ProcDocuments ?? new List<Core.Models.ProcDocuments>();
-            var rksDoc = procDocs.FirstOrDefault(d =>
-                d.DocumentType?.Name?.ToUpper().Contains("RKS") == true
-            );
-            var boqDoc = procDocs.FirstOrDefault(d =>
-                d.DocumentType?.Name?.ToUpper().Contains("BOQ") == true
-            );
-            var memoDoc = procDocs.FirstOrDefault(d =>
-                d.DocumentType?.Name?.ToUpper().Contains("MEMO") == true
-            );
-            var raDoc = procDocs.FirstOrDefault(d =>
-                d.DocumentType?.Name?.ToUpper().Contains("RA") == true
-            );
 
             // Get vendor round letter for selected vendor
             var vendorLetter =
@@ -56,8 +51,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             // Tanggal Approval Manager = ketika status berubah ke OnSubmitISPA
             // Ini adalah tanggal selesai untuk dokumen RKS, BOQ, MEMO, RA
-            var approvalManagerDate = statusHistories
-                .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.OnSubmitISPA)?.ChangedAt;
+            var approvalManagerDate = p.ManagerApprovalEndAt
+                ?? statusHistories
+                    .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.OnSubmitISPA)?.ChangedAt;
 
             // Tanggal Release PR = ketika status berubah ke OnSubmitHardcopy
             var releasePrDate = statusHistories
@@ -110,19 +106,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 TglDoc = p.DocumentDate,
 
                 // Keterangan - Accrual fields now mapped from Procurement
-                Keterangan1 = p.Note,
+                Keterangan1 = BuildKeterangan(p),
                 PotensiAccrual = p.PotensiAccrual,
                 TglAccrual = p.PotentialAccrualDate,
                 StatusAccrual = p.StatusAccrual,
 
-                // Document Dates - CreatedAt as start date, Manager approval as end date
-                RksTglMulai = rksDoc?.CreatedAt,
+                // Document Dates - completed when the Manager approves
                 RksTglSelesai = approvalManagerDate,
-                BoqTglMulai = boqDoc?.CreatedAt,
                 BoqTglSelesai = approvalManagerDate,
-                MemoTglMulai = memoDoc?.CreatedAt,
                 MemoTglSelesai = approvalManagerDate,
-                RaTglMulai = raDoc?.CreatedAt,
                 RaTglSelesai = approvalManagerDate,
 
                 // Purchase Requisition
@@ -135,17 +127,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 TanggalApprovalManager = approvalManagerDate,
                 TanggalApprovalVp = null,
                 TanggalApprovalDirektur = null,
-                TanggalSubmitIspa = pr?.IspaSubmittedAt,
+                TanggalSubmitIspa = p.IspaSubmitDate ?? p.IspaSubmittedAt,
 
                 // Approval Timeline (Mulai/Selesai for each level)
-                ManagerApprovalMulai = p.ManagerApprovalStartAt,
                 ManagerApprovalSelesai = p.ManagerApprovalEndAt,
-                VpApprovalMulai = p.VpApprovalStartAt,
                 VpApprovalSelesai = p.VpApprovalEndAt,
-                OpDirApprovalMulai = p.OpDirApprovalStartAt,
-                OpDirApprovalSelesai = p.OpDirApprovalEndAt,
-                PresDirApprovalMulai = p.PresDirApprovalStartAt,
-                PresDirApprovalSelesai = p.PresDirApprovalEndAt,
 
                 // LDP Document Info
                 HasLdpDocument = !string.IsNullOrEmpty(p.LdpFileObjectKey),

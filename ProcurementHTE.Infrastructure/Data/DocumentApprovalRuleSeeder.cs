@@ -60,7 +60,7 @@ namespace ProcurementHTE.Infrastructure.Data
                 var userFaried = await FindUserId("faried");       // President Director
 
                 // CT Ranges based on ApprovalConstants thresholds (VP level and above):
-                // 500M - 5B: Manager TNL (Kurniawan) → VP (Agus)
+                // 300M - 5B: Manager TNL (Kurniawan) → VP (Agus)
                 // 5B - 10B: VP (Agus) → Ops Director (Apriandy)
                 // 10B - 15B: Ops Director (Apriandy) → President Director (Faried)
                 // > 15B: Ops Director (Apriandy) → President Director (Faried)

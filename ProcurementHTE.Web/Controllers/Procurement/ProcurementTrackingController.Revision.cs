@@ -8,7 +8,7 @@ public partial class ProcurementTrackingController
 {
     [HttpPost("ReturnForRevision")]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin, Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic")]
+    [Authorize(Roles = "Admin, Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic, Vice President")]
     public async Task<IActionResult> ReturnForRevision(
         string procurementId,
         int[] symptoms,

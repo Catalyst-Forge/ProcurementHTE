@@ -11,6 +11,7 @@
     var documents = ViewBag.Documents as IReadOnlyList<ProcDocuments> ?? [];
     var statusName = Model?.Status?.StatusName;
     var canEdit = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Edit);
+    var canManage = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Procurement);
 
     var prePickupStatuses = new[] { "Draft", "Created", "Waiting Pickup" };
     var isPrePickup = prePickupStatuses.Contains(statusName, StringComparer.OrdinalIgnoreCase);
@@ -35,9 +36,11 @@
         AnalystName = ViewBag.AnalystName as string ?? Model?.AnalystHteUserId,
         AssistantManagerName = ViewBag.AssistantManagerName as string ?? Model?.AssistantManagerUserId,
         ManagerName = ViewBag.ManagerName as string ?? Model?.ManagerUserId,
-        CanPublish = pnl != null && statusName == "Created",
-        CanUnpublish = statusName == "Waiting Pickup",
+        CanManage = canManage,
+        CanPublish = canManage && pnl != null && statusName == "Created",
+        CanUnpublish = canManage && statusName == "Waiting Pickup",
         CanEditDelete = (statusName == "Created" || statusName == "Draft")
+            && canManage
             && canEdit.Succeeded
             && canEditByStatus
     };

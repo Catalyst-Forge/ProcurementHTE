@@ -1,3 +1,5 @@
+using ProcurementHTE.Web.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Models.DTOs;
@@ -87,6 +89,7 @@ public partial class PurchaseRequisitionsController
         }
     }
 
+    [Authorize(Roles = ActionRoles.ApPo)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadProcurementDocument(

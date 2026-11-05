@@ -2,7 +2,9 @@
 @using ProcurementHTE.Core.Models
 @model PagedResult<Procurement>
 @{
+    var canPickup = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApPo);
     var isMyPickups = (bool)(ViewData["IsMyPickups"] ?? false);
+    var prStates = ViewData["PrStates"] as Dictionary<string, ProcurementHTE.Core.Models.DTOs.PrSubmitState> ?? [];
     var badgeClass = ViewData["BadgeClass"] as Func<string, string> ?? (s => "bg-light text-body border");
 }
 
@@ -15,6 +17,8 @@
                 <th class="border-end">WO Number</th>
                 <th class="border-end">Start Date</th>
                 <th class="border-end">Job Type</th>
+                <th class="border-end">Project Region</th>
+                <th class="border-end">RA Number</th>
                 <th class="border-end">Status</th>
                 <th class="text-center width-15-rem">Action</th>
             </tr>
@@ -23,7 +27,7 @@
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="7" class="text-center text-muted">
+                    <td colspan="9" class="text-center text-muted">
                         @if (isMyPickups) {
                             <text>Belum ada procurement yang Anda pickup</text>
                         } else {
@@ -51,6 +55,25 @@
                         <td data-label="Job Type">
                             @(item.JobType?.TypeName ?? "-")
                         </td>
+                        <td data-label="Project Region">
+                            @item.ProjectRegion
+                        </td>
+                        <td data-label="RA Number">
+                            @if (!item.RequiresRaNumber) {
+                                <span class="text-muted">Tidak perlu</span>
+                            } else {
+                                <span>@(string.IsNullOrWhiteSpace(item.RaNumber) ? "-" : item.RaNumber)</span>
+                                @if (isMyPickups && canPickup && item.CanChangeRaNumber) {
+                                    <form method="post" asp-action="SaveRaNumber" asp-route-id="@item.ProcurementId" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="raNumber" value="@item.RaNumber" />
+                                        <button type="button" class="btn btn-outline-primary btn-sm ms-1 btn-ra-number" data-procnum="@item.ProcNum">
+                                            @(string.IsNullOrWhiteSpace(item.RaNumber) ? "Isi" : "Ubah")
+                                        </button>
+                                    </form>
+                                }
+                            }
+                        </td>
                         <td data-label="Status">
                             <span class="badge @badgeClass(item.Status?.StatusName ?? string.Empty)">
                                 @(item.Status?.StatusName ?? "-")
@@ -62,12 +85,29 @@
                                 <i class="bi bi-eye"></i> Details
                             </a>
                             @if (!isMyPickups) {
-                                <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
-                                    @Html.AntiForgeryToken()
-                                    <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
-                                        <i class="bi bi-box-arrow-in-down"></i> Pickup
-                                    </button>
-                                </form>
+                                @if (canPickup) {
+                                    <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                            <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                        </button>
+                                    </form>
+                                }
+                            } else if (canPickup && item.PrId == null && item.ProcurementStatus != ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled) {
+                                <a asp-controller="PurchaseRequisitions" asp-action="Create" class="btn btn-success btn-sm">
+                                    <i class="bi bi-journal-plus"></i> Create PR
+                                </a>
+                            } else if (canPickup && item.PrId != null && prStates.TryGetValue(item.PrId, out var prState) && prState.Step != null) {
+                                var (stepLabel, stepModal) = prState.Step switch {
+                                    ProcurementHTE.Core.Enums.ProcurementStatus.OnSubmitISPA => ("Submit INPRO", "#submitInproModal"),
+                                    ProcurementHTE.Core.Enums.ProcurementStatus.OnSubmitHardcopy => ("Upload Hardcopy", "#submitHardcopyModal"),
+                                    _ => ("Done PO", "#submitPoModal"),
+                                };
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="@stepModal"
+                                        data-pr-id="@item.PrId" data-pr-number="@prState.PrNumber">
+                                    @stepLabel
+                                </button>
                             }
                         </td>
                     </tr>

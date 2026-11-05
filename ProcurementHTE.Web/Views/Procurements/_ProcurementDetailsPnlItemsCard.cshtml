@@ -23,18 +23,4 @@
         </div>
     </div>
 
-    <div class="small text-muted px-3 pb-3">
-        @if (Model.IsPengangkutan)
-        {
-            <text>KM/25 = (Distance - 400) / 25<br />Operator Cost per item = <em>Additional Rate × KM/25</em><br />Revenue per item = <em>(Base Price + Operator Cost) × UnitQty</em></text>
-        }
-        else if (Model.IsSewaUnit)
-        {
-            <text>Revenue per item = <em>Base Price × Durasi × Qty Items</em></text>
-        }
-        else if (Model.IsMoving)
-        {
-            <text>Revenue per item = <em>Base Price × Quantity × Qty Items</em></text>
-        }
-    </div>
 </article>

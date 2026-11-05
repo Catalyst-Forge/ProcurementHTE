@@ -7,16 +7,14 @@ namespace ProcurementHTE.Core.Constants
     {
         // CT Thresholds (in Rupiah)
         // Approval levels based on CT:
-        // - CT ≤ 500M: Analyst → Asst Manager → Manager (Level 4)
-        // - CT ≤ 5B: + VP (Level 5)
-        // - CT ≤ 10B: + VP → OpDir (Level 6)
-        // - CT > 10B: + VP → OpDir → PresDir (Level 7)
+        // - CT ≤ 300M: Analyst → Asst Manager → Manager (Level 4)
+        // - CT > 300M: + VP (Level 5); approval stops here at any higher value
 
         /// <summary>
-        /// 500 Juta - Threshold for VP approval
+        /// 300 Juta - Threshold for VP approval
         /// CT > this value requires VP approval
         /// </summary>
-        public const decimal CT_THRESHOLD_VP = 500_000_000m;
+        public const decimal CT_THRESHOLD_VP = 300_000_000m;
 
         /// <summary>
         /// 5 Miliar - Threshold for Operation Director approval
@@ -30,11 +28,9 @@ namespace ProcurementHTE.Core.Constants
         /// </summary>
         public const decimal CT_THRESHOLD_PRES_DIR = 10_000_000_000m;
 
-        // Approval Levels (corresponds to final status before ISPA)
-        // Level 4 = Manager (default, CT ≤ 500M)
-        // Level 5 = VP (CT > 500M)
-        // Level 6 = OpDir (CT > 5B)
-        // Level 7 = PresDir (CT > 10B)
+        // Approval Levels (corresponds to final status before INPRO)
+        // Level 4 = Manager (default, CT ≤ 300M)
+        // Level 5 = VP (CT > 300M)
 
         /// <summary>
         /// Base approval level (Analyst → Asst Manager → Manager)
@@ -61,16 +57,8 @@ namespace ProcurementHTE.Core.Constants
         /// </summary>
         /// <param name="ct">Contract Total (Final Offer PNL) in Rupiah</param>
         /// <returns>Approval level (4-7)</returns>
-        public static int GetRequiredApprovalLevel(decimal ct)
-        {
-            if (ct > CT_THRESHOLD_PRES_DIR)
-                return APPROVAL_LEVEL_PRES_DIR;
-            if (ct > CT_THRESHOLD_OP_DIR)
-                return APPROVAL_LEVEL_OP_DIR;
-            if (ct > CT_THRESHOLD_VP)
-                return APPROVAL_LEVEL_VP;
-            return APPROVAL_LEVEL_MANAGER;
-        }
+        public static int GetRequiredApprovalLevel(decimal ct) =>
+            ct > CT_THRESHOLD_VP ? APPROVAL_LEVEL_VP : APPROVAL_LEVEL_MANAGER;
 
         /// <summary>
         /// Check if VP approval is required based on CT
@@ -78,18 +66,8 @@ namespace ProcurementHTE.Core.Constants
         public static bool RequiresVpApproval(decimal ct) => ct > CT_THRESHOLD_VP;
 
         /// <summary>
-        /// Check if Operation Director approval is required based on CT
-        /// </summary>
-        public static bool RequiresOpDirApproval(decimal ct) => ct > CT_THRESHOLD_OP_DIR;
-
-        /// <summary>
-        /// Check if President Director approval is required based on CT
-        /// </summary>
-        public static bool RequiresPresDirApproval(decimal ct) => ct > CT_THRESHOLD_PRES_DIR;
-
-        /// <summary>
         /// Get total steps for progress bar based on approval level
-        /// Base steps: OnCreateDP3 + 3 approvals + ISPA + Hardcopy + PO + DonePO = 8
+        /// Base steps: OnCreateDP3 + 3 approvals + INPRO + Hardcopy + PO + DonePO = 8
         /// With VP: 9, With OpDir: 10, With PresDir: 11
         /// </summary>
         public static int GetTotalSteps(int approvalLevel)

@@ -2,6 +2,7 @@
 @using ProcurementHTE.Core.Models
 @model PagedResult<Procurement>
 @{
+    var canPickup = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApInvoice);
     var currentTab = ViewBag.CurrentTab as string ?? "waiting";
     var isMyPickups = currentTab == "mypickups";
 }
@@ -81,12 +82,14 @@
                                    class="btn btn-outline-info btn-sm me-1" title="View Details">
                                     <i class="bi bi-eye"></i> Details
                                 </a>
-                                <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
-                                    @Html.AntiForgeryToken()
-                                    <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
-                                        <i class="bi bi-box-arrow-in-down"></i> Pickup
-                                    </button>
-                                </form>
+                                @if (canPickup) {
+                                    <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" class="btn btn-success btn-sm btn-pickup" data-procnum="@item.ProcNum">
+                                            <i class="bi bi-box-arrow-in-down"></i> Pickup
+                                        </button>
+                                    </form>
+                                }
                             }
                         </td>
                     </tr>

@@ -29,14 +29,6 @@
                     </div>
                 </div>
 
-                @if (isPengangkutan)
-                {
-                    <div class="col-md-4">
-                        <label asp-for="Distance" class="form-label"></label>
-                        <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                        <span class="text-danger" asp-validation-for="Distance"></span>
-                    </div>
-                }
                 @if (isSewaUnit)
                 {
                     <div class="col-md-4">
@@ -53,14 +45,6 @@
                                value="@(Model.TglMulaiMoving?.ToString("yyyy-MM-dd"))"
                                class="form-control" />
                         <span class="text-danger" asp-validation-for="TglMulaiMoving"></span>
-                    </div>
-                    <div class="col-md-4">
-                        <label asp-for="Distance" class="form-label">Jarak (Km)</label>
-                        <div class="input-group">
-                            <input asp-for="Distance" asp-format="{0:0}" class="form-control text-end" inputmode="numeric" />
-                            <span class="input-group-text">Km</span>
-                        </div>
-                        <small class="text-muted">Informasi saja, tidak mempengaruhi perhitungan</small>
                     </div>
                 }
             </div>

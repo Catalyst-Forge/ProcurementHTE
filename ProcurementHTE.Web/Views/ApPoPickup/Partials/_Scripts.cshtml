@@ -18,6 +18,39 @@
         }, 500);
     });
 
+    document.querySelectorAll('.pr-submit-modal').forEach(modal => {
+        modal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            modal.querySelector('input[name="prId"]').value = button.dataset.prId;
+            modal.querySelector('[data-pr-number]').textContent = button.dataset.prNumber;
+        });
+    });
+
+    document.querySelectorAll('.btn-ra-number').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const form = this.closest('form');
+            const input = form.querySelector('input[name="raNumber"]');
+
+            Swal.fire({
+                title: 'Nomor RA',
+                text: this.dataset.procnum,
+                input: 'text',
+                inputValue: input.value,
+                inputAttributes: { maxlength: 100 },
+                inputValidator: value => value.trim() ? null : 'Nomor RA wajib diisi',
+                showCancelButton: true,
+                confirmButtonText: 'Simpan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then(result => {
+                if (result.isConfirmed) {
+                    input.value = result.value.trim();
+                    form.submit();
+                }
+            });
+        });
+    });
+
     // SweetAlert2 for Pickup buttons
     document.querySelectorAll('.btn-pickup').forEach(btn => {
         btn.addEventListener('click', function(e) {

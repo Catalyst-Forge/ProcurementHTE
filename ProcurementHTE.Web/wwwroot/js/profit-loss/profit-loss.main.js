@@ -32,11 +32,7 @@
         app.syncToggleButtonLabel(ctx);
         app.syncAddVendorButtonState(ctx);
 
-        if (ctx.isEditMode) {
-            app.recalcHeader(ctx, { forceDistanceKm: false });
-        } else {
-            app.recalcKmPer25FromDistance(ctx);
-        }
+        app.recalcHeader(ctx);
         app.reindexVendorCards(ctx);
         app.recalcSummary(ctx);
     };

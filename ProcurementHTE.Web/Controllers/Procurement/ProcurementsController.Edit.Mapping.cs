@@ -27,7 +27,6 @@ public partial class ProcurementsController
             SpmpNumber = ProcurementReferenceNumberFormatter.AppendSuffixIfNeeded(editViewModel.SpmpNumber),
             MemoNumber = editViewModel.MemoNumber,
             OeNumber = ProcurementReferenceNumberFormatter.AppendSuffixIfNeeded(editViewModel.OeNumber),
-            RaNumber = editViewModel.RaNumber,
             NoRig = editViewModel.NoRig,
             NoHte = editViewModel.NoHte,
             ProjectCode = editViewModel.ProjectCode,
