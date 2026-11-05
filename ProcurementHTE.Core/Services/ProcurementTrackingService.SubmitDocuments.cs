@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models.DTOs;
 
@@ -80,10 +81,27 @@ public partial class ProcurementTrackingService
             );
         }
 
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.PoNumber = poNumber;
-        procurement.PoSubmittedAt = _timeProvider.GetUtcNow().UtcDateTime;
+        procurement.PoSubmittedAt = now;
         procurement.PoSubmittedByUserId = submittedByUserId;
-        procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
+        procurement.UpdatedAt = now;
+
+        // Done PO ends the procurement, so the lifecycle status must follow;
+        // otherwise the details page keeps showing "In Progress".
+        var completedStatus = await _procurementRepo.GetStatusByNameAsync("Completed");
+        if (completedStatus != null)
+        {
+            procurement.StatusId = completedStatus.StatusId;
+            procurement.CompletedAt = now;
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Status 'Completed' tidak ditemukan; procurement {ProcurementId} tetap pada status siklus lamanya",
+                procurementId
+            );
+        }
 
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(
