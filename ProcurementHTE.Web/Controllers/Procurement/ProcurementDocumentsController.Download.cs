@@ -55,18 +55,61 @@ public partial class ProcurementDocumentsController
         if (string.IsNullOrWhiteSpace(id))
             return BadRequest();
 
+        var doc = await _docSvc.GetByIdAsync(id);
+        if (doc is null || string.IsNullOrWhiteSpace(doc.ObjectKey))
+            return Json(new { ok = false, error = "Dokumen tidak ditemukan." });
+
+        // The presigned URL is signed for the internal MinIO endpoint (loopback in
+        // production), so the browser cannot open it. Hand out a same-origin URL that
+        // streams the file through the app instead.
+        var url = Url.Action(nameof(Preview), new { id });
+        return Json(new { ok = true, url });
+    }
+
+    [HttpGet("ProcurementDocuments/Preview/{id}")]
+    public async Task<IActionResult> Preview(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest();
+
+        var doc = await _docSvc.GetByIdAsync(id);
+        if (doc is null || string.IsNullOrWhiteSpace(doc.ObjectKey))
+            return NotFound();
+
         try
         {
             var url = await _docSvc.GetPresignedPreviewUrlAsync(
                 id,
-                TimeSpan.FromMinutes(15),
+                TimeSpan.FromMinutes(5),
                 HttpContext.RequestAborted
             );
-            return Json(new { ok = true, url });
+
+            var client = _http.CreateClient("MinioProxy");
+            var resp = await client.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead,
+                HttpContext.RequestAborted
+            );
+            if (!resp.IsSuccessStatusCode)
+                return StatusCode(StatusCodes.Status502BadGateway, "Gagal memuat dokumen.");
+
+            var stream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
+            var contentType = string.IsNullOrWhiteSpace(doc.ContentType)
+                ? "application/octet-stream"
+                : doc.ContentType;
+
+            var disposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("inline");
+            disposition.SetHttpFileName(
+                string.IsNullOrWhiteSpace(doc.FileName) ? "document" : doc.FileName
+            );
+            Response.Headers.ContentDisposition = disposition.ToString();
+            Response.Headers.CacheControl = "private, no-store";
+
+            return File(stream, contentType);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return Json(new { ok = false, error = $"Failed to create preview link: {ex.Message}" });
+            return StatusCode(StatusCodes.Status502BadGateway, $"Gagal memuat dokumen: {ex.Message}");
         }
     }
 
