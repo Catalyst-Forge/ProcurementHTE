@@ -7,30 +7,26 @@
     var email = user?.Email;
 }
 
-<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white shadow-sm mb-3">
-  <div class="container-fluid">
-    <button class="btn d-lg-none border" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
-      <i class="bi bi-arrow-bar-right"></i>
-    </button>
-    
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+<nav class="navbar navbar-expand navbar-light bg-white shadow-sm mb-3">
+  <div class="container-fluid flex-nowrap">
+    @* On phones and tablets the sidebar is an offcanvas; this is its menu button. *@
+    <button class="btn border d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Buka menu">
+      <i class="bi bi-list fs-5"></i>
     </button>
 
-    <div class="navbar-collapse collapse d-sm-flex justify-content-end">
-      <ul class="navbar-nav gap-2">
+    <div class="d-flex align-items-center ms-auto">
+      <ul class="navbar-nav flex-row align-items-center gap-1 gap-sm-2">
         @if (User.Identity?.IsAuthenticated == true) {
           <!-- Notification Bell -->
           <li class="nav-item dropdown">
-            <button type="button" class="btn btn-sm fs-4 position-relative" id="dropdownNotification" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Notifikasi">
+            <button type="button" class="btn btn-sm fs-4 position-relative" id="dropdownNotification" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Notifikasi" aria-label="Notifikasi">
               <i class="bi bi-bell"></i>
               <span class="notification-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
                 0
               </span>
             </button>
 
-            <div class="dropdown-menu dropdown-menu-end shadow notification-dropdown" aria-labelledby="dropdownNotification" style="width: 360px; max-height: 450px;">
+            <div class="dropdown-menu dropdown-menu-end shadow notification-dropdown" aria-labelledby="dropdownNotification" style="width: min(360px, calc(100vw - 1.5rem)); max-height: 450px;">
               <div class="dropdown-header d-flex justify-content-between align-items-center py-2 px-3 border-bottom">
                 <span class="fw-semibold">Notifikasi</span>
                 <button type="button" class="btn btn-sm btn-link text-decoration-none mark-all-read-btn p-0">
@@ -59,9 +55,15 @@
           </li>
           
           <li class="nav-item dropdown">
-            <button type="button" class="btn btn-sm fs-4 dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-person-circle"></i></button>
+            <button type="button" class="btn btn-sm fs-4 dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Akun"><i class="bi bi-person-circle"></i></button>
 
             <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser">
+              @* The header only has room for the name and email from md up; on phones they lead the menu. *@
+              <li class="d-md-none px-3 pt-1 pb-2" style="max-width: calc(100vw - 1.5rem);">
+                <div class="fw-semibold text-truncate">@fullName</div>
+                <small class="text-muted d-block text-truncate">@email</small>
+              </li>
+              <li class="d-md-none"><hr class="dropdown-divider" /></li>
               <li>
                 <a class="dropdown-item"
                    href="@Url.Action("Settings", "Account")"
@@ -81,10 +83,10 @@
             </ul>
           </li>
 
-          <div class="d-flex flex-column ms-2">
+          <li class="d-none d-md-flex flex-column ms-2 lh-sm">
             <span>@fullName</span>
             <small class="text-muted">@email</small>
-          </div>
+          </li>
         } else {
           <li class="nav-item"><a asp-controller="Auth" asp-action="Login" class="nav-link">Login</a></li>
         }

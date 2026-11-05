@@ -13,6 +13,19 @@
   padding: 0;
 }
 
+/* On phones the bell sits well inside the right edge, so a 360px menu anchored to it
+   would run off the left of the screen. Pin it under the header across the screen. */
+@media (max-width: 575.98px) {
+  /* Selector outranks Bootstrap's .navbar-expand .navbar-nav .dropdown-menu. */
+  .navbar .navbar-nav .notification-dropdown[data-bs-popper] {
+    position: fixed;
+    top: 3.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto !important;
+  }
+}
+
 .notification-dropdown .dropdown-header {
   background-color: #f8f9fa;
 }
