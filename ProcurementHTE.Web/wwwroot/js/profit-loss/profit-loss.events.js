@@ -3,6 +3,7 @@
         wireToggleButton(ctx);
         wireVendorLayoutButtons(ctx);
         wireVendorCheckboxes(ctx);
+        wireVendorSearch(ctx);
         wireAddVendor(ctx);
         wireSubmit(ctx);
         app.wireHtmxDebug(ctx);
@@ -15,9 +16,7 @@
         if (!toggleVendorBtn) {
             return;
         }
-        const checkboxes = Array
-            .from(document.querySelectorAll(ctx.vendorCheckboxSelector))
-            .filter(checkbox => !checkbox.disabled);
+        const checkboxes = app.getVisibleVendorCheckboxes(ctx);
         const allChecked = checkboxes.length > 0 && checkboxes.every(checkbox => checkbox.checked);
         const labelSpan = toggleVendorBtn.querySelector('span[data-label-checked]');
         if (labelSpan) {
@@ -49,16 +48,25 @@
 
     function wireToggleButton(ctx) {
         document.getElementById('btnToggleVendors')?.addEventListener('click', () => {
-            const checkboxes = Array
-                .from(document.querySelectorAll(ctx.vendorCheckboxSelector))
-                .filter(checkbox => !checkbox.disabled);
+            const checkboxes = app.getVisibleVendorCheckboxes(ctx);
             const shouldCheckAll = !(checkboxes.length > 0 && checkboxes.every(checkbox => checkbox.checked));
             checkboxes.forEach(checkbox => {
                 checkbox.checked = shouldCheckAll;
                 checkbox.dispatchEvent(new Event('change'));
             });
             app.syncToggleButtonLabel(ctx);
+            app.syncVendorSelectedCount(ctx);
             app.syncAddVendorButtonState(ctx);
+        });
+    }
+
+    function wireVendorSearch(ctx) {
+        const search = document.getElementById('vendorSearch');
+        app.bind(ctx, search, 'input', () => app.filterVendorChoices(ctx, search.value));
+        app.bind(ctx, search, 'keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+            }
         });
     }
 
@@ -77,6 +85,7 @@
                     }
                 }
                 app.syncToggleButtonLabel(ctx);
+                app.syncVendorSelectedCount(ctx);
                 app.refreshVendorSelectOptions(ctx);
                 app.syncAddVendorButtonState(ctx);
             });

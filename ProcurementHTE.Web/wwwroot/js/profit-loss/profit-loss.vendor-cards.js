@@ -158,6 +158,7 @@
     }
 
     function syncVendorUi(ctx) {
+        app.syncVendorSelectedCount(ctx);
         app.refreshVendorSelectOptions(ctx);
         app.syncAddVendorButtonState(ctx);
         app.reindexVendorCards(ctx);

@@ -52,6 +52,7 @@ public partial class ProcurementsController
     private static List<VendorChoiceViewModel> BuildVendorChoices(IEnumerable<Vendor> vendors)
     {
         return vendors
+            .OrderBy(vendor => vendor.VendorName, StringComparer.OrdinalIgnoreCase)
             .Select(vendor => new VendorChoiceViewModel
             {
                 Id = vendor.VendorId,

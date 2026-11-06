@@ -263,3 +263,16 @@ body {
     padding-bottom: 6rem !important;
   }
 }
+
+/* Vendor picker on the Profit & Loss form */
+.vendor-choice-search {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
+
+.vendor-choice-list {
+  max-height: 18.75rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.5rem;
+}

@@ -30,6 +30,7 @@
         app.initPresetVendors(ctx);
         app.refreshVendorSelectOptions(ctx);
         app.syncToggleButtonLabel(ctx);
+        app.syncVendorSelectedCount(ctx);
         app.syncAddVendorButtonState(ctx);
 
         app.recalcHeader(ctx);

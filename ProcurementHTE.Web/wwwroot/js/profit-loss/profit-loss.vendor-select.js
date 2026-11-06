@@ -5,6 +5,31 @@
             .map(checkbox => checkbox.value);
     };
 
+    app.getVisibleVendorCheckboxes = function (ctx) {
+        return Array
+            .from(document.querySelectorAll(ctx.vendorCheckboxSelector))
+            .filter(checkbox => !checkbox.disabled
+                && !checkbox.closest('[data-vendor-choice]')?.classList.contains('d-none'));
+    };
+
+    app.syncVendorSelectedCount = function (ctx) {
+        const counter = document.getElementById('vendorSelectedCount');
+        if (counter) {
+            counter.textContent = `${app.getSelectedVendorIds(ctx).length} vendor dipilih`;
+        }
+    };
+
+    app.filterVendorChoices = function (ctx, keyword) {
+        const term = keyword.trim().toLowerCase();
+        const choices = Array.from(document.querySelectorAll('[data-vendor-choice]'));
+        choices.forEach(choice => {
+            choice.classList.toggle('d-none', !choice.textContent.toLowerCase().includes(term));
+        });
+        document.getElementById('vendorSearchEmpty')?.classList
+            .toggle('d-none', choices.some(choice => !choice.classList.contains('d-none')));
+        app.syncToggleButtonLabel(ctx);
+    };
+
     app.getAssignedVendorIds = function (ctx) {
         return Array.from(ctx.vendorAssignments.keys());
     };
