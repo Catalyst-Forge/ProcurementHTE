@@ -60,7 +60,7 @@ public static class IdentityServiceExtensions
         options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
     }
 
-    private static void ConfigureApplicationCookie(CookieAuthenticationOptions options)
+    public static void ConfigureApplicationCookie(CookieAuthenticationOptions options)
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
@@ -73,7 +73,12 @@ public static class IdentityServiceExtensions
 
         options.Events.OnRedirectToLogin = context =>
         {
-            if (context.Request.Path.StartsWithSegments("/api"))
+            // htmx follows a redirect silently and would swap the login page into the app
+            // layout without its stylesheet. On 401, site-htmx.js reloads the page instead.
+            if (
+                context.Request.Path.StartsWithSegments("/api")
+                || context.Request.Headers.ContainsKey("HX-Request")
+            )
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return Task.CompletedTask;

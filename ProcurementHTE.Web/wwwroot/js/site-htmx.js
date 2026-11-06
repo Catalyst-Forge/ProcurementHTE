@@ -154,6 +154,10 @@
     if (status === 401) window.location.reload();
   });
 
+  document.body.addEventListener("htmx:historyCacheMissLoadError", () => {
+    window.location.reload();
+  });
+
   document.body.addEventListener("htmx:historyRestore", (event) => {
     const fragment = event.detail?.item;
     const target = document.querySelector("#app-content");
