@@ -97,7 +97,7 @@
                                 <a asp-controller="PurchaseRequisitions" asp-action="Create" class="btn btn-success btn-sm">
                                     <i class="bi bi-journal-plus"></i> Create PR
                                 </a>
-                            } else if (canPickup && item.PrId != null && prStates.TryGetValue(item.PrId, out var prState) && prState.Step != null) {
+                            } else if (canPickup && item.PrId != null && item.ProcurementStatus != ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled && prStates.TryGetValue(item.PrId, out var prState) && prState.Step != null) {
                                 var (stepLabel, stepModal) = prState.Step switch {
                                     ProcurementHTE.Core.Enums.ProcurementStatus.OnSubmitISPA => ("Submit INPRO", "#submitInproModal"),
                                     ProcurementHTE.Core.Enums.ProcurementStatus.OnSubmitHardcopy => ("Upload Hardcopy", "#submitHardcopyModal"),

@@ -86,12 +86,6 @@ namespace ProcurementHTE.Core.Services
             foreach (var v in vendors)
                 sb.AppendLine($"      <td class='text-end'>{v.Total.ToString("N0", Id)}</td>");
             sb.AppendLine("    </tr>");
-
-            sb.AppendLine("    <tr class='text-center'>");
-            sb.AppendLine($"      <td colspan='{totalColumns - 2}' class='fw-semibold'>COST OPERATOR</td>");
-            foreach (var _ in vendors)
-                sb.AppendLine("      <td></td>");
-            sb.AppendLine("    </tr>");
         }
 
         private static void AppendPnlEstimateProfitRows(
