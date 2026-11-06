@@ -4,9 +4,39 @@ namespace ProcurementHTE.Core.Services
 {
     public static class ProfitLossCalculator
     {
-        /// <summary>Revenue is typed per line, so the unit price comes from it.</summary>
-        public static decimal UnitPrice(ProfitLossItem item) =>
-            item.UnitQty > 0 ? item.Revenue / item.UnitQty : 0m;
+        /// <summary>
+        /// Names of the participating vendors still in the master list. A vendor
+        /// removed later drops out instead of showing as a raw ID.
+        /// </summary>
+        public static List<string> ActiveVendorNames(
+            IEnumerable<string> vendorIds,
+            IEnumerable<Vendor> activeVendors
+        )
+        {
+            var names = activeVendors
+                .GroupBy(vendor => vendor.VendorId)
+                .ToDictionary(group => group.Key, group => group.First().VendorName);
+
+            return vendorIds.Where(names.ContainsKey).Select(id => names[id]).ToList();
+        }
+
+        /// <summary>The winning vendor's final cost for each offer item.</summary>
+        public static IReadOnlyDictionary<string, decimal> VendorCostPerItem(
+            IReadOnlyCollection<VendorOffer>? offers,
+            string? vendorId
+        )
+        {
+            if (offers == null || offers.Count == 0 || string.IsNullOrEmpty(vendorId))
+                return new Dictionary<string, decimal>();
+
+            return BuildVendorItemCosts(offers)
+                    .FirstOrDefault(x => x.VendorId == vendorId)
+                    ?.FinalPerItem
+                ?? new Dictionary<string, decimal>();
+        }
+
+        public static decimal UnitPrice(decimal lineTotal, int unitQty) =>
+            unitQty > 0 ? lineTotal / unitQty : 0m;
 
         public static (
             string vendorId,

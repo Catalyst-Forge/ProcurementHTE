@@ -79,7 +79,15 @@ namespace ProcurementHTE.Core.Services
             {
                 context.Replace(
                     "PnlItemsTable",
-                    GenerateItemsTable(pnl.Items, context.TemplateKey, context.JobTypeName)
+                    GenerateItemsTable(
+                        pnl.Items,
+                        context.TemplateKey,
+                        ProfitLossCalculator.VendorCostPerItem(
+                            pnl.VendorOffers?.ToList(),
+                            pnl.SelectedVendorId
+                        ),
+                        context.JobTypeName
+                    )
                 );
             }
         }

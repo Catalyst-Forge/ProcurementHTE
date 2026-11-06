@@ -17,10 +17,11 @@ public static class ContractDocumentRules
         contract switch
         {
             ContractType.LTC => documentName is Spmp or WorkOrder or FinancialStatement,
-            ContractType.RO => documentName is Memorandum or WorkOrder or FinancialStatement,
+            ContractType.RO => documentName is Memorandum or WorkOrder,
             _ => documentName != FinancialStatement,
         };
 
     public static bool IsOptional(ContractType contract, string? documentName) =>
-        contract == ContractType.RO && documentName == WorkOrder;
+        (contract == ContractType.RO && documentName == WorkOrder)
+        || (contract == ContractType.LTC && documentName == FinancialStatement);
 }

@@ -6,10 +6,12 @@ namespace ProcurementHTE.Infrastructure.Data
 {
     /// <summary>
     /// Adds the Financial Statement upload to every job type. Contract rules
-    /// keep it to LTC and RO work.
+    /// keep it to LTC work.
     /// </summary>
     public static class FinancialStatementSeeder
     {
+        private const string Note = "Upload sendiri, tidak wajib; hanya untuk kontrak LTC";
+
         public static async Task SeedAsync(AppDbContext db)
         {
             var documentType = await db
@@ -21,17 +23,19 @@ namespace ProcurementHTE.Infrastructure.Data
                 documentType = new DocumentType
                 {
                     Name = ContractDocumentRules.FinancialStatement,
-                    Description = "Dokumen upload untuk kontrak LTC dan RO",
+                    Description = Note,
                 };
                 db.DocumentTypes.Add(documentType);
                 await db.SaveChangesAsync();
             }
 
             var jobTypeIds = await db.JobTypes.Select(t => t.JobTypeId).ToListAsync();
-            var configured = await db
+            var existing = await db
                 .JobTypeDocuments.Where(c => c.DocumentTypeId == documentType.DocumentTypeId)
-                .Select(c => c.JobTypeId)
                 .ToListAsync();
+            existing.ForEach(c => c.Note = Note);
+            documentType.Description = Note;
+            var configured = existing.Select(c => c.JobTypeId);
 
             var missing = jobTypeIds
                 .Except(configured)
@@ -44,15 +48,12 @@ namespace ProcurementHTE.Infrastructure.Data
                     IsGenerated = false,
                     IsUploadRequired = true,
                     RequiresApproval = false,
-                    Note = "Upload sendiri; hanya untuk kontrak LTC dan RO",
+                    Note = Note,
                 })
                 .ToList();
 
-            if (missing.Count > 0)
-            {
-                db.JobTypeDocuments.AddRange(missing);
-                await db.SaveChangesAsync();
-            }
+            db.JobTypeDocuments.AddRange(missing);
+            await db.SaveChangesAsync();
         }
     }
 }

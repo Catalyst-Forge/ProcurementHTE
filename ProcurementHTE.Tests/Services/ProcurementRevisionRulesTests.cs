@@ -28,20 +28,55 @@ public class ProcurementRevisionRulesTests
     }
 
     [Fact]
-    public void UnitPrice_ComesFromTheTypedRevenue()
+    public void UnitPrice_SplitsTheLineTotal()
     {
-        var item = new ProfitLossItem { ItemName = "Tronton", UnitQty = 5, Revenue = 600_000_000m };
-
-        Assert.Equal(120_000_000m, ProfitLossCalculator.UnitPrice(item));
+        Assert.Equal(20_000_000m, ProfitLossCalculator.UnitPrice(40_000_000m, 2));
+        Assert.Equal(0m, ProfitLossCalculator.UnitPrice(40_000_000m, 0));
     }
 
     [Fact]
-    public void UnitPrice_IsZeroWithoutUnits()
+    public void VendorCostPerItem_FollowsTheWinningVendor()
     {
-        var item = new ProfitLossItem { ItemName = "Tronton", UnitQty = 0, Revenue = 600_000_000m };
+        var offers = new List<VendorOffer>
+        {
+            Offer("menang", price: 20_000_000m, quantity: 2),
+            Offer("kalah", price: 30_000_000m, quantity: 2),
+        };
 
-        Assert.Equal(0m, ProfitLossCalculator.UnitPrice(item));
+        var costs = ProfitLossCalculator.VendorCostPerItem(offers, "menang");
+
+        Assert.Equal(40_000_000m, costs["item"]);
     }
+
+    [Fact]
+    public void ActiveVendorNames_SkipsVendorsRemovedFromTheMasterList()
+    {
+        var active = new[] { new Vendor { VendorId = "ada", VendorName = "Serasi Logistics Indonesia" } };
+
+        var names = ProfitLossCalculator.ActiveVendorNames(["ada", "sudah-dihapus"], active);
+
+        Assert.Equal(["Serasi Logistics Indonesia"], names);
+    }
+
+    [Fact]
+    public void VendorCostPerItem_IsEmptyWithoutAVendor()
+    {
+        Assert.Empty(ProfitLossCalculator.VendorCostPerItem(null, "menang"));
+    }
+
+    private static VendorOffer Offer(string vendorId, decimal price, int quantity) =>
+        new()
+        {
+            VendorId = vendorId,
+            ProcOfferId = "item",
+            ProcurementId = "proc",
+            ProfitLossId = "pnl",
+            UnitTypeId = "unit",
+            Round = 1,
+            Price = price,
+            QuantityItem = quantity,
+            QuantityOfUnit = 1,
+        };
 
     [Fact]
     public void ProfitLoss_ForAngkutan_NoLongerNeedsADistance()
@@ -67,7 +102,8 @@ public class ContractAndPrRulesTests
     [InlineData(ContractType.LTC, "Profit & Loss", false)]
     [InlineData(ContractType.RO, "Memorandum", true)]
     [InlineData(ContractType.RO, Spmp, false)]
-    [InlineData(ContractType.RO, ContractDocumentRules.FinancialStatement, true)]
+    [InlineData(ContractType.RO, ContractDocumentRules.FinancialStatement, false)]
+    [InlineData(ContractType.LTC, ContractDocumentRules.FinancialStatement, true)]
     [InlineData(ContractType.Spot, ContractDocumentRules.FinancialStatement, false)]
     [InlineData(ContractType.Spot, "Profit & Loss", true)]
     [InlineData(ContractType.STB, "Risk Assessment (RA)", true)]
@@ -77,10 +113,13 @@ public class ContractAndPrRulesTests
     }
 
     [Fact]
-    public void WorkOrder_IsOptionalOnlyForRo()
+    public void OptionalDocuments_FollowTheContract()
     {
         Assert.True(ContractDocumentRules.IsOptional(ContractType.RO, WorkOrder));
         Assert.False(ContractDocumentRules.IsOptional(ContractType.LTC, WorkOrder));
+        Assert.True(
+            ContractDocumentRules.IsOptional(ContractType.LTC, ContractDocumentRules.FinancialStatement)
+        );
     }
 
     [Fact]

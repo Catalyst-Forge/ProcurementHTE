@@ -9,6 +9,7 @@ namespace ProcurementHTE.Core.Services
         private static string GenerateItemsTable(
             ICollection<ProfitLossItem> items,
             string? docType,
+            IReadOnlyDictionary<string, decimal> vendorCosts,
             string? jobTypeName = null
         )
         {
@@ -22,7 +23,7 @@ namespace ProcurementHTE.Core.Services
                 sb.AppendLine($"  <td>{item.ProcOffer?.ItemPenawaran ?? "-"}</td>");
                 sb.AppendLine($"  <td class='text-center'>{item.UnitQty}</td>");
                 sb.AppendLine($"  <td class='text-center'>{item.ProcOffer?.Unit ?? "-"}</td>");
-                AppendItemFinancialCells(sb, item, docType, jobTypeName);
+                AppendItemFinancialCells(sb, item, docType, vendorCosts, jobTypeName);
                 sb.AppendLine("</tr>");
             }
 
@@ -33,14 +34,16 @@ namespace ProcurementHTE.Core.Services
             StringBuilder sb,
             ProfitLossItem item,
             string? docType,
+            IReadOnlyDictionary<string, decimal> vendorCosts,
             string? jobTypeName
         )
         {
             if (docType == "OwnerEstimate")
             {
-                var price = ProfitLossCalculator.UnitPrice(item);
+                var lineTotal = vendorCosts.GetValueOrDefault(item.ProcOfferId);
+                var price = ProfitLossCalculator.UnitPrice(lineTotal, item.UnitQty);
                 sb.AppendLine($"  <td class='text-end'>{price.ToString("C0", Id)}</td>");
-                sb.AppendLine($"  <td class='text-end'>{item.Revenue.ToString("C0", Id)}</td>");
+                sb.AppendLine($"  <td class='text-end'>{lineTotal.ToString("C0", Id)}</td>");
                 return;
             }
 

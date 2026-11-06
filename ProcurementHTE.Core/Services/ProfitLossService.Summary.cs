@@ -20,12 +20,10 @@ namespace ProcurementHTE.Core.Services
                 pnl.Items.Select(item => item.OperatorCost ?? 0)
             );
 
-            var selectedVendorNames = selectedRows
-                .Select(row =>
-                    allVendors.FirstOrDefault(vendor => vendor.VendorId == row.VendorId)
-                        ?.VendorName ?? row.VendorId
-                )
-                .ToList();
+            var selectedVendorNames = ProfitLossCalculator.ActiveVendorNames(
+                selectedRows.Select(row => row.VendorId),
+                allVendors
+            );
 
             var requiredItemIds = pnl
                 .Items.Select(item => item.ProcOfferId)
