@@ -95,20 +95,6 @@ public partial class PurchaseRequisitionsController
             return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(model.PRNumber))
-        {
-            var exists = await _purchaseRequisitionQueryService.IsPrNumberExistsAsync(model.PRNumber);
-            if (exists)
-            {
-                ModelState.AddModelError(
-                    "PRNumber",
-                    $"PR Number '{model.PRNumber}' sudah digunakan. Gunakan nomor lain."
-                );
-                await PopulateViewBagForCreate();
-                return false;
-            }
-        }
-
         return true;
     }
 }

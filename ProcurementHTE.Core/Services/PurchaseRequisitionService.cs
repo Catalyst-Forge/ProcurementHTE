@@ -75,11 +75,6 @@ public class PurchaseRequisitionService : IPurchaseRequisitionQueryService, IPur
         return _purchaseRequisitionRepository.CountAsync(ct);
     }
 
-    public Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default)
-    {
-        return _purchaseRequisitionRepository.IsPrNumberExistsAsync(prNumber, excludePrId, ct);
-    }
-
     #endregion
 
     #region Command Methods
@@ -176,6 +171,20 @@ public class PurchaseRequisitionService : IPurchaseRequisitionQueryService, IPur
             // Recalculate PR status based on linked procurements
             await _procurementTrackingService.RecalculatePrStatusAsync(existing.PrId, ct);
         }
+    }
+
+    public async Task<bool> DeleteIfEmptyAsync(
+        string id,
+        string deletedByUserId,
+        CancellationToken ct = default
+    )
+    {
+        var pr = await _purchaseRequisitionRepository.GetByIdWithProcurementsAsync(id, ct);
+        if (pr == null || pr.Procurements.Count > 0)
+            return false;
+
+        await DeleteAsync(id, deletedByUserId, ct);
+        return true;
     }
 
     public async Task DeleteAsync(string id, string deletedByUserId, CancellationToken ct = default)

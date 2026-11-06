@@ -1304,8 +1304,7 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.HasIndex("PoSubmittedByUserId");
 
                     b.HasIndex("PrNumber")
-                        .IsUnique()
-                        .HasDatabaseName("AK_PurchaseRequisitions_PrNumber")
+                        .HasDatabaseName("IX_PurchaseRequisitions_PrNumber")
                         .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("RejectedByUserId");

@@ -48,9 +48,10 @@
                 <th class="border-end" style="min-width: 120px;">No PR</th>
                 <th class="border-end" style="min-width: 100px;">Tgl Buat PR</th>
                 <th class="border-end" style="min-width: 100px;">Tgl Rilis PR</th>
-                <th class="border-end" style="min-width: 120px;">Aprvl User Ops</th>
-                <th class="border-end" style="min-width: 100px;">Aprvl MGR Selesai</th>
-                <th class="border-end" style="min-width: 100px;">Aprvl VP Selesai</th>
+                <th class="border-end" style="min-width: 120px;">Approval Analyst</th>
+                <th class="border-end" style="min-width: 120px;">Approval Asst. Man</th>
+                <th class="border-end" style="min-width: 120px;">Approval Manager</th>
+                <th class="border-end" style="min-width: 120px;">Approval VP</th>
                 <th class="border-end" style="min-width: 120px;">Tgl Submit INPRO</th>
                 <th class="border-end" style="min-width: 120px;">SA No</th>
                 <th class="border-end" style="min-width: 120px;">SP3 No</th>
@@ -62,7 +63,7 @@
             @if (Model == null || !Model.Items.Any())
             {
                 <tr>
-                    <td colspan="45" class="text-center text-muted py-5">
+                    <td colspan="46" class="text-center text-muted py-5">
                         <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                         @if (!string.IsNullOrWhiteSpace(Model?.Search))
                         {
@@ -132,7 +133,8 @@
                         <td>@formatText(item.NoPr)</td>
                         <td class="text-center">@formatDateTime(item.TanggalBuatPr)</td>
                         <td class="text-center">@formatDateTime(item.TanggalRilisPr)</td>
-                        <td class="text-center">@formatDateTime(item.TanggalApprovalOps)</td>
+                        <td class="text-center">@formatDate(item.TanggalApprovalAnalyst)</td>
+                        <td class="text-center">@formatDate(item.TanggalApprovalAsstManager)</td>
                         <td class="text-center">@formatDate(item.ManagerApprovalSelesai)</td>
                         <td class="text-center">@formatDate(item.VpApprovalSelesai)</td>
                         <td class="text-center">@formatDate(item.TanggalSubmitIspa)</td>

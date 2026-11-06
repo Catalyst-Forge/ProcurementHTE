@@ -41,13 +41,17 @@ namespace ProcurementHTE.Infrastructure.Repositories
             // Get approval dates from PR Status History
             var statusHistories = pr?.StatusHistories?.ToList() ?? new List<Core.Models.PurchaseRequisitionStatusHistory>();
 
-            // Tanggal Approval Analyst = ketika status berubah ke WaitingApprovalAsstManager
-            var approvalAnalystDate = statusHistories
-                .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.WaitingApprovalAsstManager)?.ChangedAt;
+            // An approval lands when the job moves to the next approver; after a
+            // revision the latest pass counts.
+            DateTime? ReachedAt(ProcurementStatus status) =>
+                p.StatusHistories?
+                    .Where(h => h.Status == status)
+                    .OrderByDescending(h => h.ChangedAt)
+                    .FirstOrDefault()?.ChangedAt;
 
-            // Tanggal Approval Asst Manager = ketika status berubah ke WaitingApprovalManager  
-            var approvalAsstManagerDate = statusHistories
-                .FirstOrDefault(h => h.Status == PurchaseRequisitionStatus.WaitingApprovalManager)?.ChangedAt;
+            var approvalAnalystDate = ReachedAt(ProcurementStatus.WaitingApprovalAsstManager);
+            var approvalAsstManagerDate =
+                ReachedAt(ProcurementStatus.WaitingApprovalManager) ?? p.ManagerApprovalStartAt;
 
             // Tanggal Approval Manager = ketika status berubah ke OnSubmitISPA
             // Ini adalah tanggal selesai untuk dokumen RKS, BOQ, MEMO, RA
@@ -123,7 +127,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 TanggalRilisPr = pr?.CreatedAt, // Tanggal rilis PR = tanggal buat PR
 
                 // Approval Dates - from PR Status History
-                TanggalApprovalOps = approvalAnalystDate,
+                TanggalApprovalAnalyst = approvalAnalystDate,
+                TanggalApprovalAsstManager = approvalAsstManagerDate,
                 TanggalApprovalManager = approvalManagerDate,
                 TanggalApprovalVp = null,
                 TanggalApprovalDirektur = null,

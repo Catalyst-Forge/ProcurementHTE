@@ -30,8 +30,6 @@ public interface IPurchaseRequisitionRepository
 
     Task<string?> GetLastPrNumberAsync(string prefix, CancellationToken ct = default);
 
-    Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default);
-
     // Command Methods
     Task CreateAsync(PurchaseRequisition purchaseRequisition, CancellationToken ct = default);
 

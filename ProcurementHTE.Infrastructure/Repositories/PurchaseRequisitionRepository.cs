@@ -108,19 +108,6 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<bool> IsPrNumberExistsAsync(string prNumber, string? excludePrId = null, CancellationToken ct = default)
-    {
-        var query = _context.PurchaseRequisitions
-            .Where(pr => pr.PrNumber == prNumber && !pr.IsDeleted);
-
-        if (!string.IsNullOrEmpty(excludePrId))
-        {
-            query = query.Where(pr => pr.PrId != excludePrId);
-        }
-
-        return await query.AnyAsync(ct);
-    }
-
     #endregion
 
     #region Command Methods

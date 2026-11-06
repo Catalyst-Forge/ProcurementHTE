@@ -16,5 +16,6 @@ public interface IPurchaseRequisitionCommandService
         CancellationToken ct = default
     );
 
+    Task<bool> DeleteIfEmptyAsync(string id, string deletedByUserId, CancellationToken ct = default);
     Task DeleteAsync(string id, string deletedByUserId, CancellationToken ct = default);
 }

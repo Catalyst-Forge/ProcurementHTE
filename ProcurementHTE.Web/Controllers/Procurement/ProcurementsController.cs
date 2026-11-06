@@ -28,6 +28,7 @@ public partial class ProcurementsController : Controller
     private readonly IUnitTypeRepository _unitTypeRepository;
     private readonly INotificationService _notificationService;
     private readonly IProcurementTrackingService _trackingService;
+    private readonly IPurchaseRequisitionCommandService _prCommandService;
     private readonly IQrCodeGenerator _qrCodeGenerator;
     private readonly ILogger<ProcurementsController> _logger;
 
@@ -47,6 +48,7 @@ public partial class ProcurementsController : Controller
         IUnitTypeRepository unitTypeRepository,
         INotificationService notificationService,
         IProcurementTrackingService trackingService,
+        IPurchaseRequisitionCommandService prCommandService,
         IQrCodeGenerator qrCodeGenerator,
         ILogger<ProcurementsController> logger
     )
@@ -67,6 +69,7 @@ public partial class ProcurementsController : Controller
         _unitTypeRepository = unitTypeRepository;
         _notificationService = notificationService;
         _trackingService = trackingService;
+        _prCommandService = prCommandService;
         _qrCodeGenerator = qrCodeGenerator;
         _logger = logger;
     }

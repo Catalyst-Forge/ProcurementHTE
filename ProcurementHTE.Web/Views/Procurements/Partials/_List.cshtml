@@ -87,7 +87,7 @@
                         && !statusName.Equals("Closed", StringComparison.OrdinalIgnoreCase)
                         && !statusName.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
                     var canEditThisItem = canManage && canEdit.Succeeded && !isPublished;
-                    var canDeleteThisItem = canManage && canDelete.Succeeded && !isPublished;
+                    var canDeleteThisItem = User.IsInRole("Admin") || (canManage && canDelete.Succeeded && !isPublished);
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
                             @item.JobName

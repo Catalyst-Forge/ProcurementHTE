@@ -16,8 +16,7 @@ public sealed class PurchaseRequisitionConfiguration : IEntityTypeConfiguration<
 
         entity
             .HasIndex(pr => pr.PrNumber)
-            .IsUnique()
-            .HasDatabaseName("AK_PurchaseRequisitions_PrNumber")
+            .HasDatabaseName("IX_PurchaseRequisitions_PrNumber")
             .HasFilter("[IsDeleted] = 0");
 
         entity

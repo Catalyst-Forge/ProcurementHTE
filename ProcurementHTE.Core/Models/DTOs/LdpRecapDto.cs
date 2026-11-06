@@ -65,7 +65,8 @@ namespace ProcurementHTE.Core.Models.DTOs
         public DateTime? TanggalRilisPr { get; set; }
 
         // Approval Dates
-        public DateTime? TanggalApprovalOps { get; set; }
+        public DateTime? TanggalApprovalAnalyst { get; set; }
+        public DateTime? TanggalApprovalAsstManager { get; set; }
         public DateTime? TanggalApprovalManager { get; set; }
         public DateTime? TanggalApprovalVp { get; set; }
         public DateTime? TanggalApprovalDirektur { get; set; }

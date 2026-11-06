@@ -56,7 +56,10 @@ public partial class ProcurementsController
             await _pnlCommandService.DeleteByProcurementAsync(id, currentUserId);
             await _commandService.DeleteProcurementAsync(procurement, currentUserId);
 
-            if (!string.IsNullOrEmpty(prId))
+            if (
+                !string.IsNullOrEmpty(prId)
+                && !await _prCommandService.DeleteIfEmptyAsync(prId, currentUserId)
+            )
                 await _trackingService.RecalculatePrStatusAsync(prId);
 
             TempData["SuccessMessage"] = deletedDocsCount > 0

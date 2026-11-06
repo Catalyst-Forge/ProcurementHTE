@@ -27,6 +27,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Procurements.Include(p => p.JobType)
                 .Include(p => p.PurchaseRequisition)
                 .ThenInclude(pr => pr!.StatusHistories)
+                .Include(p => p.StatusHistories)
                 .Include(p => p.ProcOffers)
                 .Include(p => p.ProcDocuments!)
                 .ThenInclude(pd => pd.DocumentType)
