@@ -38,17 +38,17 @@
 
             <div class="flex-grow-1">
                 <div class="fw-semibold mb-1">@item.DocumentTypeName</div>
-                @await Html.PartialAsync("_ProcurementDocumentBadges", Model)
-                @await Html.PartialAsync("_ProcurementDocumentMetadata", Model)
+                @await Html.PartialAsync("Partials/_ProcurementDocumentBadges", Model)
+                @await Html.PartialAsync("Partials/_ProcurementDocumentMetadata", Model)
             </div>
         </div>
     </td>
 
     <td class="text-center" data-status-row="@Model.RowIndex">
-        @await Html.PartialAsync("_ProcurementDocumentStatusBadge", Model)
+        @await Html.PartialAsync("Partials/_ProcurementDocumentStatusBadge", Model)
     </td>
 
     <td class="pe-4" data-actions-row="@Model.RowIndex">
-        @await Html.PartialAsync("_ProcurementDocumentActions", Model)
+        @await Html.PartialAsync("Partials/_ProcurementDocumentActions", Model)
     </td>
 </tr>

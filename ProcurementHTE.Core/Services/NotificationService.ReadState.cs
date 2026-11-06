@@ -34,9 +34,13 @@ namespace ProcurementHTE.Core.Services
             return await _repository.GetUnreadCountAsync(userId, ct);
         }
 
-        public async Task MarkAsReadAsync(string notificationId, CancellationToken ct = default)
+        public async Task MarkAsReadAsync(
+            string notificationId,
+            string userId,
+            CancellationToken ct = default
+        )
         {
-            await _repository.MarkAsReadAsync(notificationId, ct);
+            await _repository.MarkAsReadAsync(notificationId, userId, ct);
         }
 
         public async Task MarkAllAsReadAsync(string userId, CancellationToken ct = default)

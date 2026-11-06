@@ -69,23 +69,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var end = start.AddMonths(1);
 
             return await _context
-                .ProfitLossItems.Where(item =>
-                    item.ProfitLoss.CreatedAt >= start
-                    && item.ProfitLoss.CreatedAt < end
-                    && !item.ProfitLoss.IsDeleted
-                    && !item.ProfitLoss.Procurement.IsDeleted
-                )
+                .ProfitLossItems.CountedInFinancials()
+                .Where(item => item.ProfitLoss.CreatedAt >= start && item.ProfitLoss.CreatedAt < end)
                 .SumAsync(item => item.Revenue);
         }
 
         public async Task<IReadOnlyList<RevenuePerMonthDto>> GetRevenuePerMonthAsync(int year)
         {
             return await _context
-                .ProfitLossItems.Where(item =>
-                    item.ProfitLoss.CreatedAt.Year == year
-                    && !item.ProfitLoss.IsDeleted
-                    && !item.ProfitLoss.Procurement.IsDeleted
-                )
+                .ProfitLossItems.CountedInFinancials()
+                .Where(item => item.ProfitLoss.CreatedAt.Year == year)
                 .GroupBy(item => item.ProfitLoss.CreatedAt.Month)
                 .Select(group => new RevenuePerMonthDto
                 {

@@ -63,12 +63,12 @@ namespace ProcurementHTE.Web.Controllers.Api
             CancellationToken ct = default
         )
         {
-            await _notificationService.MarkAsReadAsync(notificationId, ct);
-
             var userId = _userManager.GetUserId(User);
-            var unreadCount = !string.IsNullOrEmpty(userId)
-                ? await _notificationService.GetUnreadCountAsync(userId, ct)
-                : 0;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            await _notificationService.MarkAsReadAsync(notificationId, userId, ct);
+            var unreadCount = await _notificationService.GetUnreadCountAsync(userId, ct);
 
             return Ok(new { success = true, unreadCount });
         }

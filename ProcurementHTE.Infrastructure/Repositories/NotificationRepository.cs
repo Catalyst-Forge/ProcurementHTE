@@ -89,9 +89,16 @@ namespace ProcurementHTE.Infrastructure.Repositories
             );
         }
 
-        public async Task MarkAsReadAsync(string notificationId, CancellationToken ct = default)
+        public async Task MarkAsReadAsync(
+            string notificationId,
+            string userId,
+            CancellationToken ct = default
+        )
         {
-            var notification = await _context.Notifications.FindAsync([notificationId], ct);
+            var notification = await _context.Notifications.FirstOrDefaultAsync(
+                n => n.NotificationId == notificationId && n.UserId == userId,
+                ct
+            );
             if (notification != null)
             {
                 notification.IsRead = true;

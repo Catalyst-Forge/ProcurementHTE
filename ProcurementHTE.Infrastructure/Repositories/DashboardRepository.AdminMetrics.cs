@@ -32,7 +32,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync(ct);
 
             var revenueData = await _context
-                .ProfitLosses.Where(pl => !pl.IsDeleted)
+                .ProfitLosses.CountedInFinancials()
                 .Select(pl => new
                 {
                     pl.ProcurementId,

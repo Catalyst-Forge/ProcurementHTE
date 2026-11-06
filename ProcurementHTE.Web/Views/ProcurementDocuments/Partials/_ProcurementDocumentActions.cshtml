@@ -7,21 +7,21 @@
 <div class="d-flex gap-2 justify-content-end flex-wrap">
     @if (!item.Uploaded && item.IsUploadRequired && !item.IsGenerated)
     {
-        @await Html.PartialAsync("_ProcurementDocumentUploadForm", Model)
+        @await Html.PartialAsync("Partials/_ProcurementDocumentUploadForm", Model)
     }
 
     @if (item.IsGenerated)
     {
-        @await Html.PartialAsync("_ProcurementDocumentGenerateForm", Model)
+        @await Html.PartialAsync("Partials/_ProcurementDocumentGenerateForm", Model)
     }
 
     @if (Model.IsUploaded && !string.IsNullOrEmpty(item.ProcDocumentId))
     {
-        @await Html.PartialAsync("_ProcurementDocumentFileActions", Model)
+        @await Html.PartialAsync("Partials/_ProcurementDocumentFileActions", Model)
     }
 
     @if (Model.IsPending && !string.IsNullOrEmpty(item.ProcDocumentId))
     {
-        @await Html.PartialAsync("_ProcurementDocumentPendingActions", Model)
+        @await Html.PartialAsync("Partials/_ProcurementDocumentPendingActions", Model)
     }
 </div>

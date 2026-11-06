@@ -23,7 +23,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     Month = g.Key.Month,
                     Count = g.Count(),
                     TotalValue = g.Sum(p =>
-                        p.ProfitLosses.SelectMany(pl => pl.Items)
+                        p.ProfitLosses.Where(pl => p.ProcurementStatus != ProcurementStatus.Cancelled)
+                            .SelectMany(pl => pl.Items)
                             .Sum(item => (decimal?)item.Revenue)
                         ?? 0m
                     ),

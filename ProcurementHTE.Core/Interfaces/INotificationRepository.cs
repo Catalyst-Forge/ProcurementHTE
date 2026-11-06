@@ -19,7 +19,7 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
         Task<int> GetUnreadCountAsync(string userId, CancellationToken ct = default);
-        Task MarkAsReadAsync(string notificationId, CancellationToken ct = default);
+        Task MarkAsReadAsync(string notificationId, string userId, CancellationToken ct = default);
         Task MarkAllAsReadAsync(string userId, CancellationToken ct = default);
         Task DeleteAsync(string notificationId, CancellationToken ct = default);
         Task DeleteOldNotificationsAsync(int daysOld = 30, CancellationToken ct = default);

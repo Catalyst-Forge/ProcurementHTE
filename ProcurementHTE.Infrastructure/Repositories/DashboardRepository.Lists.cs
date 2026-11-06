@@ -76,7 +76,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     JobTypeName = g.Key,
                     Count = g.Count(),
                     TotalValue = g.Sum(proc =>
-                        proc.ProfitLosses.SelectMany(pl => pl.Items)
+                        proc.ProfitLosses.Where(pl => proc.ProcurementStatus != ProcurementStatus.Cancelled)
+                            .SelectMany(pl => pl.Items)
                             .Sum(item => (decimal?)item.Revenue)
                         ?? 0m
                     ),

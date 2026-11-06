@@ -30,7 +30,7 @@
 
                 @if (sphLetters.Any())
                 {
-                    @await Html.PartialAsync("_ProcurementRoundLetterTable", sphLetters)
+                    @await Html.PartialAsync("Partials/_ProcurementRoundLetterTable", sphLetters)
                 }
                 else
                 {
@@ -54,7 +54,7 @@
 
                 @if (snhLetters.Any())
                 {
-                    @await Html.PartialAsync("_ProcurementRoundLetterTable", snhLetters)
+                    @await Html.PartialAsync("Partials/_ProcurementRoundLetterTable", snhLetters)
                 }
                 else
                 {

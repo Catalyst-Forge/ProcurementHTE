@@ -28,6 +28,9 @@ public static class IdentityServiceExtensions
         services.AddDualAuthentication(configuration);
         services.ConfigureApplicationCookie(ConfigureApplicationCookie);
         services.AddSession(ConfigureSession);
+        services.AddAntiforgery(options =>
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest
+        );
         services.AddScoped<IAuthorizationHandler, MinimumRoleHandler>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
@@ -105,6 +108,7 @@ public static class IdentityServiceExtensions
     {
         options.IdleTimeout = TimeSpan.FromMinutes(30);
         options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.IsEssential = true;
     }
 }

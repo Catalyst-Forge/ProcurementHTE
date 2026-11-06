@@ -70,6 +70,9 @@ if (!Directory.Exists(templatesPath))
 // ===========================================================================
 
 // Configure the HTTP request pipeline.
+// Runs first: HSTS and cookies need to see the original HTTPS scheme, not nginx's plain HTTP hop.
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -81,7 +84,6 @@ else
     app.UseHsts();
 }
 
-app.UseForwardedHeaders();
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 app.UseHttpsRedirection();

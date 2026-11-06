@@ -33,23 +33,23 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
         public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
         {
-            // P&L items have no soft delete of their own; skip those of deleted P&Ls or procurements.
             return await _context
-                .ProfitLossItems.Where(item => !item.ProfitLoss.IsDeleted && !item.ProfitLoss.Procurement.IsDeleted)
+                .ProfitLossItems.CountedInFinancials()
                 .SumAsync(item => (decimal?)item.Revenue, ct) ?? 0m;
         }
 
         public async Task<decimal> GetTotalCostAsync(CancellationToken ct = default)
         {
-            return await _context.ProfitLosses.SumAsync(
-                    pnl => (decimal?)pnl.SelectedVendorFinalOffer,
-                    ct
-                ) ?? 0m;
+            return await _context
+                .ProfitLosses.CountedInFinancials()
+                .SumAsync(pnl => (decimal?)pnl.SelectedVendorFinalOffer, ct) ?? 0m;
         }
 
         public async Task<decimal> GetTotalProfitAsync(CancellationToken ct = default)
         {
-            return await _context.ProfitLosses.SumAsync(pnl => (decimal?)pnl.Profit, ct) ?? 0m;
+            return await _context
+                .ProfitLosses.CountedInFinancials()
+                .SumAsync(pnl => (decimal?)pnl.Profit, ct) ?? 0m;
         }
 
         public async Task<int> GetTotalPurchaseRequisitionsCountAsync(
