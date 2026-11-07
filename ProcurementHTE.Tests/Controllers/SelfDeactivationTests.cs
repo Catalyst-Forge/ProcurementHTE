@@ -68,13 +68,35 @@ public sealed class SelfDeactivationTests : IAsyncLifetime
             Email = _admin.Email!,
             UserName = _admin.UserName!,
             IsActive = false,
+            SelectedRoles = ["Admin"],
         };
 
         var result = await controller.Edit(_admin.Id, new UserFormPageViewModel { Form = form });
 
         Assert.IsType<ViewResult>(result);
-        Assert.True(controller.ModelState.ContainsKey("Form.IsActive"));
+        Assert.Equal("Form.IsActive", Assert.Single(controller.ModelState).Key);
         Assert.True((await _users.FindByIdAsync(_admin.Id))!.IsActive);
+    }
+
+    [Fact]
+    public async Task Edit_form_cannot_remove_admin_from_the_signed_in_account()
+    {
+        var controller = NewController();
+        var form = new UserFormInputModel
+        {
+            Id = _admin.Id,
+            FirstName = "Changed",
+            Email = _admin.Email!,
+            UserName = _admin.UserName!,
+            IsActive = true,
+            SelectedRoles = ["Operation"],
+        };
+
+        var result = await controller.Edit(_admin.Id, new UserFormPageViewModel { Form = form });
+
+        Assert.IsType<ViewResult>(result);
+        Assert.Equal("Form.SelectedRoles", Assert.Single(controller.ModelState).Key);
+        Assert.Equal("admin", (await _users.FindByIdAsync(_admin.Id))!.FirstName);
     }
 
     private static User NewUser(string name) => new()

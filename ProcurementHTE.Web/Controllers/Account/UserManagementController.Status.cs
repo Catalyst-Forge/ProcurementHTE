@@ -4,8 +4,11 @@ namespace ProcurementHTE.Web.Controllers.Account;
 
 public partial class UserManagementController
 {
+    private const string AdminRole = "Admin";
     private const string SelfDeactivationMessage =
         "Tidak dapat menonaktifkan akun yang sedang digunakan.";
+    private const string SelfAdminRemovalMessage =
+        "Tidak dapat melepas role Admin dari akun yang sedang digunakan.";
 
     private bool IsCurrentUser(string userId) =>
         string.Equals(_userManager.GetUserId(User), userId, StringComparison.OrdinalIgnoreCase);

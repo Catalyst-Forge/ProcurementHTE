@@ -46,8 +46,14 @@ public partial class UserManagementController
             return BadRequest();
 
         await ValidateNipIsUniqueAsync(model.Form, excludeUserId: id);
-        if (!model.Form.IsActive && IsCurrentUser(id))
-            ModelState.AddModelError("Form.IsActive", SelfDeactivationMessage);
+        if (IsCurrentUser(id))
+        {
+            if (!model.Form.IsActive)
+                ModelState.AddModelError("Form.IsActive", SelfDeactivationMessage);
+
+            if (!model.Form.SelectedRoles.Contains(AdminRole))
+                ModelState.AddModelError("Form.SelectedRoles", SelfAdminRemovalMessage);
+        }
 
         if (!ModelState.IsValid)
         {
