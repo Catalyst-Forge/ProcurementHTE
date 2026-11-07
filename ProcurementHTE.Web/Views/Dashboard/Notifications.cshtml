@@ -104,7 +104,6 @@
                                href="@Url.Action("Notifications", "Dashboard", new { page = currentPage - 1, unreadOnly })"
                                hx-get='@Url.Action("Notifications", "Dashboard", new { page = currentPage - 1, unreadOnly })'
                                hx-target="#app-content"
-                               hx-indicator="#content-loading"
                                hx-push-url="true">
                                 <i class="bi bi-chevron-left"></i> Sebelumnya
                             </a>
@@ -114,7 +113,6 @@
                                href="@Url.Action("Notifications", "Dashboard", new { page = currentPage + 1, unreadOnly })"
                                hx-get='@Url.Action("Notifications", "Dashboard", new { page = currentPage + 1, unreadOnly })'
                                hx-target="#app-content"
-                               hx-indicator="#content-loading"
                                hx-push-url="true">
                                 Berikutnya <i class="bi bi-chevron-right"></i>
                             </a>

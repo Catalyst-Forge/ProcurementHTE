@@ -250,7 +250,7 @@ A three-part row: question tile, answer field, refresh button (`1fr 1fr 48px`, 8
 The form-level error is a 10px-radius danger-wash box with a danger-line border, 14px/500 danger text, and a leading 16px icon. It carries `role="alert"`.
 
 ### Loading States
-A read never covers the screen: moving between pages, sorting, filtering, and paging show a 3px blue bar at the top of the viewport after 300ms. A write shows the full-screen overlay with the text `Memproses...`. The overlay blocks clicks at once so nothing is sent twice, but it stays invisible for its first 300ms, so a quick action does not flash.
+A read never covers the screen. After 300ms, moving to another page swaps the content area for a shimmering skeleton while the sidebar and navbar stay, and sorting, filtering, or paging shimmers only the table cells. A request that fills part of the page shows neither. A write shows the full-screen overlay with the text `Memproses...`. The overlay blocks clicks at once so nothing is sent twice, but it stays invisible for its first 300ms, so a quick action does not flash.
 
 ### Track Stage (signature component; provisional, see Overview)
 The infinity mark redrawn as a road on the navy stage. The track is an SVG path stroked with the brand gradient (blue-600 → #0EA5D6 → teal-500). It is broken at the centre crossing so the overpass reads the way the logo does. Three document tokens (white sheet, folded corner, one blue line and two fold-grey lines) travel the path via SMIL `animateMotion`. The route runs centre → left loop → right loop over 16s, and the tokens are phased a third apart.

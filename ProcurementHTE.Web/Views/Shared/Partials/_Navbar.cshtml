@@ -46,7 +46,6 @@
                 <a asp-controller="Dashboard" asp-action="Notifications" class="text-decoration-none small fw-semibold text-primary"
                    hx-get='@Url.Action("Notifications", "Dashboard")'
                    hx-target="#app-content"
-                   hx-indicator="#content-loading"
                    hx-push-url="true">
                   <i class="bi bi-list-ul"></i> Lihat Semua
                 </a>
@@ -69,7 +68,6 @@
                    href="@Url.Action("Settings", "Account")"
                    hx-get='@Url.Action("Settings", "Account")'
                    hx-target="#app-content"
-                   hx-indicator="#content-loading"
                    hx-push-url="true"
                    data-nav-controller="Account"
                    data-nav-action="Settings">Profil &amp; Keamanan</a>

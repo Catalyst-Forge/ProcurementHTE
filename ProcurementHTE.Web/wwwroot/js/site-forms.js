@@ -113,7 +113,7 @@
   };
 
   // Only a write covers the screen, so it cannot be sent twice. Moving between pages,
-  // sorting, and filtering are reads, and they get the thin bar at the top instead.
+  // sorting, and filtering are reads, and they get a skeleton instead.
   const shouldShowOverlayForHtmx = (source, target, verb) => {
     if (source && typeof source.closest === "function" && (source.closest(".delete-form") || source.closest("[data-no-loading-overlay]"))) {
       return false;
@@ -153,10 +153,15 @@
       return;
     }
 
-    const overlayNeeded = shouldShowOverlayForHtmx(source, target, event.detail?.requestConfig?.verb);
+    const verb = event.detail?.requestConfig?.verb;
+    const overlayNeeded = shouldShowOverlayForHtmx(source, target, verb);
     if (overlayNeeded) window.SiteApp.showGlobalLoadingOverlay();
 
-    hxLoadingRequests.set(xhr, { overlayShown: overlayNeeded });
+    // A request that fills part of the page keeps the rest of it visible.
+    const skeletonNeeded = verb === "get" && target?.id === "app-content";
+    if (skeletonNeeded) window.SiteApp.showContentSkeleton(event.detail?.pathInfo?.requestPath);
+
+    hxLoadingRequests.set(xhr, { overlayShown: overlayNeeded, skeletonShown: skeletonNeeded });
   });
 
   const releaseHxOverlay = (event) => {
@@ -169,9 +174,10 @@
 
     if (meta.form && meta.form.dataset) meta.form.dataset.loadingActive = "false";
     if (meta.overlayShown) window.SiteApp.hideGlobalLoadingOverlay();
+    if (meta.skeletonShown) window.SiteApp.hideContentSkeleton();
   };
 
-  ["htmx:afterSwap", "htmx:afterOnLoad", "htmx:responseError", "htmx:sendError", "htmx:timeout", "htmx:abort", "htmx:swapError"].forEach((evtName) => {
+  ["htmx:afterSwap", "htmx:afterOnLoad", "htmx:responseError", "htmx:sendError", "htmx:sendAbort", "htmx:timeout", "htmx:abort", "htmx:swapError"].forEach((evtName) => {
     document.body.addEventListener(evtName, releaseHxOverlay);
   });
 

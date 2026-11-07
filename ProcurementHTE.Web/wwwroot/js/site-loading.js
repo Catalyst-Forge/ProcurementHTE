@@ -1,7 +1,11 @@
 (function () {
   "use strict";
 
+  const SKELETON_DELAY_MS = 300;
+
   let overlayFailsafe = null;
+  let skeletonTimer = null;
+  let readsInFlight = 0;
   let overlaySuppressUntil = 0;
 
   const getOverlay = () => document.getElementById("global-loading-overlay");
@@ -42,6 +46,45 @@
     hideOverlayNow();
   };
 
+  const clearSkeleton = () => {
+    clearTimeout(skeletonTimer);
+    document.getElementById("content-loading")?.classList.remove("is-active");
+    const content = document.getElementById("app-content");
+    if (!content) return;
+    content.classList.remove("is-loading");
+    content.removeAttribute("aria-busy");
+    content.querySelector(".table-refreshing")?.classList.remove("table-refreshing");
+  };
+
+  const applySkeleton = (path) => {
+    const content = document.getElementById("app-content");
+    if (!content) return;
+    content.setAttribute("aria-busy", "true");
+
+    // Sorting, filtering, and paging stay on the page, so only the table has to wait.
+    const samePage = new URL(path, window.location.href).pathname === window.location.pathname;
+    const table = samePage ? content.querySelector(".table-responsive") : null;
+    if (table) {
+      table.classList.add("table-refreshing");
+      return;
+    }
+
+    content.classList.add("is-loading");
+    document.getElementById("content-loading")?.classList.add("is-active");
+  };
+
+  // A read only shows a skeleton once the wait is long enough to notice.
+  window.SiteApp.showContentSkeleton = function(path) {
+    readsInFlight += 1;
+    clearTimeout(skeletonTimer);
+    skeletonTimer = setTimeout(() => applySkeleton(path), SKELETON_DELAY_MS);
+  };
+
+  window.SiteApp.hideContentSkeleton = function() {
+    readsInFlight = Math.max(0, readsInFlight - 1);
+    if (readsInFlight === 0) clearSkeleton();
+  };
+
   window.AppLoadingOverlay = {
     show: window.SiteApp.showGlobalLoadingOverlay,
     hide: window.SiteApp.hideGlobalLoadingOverlay,
@@ -80,8 +123,10 @@
     }
   });
 
+  // htmx snapshots the page here, and Back would restore a skeleton that never ends.
   document.body.addEventListener("htmx:beforeHistorySave", () => {
     hideOverlayNow();
+    clearSkeleton();
   });
 
   document.body.addEventListener("htmx:historyRestore", () => {

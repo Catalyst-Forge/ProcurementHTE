@@ -48,13 +48,25 @@
             }
 
             <div class="container-fluid gx-8 mb-5 position-relative">
-                <div id="content-loading" class="page-progress" aria-hidden="true"></div>
+                <div id="content-loading" class="content-skeleton" aria-hidden="true">
+                    <div class="content-skeleton__line content-skeleton__title"></div>
+                    <div class="content-skeleton__line content-skeleton__subtitle"></div>
+                    <div class="content-skeleton__panel">
+                        @for (var row = 0; row < 7; row++)
+                        {
+                            <div class="content-skeleton__row">
+                                <div class="content-skeleton__line"></div>
+                                <div class="content-skeleton__line"></div>
+                                <div class="content-skeleton__line"></div>
+                            </div>
+                        }
+                    </div>
+                </div>
                 <main id="app-content"
                       role="main"
                       class="pb-3"
                       hx-boost="@hxBoostValue"
                       hx-target="#app-content"
-                      hx-indicator="#content-loading"
                       hx-push-url="true">
 
                     @await Html.PartialAsync("_SweetAlerts")

@@ -27,6 +27,7 @@
   --dx-line: #D3DCE9;
   --dx-line-strong: #B7C4D8;
   --dx-ground: #EDF2F8;
+  --dx-skeleton-sheen: linear-gradient(90deg, rgba(var(--dx-ink-rgb), 0.06) 25%, rgba(var(--dx-ink-rgb), 0.13) 50%, rgba(var(--dx-ink-rgb), 0.06) 75%);
   --dx-field: #F6F8FC;
   --dx-card: #FFFFFF;
 
