@@ -36,6 +36,7 @@
         <thead class="table-light text-center">
             <tr class="align-middle">
                 <th sort-key="jobName" class="border-end" style="min-width: 220px">Job Name</th>
+                <th sort-key="spmp" class="border-end" style="min-width: 120px">SPMP</th>
                 <th sort-key="wonum" class="border-end">WO Number</th>
                 <th sort-key="startDate" sort-kind="date" class="border-end" style="min-width: 110px">Start Date</th>
                 <th sort-key="jobType" class="border-end" style="min-width: 100px">Job Type</th>
@@ -55,7 +56,7 @@
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="13" class="text-center text-muted">No Procurement data found</td>
+                    <td colspan="15" class="text-center text-muted">No Procurement data found</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
@@ -91,6 +92,9 @@
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
                             @item.JobName
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="SPMP">
+                            @(string.IsNullOrWhiteSpace(item.SpmpNumber) ? "-" : item.SpmpNumber)
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="WO Number">
                             @wonum
