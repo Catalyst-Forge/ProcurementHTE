@@ -1,10 +1,9 @@
 <!--
 Sync Impact Report
-- Version change: none -> 1.0.0 (first ratification)
-- Modified principles: none
-- Added principles: I. Batas Lapisan, II. Perilaku Baru Disertai Test, III. Data Produksi Dilindungi,
-  IV. Push ke Master Adalah Deploy, V. Akses dan Keamanan
-- Added sections: Batasan Teknis, Alur Kerja, Governance
+- Version change: 1.0.0 -> 2.0.0
+- Modified principles: III. Data Produksi Dilindungi (hard delete allowed for one Admin path, with an append-only log)
+- Added principles: none
+- Added sections: none
 - Removed sections: none
 - Templates: plan-template.md reads this file at runtime through its Constitution Check; no edits needed
 - Follow-up TODOs: none
@@ -41,12 +40,17 @@ Alasan: test berjalan di InMemory, sedangkan produksi berjalan di SQL Server.
 ### III. Data Produksi Dilindungi
 
 - Data bisnis WAJIB dihapus lewat soft delete (`IsDeleted`), bukan hard delete.
+- Satu-satunya hard delete adalah hapus permanen oleh Admin dari Data Terhapus. Data WAJIB sudah di-soft-delete,
+  tidak dipakai data lain, dan disertai alasan.
+- Setiap hapus permanen WAJIB tercatat di `PermanentDeletionLogs` dalam transaksi yang sama. Log itu append-only
+  dan WAJIB tidak bisa diubah atau dihapus.
 - Perubahan pada database produksi WAJIB mendapat persetujuan eksplisit setiap kali.
 - Migrasi WAJIB aditif, didahului backup, dan skrip idempotent-nya diperiksa sebelum dijalankan.
 - Migrasi WAJIB diterapkan ke produksi sebelum push, dengan `sqlcmd -I`.
 
 Alasan: aplikasi lokal memakai database produksi dan tidak menjalankan migrasi sendiri, jadi skema
-yang tertinggal langsung membuatnya error.
+yang tertinggal langsung membuatnya error. Hapus permanen tidak bisa dibatalkan, jadi jejaknya harus lebih
+panjang umurnya daripada data yang dihapus.
 
 ### IV. Push ke Master Adalah Deploy
 
@@ -90,4 +94,4 @@ Check, dan pengecualian WAJIB dicatat beserta alasannya di bagian Complexity Tra
 Perubahan dilakukan lewat `/speckit-constitution` dengan penomoran semantik: MAJOR untuk menghapus atau
 mengubah makna prinsip, MINOR untuk menambah prinsip atau bagian, dan PATCH untuk perbaikan kata.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-07
+**Version**: 2.0.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-08

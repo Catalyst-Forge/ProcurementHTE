@@ -10,7 +10,7 @@ namespace ProcurementHTE.Infrastructure.Data;
 /// Turns EF removals of <see cref="ISoftDeletable"/> entities into soft deletes
 /// and stamps who/when on every deletion, so a plain <c>Remove()</c> anywhere in
 /// the codebase can never physically delete these rows.
-/// Bulk <c>ExecuteDelete</c> bypasses this on purpose.
+/// Bulk <c>ExecuteDelete</c> bypasses this on purpose, and so does RecordPurgeService.
 /// </summary>
 public sealed class SoftDeleteInterceptor(IServiceProvider services) : SaveChangesInterceptor
 {
@@ -57,6 +57,9 @@ public sealed class SoftDeleteInterceptor(IServiceProvider services) : SaveChang
             var entity = entry.Entity;
             switch (entry.State)
             {
+                case EntityState.Deleted when context is AppDbContext { PermanentDeleteAllowed: true }:
+                    break;
+
                 case EntityState.Deleted:
                     entry.State = EntityState.Modified;
                     entity.IsDeleted = true;

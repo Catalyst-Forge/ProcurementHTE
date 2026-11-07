@@ -21,6 +21,34 @@ public sealed record DeletedRecordItem(
     string? DeletedByName
 );
 
+public sealed record PurgePreview(
+    DeletedRecordKind Kind,
+    string Id,
+    string Title,
+    string? Detail,
+    int RelatedRows,
+    int FileCount,
+    IReadOnlyList<string> Blockers
+);
+
+public sealed record PurgeRequest(
+    DeletedRecordKind Kind,
+    string Id,
+    string Reason,
+    string ActorUserId,
+    string? IpAddress
+)
+{
+    public const int MinReasonLength = 10;
+}
+
+public sealed record PurgeResult(bool Succeeded, string Message)
+{
+    public static PurgeResult Ok(string message) => new(true, message);
+
+    public static PurgeResult Fail(string message) => new(false, message);
+}
+
 public sealed record RestoreResult(bool Succeeded, string Message)
 {
     public static RestoreResult Ok(string message) => new(true, message);

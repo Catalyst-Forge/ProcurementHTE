@@ -1,0 +1,60 @@
+@using ProcurementHTE.Web.Models.Admin
+@model IReadOnlyList<ProcurementHTE.Core.Models.PermanentDeletionLog>
+@{
+    ViewData["Title"] = "Riwayat Hapus Permanen";
+}
+
+<div class="account-settings">
+    <header class="settings-header mb-4">
+        <h2 class="mb-1">Riwayat Hapus Permanen</h2>
+        <p class="text-muted mb-2">Catatan ini tidak bisa diubah atau dihapus.</p>
+        <a asp-action="Index" class="small">Kembali ke Data Terhapus</a>
+    </header>
+
+    <section class="card settings-card" aria-label="Riwayat hapus permanen">
+        @if (Model.Count == 0)
+        {
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox fs-2 text-muted" aria-hidden="true"></i>
+                <p class="fw-semibold mt-2 mb-0">Belum ada data yang dihapus permanen</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-4">Data</th>
+                            <th scope="col">Alasan</th>
+                            <th scope="col">Ikut terhapus</th>
+                            <th scope="col">Dihapus oleh</th>
+                            <th scope="col" class="pe-4">Waktu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-semibold text-break">@log.Title</div>
+                                    <small class="text-muted text-break">@DeletedRecordsViewModel.LabelFor(log.Kind)@(string.IsNullOrWhiteSpace(log.Detail) ? string.Empty : $" · {log.Detail}")</small>
+                                </td>
+                                <td class="text-break">@log.Reason</td>
+                                <td class="text-nowrap">
+                                    @log.RelatedRows data, @log.FileCount file
+                                    @if (log.FilesFailed > 0)
+                                    {
+                                        <div class="text-danger small">@log.FilesFailed file gagal</div>
+                                    }
+                                </td>
+                                <td>@log.DeletedByName</td>
+                                <td class="text-nowrap pe-4">@log.DeletedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

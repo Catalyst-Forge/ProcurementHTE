@@ -7,6 +7,10 @@ namespace ProcurementHTE.Infrastructure.Data
     public class AppDbContext(DbContextOptions<AppDbContext> options)
         : IdentityDbContext<User, Role, string>(options)
     {
+        // Only RecordPurgeService sets this. Every other removal stays a soft delete.
+        internal bool PermanentDeleteAllowed { get; set; }
+
+        public DbSet<PermanentDeletionLog> PermanentDeletionLogs { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
         public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ProcurementHTE.Core.Models.DTOs;
 
 namespace ProcurementHTE.Web.Models.Admin;
@@ -20,4 +21,34 @@ public class DeletedRecordsViewModel
         (DeletedRecordKind.DocumentApprovalRule, "Approval Rules"),
         (DeletedRecordKind.User, "Users"),
     ];
+
+    public static string LabelFor(string kind) =>
+        Enum.TryParse<DeletedRecordKind>(kind, out var parsed)
+            ? Tabs.FirstOrDefault(tab => tab.Kind == parsed).Label ?? kind
+            : kind;
+}
+
+public class PurgePageViewModel
+{
+    public required PurgePreview Preview { get; init; }
+    public required PurgeInputModel Form { get; init; }
+}
+
+public class PurgeInputModel
+{
+    public const string ConfirmationText = "HAPUS";
+
+    public DeletedRecordKind Kind { get; set; }
+
+    [Required]
+    public string Id { get; set; } = default!;
+
+    [Required(ErrorMessage = "Alasan wajib diisi.")]
+    [StringLength(500, MinimumLength = PurgeRequest.MinReasonLength, ErrorMessage = "Alasan 10 sampai 500 karakter.")]
+    [Display(Name = "Alasan")]
+    public string Reason { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Ketik HAPUS untuk mengonfirmasi.")]
+    [Display(Name = "Konfirmasi")]
+    public string Confirmation { get; set; } = string.Empty;
 }

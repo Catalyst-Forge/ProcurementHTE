@@ -1,0 +1,70 @@
+@using ProcurementHTE.Web.Models.Admin
+@model PurgePageViewModel
+@{
+    ViewData["Title"] = "Hapus Permanen";
+    var preview = Model.Preview;
+    var blocked = preview.Blockers.Count > 0;
+}
+
+<div class="account-settings">
+    <header class="settings-header mb-4">
+        <h2 class="mb-1">Hapus Permanen</h2>
+        <p class="text-muted mb-0">Data ini hilang selamanya dan tidak bisa dipulihkan. Catatan penghapusannya tetap tersimpan di Riwayat Hapus Permanen.</p>
+    </header>
+
+    <section class="card settings-card" aria-labelledby="purge-title">
+        <div class="card-body">
+            <p class="text-muted small mb-1">@DeletedRecordsViewModel.LabelFor(preview.Kind.ToString())</p>
+            <h3 class="h5 mb-1 text-break" id="purge-title">@preview.Title</h3>
+            @if (!string.IsNullOrWhiteSpace(preview.Detail))
+            {
+                <p class="text-muted small mb-3 text-break">@preview.Detail</p>
+            }
+
+            <ul class="mb-4 ps-3">
+                <li>@preview.RelatedRows data terkait ikut terhapus</li>
+                <li>@preview.FileCount file ikut terhapus dari penyimpanan</li>
+            </ul>
+
+            @if (blocked)
+            {
+                <div class="alert alert-warning mb-3" role="alert">
+                    <p class="fw-semibold mb-1">Belum bisa dihapus, karena masih dipakai:</p>
+                    <ul class="mb-0 ps-3">
+                        @foreach (var blocker in preview.Blockers)
+                        {
+                            <li>@blocker</li>
+                        }
+                    </ul>
+                </div>
+                <a asp-action="Index" asp-route-kind="@preview.Kind" class="btn btn-outline-secondary">Kembali</a>
+            }
+            else
+            {
+                <form asp-action="Purge" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    <input type="hidden" asp-for="Form.Kind" />
+                    <input type="hidden" asp-for="Form.Id" />
+
+                    <div class="mb-3">
+                        <label asp-for="Form.Reason" class="form-label"></label>
+                        <textarea asp-for="Form.Reason" class="form-control" rows="3" maxlength="500"></textarea>
+                        <div class="form-text">Tersimpan di log. Minimal 10 karakter.</div>
+                        <span asp-validation-for="Form.Reason" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Form.Confirmation" class="form-label">Ketik <strong>@PurgeInputModel.ConfirmationText</strong> untuk mengonfirmasi</label>
+                        <input asp-for="Form.Confirmation" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="Form.Confirmation" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a asp-action="Index" asp-route-kind="@preview.Kind" class="btn btn-outline-secondary">Batal</a>
+                        <button type="submit" class="btn btn-danger">Hapus Permanen</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </section>
+</div>
