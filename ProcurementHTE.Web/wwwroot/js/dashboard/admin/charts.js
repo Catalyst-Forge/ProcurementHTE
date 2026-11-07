@@ -22,7 +22,7 @@
                     data: roleData.map(item => item.userCount),
                     backgroundColor: roleData.map(item => item.color),
                     borderWidth: 2,
-                    borderColor: '#fff'
+                    borderColor: dxColor('card')
                 }]
             },
             options: {
@@ -50,7 +50,7 @@
                 datasets: [{
                     label: 'Count',
                     data: regionData.map(item => item.count),
-                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6f42c1'],
+                    backgroundColor: [dxColor('blue-600'), dxColor('success'), dxColor('warning'), dxColor('danger'), dxColor('info'), dxColor('navy-800')],
                     borderRadius: 4
                 }]
             },

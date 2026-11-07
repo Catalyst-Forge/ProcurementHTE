@@ -140,11 +140,11 @@
 
     string GetIconBackground(string? type) => type switch
     {
-        "ProcurementPublished" => "#0d6efd",
-        "ApprovedByAnalyst" or "ApprovedByAssistantManager" or "ApprovedByManager" => "#198754",
-        "PrRejected" => "#dc3545",
-        "PrCompleted" => "#ffc107",
-        _ => "#6c757d"
+        "ProcurementPublished" => "var(--dx-blue-600)",
+        "ApprovedByAnalyst" or "ApprovedByAssistantManager" or "ApprovedByManager" => "var(--dx-success)",
+        "PrRejected" => "var(--dx-danger)",
+        "PrCompleted" => "var(--dx-warning)",
+        _ => "var(--dx-ink-muted)"
     };
 }
 

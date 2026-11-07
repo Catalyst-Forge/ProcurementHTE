@@ -27,8 +27,8 @@
             text: 'Apakah Anda yakin ingin meng-approve procurement ini?',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
+            confirmButtonColor: 'var(--dx-success)',
+            cancelButtonColor: 'var(--dx-ink-muted)',
             confirmButtonText: 'Ya, Approve',
             cancelButtonText: 'Batal'
         }).then(function(result) {
@@ -45,7 +45,7 @@
                 title: 'Alasan Wajib Diisi',
                 text: 'Silakan masukkan alasan reject terlebih dahulu.',
                 icon: 'warning',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--dx-blue-600)'
             });
             return;
         }
@@ -55,8 +55,8 @@
             text: 'Apakah Anda yakin ingin me-reject procurement ini?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
+            confirmButtonColor: 'var(--dx-danger)',
+            cancelButtonColor: 'var(--dx-ink-muted)',
             confirmButtonText: 'Ya, Reject',
             cancelButtonText: 'Batal'
         }).then(function(result) {

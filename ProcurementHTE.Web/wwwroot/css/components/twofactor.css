@@ -21,10 +21,10 @@
   gap: 0.35rem;
   align-items: stretch;
   padding: 0.35rem;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(var(--dx-ink-rgb), 0.12);
   border-radius: 0.75rem;
   background: rgba(248, 249, 250, 0.94);
-  box-shadow: 0 0.35rem 1rem rgba(15, 23, 42, 0.08);
+  box-shadow: 0 0.35rem 1rem rgba(var(--dx-ink-rgb), 0.08);
   backdrop-filter: blur(10px);
 }
 
@@ -40,7 +40,7 @@
   min-height: 2.85rem;
   padding: 0 0.75rem;
   border-radius: 0.55rem;
-  color: #1f2937;
+  color: var(--dx-ink);
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -48,13 +48,13 @@
 
 .twofactor-method-tabs .nav-link.active {
   color: #fff;
-  box-shadow: 0 0.35rem 0.75rem rgba(13, 110, 253, 0.24);
+  box-shadow: 0 0.35rem 0.75rem rgba(var(--dx-blue-600-rgb), 0.24);
 }
 
 .twofactor-method-tabs .nav-link.disabled,
 .twofactor-method-tabs .nav-link:disabled {
-  color: #6c757d;
-  background-color: #eef1f4;
+  color: var(--dx-ink-muted);
+  background-color: var(--dx-ground);
   opacity: 0.72;
 }
 
@@ -82,7 +82,7 @@
 
 .twofactor-panel-header p {
   margin-bottom: 0;
-  color: #6c757d;
+  color: var(--dx-ink-muted);
 }
 
 .twofactor-method-form {
@@ -94,9 +94,9 @@
 }
 
 .twofactor-method-surface {
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(var(--dx-ink-rgb), 0.12);
   border-radius: 0.5rem;
-  background: #f8fafc;
+  background: var(--dx-field);
   padding: 1rem;
 }
 
@@ -121,14 +121,14 @@
   display: block;
   width: 100%;
   max-width: 11rem;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(var(--dx-ink-rgb), 0.12);
   border-radius: 0.5rem;
   background: #fff;
   padding: 0.45rem;
 }
 
 .twofactor-qr-frame small {
-  color: #6c757d;
+  color: var(--dx-ink-muted);
   text-align: center;
   line-height: 1.35;
 }
@@ -166,7 +166,7 @@
   gap: 1rem;
   margin-top: auto;
   padding-top: 0.9rem;
-  border-top: 1px solid rgba(15, 23, 42, 0.1);
+  border-top: 1px solid rgba(var(--dx-ink-rgb), 0.1);
 }
 
 .twofactor-action-row .btn-link {
@@ -177,10 +177,10 @@
   display: grid;
   align-content: center;
   min-height: 15rem;
-  border: 1px solid rgba(255, 193, 7, 0.45);
+  border: 1px solid rgba(var(--dx-warning-rgb), 0.45);
   border-radius: 0.5rem;
   background: rgba(255, 243, 205, 0.55);
-  color: #664d03;
+  color: var(--dx-warning-ink);
   padding: 1.25rem;
 }
 

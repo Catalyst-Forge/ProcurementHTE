@@ -9,4 +9,8 @@
     history.scrollRestoration = "manual";
   }
   window.SiteApp = {};
+
+  // Canvas charts cannot read var(), so they ask for the token's value here.
+  window.dxColor = (name) =>
+    getComputedStyle(document.documentElement).getPropertyValue(`--dx-${name}`).trim();
 })();

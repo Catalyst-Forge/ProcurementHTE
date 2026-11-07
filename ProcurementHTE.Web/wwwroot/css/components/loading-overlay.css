@@ -15,18 +15,18 @@
 .global-loading-overlay__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(var(--dx-ink-rgb), 0.5);
   backdrop-filter: blur(2px);
 }
 
 .global-loading-overlay__content {
   position: relative;
   z-index: 1;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(var(--dx-ink-rgb), 0.85);
   padding: 1.75rem 2.5rem;
   border-radius: 1rem;
   min-width: 220px;
-  box-shadow: 0 25px 55px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 25px 55px rgba(var(--dx-ink-rgb), 0.45);
 }
 
 .content-loading-indicator {

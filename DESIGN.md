@@ -17,6 +17,10 @@ colors:
   card: "#FFFFFF"
   on-stage: "#FFFFFF"
   doc-fold: "#C9D6EA"
+  info: "#0E7490"
+  success: "#198754"
+  warning: "#FFC107"
+  warning-ink: "#B45309"
   danger: "#B42318"
   danger-ground: "#FEF0EE"
   danger-line: "#F5C2BC"
@@ -150,7 +154,7 @@ A cool, saturated navy-and-blue palette with one teal that belongs to the brand 
 - **Muted Ink** (ink-muted): the lede, help text, field icons, and resting icon buttons.
 - **Placeholder Slate** (placeholder): placeholder text and loading text. It is darker than a typical placeholder grey so it stays legible on the field fill.
 - **Hairline** (line): resting borders of fields and icon buttons.
-- **Firm Hairline** (line-strong): field hover border and the dashed border of the captcha question. Currently hard-coded in CSS, not a `--dx-*` variable.
+- **Firm Hairline** (line-strong): field hover border and the dashed border of the captcha question.
 - **Blue-Grey Ground** (ground): the page background on the task side.
 - **Field Wash** (field): resting fill of inputs and icon buttons. Inputs turn white (card) on focus.
 - **Card White** (card): the login card and the focused input.
@@ -159,6 +163,9 @@ A cool, saturated navy-and-blue palette with one teal that belongs to the brand 
 
 ### Feedback
 - **Danger** (danger), **Danger Wash** (danger-ground), **Danger Line** (danger-line): the error alert, invalid-field border and fill, and field error text. Error focus uses a red ring (`rgba(180, 35, 24, 0.16)`).
+
+### Token Source
+All colours live in `ProcurementHTE.Web/wwwroot/css/tokens.css` as `--dx-*`. Bootstrap variables are mapped onto them in `site.css`. Stylesheets, inline styles, and SweetAlert options use `var(--dx-*)`, and canvas charts use `dxColor('name')`. Only brand SVG artwork and the `theme-color` meta tag keep literal values.
 
 ### Named Rules
 **The One Blue Rule.** Blue-600 is the only colour that means "act here". Hover deepens it to blue-700. No other hue fills a button or marks focus.

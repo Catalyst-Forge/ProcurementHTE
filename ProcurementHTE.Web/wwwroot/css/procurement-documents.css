@@ -55,33 +55,33 @@
 }
 
 .badge-mandatory {
-    border-color: rgba(220, 53, 69, 0.4);
-    color: #dc3545;
-    background-color: rgba(220, 53, 69, 0.08);
+    border-color: rgba(var(--dx-danger-rgb), 0.4);
+    color: var(--dx-danger);
+    background-color: rgba(var(--dx-danger-rgb), 0.08);
 }
 
 .badge-upload {
-    border-color: rgba(13, 110, 253, 0.35);
-    color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.08);
+    border-color: rgba(var(--dx-blue-600-rgb), 0.35);
+    color: var(--dx-blue-600);
+    background-color: rgba(var(--dx-blue-600-rgb), 0.08);
 }
 
 .badge-generated {
-    border-color: rgba(32, 201, 151, 0.4);
-    color: #20c997;
-    background-color: rgba(32, 201, 151, 0.1);
+    border-color: rgba(var(--dx-info-rgb), 0.4);
+    color: var(--dx-info);
+    background-color: rgba(var(--dx-info-rgb), 0.1);
 }
 
 .badge-approval {
-    border-color: rgba(255, 193, 7, 0.5);
-    color: #664d03;
-    background-color: rgba(255, 193, 7, 0.15);
+    border-color: rgba(var(--dx-warning-rgb), 0.5);
+    color: var(--dx-warning-ink);
+    background-color: rgba(var(--dx-warning-rgb), 0.15);
 }
 
 .badge-complete {
-    border-color: rgba(25, 135, 84, 0.5);
-    color: #198754;
-    background-color: rgba(25, 135, 84, 0.1);
+    border-color: rgba(var(--dx-success-rgb), 0.5);
+    color: var(--dx-success-ink);
+    background-color: rgba(var(--dx-success-rgb), 0.1);
 }
 
 .badge {
@@ -136,15 +136,15 @@
 
 .timeline-icon.text-success {
     border-color: var(--bs-success);
-    background: rgba(25, 135, 84, 0.1);
+    background: rgba(var(--dx-success-rgb), 0.1);
 }
 
 .timeline-icon.text-danger {
     border-color: var(--bs-danger);
-    background: rgba(220, 53, 69, 0.1);
+    background: rgba(var(--dx-danger-rgb), 0.1);
 }
 
 .timeline-icon.text-warning {
     border-color: var(--bs-warning);
-    background: rgba(255, 193, 7, 0.1);
+    background: rgba(var(--dx-warning-rgb), 0.1);
 }

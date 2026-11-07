@@ -1,6 +1,6 @@
 .app-error-page {
   min-height: calc(100vh - 120px);
-  background: linear-gradient(135deg, rgba(0, 112, 243, 0.04), rgba(15, 23, 42, 0.02));
+  background: linear-gradient(135deg, rgba(var(--dx-blue-600-rgb), 0.04), rgba(var(--dx-ink-rgb), 0.02));
 }
 
 .app-error-illustration {
@@ -22,7 +22,7 @@
 .app-error-title {
   font-size: clamp(2rem, 3vw, 2.75rem);
   font-weight: 700;
-  color: #0f172a;
+  color: var(--dx-ink);
 }
 
 .app-error-description {
@@ -31,7 +31,7 @@
 }
 
 .app-error-actions .btn-link {
-  color: #475569;
+  color: var(--dx-ink-muted);
 }
 
 .app-error-meta {
@@ -50,13 +50,13 @@
 
 .app-error-meta-item .label {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--dx-ink-muted);
   letter-spacing: 0.08em;
 }
 
 .app-error-meta-item .value {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--dx-ink);
 }
 
 @media (max-width: 992px) {

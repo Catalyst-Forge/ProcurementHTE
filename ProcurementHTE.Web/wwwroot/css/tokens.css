@@ -1,0 +1,54 @@
+/* Docutrax colour tokens: the one source for every stylesheet. Roles are in DESIGN.md.
+   Load this before any other CSS. The -rgb triples exist for rgba(); Bootstrap's own
+   variables are mapped onto these tokens in site.css. */
+:root {
+  /* Stage */
+  --dx-navy-950: #071330;
+  --dx-navy-900: #0A1A3F;
+  --dx-navy-800: #0F2A66;
+  --dx-navy-800-rgb: 15, 42, 102;
+  --dx-on-stage: #FFFFFF;
+  --dx-on-stage-muted: #B9C7E4;
+
+  /* Action */
+  --dx-blue-600: #2563EB;
+  --dx-blue-600-rgb: 37, 99, 235;
+  --dx-blue-700: #1D4ED8;
+  --dx-blue-700-rgb: 29, 78, 216;
+  --dx-blue-800: #1E40AF;
+  --dx-teal-500: #14B8A6;
+
+  /* Neutral */
+  --dx-ink: #0F1B33;
+  --dx-ink-rgb: 15, 27, 51;
+  --dx-ink-muted: #4A5872;
+  --dx-ink-muted-rgb: 74, 88, 114;
+  --dx-placeholder: #5A6880;
+  --dx-line: #D3DCE9;
+  --dx-line-strong: #B7C4D8;
+  --dx-ground: #EDF2F8;
+  --dx-field: #F6F8FC;
+  --dx-card: #FFFFFF;
+
+  /* Feedback */
+  --dx-info: #0E7490;
+  --dx-info-rgb: 14, 116, 144;
+  --dx-info-hover: #155E75;
+  --dx-info-active: #164E63;
+  --dx-success: #198754;
+  --dx-success-rgb: 25, 135, 84;
+  --dx-success-ink: #146C43;
+  --dx-success-ground: #D1E7DD;
+  --dx-warning: #FFC107;
+  --dx-warning-rgb: 255, 193, 7;
+  --dx-warning-line: #D97706;
+  --dx-warning-line-rgb: 217, 119, 6;
+  --dx-warning-ink: #B45309;
+  --dx-warning-ink-rgb: 180, 83, 9;
+  --dx-warning-ground: #FFF3CD;
+  --dx-danger: #B42318;
+  --dx-danger-rgb: 180, 35, 24;
+  --dx-danger-hover: #912018;
+  --dx-danger-ground: #FEF0EE;
+  --dx-danger-line: #F5C2BC;
+}

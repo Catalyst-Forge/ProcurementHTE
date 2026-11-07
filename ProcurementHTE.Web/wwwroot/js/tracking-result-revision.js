@@ -36,7 +36,7 @@
                 title: 'Pilih Masalah',
                 text: 'Silakan pilih minimal satu masalah yang ditemukan.',
                 icon: 'warning',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--dx-blue-600)'
             });
             return;
         }
@@ -46,7 +46,7 @@
                 title: 'Catatan Wajib Diisi',
                 text: 'Silakan masukkan catatan rejection.',
                 icon: 'warning',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--dx-blue-600)'
             });
             return;
         }
@@ -57,8 +57,8 @@
             text: 'Procurement akan dikembalikan untuk perbaikan. Lanjutkan?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
+            confirmButtonColor: 'var(--dx-danger)',
+            cancelButtonColor: 'var(--dx-ink-muted)',
             confirmButtonText: 'Ya, Return for Revision',
             cancelButtonText: 'Batal'
         }).then(function(result) {
@@ -104,7 +104,7 @@
                             title: 'Berhasil!',
                             text: data.message || 'Procurement berhasil dikembalikan untuk revisi.',
                             icon: 'success',
-                            confirmButtonColor: '#198754'
+                            confirmButtonColor: 'var(--dx-success)'
                         }).then(function() {
                             // Close modal and reload page
                             var modal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
@@ -116,7 +116,7 @@
                             title: 'Error',
                             text: data.message || 'Gagal mengirim return for revision.',
                             icon: 'error',
-                            confirmButtonColor: '#dc3545'
+                            confirmButtonColor: 'var(--dx-danger)'
                         });
                     }
                 })
@@ -125,7 +125,7 @@
                         title: 'Error',
                         text: 'Terjadi kesalahan: ' + error.message,
                         icon: 'error',
-                        confirmButtonColor: '#dc3545'
+                        confirmButtonColor: 'var(--dx-danger)'
                     });
                 });
             }
@@ -138,8 +138,8 @@
             text: 'Apakah Anda yakin sudah melakukan perbaikan yang diperlukan?',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#6c757d',
+            confirmButtonColor: 'var(--dx-success)',
+            cancelButtonColor: 'var(--dx-ink-muted)',
             confirmButtonText: 'Ya, Submit',
             cancelButtonText: 'Batal'
         }).then(function(result) {
@@ -181,7 +181,7 @@
                             title: 'Berhasil!',
                             text: data.message || 'Revision berhasil disubmit.',
                             icon: 'success',
-                            confirmButtonColor: '#198754'
+                            confirmButtonColor: 'var(--dx-success)'
                         }).then(function() {
                             window.location.reload();
                         });
@@ -190,7 +190,7 @@
                             title: 'Error',
                             text: data.message || 'Gagal submit revision.',
                             icon: 'error',
-                            confirmButtonColor: '#dc3545'
+                            confirmButtonColor: 'var(--dx-danger)'
                         });
                     }
                 })
@@ -199,7 +199,7 @@
                         title: 'Error',
                         text: 'Terjadi kesalahan: ' + error.message,
                         icon: 'error',
-                        confirmButtonColor: '#dc3545'
+                        confirmButtonColor: 'var(--dx-danger)'
                     });
                 });
             }

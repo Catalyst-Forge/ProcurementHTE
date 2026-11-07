@@ -71,7 +71,7 @@
                                       data-confirm-title="@(user.IsActive ? $"Nonaktifkan {user.DisplayName}?" : $"Aktifkan {user.DisplayName}?")"
                                       data-confirm-message="@(user.IsActive ? "User langsung tidak bisa login dan semua sesinya diakhiri." : "User bisa login lagi.")"
                                       data-confirm-confirm="@(user.IsActive ? "Nonaktifkan" : "Aktifkan")"
-                                      data-confirm-confirm-color="@(user.IsActive ? "#dc3545" : "#2563eb")"
+                                      data-confirm-confirm-color="@(user.IsActive ? "var(--dx-danger)" : "var(--dx-blue-600)")"
                                       data-confirm-cancel="Batal">
                                     <button type="submit" class="btn btn-outline-warning"
                                             title="@(user.IsActive ? "Nonaktifkan user" : "Aktifkan user")"

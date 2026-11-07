@@ -186,8 +186,8 @@
         showCancelButton: true,
         confirmButtonText: config.confirmButtonText,
         cancelButtonText: config.cancelButtonText,
-        confirmButtonColor: config.confirmButtonColor || "#dc3545",
-        cancelButtonColor: config.cancelButtonColor || "#6c757d",
+        confirmButtonColor: config.confirmButtonColor || "var(--dx-danger)",
+        cancelButtonColor: config.cancelButtonColor || "var(--dx-ink-muted)",
         focusCancel: true,
       });
       return result.isConfirmed;

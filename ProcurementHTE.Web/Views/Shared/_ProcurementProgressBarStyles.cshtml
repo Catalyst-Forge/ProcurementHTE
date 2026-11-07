@@ -31,19 +31,19 @@
     }
 
     .progress-step.completed .step-icon {
-        background-color: #28a745;
+        background-color: var(--dx-success);
         color: white;
     }
 
     .progress-step.current .step-icon {
-        background-color: #007bff;
+        background-color: var(--dx-blue-600);
         color: white;
         animation: pulse 2s infinite;
     }
 
     .progress-step.pending .step-icon {
-        background-color: #e9ecef;
-        color: #6c757d;
+        background-color: var(--dx-ground);
+        color: var(--dx-ink-muted);
     }
 
     .step-details {
@@ -52,7 +52,7 @@
 
     .step-number {
         font-size: 12px;
-        color: #6c757d;
+        color: var(--dx-ink-muted);
         text-transform: uppercase;
         font-weight: 600;
         letter-spacing: 0.5px;
@@ -61,13 +61,13 @@
     .step-title {
         font-size: 16px;
         font-weight: 600;
-        color: #212529;
+        color: var(--dx-ink);
         margin-top: 4px;
     }
 
     .step-timestamp, .step-user {
         font-size: 13px;
-        color: #6c757d;
+        color: var(--dx-ink-muted);
         margin-top: 4px;
     }
 
@@ -77,12 +77,12 @@
         top: 55px;
         bottom: -15px;
         width: 2px;
-        background-color: #e9ecef;
+        background-color: var(--dx-ground);
         transition: background-color 0.3s ease;
     }
 
     .step-line.completed {
-        background-color: #28a745;
+        background-color: var(--dx-success);
     }
 
     @@keyframes pulse {

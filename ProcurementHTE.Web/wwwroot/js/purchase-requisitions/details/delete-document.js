@@ -41,7 +41,7 @@
             html: `<p>Are you sure you want to delete <strong>${button.dataset.docName || ''}</strong>?</p>`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
+            confirmButtonColor: 'var(--dx-danger)',
             confirmButtonText: '<i class="bi bi-trash"></i> Delete',
             cancelButtonText: 'Cancel',
             reverseButtons: true,

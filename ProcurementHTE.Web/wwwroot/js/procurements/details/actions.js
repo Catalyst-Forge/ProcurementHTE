@@ -41,8 +41,8 @@
                 html: `Apakah Anda yakin ingin mempublish procurement <strong>${button.dataset.procnum}</strong>?<br><small class="text-muted">Status akan berubah menjadi "Waiting Pickup"</small>`,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#198754',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: 'var(--dx-success)',
+                cancelButtonColor: 'var(--dx-ink-muted)',
                 confirmButtonText: '<i class="bi bi-send-fill"></i> Ya, Publish',
                 cancelButtonText: '<i class="bi bi-x"></i> Batal',
                 reverseButtons: true
@@ -64,8 +64,8 @@
                 html: `Apakah Anda yakin ingin membatalkan publish procurement <strong>${button.dataset.procnum}</strong>?<br><small class="text-muted">Status akan kembali menjadi "Created" dan dapat diedit kembali</small>`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#ffc107',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: 'var(--dx-warning)',
+                cancelButtonColor: 'var(--dx-ink-muted)',
                 confirmButtonText: '<i class="bi bi-arrow-counterclockwise"></i> Ya, Batal Publish',
                 cancelButtonText: '<i class="bi bi-x"></i> Tidak',
                 reverseButtons: true

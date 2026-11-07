@@ -24,7 +24,7 @@
                         labels: procurementStatusData.map(item => item.statusName),
                         datasets: [{
                             data: procurementStatusData.map(item => item.count),
-                            backgroundColor: ["#0d6efd","#198754","#ffc107","#dc3545","#6c757d"],
+                            backgroundColor: [dxColor('blue-600'),dxColor('success'),dxColor('warning'),dxColor('danger'),dxColor('ink-muted')],
                         }]
                     },
                     options: {
@@ -61,7 +61,7 @@
                         datasets: [{
                             label: "Revenue",
                             data: revenueData,
-                            borderColor: "#0d6efd",
+                            borderColor: dxColor('blue-600'),
                             backgroundColor: "rgba(13, 110, 253, 0.12)",
                             tension: 0.35,
                             fill: true,
@@ -104,7 +104,7 @@
                         labels: approvalStatus.map(x => x.statusName),
                         datasets: [{
                             data: approvalStatus.map(x => x.count),
-                            backgroundColor: ["#198754", "#ffc107", "#dc3545", "#0d6efd"],
+                            backgroundColor: [dxColor('success'), dxColor('warning'), dxColor('danger'), dxColor('blue-600')],
                         }]
                     },
                     options: {

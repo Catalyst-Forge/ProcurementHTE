@@ -52,8 +52,8 @@
             datasets: [{
                 data: statusData.map(d => d.count),
                 backgroundColor: [
-                    '#0d6efd', '#198754', '#ffc107', '#dc3545',
-                    '#6c757d', '#0dcaf0', '#6f42c1', '#fd7e14'
+                    dxColor('blue-600'), dxColor('success'), dxColor('warning'), dxColor('danger'),
+                    dxColor('ink-muted'), dxColor('info'), dxColor('navy-800'), dxColor('warning-line')
                 ],
                 borderWidth: 0
             }]
@@ -78,7 +78,7 @@
             datasets: [{
                 label: 'Count',
                 data: jobTypeData.map(d => d.count),
-                backgroundColor: '#0d6efd',
+                backgroundColor: dxColor('blue-600'),
                 borderRadius: 4
             }]
         },
@@ -98,7 +98,7 @@
             datasets: [{
                 label: 'Procurement Count',
                 data: monthlyData.map(d => d.count),
-                borderColor: '#0d6efd',
+                borderColor: dxColor('blue-600'),
                 backgroundColor: 'rgba(13, 110, 253, 0.1)',
                 tension: 0.4,
                 fill: true
@@ -121,7 +121,7 @@
                 datasets: [{
                     label: 'Purchase Requisitions',
                     data: prTrendData.map(item => item.count),
-                    backgroundColor: ['#6f42c1', '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6610f2', '#fd7e14', '#20c997', '#e83e8c', '#adb5bd', '#343a40'],
+                    backgroundColor: [dxColor('navy-800'), dxColor('blue-600'), dxColor('success'), dxColor('warning'), dxColor('danger'), dxColor('info'), '#6610f2', dxColor('warning-line'), '#20c997', '#e83e8c', '#adb5bd', '#343a40'],
                     borderWidth: 0
                 }]
             },

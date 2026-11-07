@@ -9,24 +9,6 @@
 }
 
 :root {
-  --dx-navy-950: #071330;
-  --dx-navy-900: #0A1A3F;
-  --dx-navy-800: #0F2A66;
-  --dx-blue-600: #2563EB;
-  --dx-blue-700: #1D4ED8;
-  --dx-teal-500: #14B8A6;
-  --dx-ink: #0F1B33;
-  --dx-ink-muted: #4A5872;
-  --dx-placeholder: #5A6880;
-  --dx-line: #D3DCE9;
-  --dx-ground: #EDF2F8;
-  --dx-field: #F6F8FC;
-  --dx-card: #FFFFFF;
-  --dx-danger: #B42318;
-  --dx-danger-ground: #FEF0EE;
-  --dx-danger-line: #F5C2BC;
-  --dx-on-stage: #FFFFFF;
-  --dx-on-stage-muted: #B9C7E4;
 
   --dx-radius-field: 10px;
   --dx-radius-card: 16px;
@@ -58,7 +40,7 @@ html {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.2);
+  background: rgba(var(--dx-blue-600-rgb), 0.2);
   color: var(--dx-ink);
 }
 
@@ -155,12 +137,12 @@ html {
 .login-card {
   width: min(100%, 440px);
   padding: 40px 40px 36px;
-  border: 1px solid rgba(15, 27, 51, 0.06);
+  border: 1px solid rgba(var(--dx-ink-rgb), 0.06);
   border-radius: var(--dx-radius-card);
   background: var(--dx-card);
   box-shadow:
-    0 2px 6px rgba(15, 27, 51, 0.05),
-    0 24px 48px -24px rgba(15, 27, 51, 0.28);
+    0 2px 6px rgba(var(--dx-ink-rgb), 0.05),
+    0 24px 48px -24px rgba(var(--dx-ink-rgb), 0.28);
 }
 
 .login-logo {
@@ -281,14 +263,14 @@ html {
 }
 
 .field-input:hover {
-  border-color: #B7C4D8;
+  border-color: var(--dx-line-strong);
 }
 
 .field-input:focus {
   outline: none;
   border-color: var(--dx-blue-600);
   background: var(--dx-card);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 3px rgba(var(--dx-blue-600-rgb), 0.18);
 }
 
 .field-input.input-validation-error {
@@ -297,7 +279,7 @@ html {
 }
 
 .field-input.input-validation-error:focus {
-  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.16);
+  box-shadow: 0 0 0 3px rgba(var(--dx-danger-rgb), 0.16);
 }
 
 .field-input[type="password"],
@@ -329,7 +311,7 @@ html {
 
 .field-toggle:hover,
 .captcha-refresh:hover {
-  background: rgba(37, 99, 235, 0.08);
+  background: rgba(var(--dx-blue-600-rgb), 0.08);
   color: var(--dx-blue-600);
 }
 
@@ -362,7 +344,7 @@ html {
   display: grid;
   place-items: center;
   height: 48px;
-  border: 1px dashed #B7C4D8;
+  border: 1px dashed var(--dx-line-strong);
   border-radius: var(--dx-radius-field);
   background: #E9F0FB;
   color: var(--dx-navy-800);
@@ -428,7 +410,7 @@ html {
   font-weight: 650;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.7);
+  box-shadow: 0 10px 20px -10px rgba(var(--dx-blue-600-rgb), 0.7);
   transition:
     background-color 0.15s ease,
     box-shadow 0.15s ease,
@@ -437,7 +419,7 @@ html {
 
 .login-submit:hover {
   background: var(--dx-blue-700);
-  box-shadow: 0 12px 24px -10px rgba(29, 78, 216, 0.75);
+  box-shadow: 0 12px 24px -10px rgba(var(--dx-blue-700-rgb), 0.75);
 }
 
 .login-submit:active {
@@ -579,12 +561,12 @@ html {
    the panel and match the login card. */
 .auth-content .card {
   width: 100% !important;
-  border: 1px solid rgba(15, 27, 51, 0.06);
+  border: 1px solid rgba(var(--dx-ink-rgb), 0.06);
   border-radius: var(--dx-radius-card);
   background: var(--dx-card);
   box-shadow:
-    0 2px 6px rgba(15, 27, 51, 0.05),
-    0 24px 48px -24px rgba(15, 27, 51, 0.28);
+    0 2px 6px rgba(var(--dx-ink-rgb), 0.05),
+    0 24px 48px -24px rgba(var(--dx-ink-rgb), 0.28);
 }
 
 .auth-content .d-flex.justify-content-center > .card {
@@ -620,7 +602,7 @@ html {
 .auth-content .form-control:focus {
   border-color: var(--dx-blue-600);
   background: var(--dx-card);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 0 3px rgba(var(--dx-blue-600-rgb), 0.18);
 }
 
 .auth-content .btn-primary {
