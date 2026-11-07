@@ -61,9 +61,7 @@ html {
   gap: clamp(32px, 6vh, 64px);
   padding: clamp(40px, 6vw, 88px);
   overflow: hidden;
-  background:
-    radial-gradient(circle at 1px 1px, rgba(185, 199, 228, 0.16) 1px, transparent 0) 0 0 / 26px 26px,
-    linear-gradient(160deg, var(--dx-navy-900) 0%, var(--dx-navy-800) 100%);
+  background: var(--dx-navy-800);
   color: var(--dx-on-stage);
 }
 
@@ -93,12 +91,6 @@ html {
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
   animation: dx-draw 1.8s var(--dx-ease-out) both;
-}
-
-.loop-nodes circle {
-  fill: var(--dx-navy-900);
-  stroke: var(--dx-on-stage);
-  stroke-width: 5;
 }
 
 .loop-docs use {

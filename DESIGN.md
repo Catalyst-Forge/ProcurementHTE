@@ -118,13 +118,13 @@ components:
 
 **Creative North Star: "The Unbroken Track"**
 
-Docutrax is drawn as a track that never breaks. The brand mark, a blue-to-teal infinity, becomes the stage: on a deep navy field with a faint dot grid, the mark is drawn at large scale as a road, and small white document tokens travel along it past the procurement stages. Next to it, the working side is quiet and light: a pale blue-grey ground, one white card, one blue action. The world splits cleanly. Navy holds the brand, light holds the task, and the two never mix.
+Docutrax is drawn as a track that never breaks. The brand mark, a blue-to-teal infinity, becomes the stage: on a plain deep navy field, the mark is drawn at large scale as a road, and small white document tokens travel along it past the procurement stages. Next to it, the working side is quiet and light: a pale blue-grey ground, one white card, one blue action. The world splits cleanly. Navy holds the brand, light holds the task, and the two never mix.
 
 The density is that of a daily tool, not a marketing page. One family (Montserrat) carries the whole hierarchy through weight alone. Shapes are softly rounded (10px fields, 16px card, full pills). Depth is soft, diffuse lift and never a hard offset. Motion has two registers: a single entrance (the track draws itself, the stage pills rise in sequence) and one continuous, slow ambient loop (three documents moving along the track). Both stop completely under reduced motion.
 
 **Scope and status.** This system is derived from a single shipped surface, the login page. The dashboard, the procurement screens, and the other auth pages that use `_AuthenticationLayout` (including Forgot Password, which the login links to) still use the older Bootstrap look and have **not adopted** this world yet. Tokens live only in `login.css` as `--dx-*`. Nothing here has been checked against a data-dense screen.
 
-**Open decision: the left-panel world is not confirmed.** The client pinned the split composition (visual panel on the left, white login card on the right) and the form contents. The left-panel world, the logo-as-track illustration, was the one free axis. It was not rolled and the user has not yet confirmed it. Treat the Track Stage component and everything derived from it (navy stage, dot grid, document tokens, stage pills) as provisional until it is confirmed. The light working side, the palette roles, the type, and the form components rest on the brand mark and the client's pins, so they are firmer.
+**Open decision: the left-panel world is not confirmed.** The client pinned the split composition (visual panel on the left, white login card on the right) and the form contents. The left-panel world, the logo-as-track illustration, was the one free axis. It was not rolled and the user has not yet confirmed it. Treat the Track Stage component and everything derived from it (navy stage, document tokens, stage pills) as provisional until it is confirmed. The light working side, the palette roles, the type, and the form components rest on the brand mark and the client's pins, so they are firmer.
 
 **Key Characteristics:**
 - Two grounds: a deep navy brand stage and a pale blue-grey task ground.
@@ -146,8 +146,8 @@ A cool, saturated navy-and-blue palette with one teal that belongs to the brand 
 - **Track Teal** (teal-500): the end stop of the brand gradient (blue-600 → #0EA5D6 → teal-500) on the infinity track and in the logo. It also tints text selection on the navy stage. It never fills a control.
 
 ### Tertiary
-- **Stage Navy** (navy-900): the deep end of the left-panel field, the fill inside the track's stage nodes, stage-pill text, and the browser `theme-color`.
-- **Stage Navy Light** (navy-800): the light end of the stage gradient (160deg, navy-900 → navy-800). On the light side it sets the captcha numerals.
+- **Stage Navy** (navy-900): stage-pill text and the browser `theme-color`.
+- **Stage Navy Light** (navy-800): the flat left-panel field. On the light side it sets the captcha numerals.
 
 ### Neutral
 - **Ink** (ink): all primary text on the light side.
@@ -158,7 +158,7 @@ A cool, saturated navy-and-blue palette with one teal that belongs to the brand 
 - **Blue-Grey Ground** (ground): the page background on the task side.
 - **Field Wash** (field): resting fill of inputs and icon buttons. Inputs turn white (card) on focus.
 - **Card White** (card): the login card and the focused input.
-- **On-Stage White** (on-stage): all text on the navy stage, the node rings, and stage pills.
+- **On-Stage White** (on-stage): all text on the navy stage and stage pills.
 - **Fold Grey** (doc-fold): the folded corner and secondary lines of the document token (SVG literal).
 
 ### Feedback
@@ -250,7 +250,7 @@ A three-part row: question tile, answer field, refresh button (`1fr 1fr 48px`, 8
 The form-level error is a 10px-radius danger-wash box with a danger-line border, 14px/500 danger text, and a leading 16px icon. It carries `role="alert"`.
 
 ### Track Stage (signature component; provisional, see Overview)
-The infinity mark redrawn as a road on the navy stage. The track is an SVG path stroked with the brand gradient (blue-600 → #0EA5D6 → teal-500). It is broken at the centre crossing so the overpass reads the way the logo does. Four node rings (navy fill, white 5-unit stroke) sit at the top and bottom of each loop. White stage pills anchor to them: on the left loop, Purchase Requisition above and Approval berjenjang below; on the right loop, Vendor above and Purchase Order below. Three document tokens (white sheet, folded corner, one blue line and two fold-grey lines) travel the path via SMIL `animateMotion`. The route runs centre → left loop → right loop over 16s, and the tokens are phased a third apart.
+The infinity mark redrawn as a road on the navy stage. The track is an SVG path stroked with the brand gradient (blue-600 → #0EA5D6 → teal-500). It is broken at the centre crossing so the overpass reads the way the logo does. Three document tokens (white sheet, folded corner, one blue line and two fold-grey lines) travel the path via SMIL `animateMotion`. The route runs centre → left loop → right loop over 16s, and the tokens are phased a third apart.
 
 - **Entrance:** the track draws in over 1.8s (`cubic-bezier(0.16, 1, 0.3, 1)`). Pills rise 8px and fade in over 0.9s, staggered 150ms from 0.5s.
 - **Reduced motion:** CSS stops the draw and the rise. JavaScript calls `pauseAnimations()` on the SVG, because SMIL ignores CSS media queries. Every new SMIL motion must be wired the same way.
