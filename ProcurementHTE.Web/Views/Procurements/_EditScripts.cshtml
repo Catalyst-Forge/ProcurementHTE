@@ -4,12 +4,6 @@
         const offersContainer = document.getElementById('offers-container');
         const btnAddOffer = document.getElementById('btn-add-offer');
 
-        // Debug log
-        console.log('Edit Procurement Script Loaded', {
-            offersContainer: !!offersContainer,
-            btnAddOffer: !!btnAddOffer
-        });
-
         const newKey = () => Math.random().toString(36).slice(2, 10);
 
         const offerRowMarkup = (key) => `
@@ -52,7 +46,6 @@
 
             newBtnAddOffer.addEventListener('click', (e) => {
                 e.preventDefault();
-                console.log('Add offer clicked');
                 const key = newKey();
                 offersContainer.insertAdjacentHTML('beforeend', offerRowMarkup(key));
 
@@ -72,7 +65,6 @@
             const btnOffer = event.target.closest('.js-remove-offer');
             if (btnOffer) {
                 event.preventDefault();
-                console.log('Remove offer clicked');
                 const row = btnOffer.closest('.offer-row');
                 if (row) {
                     row.remove();

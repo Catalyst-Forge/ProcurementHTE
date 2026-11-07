@@ -37,7 +37,6 @@
             try {
                 const response = await fetch(`@Url.Action("GetFilteredProcurements", "PurchaseRequisitions")?${params.toString()}`);
                 const data = await response.json();
-                console.log('Procurements loaded:', data);
                 procurements = data;
                 renderProcurements(data);
             } catch (error) {

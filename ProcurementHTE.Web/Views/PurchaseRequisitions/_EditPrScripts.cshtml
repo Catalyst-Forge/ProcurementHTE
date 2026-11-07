@@ -39,7 +39,6 @@
             try {
                 const response = await fetch(`@Url.Action("GetFilteredProcurements", "PurchaseRequisitions")?${params.toString()}`);
                 const data = await response.json();
-                console.log('Procurements loaded:', data);
                 procurements = data;
                 
                 // Also fetch currently linked procurements for this PR
@@ -60,7 +59,6 @@
                 // Fetch linked procurements for current PR
                 const response = await fetch(`@Url.Action("GetLinkedProcurements", "PurchaseRequisitions")?prId=${currentPrId}`);
                 const linkedData = await response.json();
-                console.log('Linked procurements:', linkedData);
 
                 // Merge linked procurements with available ones (avoiding duplicates)
                 const availableIds = new Set(availableProcurements.map(p => p.id));

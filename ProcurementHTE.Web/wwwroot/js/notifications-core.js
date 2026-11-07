@@ -30,17 +30,14 @@
       .build();
 
     ns.state.connection.on("ReceiveNotification", function (data) {
-      console.log("📬 New notification received:", data);
       ns.handleNewNotification(data);
     });
 
     ns.state.connection.on("UpdateNotificationBadge", function (data) {
-      console.log("🔢 Badge count updated:", data.unreadCount);
       ns.updateBadgeCount(data.unreadCount);
     });
 
     ns.state.connection.on("UpdateApprovalBadge", function (data) {
-      console.log("🔔 Approval badge updated:", data.pendingCount);
       if (data.pendingCount === -1) {
         ns.loadPendingApprovalCount();
       } else {
@@ -50,7 +47,6 @@
 
     ns.state.connection.start()
       .then(() => {
-        console.log("✅ Notification SignalR connected");
         ns.state.isConnected = true;
         ns.loadNotifications();
         ns.loadPendingApprovalCount();
@@ -61,14 +57,12 @@
       });
 
     ns.state.connection.onreconnected(() => {
-      console.log("🔄 Notification SignalR reconnected");
       ns.state.isConnected = true;
       ns.loadNotifications();
       ns.loadPendingApprovalCount();
     });
 
     ns.state.connection.onclose(() => {
-      console.log("❌ Notification SignalR disconnected");
       ns.state.isConnected = false;
     });
   };

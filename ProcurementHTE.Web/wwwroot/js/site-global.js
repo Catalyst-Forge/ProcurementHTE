@@ -9,14 +9,11 @@
       logoutForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
-        console.log("Logout form submitted - notifying SignalR...");
-
         // Try to notify SignalR of logout
         if (window.dashboardConnection && window.dashboardConnection.state === 0) {
           // 0 = Connected state
           try {
             await window.dashboardConnection.invoke("NotifyLogout");
-            console.log("✓ SignalR notified of logout");
           } catch (err) {
             console.error("Failed to notify SignalR:", err);
           }
@@ -26,7 +23,6 @@
         }
 
         // Now submit the form
-        console.log("Proceeding with logout...");
         logoutForm.submit();
       });
     }

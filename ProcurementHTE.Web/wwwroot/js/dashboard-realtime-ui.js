@@ -1,25 +1,12 @@
 // Real-time Dashboard UI Updates
 window.DashboardUI = {
   updateUserActivityUI: function(data) {
-    console.log("=== UPDATE USER ACTIVITY UI START ===");
-    console.log("Looking for user ID:", data.userId);
-
-    const allUserRows = document.querySelectorAll("tr[data-user-id]");
-    if (allUserRows.length > 0) {
-      console.log(
-        "Sample user IDs in table:",
-        Array.from(allUserRows).slice(0, 3).map((r) => r.getAttribute("data-user-id")).join(", ")
-      );
-    }
-
     const userRow = document.querySelector("tr[data-user-id='" + data.userId + "']");
     if (!userRow) {
-      console.log("? User row NOT FOUND for ID:", data.userId);
       this.refreshUserActivityTable();
       return;
     }
 
-    console.log("? Found user row for ID:", data.userId);
     userRow.setAttribute("data-user-status", data.isOnline ? "online" : "offline");
 
     const iconCell = userRow.querySelector(".user-status-icon");
@@ -98,7 +85,6 @@ window.DashboardUI = {
   },
 
   refreshDashboardData: function() {
-    console.log("Refreshing dashboard metrics...");
     this.refreshUserActivityTable();
   },
 

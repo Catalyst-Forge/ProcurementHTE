@@ -84,8 +84,11 @@
         });
     };
 
+    // Only for local work, so the production console stays quiet.
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
     app.debugLog = function (...args) {
-        if (window?.console?.info) {
+        if (isLocalHost) {
             console.info('[PnL]', ...args);
         }
     };
