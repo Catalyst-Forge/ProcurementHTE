@@ -7,7 +7,8 @@ set -Eeuo pipefail
 
 SRC="${SRC:-/var/lib/docker/volumes/catalystforge_minio_data/_data}"
 DEST_DIR="${DEST_DIR:-/var/backups/procurementhte-minio}"
-KEEP="${KEEP:-14}"
+KEEP="${KEEP:-7}"
+MIN_FREE_GB="${MIN_FREE_GB:-5}"
 
 log() { printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"; }
 die() { log "GAGAL: $*"; exit 1; }
@@ -16,6 +17,12 @@ die() { log "GAGAL: $*"; exit 1; }
 
 mkdir -p "$DEST_DIR"
 chmod 700 "$DEST_DIR"
+
+# Disk ini dipakai bersama layanan lain, jadi backup tidak boleh menghabiskannya.
+FREE_GB="$(df --output=avail -BG "$DEST_DIR" | tail -1 | tr -dc '0-9')"
+SRC_GB="$(du -s -BG "$SRC" | cut -f1 | tr -dc '0-9')"
+[ "$FREE_GB" -ge "$((MIN_FREE_GB + SRC_GB))" ] \
+  || die "sisa disk ${FREE_GB} GB, butuh $((MIN_FREE_GB + SRC_GB)) GB (data ${SRC_GB} GB + cadangan ${MIN_FREE_GB} GB)"
 
 NAME="minio-$(date -u '+%Y%m%d-%H%M%S').tar.gz"
 TMP="$DEST_DIR/.$NAME.tmp"
