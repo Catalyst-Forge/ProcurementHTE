@@ -1,0 +1,74 @@
+/* --- LDP report table ---
+   The report has 46 columns, far more than fit on a screen, so it shows one group at a
+   time. The table's data-view picks the group; .ldp-pinned cells show in every group.
+   "all" keeps the full spreadsheet width, with each column at its --ldp-col-width. */
+.ldp-table[data-view="summary"] .ldp-col:not(.ldp-summary),
+.ldp-table[data-view="job"] .ldp-col:not(.ldp-job),
+.ldp-table[data-view="finance"] .ldp-col:not(.ldp-finance),
+.ldp-table[data-view="docs"] .ldp-col:not(.ldp-docs),
+.ldp-table[data-view="pr"] .ldp-col:not(.ldp-pr),
+.ldp-table[data-view="approval"] .ldp-col:not(.ldp-approval) {
+  /* !important beats the card layout's display on phones. */
+  display: none !important;
+}
+
+.ldp-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.ldp-table:not([data-view="all"]) {
+  font-size: 0.8125rem;
+}
+
+.ldp-table[data-view="all"] th {
+  min-width: var(--ldp-col-width);
+}
+
+/* Long text stays at two lines in a group so rows keep an even height. The full value
+   is in the cell's tooltip and in "all". */
+.ldp-clamp,
+.ldp-job-hint {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.ldp-table[data-view="all"] .ldp-clamp {
+  display: inline;
+}
+
+/* Outside "summary" the Job Name column is hidden, so the row names itself here. */
+.ldp-job-hint {
+  min-width: 8rem;
+  color: var(--bs-secondary-color);
+}
+
+.ldp-table:is([data-view="summary"], [data-view="all"]) .ldp-job-hint {
+  display: none;
+}
+
+/* A small laptop or a zoomed browser, with the sidebar still open. */
+@media screen and (min-width: 992px) and (max-width: 1279.98px) {
+  .ldp-table:not([data-view="all"]) {
+    font-size: 0.75rem;
+  }
+
+  .ldp-job-hint {
+    min-width: 6.5rem;
+  }
+}
+
+/* The card layout has room for the whole value. */
+@media screen and (max-width: 991.98px) {
+  .ldp-clamp {
+    display: inline;
+  }
+
+  .ldp-job-hint {
+    min-width: 0;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+  }
+}
