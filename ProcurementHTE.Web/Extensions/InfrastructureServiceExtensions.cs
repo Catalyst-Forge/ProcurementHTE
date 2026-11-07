@@ -28,7 +28,9 @@ public static class InfrastructureServiceExtensions
         // Lets the soft delete interceptor record who deleted a row.
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpCurrentUserAccessor>();
-        services.AddScoped<IListSortProvider, QueryListSortProvider>();
+        services.AddScoped<QueryListStateProvider>();
+        services.AddScoped<IListSortProvider>(sp => sp.GetRequiredService<QueryListStateProvider>());
+        services.AddScoped<IListFilterProvider>(sp => sp.GetRequiredService<QueryListStateProvider>());
 
         return services;
     }

@@ -7,6 +7,7 @@ public static class ListQueryExtensions
 {
     private const string SortKey = "sort";
     private const string DirectionKey = "dir";
+    private const string FilterPrefix = "f.";
 
     public static ListSort? ReadListSort(this HttpRequest request)
     {
@@ -21,6 +22,28 @@ public static class ListQueryExtensions
         );
         return new ListSort(key, descending);
     }
+
+    /// <summary>Per-column filters, sent as f.Column=value.</summary>
+    public static IReadOnlyDictionary<string, string> ReadListFilters(this HttpRequest request) =>
+        request
+            .Query.Where(item =>
+                item.Key.StartsWith(FilterPrefix, StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(item.Value)
+            )
+            .ToDictionary(
+                item => item.Key[FilterPrefix.Length..],
+                item => item.Value.ToString().Trim(),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+    public static string WithoutListFilters(this HttpRequest request) =>
+        request.WithQuery(
+            request
+                .Query.Keys.Where(key => key.StartsWith(FilterPrefix, StringComparison.OrdinalIgnoreCase))
+                .Select(key => (key, (string?)null))
+                .Append(("page", null))
+                .ToArray()
+        );
 
     /// <summary>The current query string with these keys replaced, or removed when null.</summary>
     public static string WithQuery(this HttpRequest request, params (string Key, string? Value)[] changes)
@@ -56,7 +79,12 @@ public static class ListQueryExtensions
         );
 }
 
-public sealed class QueryListSortProvider(IHttpContextAccessor accessor) : IListSortProvider
+public sealed class QueryListStateProvider(IHttpContextAccessor accessor)
+    : IListSortProvider,
+        IListFilterProvider
 {
     public ListSort? Current => accessor.HttpContext?.Request.ReadListSort();
+
+    public IReadOnlyDictionary<string, string> Filters =>
+        accessor.HttpContext?.Request.ReadListFilters() ?? new Dictionary<string, string>();
 }

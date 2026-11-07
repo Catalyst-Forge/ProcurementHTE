@@ -10,6 +10,12 @@ public interface IListSortProvider
     ListSort? Current { get; }
 }
 
+/// <summary>The per-column value searches a list page asked for, keyed by column.</summary>
+public interface IListFilterProvider
+{
+    IReadOnlyDictionary<string, string> Filters { get; }
+}
+
 public static class ListSortExtensions
 {
     /// <summary>

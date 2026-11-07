@@ -39,10 +39,9 @@
     return collator.compare(a.text, b.text);
   }
 
-  function sortBy(table, button) {
+  function sortBy(table, button, descending) {
     const header = button.closest("th");
     const index = [...header.parentElement.cells].indexOf(header);
-    const descending = header.getAttribute("aria-sort") === "ascending";
     const body = table.tBodies[0];
 
     const rows = [...body.rows].map((row) => ({ row, value: sortValue(row.cells[index]) }));
@@ -51,17 +50,29 @@
 
     table.tHead.querySelectorAll("th[aria-sort]").forEach((th) => {
       th.removeAttribute("aria-sort");
-      th.querySelector(".sort-icon").className = "bi bi-chevron-expand sort-icon";
+      const other = th.querySelector(".column-header");
+      delete other.dataset.sorted;
+      other.querySelector(".column-sort-mark")?.remove();
     });
+
     header.setAttribute("aria-sort", descending ? "descending" : "ascending");
-    button.querySelector(".sort-icon").className =
-      `bi ${descending ? "bi-caret-down-fill" : "bi-caret-up-fill"} sort-icon`;
+    button.dataset.sorted = descending ? "desc" : "asc";
+    const mark = document.createElement("i");
+    mark.className = `bi ${descending ? "bi-caret-down-fill" : "bi-caret-up-fill"} column-sort-mark`;
+    mark.setAttribute("aria-hidden", "true");
+    button.append(mark);
+  }
+
+  function columnKind(table, index) {
+    const first = [...table.tBodies[0].rows].map((row) => sortValue(row.cells[index])).find((v) => !v.empty);
+    if (first?.date != null) return "date";
+    return first?.number != null ? "number" : "text";
   }
 
   function canSort(table) {
     if (table.dataset.sortReady || table.hasAttribute("data-no-sort")) return false;
     if (table.tHead?.rows.length !== 1 || table.tBodies.length !== 1) return false;
-    if (table.querySelector(".sort-link")) return false;
+    if (table.querySelector(".column-header")) return false;
 
     const body = table.tBodies[0];
     if (body.rows.length < 2) return false;
@@ -73,23 +84,24 @@
     if (!canSort(table)) return;
     table.dataset.sortReady = "true";
 
-    for (const header of table.tHead.rows[0].cells) {
+    [...table.tHead.rows[0].cells].forEach((header, index) => {
       const label = header.textContent.replace(/\s+/g, " ").trim().toLowerCase();
-      if (NON_DATA_HEADERS.has(label) || header.colSpan > 1) continue;
+      if (NON_DATA_HEADERS.has(label) || header.colSpan > 1) return;
+
+      const text = document.createElement("span");
+      text.className = "column-header-label";
+      text.append(...header.childNodes);
 
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "table-sort-button";
-      button.append(...header.childNodes);
-
-      const icon = document.createElement("i");
-      icon.className = "bi bi-chevron-expand sort-icon";
-      icon.setAttribute("aria-hidden", "true");
-      button.append(icon);
-
-      button.addEventListener("click", () => sortBy(table, button));
+      button.className = "column-header";
+      button.dataset.kind = columnKind(table, index);
+      button.setAttribute("aria-haspopup", "dialog");
+      button.setAttribute("aria-expanded", "false");
+      button.append(text);
+      button.addEventListener("column-sort", (event) => sortBy(table, button, event.detail.descending));
       header.append(button);
-    }
+    });
   }
 
   function enhanceAll() {

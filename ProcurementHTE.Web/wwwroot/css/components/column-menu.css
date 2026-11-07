@@ -1,0 +1,130 @@
+/* --- Column menu ---
+   Headers stay plain; clicking one opens the card with sort and, where the list supports
+   it, value search. Only a sorted or filtered column shows a mark. */
+.column-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.column-header:hover,
+.column-header[aria-expanded="true"] {
+  color: var(--dx-blue-700);
+}
+
+.column-header:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--dx-blue-600);
+  outline-offset: 2px;
+}
+
+.column-sort-mark {
+  flex: none;
+  color: var(--dx-blue-600);
+  font-size: 0.7em;
+}
+
+.column-filter-mark {
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--dx-blue-600);
+}
+
+.column-menu {
+  position: fixed;
+  z-index: 1060;
+  width: 15rem;
+  padding: 0.375rem;
+  border: 1px solid var(--dx-line);
+  border-radius: 10px;
+  background: var(--dx-card);
+  color: var(--dx-ink);
+  font-size: 0.875rem;
+  box-shadow: 0 8px 24px rgba(var(--dx-ink-rgb), 0.14);
+}
+
+.column-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.column-menu-item:hover,
+.column-menu-item:focus-visible {
+  outline: none;
+  background: rgba(var(--dx-blue-600-rgb), 0.08);
+}
+
+.column-menu-item[aria-current="true"] {
+  color: var(--dx-blue-700);
+  font-weight: 600;
+}
+
+.column-menu-search {
+  margin-top: 0.375rem;
+  padding: 0.5rem 0.5rem 0.25rem;
+  border-top: 1px solid var(--dx-line);
+}
+
+.column-menu-search label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--dx-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.column-menu-clear {
+  margin-top: 0.375rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dx-blue-700);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.column-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.column-filter-chips[hidden] {
+  display: none;
+}
+
+.column-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid rgba(var(--dx-blue-600-rgb), 0.35);
+  border-radius: 999px;
+  background: rgba(var(--dx-blue-600-rgb), 0.08);
+  color: var(--dx-blue-700);
+  text-decoration: none;
+}
+
+.column-filter-chip:hover {
+  border-color: var(--dx-blue-600);
+}

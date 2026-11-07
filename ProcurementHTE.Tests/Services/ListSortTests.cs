@@ -17,6 +17,11 @@ public partial class ListSortTests
 {
     private sealed record FixedSort(ListSort? Current) : IListSortProvider;
 
+    private sealed record FixedFilters(params (string Key, string Value)[] Items) : IListFilterProvider
+    {
+        public IReadOnlyDictionary<string, string> Filters => Items.ToDictionary(i => i.Key, i => i.Value);
+    }
+
     private static AppDbContext NewDb() =>
         new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
@@ -68,12 +73,34 @@ public partial class ListSortTests
             new Procurement { ProcNum = "3", Wonum = "WO-B" }
         );
         await db.SaveChangesAsync();
-        var repository = new LdpRepository(db, new FixedSort(new ListSort("NoWo", true)));
+        var repository = new LdpRepository(db, new FixedSort(new ListSort("NoWo", true)), new FixedFilters());
 
         var (items, total) = await repository.GetAllAsync(2, 1);
 
         Assert.Equal(3, total);
         Assert.Equal("WO-B", items.Single().NoWo);
+    }
+
+    [Theory]
+    [InlineData("NoWo", "wo-b", 1)]
+    [InlineData("NoWo", "WO", 3)]
+    [InlineData("NoWo", "zzz", 0)]
+    [InlineData("NotAColumn", "zzz", 3)]
+    public async Task Ldp_filters_every_row_and_recounts(string column, string value, int expected)
+    {
+        await using var db = NewDb();
+        db.Procurements.AddRange(
+            new Procurement { ProcNum = "1", Wonum = "WO-A" },
+            new Procurement { ProcNum = "2", Wonum = "WO-C" },
+            new Procurement { ProcNum = "3", Wonum = "WO-B" }
+        );
+        await db.SaveChangesAsync();
+        var repository = new LdpRepository(db, new FixedSort(null), new FixedFilters((column, value)));
+
+        var (items, total) = await repository.GetAllAsync(1, 10);
+
+        Assert.Equal(expected, total);
+        Assert.Equal(expected, items.Count);
     }
 
     [Fact]
@@ -93,15 +120,16 @@ public partial class ListSortTests
     }
 
     [Theory]
-    [InlineData("", null, "dir=asc", "bi-chevron-expand")]
-    [InlineData("?sort=vendor", "ascending", "dir=desc", "bi-caret-up-fill")]
-    [InlineData("?sort=vendor&dir=desc", "descending", "dir=asc", "bi-caret-down-fill")]
-    [InlineData("?sort=city", null, "dir=asc", "bi-chevron-expand")]
-    public async Task Header_shows_state_and_links_to_the_next_direction(
+    [InlineData("", null, null, false)]
+    [InlineData("?sort=vendor", "ascending", "bi-caret-up-fill", false)]
+    [InlineData("?sort=vendor&dir=desc", "descending", "bi-caret-down-fill", false)]
+    [InlineData("?sort=city", null, null, false)]
+    [InlineData("?f.Vendor=krakatau", null, null, true)]
+    public async Task Header_is_plain_until_its_column_is_active(
         string query,
         string? ariaSort,
-        string nextDirection,
-        string icon
+        string? sortMark,
+        bool filterMark
     )
     {
         var httpContext = new DefaultHttpContext();
@@ -109,6 +137,7 @@ public partial class ListSortTests
         var helper = new SortableHeaderTagHelper
         {
             Key = "vendor",
+            FilterKey = "Vendor",
             ViewContext = new ViewContext { HttpContext = httpContext },
         };
         var output = new TagHelperOutput(
@@ -121,9 +150,12 @@ public partial class ListSortTests
 
         var html = output.Content.GetContent();
         Assert.Equal(ariaSort, output.Attributes["aria-sort"]?.Value?.ToString());
-        Assert.Contains(nextDirection, html);
-        Assert.Contains(icon, html);
-        Assert.Contains("Vendor", html);
+        Assert.Equal(sortMark is not null, html.Contains("column-sort-mark"));
+        if (sortMark is not null)
+            Assert.Contains(sortMark, html);
+        Assert.Equal(filterMark, html.Contains("column-filter-mark"));
+        Assert.Contains("data-sort-asc", html);
+        Assert.Contains("data-sort-desc", html);
     }
 
     [GeneratedRegex("sort-key=\"([A-Za-z0-9]+)\"")]
@@ -160,7 +192,7 @@ public partial class ListSortTests
         var used = SortKey().Matches(File.ReadAllText(ViewPath("Ldp/_LdpTable.cshtml"))).Select(m => m.Groups[1].Value).ToList();
 
         Assert.Equal(44, used.Count);
-        Assert.All(used, key => Assert.NotNull(LdpRepository.FindSortProperty(new ListSort(key, false))));
+        Assert.All(used, key => Assert.NotNull(LdpRepository.FindColumn(key)));
     }
 
     private static string ViewPath(string view)

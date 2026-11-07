@@ -54,7 +54,7 @@ dan angka, bukan urutan teks.
 
 - **FR-001**: Setiap kolom data pada daftar berpaginasi MUST bisa diurutkan lewat klik header.
 - **FR-002**: Daftar berpaginasi MUST mengurutkan seluruh data hasil filter, bukan hanya halaman aktif.
-- **FR-003**: Klik header pertama MUST mengurutkan naik, dan klik pada kolom yang sama MUST membaliknya.
+- **FR-003**: Klik header pertama MUST mengurutkan naik, dan klik pada kolom yang sama MUST membaliknya. *(Diganti oleh menu kolom di `specs/002-column-menu`.)*
 - **FR-004**: Header MUST menunjukkan kolom aktif dan arahnya, termasuk untuk pembaca layar lewat `aria-sort`.
 - **FR-005**: Urutan dan pencarian MUST tetap berlaku saat berpindah halaman dan mengubah jumlah baris.
 - **FR-006**: Tabel tanpa paginasi MUST bisa diurutkan di browser berdasarkan teks, angka, dan tanggal.

@@ -11,11 +11,17 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
         private readonly IListSortProvider _listSort;
+        private readonly IListFilterProvider _listFilter;
 
-        public LdpRepository(AppDbContext context, IListSortProvider listSort)
+        public LdpRepository(
+            AppDbContext context,
+            IListSortProvider listSort,
+            IListFilterProvider listFilter
+        )
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _listSort = listSort;
+            _listFilter = listFilter;
         }
 
         public async Task<(IReadOnlyList<LdpRecapDto> Items, int TotalCount)> GetAllAsync(
@@ -57,11 +63,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
             // Get total count
             var totalCount = await query.CountAsync(ct);
 
-            // A sorted report needs every row before it can page; see LdpRepository.Sort.cs.
+            // Sorting and filtering need every row before paging; see LdpRepository.Sort.cs.
             var sort = _listSort.Current;
-            var sortProperty = FindSortProperty(sort);
+            var sortProperty = FindColumn(sort?.Key);
+            var filters = KnownFilters(_listFilter.Filters);
+            var needsAllRows = sortProperty is not null || filters.Count > 0;
             var procurements = await (
-                sortProperty is null ? query.Skip((page - 1) * pageSize).Take(pageSize) : query
+                needsAllRows ? query : query.Skip((page - 1) * pageSize).Take(pageSize)
             ).ToListAsync(ct);
 
             // Get VendorRoundLetters for selected vendors
@@ -76,12 +84,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Select(p => MapToDto(p, vendorRoundLetters))
                 .ToList();
 
-            if (sortProperty is not null)
+            if (needsAllRows)
             {
-                items = Sort(items, sortProperty, sort!.Descending)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
+                var matches = items.Where(item => filters.All(filter => filter.Matches(item)));
+                if (sortProperty is not null)
+                    matches = Sort(matches, sortProperty, sort!.Descending);
+
+                items = matches.ToList();
+                totalCount = items.Count;
+                items = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
             }
 
             return (items, totalCount);
