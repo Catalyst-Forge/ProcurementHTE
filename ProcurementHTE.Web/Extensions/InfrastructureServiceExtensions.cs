@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Web.Utils;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Infrastructure;
@@ -27,6 +28,7 @@ public static class InfrastructureServiceExtensions
         // Lets the soft delete interceptor record who deleted a row.
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpCurrentUserAccessor>();
+        services.AddScoped<IListSortProvider, QueryListSortProvider>();
 
         return services;
     }

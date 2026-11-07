@@ -10,9 +10,13 @@ namespace ProcurementHTE.Infrastructure.Repositories;
 public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
 {
     private readonly AppDbContext _context;
+    private readonly IListSortProvider _listSort;
 
-    public PurchaseRequisitionRepository(AppDbContext context) =>
+    public PurchaseRequisitionRepository(AppDbContext context, IListSortProvider listSort)
+    {
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _listSort = listSort;
+    }
 
     #region Query Methods
 
@@ -48,7 +52,13 @@ public class PurchaseRequisitionRepository : IPurchaseRequisitionRepository
         return query.ToPagedResultAsync(
             page,
             pageSize,
-            orderBy: q => q.OrderByDescending(pr => pr.CreatedAt),
+            orderBy: q =>
+                q.SortBy(
+                    _listSort.Current,
+                    ListSortColumns.PurchaseRequisitions,
+                    pr => pr.PrId,
+                    d => d.OrderByDescending(pr => pr.CreatedAt)
+                ),
             ct: ct
         );
     }

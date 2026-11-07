@@ -1,3 +1,6 @@
+using ProcurementHTE.Web.Extensions;
+using ProcurementHTE.Infrastructure.Repositories;
+using ProcurementHTE.Core.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Web.Models.Admin;
@@ -57,7 +60,12 @@ public partial class UserManagementController
         var page = filters.Page <= 0 ? 1 : filters.Page;
         var pageSize = filters.PageSize <= 0 ? 10 : filters.PageSize;
         var users = await query
-            .OrderBy(u => u.UserName)
+            .SortBy(
+                Request.ReadListSort(),
+                ListSortColumns.Users,
+                u => u.Id,
+                o => o.OrderBy(u => u.UserName)
+            )
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

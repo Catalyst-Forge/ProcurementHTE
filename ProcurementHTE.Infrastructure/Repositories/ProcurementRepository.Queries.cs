@@ -27,7 +27,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await query.ToPagedResultAsync(
                 page,
                 pageSize,
-                orderBy: q => q.OrderByDescending(w => w.CreatedAt),
+                orderBy: q => SortProcurements(q, o => o.OrderByDescending(p => p.CreatedAt)),
                 ct: ct
             );
         }
@@ -115,7 +115,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await query.ToPagedResultAsync(
                 page,
                 pageSize,
-                orderBy: q => q.OrderByDescending(w => w.CreatedAt),
+                orderBy: q => SortProcurements(q, o => o.OrderByDescending(p => p.CreatedAt)),
                 ct: ct
             );
         }
@@ -139,7 +139,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await query.ToPagedResultAsync(
                 page,
                 pageSize,
-                orderBy: q => q.OrderByDescending(w => w.CreatedAt),
+                orderBy: q => SortProcurements(q, o => o.OrderByDescending(p => p.CreatedAt)),
                 ct: ct
             );
         }

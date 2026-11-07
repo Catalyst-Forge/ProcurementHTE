@@ -58,12 +58,12 @@
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th class="border-end">Procurement No.</th>
-                <th class="border-end">Job Name</th>
-                <th class="border-end">WO Number</th>
-                <th class="border-end">Vendor</th>
-                <th class="border-end">Status</th>
-                <th class="border-end">Accrual Status</th>
+                <th sort-key="procNum" class="border-end">Procurement No.</th>
+                <th sort-key="jobName" class="border-end">Job Name</th>
+                <th sort-key="wonum" class="border-end">WO Number</th>
+                <th sort-key="vendor" class="border-end">Vendor</th>
+                <th sort-key="status" class="border-end">Status</th>
+                <th sort-key="noAccrual" class="border-end">Accrual Status</th>
                 <th class="text-center width-15-rem">Action</th>
             </tr>
         </thead>
@@ -147,7 +147,7 @@
         <ul class="pagination justify-content-center">
             @if (Model.Page > 1) {
                 <li class="page-item">
-                    <a class="page-link" href="?tab=@currentTab&page=@(Model.Page - 1)&pageSize=@pageSize&search=@currentSearch">
+                    <a class="page-link" href="@Context.Request.WithPage(Model.Page - 1)">
                         Previous
                     </a>
                 </li>
@@ -155,7 +155,7 @@
 
             @for (var i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++) {
                 <li class="page-item @(i == Model.Page ? "active" : "")">
-                    <a class="page-link" href="?tab=@currentTab&page=@i&pageSize=@pageSize&search=@currentSearch">
+                    <a class="page-link" href="@Context.Request.WithPage(i)">
                         @i
                     </a>
                 </li>
@@ -163,7 +163,7 @@
 
             @if (Model.Page < Model.TotalPages) {
                 <li class="page-item">
-                    <a class="page-link" href="?tab=@currentTab&page=@(Model.Page + 1)&pageSize=@pageSize&search=@currentSearch">
+                    <a class="page-link" href="@Context.Request.WithPage(Model.Page + 1)">
                         Next
                     </a>
                 </li>

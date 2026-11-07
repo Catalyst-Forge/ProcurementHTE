@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Common;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
@@ -113,7 +114,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             var totalCount = await query.CountAsync(ct);
             var items = await query
-                .OrderByDescending(p => p.ApprovalTokenGeneratedAt ?? p.UpdatedAt ?? p.CreatedAt)
+                .SortBy(
+                    _listSort?.Current,
+                    ListSortColumns.PendingApprovals,
+                    p => p.ProcurementId,
+                    o => o.OrderByDescending(p => p.ApprovalTokenGeneratedAt ?? p.UpdatedAt ?? p.CreatedAt)
+                )
                 .Skip(skip)
                 .Take(take)
                 .Select(p => new PendingApprovalItem(

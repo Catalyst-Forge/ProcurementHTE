@@ -21,6 +21,11 @@
             </select>
             <span class="ms-1 small text-muted">entries</span>
             <input type="hidden" name="page" value="@Model.Page" />
+            @foreach (var item in Context.Request.Query.Where(q => q.Key is not ("page" or "pageSize"))) {
+                foreach (var value in item.Value) {
+                    <input type="hidden" name="@item.Key" value="@value" />
+                }
+            }
         </form>
     </div>
 
@@ -28,9 +33,7 @@
         <ul class="pagination mb-0 gap-1">
             <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
                 <a class="page-link border-0 rounded-circle bg-transparent"
-                   asp-action="Index"
-                   asp-route-page="@(Model.Page - 1)"
-                   asp-route-pageSize="@Model.PageSize"
+                   href="@Context.Request.WithPage((int)Model.Page - 1)"
                    aria-label="Previous">
                     <i class="bi bi-chevron-left"></i>
                 </a>
@@ -39,17 +42,13 @@
             @for (var p = 1; p <= Model.TotalPages; p++) {
                 <li class="page-item @(Model.Page == p ? "active" : "")">
                     <a class="page-link border-0 rounded-circle"
-                       asp-action="Index"
-                       asp-route-page="@p"
-                       asp-route-pageSize="@Model.PageSize">@p</a>
+                       href="@Context.Request.WithPage(p)">@p</a>
                 </li>
             }
 
             <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
                 <a class="page-link border-0 rounded-circle bg-transparent"
-                   asp-action="Index"
-                   asp-route-page="@(Model.Page + 1)"
-                   asp-route-pageSize="@Model.PageSize"
+                   href="@Context.Request.WithPage((int)Model.Page + 1)"
                    aria-label="Next">
                     <i class="bi bi-chevron-right"></i>
                 </a>

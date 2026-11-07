@@ -9,9 +9,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class JobTypesRepository : IJobTypeRepository
     {
         private readonly AppDbContext _context;
+        private readonly IListSortProvider _listSort;
 
-        public JobTypesRepository(AppDbContext context) =>
+        public JobTypesRepository(AppDbContext context, IListSortProvider listSort)
+        {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _listSort = listSort;
+        }
 
         public async Task CreateJobTypeAsync(JobTypes jobType)
         {
@@ -47,7 +51,18 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 );
             }
 
-            return query.ToPagedResultAsync(page, pageSize, null, ct);
+            return query.ToPagedResultAsync(
+                page,
+                pageSize,
+                q =>
+                    q.SortBy(
+                        _listSort.Current,
+                        ListSortColumns.JobTypes,
+                        t => t.JobTypeId,
+                        o => o.OrderBy(t => t.TypeName)
+                    ),
+                ct
+            );
         }
 
         public async Task<JobTypes?> GetByIdAsync(string id)

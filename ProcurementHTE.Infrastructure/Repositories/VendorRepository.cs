@@ -9,9 +9,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public class VendorRepository : IVendorRepository
     {
         private readonly AppDbContext _context;
+        private readonly IListSortProvider _listSort;
 
-        public VendorRepository(AppDbContext context) =>
+        public VendorRepository(AppDbContext context, IListSortProvider listSort)
+        {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _listSort = listSort;
+        }
 
         public async Task<int> CountAsync()
         {
@@ -68,7 +72,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return query.ToPagedResultAsync(
                 page,
                 pageSize,
-                orderBy: q => q.OrderByDescending(v => v.CreatedAt),
+                orderBy: q =>
+                    q.SortBy(
+                        _listSort.Current,
+                        ListSortColumns.Vendors,
+                        v => v.VendorId,
+                        d => d.OrderByDescending(v => v.CreatedAt)
+                    ),
                 ct: ct
             );
         }

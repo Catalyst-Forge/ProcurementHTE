@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Common;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
@@ -9,10 +10,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public partial class LdpRepository : ILdpRepository
     {
         private readonly AppDbContext _context;
+        private readonly IListSortProvider _listSort;
 
-        public LdpRepository(AppDbContext context)
+        public LdpRepository(AppDbContext context, IListSortProvider listSort)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _listSort = listSort;
         }
 
         public async Task<(IReadOnlyList<LdpRecapDto> Items, int TotalCount)> GetAllAsync(
@@ -54,11 +57,12 @@ namespace ProcurementHTE.Infrastructure.Repositories
             // Get total count
             var totalCount = await query.CountAsync(ct);
 
-            // Get paged data
-            var procurements = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
+            // A sorted report needs every row before it can page; see LdpRepository.Sort.cs.
+            var sort = _listSort.Current;
+            var sortProperty = FindSortProperty(sort);
+            var procurements = await (
+                sortProperty is null ? query.Skip((page - 1) * pageSize).Take(pageSize) : query
+            ).ToListAsync(ct);
 
             // Get VendorRoundLetters for selected vendors
             var procurementIds = procurements.Select(p => p.ProcurementId).ToList();
@@ -71,6 +75,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var items = procurements
                 .Select(p => MapToDto(p, vendorRoundLetters))
                 .ToList();
+
+            if (sortProperty is not null)
+            {
+                items = Sort(items, sortProperty, sort!.Descending)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+            }
 
             return (items, totalCount);
         }

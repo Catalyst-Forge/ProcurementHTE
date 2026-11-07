@@ -37,7 +37,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await query.ToPagedResultAsync(
                 page,
                 pageSize,
-                orderBy: q => q.OrderByDescending(p => p.CreatedAt),
+                orderBy: q => SortProcurements(q, o => o.OrderByDescending(p => p.CreatedAt)),
                 ct: ct
             );
         }
@@ -58,7 +58,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return await query.ToPagedResultAsync(
                 page,
                 pageSize,
-                orderBy: q => q.OrderByDescending(p => p.ApInvoicePickedUpAt ?? p.CreatedAt),
+                orderBy: q => SortProcurements(q, o => o.OrderByDescending(p => p.ApInvoicePickedUpAt ?? p.CreatedAt)),
                 ct: ct
             );
         }

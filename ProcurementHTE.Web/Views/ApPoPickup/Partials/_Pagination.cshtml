@@ -15,7 +15,7 @@
     <ul class="pagination justify-content-center">
         @if (Model.Page > 1) {
             <li class="page-item">
-                <a class="page-link" href="?tab=@currentTab&page=@(Model.Page - 1)&pageSize=@pageSize&search=@currentSearch&fields=@fieldsStr">
+                <a class="page-link" href="@Context.Request.WithPage(Model.Page - 1)">
                     Previous
                 </a>
             </li>
@@ -23,7 +23,7 @@
 
         @for (var i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++) {
             <li class="page-item @(i == Model.Page ? "active" : "")">
-                <a class="page-link" href="?tab=@currentTab&page=@i&pageSize=@pageSize&search=@currentSearch&fields=@fieldsStr">
+                <a class="page-link" href="@Context.Request.WithPage(i)">
                     @i
                 </a>
             </li>
@@ -31,7 +31,7 @@
 
         @if (Model.Page < Model.TotalPages) {
             <li class="page-item">
-                <a class="page-link" href="?tab=@currentTab&page=@(Model.Page + 1)&pageSize=@pageSize&search=@currentSearch&fields=@fieldsStr">
+                <a class="page-link" href="@Context.Request.WithPage(Model.Page + 1)">
                     Next
                 </a>
             </li>

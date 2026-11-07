@@ -1,0 +1,39 @@
+/* --- Sortable table headers ---
+   .sort-link is a server-sorted column (SortableHeaderTagHelper) and .table-sort-button
+   a column sorted in the browser (js/table-sort.js). They look and behave the same. */
+.sort-link,
+.table-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sort-link:hover,
+.table-sort-button:hover {
+  color: var(--dx-blue-700);
+}
+
+.sort-link:focus-visible,
+.table-sort-button:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--dx-blue-600);
+  outline-offset: 2px;
+}
+
+.sort-icon {
+  flex: none;
+  color: var(--dx-placeholder);
+  font-size: 0.7em;
+}
+
+th[aria-sort] .sort-icon {
+  color: var(--dx-blue-600);
+}
