@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Enums;
+using ProcurementHTE.Web.Authorization;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
@@ -8,7 +9,7 @@ public partial class ProcurementTrackingController
 {
     [HttpPost("ReturnForRevision")]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin, Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic, Vice President")]
+    [Authorize(Roles = ActionRoles.Approver)]
     public async Task<IActionResult> ReturnForRevision(
         string procurementId,
         int[] symptoms,

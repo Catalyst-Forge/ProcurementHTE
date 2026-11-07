@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Web.Navigation;
 
 namespace ProcurementHTE.Tests.Navigation;
@@ -32,14 +33,13 @@ public class SidebarMenuTests
     [Theory]
     [InlineData("Operation")]
     [InlineData("Analyst HTE & LTS")]
-    [InlineData("Assistant Manager HTE")]
+    [InlineData(RoleNames.AsstManager)]
     [InlineData("Manager Transport & Logistic")]
     [InlineData("AP-PO")]
     [InlineData("AP-Invoice")]
     [InlineData("AR")]
     [InlineData("Vice President")]
-    [InlineData("Dewan Direksi")]
-    [InlineData("HSE")]
+    [InlineData(RoleNames.Accrual)]
     public void For_EveryRoleButAdmin_SeesTheWorkflowMenusOnly(string role)
     {
         Assert.Equal(EveryoneSees.OrderBy(x => x), VisibleLabels(role).OrderBy(x => x));
@@ -66,7 +66,7 @@ public class SidebarMenuTests
     [Fact]
     public void For_DropsGroupsWithNoVisibleItems()
     {
-        var sections = SidebarMenu.For(UserWithRoles("HSE"));
+        var sections = SidebarMenu.For(UserWithRoles("Operation"));
 
         Assert.All(sections, s => Assert.NotEmpty(s.Items));
         Assert.DoesNotContain(sections, s => s.Label == "Master Data");

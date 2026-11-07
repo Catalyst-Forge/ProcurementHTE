@@ -1,5 +1,6 @@
 using ProcurementHTE.Core.Common;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Interfaces;
 
@@ -15,7 +16,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             var isAdmin = userRoles.Contains("Admin");
             var isAnalyst = userRoles.Contains("Analyst HTE & LTS");
-            var isAsstManager = userRoles.Contains("Assistant Manager HTE");
+            var isAsstManager = userRoles.Contains(RoleNames.AsstManager);
             var isManager = userRoles.Contains("Manager Transport & Logistic");
             var isVicePresident = userRoles.Contains("Vice President");
             var query = _context.Procurements.AsQueryable();
@@ -71,7 +72,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             var isAdmin = userRoles.Contains("Admin");
             var isAnalyst = userRoles.Contains("Analyst HTE & LTS");
-            var isAsstManager = userRoles.Contains("Assistant Manager HTE");
+            var isAsstManager = userRoles.Contains(RoleNames.AsstManager);
             var isManager = userRoles.Contains("Manager Transport & Logistic");
             var isVicePresident = userRoles.Contains("Vice President");
             var seesEveryApproval = isAdmin || !(isAnalyst || isAsstManager || isManager || isVicePresident);

@@ -1,3 +1,5 @@
+using ProcurementHTE.Core.Constants;
+
 namespace ProcurementHTE.Infrastructure.Data
 {
     public static partial class UserSeeder
@@ -45,7 +47,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Assistant",
                     "Manager",
                     "AssistantManager123!",
-                    "Assistant Manager HTE"
+                    RoleNames.AsstManager
                 ),
                 (
                     "vicepresident",
@@ -54,40 +56,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     "President",
                     "VicePresident123!",
                     "Vice President"
-                ),
-                (
-                    "opdir",
-                    "opdir@example.com",
-                    "Operation",
-                    "Director",
-                    "OpDir123!",
-                    "Operation Director"
-                ),
-                (
-                    "presdir",
-                    "presdir@example.com",
-                    "President",
-                    "Director",
-                    "PresDir123!",
-                    "President Director"
-                ),
-                ("board", "board@example.com", "Dewan", "Direksi", "Board123!", "Dewan Direksi"),
-                (
-                    "komisaris",
-                    "komisaris@example.com",
-                    "Commisioner",
-                    "",
-                    "Komisaris123!",
-                    "Dewan Komisaris"
-                ),
-                ("hse", "hse@example.com", "HSE", "", "Hse1234!", "HSE"),
-                (
-                    "scm",
-                    "scm@example.com",
-                    "Supply Chain",
-                    "Management",
-                    "Scm1234!",
-                    "Supply Chain Management"
                 ),
                 ("naura", "khinsa.naura@pertamina-pdc.com", "Khinsa", "Naura", "Ura12345", "Admin"),
                 ("diah", "dyahayusekaragung@gmail.com", "Diah", "Ayu", "DiahAyu123", "Operation"),
@@ -129,7 +97,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     "Edo",
                     "Pradipta",
                     "EdoPradipta123",
-                    "Assistant Manager HTE"
+                    RoleNames.AsstManager
                 ),
                 (
                     "kurniawan",
@@ -154,23 +122,6 @@ namespace ProcurementHTE.Infrastructure.Data
                     "",
                     "ApInvoice123!",
                     "AP-Invoice"
-                ),
-                // Direksi dengan nama asli
-                (
-                    "faried",
-                    "faried.iskandar@pertamina-pdc.com",
-                    "Faried",
-                    "Iskandar Dozyn",
-                    "Faried123!",
-                    "President Director"
-                ),
-                (
-                    "apriandy",
-                    "apriandy.zainuddin@pertamina-pdc.com",
-                    "Apriandy",
-                    "Zainuddin",
-                    "Apriandy123!",
-                    "Operation Director"
                 ),
                 (
                     "agus",

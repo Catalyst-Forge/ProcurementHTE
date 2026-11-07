@@ -23,7 +23,6 @@ namespace ProcurementHTE.Web.Models.Admin
         public string Id { get; set; } = null!;
         public string DisplayName { get; set; } = null!;
         public string Email { get; set; } = null!;
-        public string UserName { get; set; } = null!;
         public string JobTitle { get; set; } = string.Empty;
         public string[] Roles { get; set; } = Array.Empty<string>();
         public bool EmailConfirmed { get; set; }
@@ -64,11 +63,6 @@ namespace ProcurementHTE.Web.Models.Admin
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; } = null!;
-
-        [Required]
-        [Display(Name = "Username")]
-        [StringLength(50, MinimumLength = 3)]
-        public string UserName { get; set; } = null!;
 
         [Display(Name = "NIP")]
         [StringLength(30)]

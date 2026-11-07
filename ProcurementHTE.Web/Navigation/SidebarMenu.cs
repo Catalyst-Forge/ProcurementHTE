@@ -45,11 +45,8 @@ public static class SidebarMenu
         "OperationDashboard",
         "ManagerTransportDashboard",
         "AnalystHteDashboard",
-        "HteDashboard",
         "AssistantManagerHteDashboard",
         "VicePresidentDashboard",
-        "HseDashboard",
-        "SupplyChainManagementDashboard",
     ];
 
     public static readonly IReadOnlyList<SidebarSection> Sections =

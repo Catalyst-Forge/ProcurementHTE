@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
@@ -121,8 +122,8 @@ public partial class ProcurementsController
     {
         var statusName = procurement.Status?.StatusName ?? "";
         var prePickupStatuses = new[] { "Draft", "Created", "Waiting Pickup" };
-        var earlyEditRoles = new[] { "Admin", "Operation", "Assistant Manager HTE" };
-        var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS", "Supply Chain Management" };
+        var earlyEditRoles = new[] { "Admin", "Operation", RoleNames.AsstManager };
+        var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS" };
 
         var isPrePickup = prePickupStatuses.Contains(statusName, StringComparer.OrdinalIgnoreCase);
         var userRoles = User.Claims

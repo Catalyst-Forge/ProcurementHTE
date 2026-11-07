@@ -51,8 +51,7 @@ public class UserIdentifierLookupTests : IAsyncLifetime
     [InlineData("  19870512 ")]
     [InlineData("budi@pdc.test")]
     [InlineData("BUDI@PDC.TEST")]
-    [InlineData("budi.santoso")]
-    public async Task FindAsync_ResolvesNipEmailAndUsernameToSameUser(string identifier)
+    public async Task FindAsync_ResolvesNipAndEmailToSameUser(string identifier)
     {
         var user = await UserIdentifierLookup.FindAsync(_userManager, identifier);
 
@@ -75,6 +74,7 @@ public class UserIdentifierLookupTests : IAsyncLifetime
     [InlineData(null)]
     [InlineData("99999999")]
     [InlineData("tidak@ada.test")]
+    [InlineData("budi.santoso")]
     public async Task FindAsync_ReturnsNull_ForBlankOrUnknownIdentifier(string? identifier)
     {
         Assert.Null(await UserIdentifierLookup.FindAsync(_userManager, identifier));
@@ -83,7 +83,6 @@ public class UserIdentifierLookupTests : IAsyncLifetime
     [Theory]
     [InlineData("11112222")]
     [InlineData("hapus@pdc.test")]
-    [InlineData("terhapus")]
     public async Task FindAsync_IgnoresDeletedUsers(string identifier)
     {
         await CreateAsync("terhapus", "hapus@pdc.test", nip: "11112222");

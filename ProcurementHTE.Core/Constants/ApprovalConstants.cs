@@ -16,18 +16,6 @@ namespace ProcurementHTE.Core.Constants
         /// </summary>
         public const decimal CT_THRESHOLD_VP = 300_000_000m;
 
-        /// <summary>
-        /// 5 Miliar - Threshold for Operation Director approval
-        /// CT > this value requires Operation Director approval
-        /// </summary>
-        public const decimal CT_THRESHOLD_OP_DIR = 5_000_000_000m;
-
-        /// <summary>
-        /// 10 Miliar - Threshold for President Director approval
-        /// CT > this value requires President Director approval
-        /// </summary>
-        public const decimal CT_THRESHOLD_PRES_DIR = 10_000_000_000m;
-
         // Approval Levels (corresponds to final status before INPRO)
         // Level 4 = Manager (default, CT ≤ 300M)
         // Level 5 = VP (CT > 300M)

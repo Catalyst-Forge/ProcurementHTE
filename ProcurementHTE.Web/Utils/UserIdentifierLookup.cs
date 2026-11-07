@@ -6,7 +6,7 @@ namespace ProcurementHTE.Web.Utils;
 
 /// <summary>
 /// Resolves what a user typed into a login or recovery form: an email when it
-/// contains '@', otherwise a NIP, and finally a username for legacy accounts.
+/// contains '@', otherwise a NIP.
 /// </summary>
 public static class UserIdentifierLookup
 {
@@ -16,14 +16,10 @@ public static class UserIdentifierLookup
             return null;
 
         var normalized = identifier.Trim();
-        User? user;
+        var user = normalized.Contains('@')
+            ? await userManager.FindByEmailAsync(normalized)
+            : await userManager.Users.FirstOrDefaultAsync(u => u.Nip == normalized);
 
-        if (normalized.Contains('@'))
-            user = await userManager.FindByEmailAsync(normalized);
-        else
-            user = await userManager.Users.FirstOrDefaultAsync(u => u.Nip == normalized);
-
-        user ??= await userManager.FindByNameAsync(normalized);
         return user is { IsDeleted: false } ? user : null;
     }
 }

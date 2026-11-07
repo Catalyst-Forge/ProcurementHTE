@@ -35,7 +35,7 @@ public partial class UserManagementController
         await RefreshUserSessionStateAsync(user, user.IsActive);
 
         TempData["SuccessMessage"] =
-            $"Status user {user.UserName} diubah menjadi {(user.IsActive ? "Aktif" : "Tidak Aktif")}.";
+            $"Status user {BuildDisplayName(user)} diubah menjadi {(user.IsActive ? "Aktif" : "Tidak Aktif")}.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -77,7 +77,7 @@ public partial class UserManagementController
 
         await RefreshUserSessionStateAsync(user, false);
         TempData["SuccessMessage"] =
-            $"User {user.UserName} dihapus dan tidak bisa login lagi. Admin bisa memulihkannya dari menu Data Terhapus.";
+            $"User {BuildDisplayName(user)} dihapus dan tidak bisa login lagi. Admin bisa memulihkannya dari menu Data Terhapus.";
 
         return RedirectToAction(nameof(Index));
     }

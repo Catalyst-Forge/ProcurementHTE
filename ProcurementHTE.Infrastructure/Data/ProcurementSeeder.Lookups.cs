@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data;
@@ -24,7 +25,7 @@ public static partial class ProcurementSeeder
             AnalystUser: await GetUserOrThrowAsync("AHte@example.com", "Analyst HTE & LTS"),
             AssistantManagerUser: await GetUserOrThrowAsync(
                 "assistantmanagerhte@example.com",
-                "Assistant Manager HTE"
+                RoleNames.AsstManager
             ),
             ManagerUser: await GetUserOrThrowAsync(
                 "manager@example.com",

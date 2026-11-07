@@ -66,7 +66,6 @@ public sealed class SelfDeactivationTests : IAsyncLifetime
             Id = _admin.Id,
             FirstName = "Admin",
             Email = _admin.Email!,
-            UserName = _admin.UserName!,
             IsActive = false,
             SelectedRoles = ["Admin"],
         };
@@ -87,7 +86,6 @@ public sealed class SelfDeactivationTests : IAsyncLifetime
             Id = _admin.Id,
             FirstName = "Changed",
             Email = _admin.Email!,
-            UserName = _admin.UserName!,
             IsActive = true,
             SelectedRoles = ["Operation"],
         };

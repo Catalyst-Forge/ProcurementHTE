@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Web.Authorization;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ArPickup;
@@ -103,7 +104,7 @@ public class AccrualController : Controller
     /// </summary>
     [HttpPost("Save")]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "AR,Admin")]
+    [Authorize(Roles = ActionRoles.Accrual)]
     public async Task<IActionResult> Save([FromBody] AccrualSaveRequest request)
     {
         try
@@ -120,8 +121,7 @@ public class AccrualController : Controller
             if (procurement == null)
                 return NotFound(new { success = false, message = "Procurement tidak ditemukan" });
 
-            // Check if AR has picked up this procurement (unless admin)
-            if (!User.IsInRole("Admin") && string.IsNullOrEmpty(procurement.ArUserId))
+            if (!ActionRoles.CanFillAccrual(User, !string.IsNullOrEmpty(procurement.ArUserId)))
             {
                 return BadRequest(new { success = false, message = "Anda harus pickup procurement ini terlebih dahulu dari menu AR Pickup" });
             }

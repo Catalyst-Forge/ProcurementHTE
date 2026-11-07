@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProcurementHTE.Web.Authorization;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
@@ -7,7 +8,7 @@ public partial class ProcurementTrackingController
 {
     [HttpPost("Reject")]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin, Analyst HTE & LTS, Assistant Manager HTE, Manager Transport & Logistic, Vice President")]
+    [Authorize(Roles = ActionRoles.Approver)]
     public async Task<IActionResult> Reject(
         string procurementId,
         string rejectionNote,

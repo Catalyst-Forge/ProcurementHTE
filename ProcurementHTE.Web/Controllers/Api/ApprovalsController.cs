@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 
@@ -54,7 +55,7 @@ namespace ProcurementHTE.Web.Controllers.Api
                 user.UserName, userId, string.Join(", ", rolesArray));
 
             // Check if user has approver role
-            var approverRoles = new[] { "Admin", "Analyst HTE & LTS", "Assistant Manager HTE", "Manager Transport & Logistic", "Vice President" };
+            var approverRoles = new[] { "Admin", "Analyst HTE & LTS", RoleNames.AsstManager, "Manager Transport & Logistic", "Vice President" };
             if (!rolesArray.Any(r => approverRoles.Contains(r)))
             {
                 _logger.LogInformation("GetPendingCount: User {UserName} has no approver role, returning 0", user.UserName);
@@ -88,7 +89,7 @@ namespace ProcurementHTE.Web.Controllers.Api
             var rolesArray = roles.ToArray();
 
             // Check if user has approver role
-            var approverRoles = new[] { "Admin", "Analyst HTE & LTS", "Assistant Manager HTE", "Manager Transport & Logistic", "Vice President" };
+            var approverRoles = new[] { "Admin", "Analyst HTE & LTS", RoleNames.AsstManager, "Manager Transport & Logistic", "Vice President" };
             if (!rolesArray.Any(r => approverRoles.Contains(r)))
             {
                 return Ok(new { items = Array.Empty<object>(), totalCount = 0 });

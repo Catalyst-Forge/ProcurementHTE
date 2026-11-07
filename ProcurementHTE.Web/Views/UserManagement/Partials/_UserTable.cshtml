@@ -7,7 +7,6 @@
             <tr>
                 <th sort-key="name">Nama</th>
                 <th sort-key="email">Email</th>
-                <th sort-key="userName">Username</th>
                 <th sort-key="jobTitle">Jabatan</th>
                 <th>Roles</th>
                 <th sort-key="status">Status</th>
@@ -24,7 +23,6 @@
                     <tr>
                         <td>@user.DisplayName</td>
                         <td>@user.Email</td>
-                        <td>@user.UserName</td>
                         <td>@user.JobTitle</td>
                         <td>
                             @if (user.Roles.Any())
@@ -100,7 +98,7 @@
             else
             {
                 <tr>
-                    <td colspan="9" class="text-center py-4">
+                    <td colspan="8" class="text-center py-4">
                         Tidak ada data user.
                     </td>
                 </tr>

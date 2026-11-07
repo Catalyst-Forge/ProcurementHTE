@@ -30,9 +30,9 @@
 
             <!-- Assistant Manager -->
             <div class="col-md-5">
-                <label asp-for="AssistantManagerUserId" class="form-label">Assistant Manager HTE</label>
+                <label asp-for="AssistantManagerUserId" class="form-label">@RoleNames.AsstManager</label>
                 <select asp-for="AssistantManagerUserId" class="form-select" asp-items="assistantManagerOptions">
-                    <option value="">Select Assistant Manager</option>
+                    <option value="">Select Asst. Manager</option>
                 </select>
                 <span asp-validation-for="AssistantManagerUserId" class="text-danger"></span>
             </div>

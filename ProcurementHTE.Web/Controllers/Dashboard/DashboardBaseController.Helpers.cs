@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.Dashboard;
@@ -12,14 +13,13 @@ public abstract partial class DashboardBaseController
             ("Admin", "#dc3545"),
             ("Operation", "#0d6efd"),
             ("Analyst HTE & LTS", "#198754"),
-            ("Assistant Manager HTE", "#ffc107"),
+            (RoleNames.AsstManager, "#ffc107"),
             ("Manager Transport & Logistic", "#0dcaf0"),
             ("Vice President", "#6f42c1"),
             ("AP-PO", "#fd7e14"),
             ("AR", "#20c997"),
             ("AP-Invoice", "#e83e8c"),
-            ("HSE", "#6c757d"),
-            ("Supply Chain Management", "#343a40")
+            (RoleNames.Accrual, "#6c757d")
         };
 
         var result = new List<RoleDistributionViewModel>();

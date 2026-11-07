@@ -71,7 +71,7 @@ namespace ProcurementHTE.Core.Services
             var proc = context.Procurement;
             var labels = new ProcurementRoleLabels(
                 proc.AnalystHtePjs ? "Pjs. Analyst HTE & LTS" : "Analyst HTE & LTS",
-                proc.AssistantManagerPjs ? "Pjs. Assistant Manager HTE" : "Assistant Manager HTE",
+                proc.AssistantManagerPjs ? $"Pjs. {RoleNames.AsstManager}" : RoleNames.AsstManager,
                 proc.ManagerPjs
                     ? "Pjs. Manager Transport & Logistic"
                     : "Manager Transport & Logistic",

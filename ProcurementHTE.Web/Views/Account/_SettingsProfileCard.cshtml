@@ -3,7 +3,7 @@
 <section class="card settings-card mb-4" id="profil" aria-labelledby="profil-title">
     <div class="card-header">
         <h5 class="mb-0" id="profil-title">Profil</h5>
-        <small class="text-muted">Nama, username, email, jabatan, dan nomor HP yang dipakai di seluruh aplikasi.</small>
+        <small class="text-muted">Nama, email, jabatan, dan nomor HP yang dipakai di seluruh aplikasi.</small>
     </div>
     <div class="card-body">
         <form asp-action="UpdateProfile" method="post" class="row g-3">
@@ -16,11 +16,6 @@
                 <label asp-for="Profile.LastName" class="form-label"></label>
                 <input asp-for="Profile.LastName" class="form-control" />
                 <span asp-validation-for="Profile.LastName" class="text-danger small"></span>
-            </div>
-            <div class="col-md-6">
-                <label asp-for="Profile.UserName" class="form-label"></label>
-                <input asp-for="Profile.UserName" class="form-control" />
-                <span asp-validation-for="Profile.UserName" class="text-danger small"></span>
             </div>
             <div class="col-md-6">
                 <label asp-for="Profile.Email" class="form-label"></label>

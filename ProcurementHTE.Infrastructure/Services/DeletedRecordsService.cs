@@ -263,6 +263,9 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
             return RestoreResult.Fail("Document type-nya masih terhapus. Pulihkan itu dulu.");
         if (item.JobTypeId != null && !await db.JobTypes.AnyAsync(j => j.JobTypeId == item.JobTypeId, ct))
             return RestoreResult.Fail("Procurement type-nya masih terhapus. Pulihkan itu dulu.");
+        if (!await db.Roles.AnyAsync(r => r.Id == item.SubmitterRoleId, ct)
+            || (item.ApproverRoleId != null && !await db.Roles.AnyAsync(r => r.Id == item.ApproverRoleId, ct)))
+            return RestoreResult.Fail("Role pada aturan ini sudah dihapus, jadi aturannya tidak bisa dipulihkan.");
 
         item.IsDeleted = false;
         return RestoreResult.Ok("Aturan approval dipulihkan.");
@@ -276,7 +279,7 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
 
         user.IsDeleted = false;
         user.IsActive = true;
-        return RestoreResult.Ok($"User {user.UserName} dipulihkan dan bisa login lagi.");
+        return RestoreResult.Ok($"User {user.FullName ?? user.Email} dipulihkan dan bisa login lagi.");
     }
 
     private async Task RestoreJobTypeDocumentsAsync(IReadOnlyList<JobTypeDocuments> documents, DateTime? at, CancellationToken ct)

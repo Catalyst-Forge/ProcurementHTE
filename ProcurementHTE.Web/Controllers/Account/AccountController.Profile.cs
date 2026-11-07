@@ -51,7 +51,6 @@ public partial class AccountController
             LastName = model.LastName ?? string.Empty,
             JobTitle = model.JobTitle,
             Email = normalizedEmail,
-            UserName = model.UserName,
             PhoneNumber = normalizedPhone,
         };
 

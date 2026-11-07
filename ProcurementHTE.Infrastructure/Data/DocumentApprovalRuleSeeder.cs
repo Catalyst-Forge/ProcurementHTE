@@ -40,7 +40,7 @@ namespace ProcurementHTE.Infrastructure.Data
                     return role?.Id;
                 }
 
-                // Find users by username for VP level and above
+                // Find users by username for VP level
                 async Task<string?> FindUserId(string userName)
                 {
                     var user = await context.Users.AsNoTracking()
@@ -50,26 +50,16 @@ namespace ProcurementHTE.Infrastructure.Data
 
                 var roleManagerTnl = await FindRoleId("Manager Transport & Logistic");
                 var roleVp = await FindRoleId("Vice President");
-                var roleOpDir = await FindRoleId("Operation Director");
-                var rolePresDir = await FindRoleId("President Director");
 
-                // User IDs for VP level and above
+                // User IDs for VP level
                 var userKurniawan = await FindUserId("kurniawan"); // Manager TNL
                 var userAgus = await FindUserId("agus");           // VP
-                var userApriandy = await FindUserId("apriandy");   // Ops Director
-                var userFaried = await FindUserId("faried");       // President Director
 
-                // CT Ranges based on ApprovalConstants thresholds (VP level and above):
-                // 300M - 5B: Manager TNL (Kurniawan) → VP (Agus)
-                // 5B - 10B: VP (Agus) → Ops Director (Apriandy)
-                // 10B - 15B: Ops Director (Apriandy) → President Director (Faried)
-                // > 15B: Ops Director (Apriandy) → President Director (Faried)
+                // Above the threshold the chain is Manager TNL (Kurniawan) → VP (Agus),
+                // because approval stops at the VP at any value.
                 var ranges = new (decimal Min, decimal Max, string? SubmitterRole, string? SubmitterUser, string? ApproverRole, string? ApproverUser)[]
                 {
-                    (ApprovalConstants.CT_THRESHOLD_VP, ApprovalConstants.CT_THRESHOLD_OP_DIR, roleManagerTnl, userKurniawan, roleVp, userAgus),
-                    (ApprovalConstants.CT_THRESHOLD_OP_DIR, ApprovalConstants.CT_THRESHOLD_PRES_DIR, roleVp, userAgus, roleOpDir, userApriandy),
-                    (ApprovalConstants.CT_THRESHOLD_PRES_DIR, 15_000_000_000m, roleOpDir, userApriandy, rolePresDir, userFaried),
-                    (15_000_000_000m, 99_000_000_000m, roleOpDir, userApriandy, rolePresDir, userFaried),
+                    (ApprovalConstants.CT_THRESHOLD_VP, 99_000_000_000m, roleManagerTnl, userKurniawan, roleVp, userAgus),
                 };
 
                 foreach (var docType in docTypes)

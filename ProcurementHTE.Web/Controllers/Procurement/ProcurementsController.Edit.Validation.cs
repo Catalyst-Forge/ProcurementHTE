@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Web.Models.ViewModels;
 
@@ -56,7 +57,7 @@ public partial class ProcurementsController
             ModelState.AddModelError(nameof(editViewModel.AnalystHteUserId), "Analyst HTE & LTS wajib dipilih");
 
         if (string.IsNullOrWhiteSpace(editViewModel.AssistantManagerUserId))
-            ModelState.AddModelError(nameof(editViewModel.AssistantManagerUserId), "Assistant Manager HTE wajib dipilih");
+            ModelState.AddModelError(nameof(editViewModel.AssistantManagerUserId), $"{RoleNames.AsstManager} wajib dipilih");
 
         if (string.IsNullOrWhiteSpace(editViewModel.ManagerUserId))
             ModelState.AddModelError(nameof(editViewModel.ManagerUserId), "Manager Transport & Logistic wajib dipilih");

@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models.DTOs;
 using System.Security.Claims;
@@ -19,7 +20,7 @@ public partial class ProcurementTrackingController
     {
         var isAdmin = User.IsInRole("Admin");
         var isAnalyst = User.IsInRole("Analyst HTE & LTS");
-        var isAsstManager = User.IsInRole("Assistant Manager HTE");
+        var isAsstManager = User.IsInRole(RoleNames.AsstManager);
         var isManager = User.IsInRole("Manager Transport & Logistic");
         var isVicePresident = User.IsInRole("Vice President");
 
@@ -40,7 +41,7 @@ public partial class ProcurementTrackingController
     {
         return User.IsInRole("Admin")
             || User.IsInRole("Analyst HTE & LTS")
-            || User.IsInRole("Assistant Manager HTE")
+            || User.IsInRole(RoleNames.AsstManager)
             || User.IsInRole("Manager Transport & Logistic")
             || User.IsInRole("Vice President");
     }

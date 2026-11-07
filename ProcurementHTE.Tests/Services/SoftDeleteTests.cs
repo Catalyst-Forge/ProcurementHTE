@@ -48,6 +48,33 @@ public class SoftDeleteTests : IDisposable
     }
 
     [Fact]
+    public async Task Rule_pointing_at_a_removed_role_cannot_be_restored()
+    {
+        var (_, _, _, _, rule) = SeedSetup();
+        _db.DocumentApprovalRules.Remove(rule);
+        await _db.SaveChangesAsync();
+
+        var result = await new DeletedRecordsService(_db).RestoreAsync(DeletedRecordKind.DocumentApprovalRule, rule.DocumentApprovalRuleId);
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(await _db.DocumentApprovalRules.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Rule_with_existing_roles_can_be_restored()
+    {
+        var (_, _, _, _, rule) = SeedSetup();
+        _db.Roles.Add(new Role { Id = "role-1", Name = "Operation", NormalizedName = "OPERATION", Description = "Operation" });
+        _db.DocumentApprovalRules.Remove(rule);
+        await _db.SaveChangesAsync();
+
+        var result = await new DeletedRecordsService(_db).RestoreAsync(DeletedRecordKind.DocumentApprovalRule, rule.DocumentApprovalRuleId);
+
+        Assert.True(result.Succeeded);
+        Assert.Single(await _db.DocumentApprovalRules.ToListAsync());
+    }
+
+    [Fact]
     public async Task Remove_TurnsIntoSoftDelete_AndRecordsWhoDeleted()
     {
         var (_, _, _, approval, _) = SeedSetup();

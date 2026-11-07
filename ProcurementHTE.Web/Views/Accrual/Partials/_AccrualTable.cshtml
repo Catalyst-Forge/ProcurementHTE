@@ -77,7 +77,7 @@
                                     }
                                 </td>
                                 <td class="text-center">
-                                    @if (User.IsInRole("Admin") || (User.IsInRole("AR") && isPickedByAr))
+                                    @if (ProcurementHTE.Web.Authorization.ActionRoles.CanFillAccrual(User, isPickedByAr))
                                     {
                                         <button type="button"
                                                 class="btn btn-sm @(hasAccrual ? "btn-outline-primary" : "btn-primary") btn-edit-accrual"

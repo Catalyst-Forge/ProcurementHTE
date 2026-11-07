@@ -310,3 +310,8 @@ body {
   overflow-y: auto;
   padding: 0.5rem;
 }
+
+/* The validation summary is always in the markup, so hide it until it has errors */
+.validation-summary-valid {
+  display: none;
+}

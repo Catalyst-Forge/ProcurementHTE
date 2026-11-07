@@ -25,6 +25,7 @@ public partial class UserManagementController
     public async Task<IActionResult> Create(UserFormPageViewModel model)
     {
         await ValidateNipIsUniqueAsync(model.Form, excludeUserId: null);
+        await ValidateEmailNotHeldByDeletedUserAsync(model.Form, excludeUserId: null);
         if (!ModelState.IsValid)
         {
             model.Roles = await GetRoleOptionsAsync();
@@ -37,7 +38,7 @@ public partial class UserManagementController
         {
             var user = new User
             {
-                UserName = model.Form.UserName,
+                UserName = model.Form.Email,
                 Email = model.Form.Email,
                 FirstName = model.Form.FirstName,
                 LastName = model.Form.LastName ?? string.Empty,
@@ -53,8 +54,7 @@ public partial class UserManagementController
             var createResult = await _userManager.CreateAsync(user, password);
             if (!createResult.Succeeded)
             {
-                foreach (var error in createResult.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
+                AddIdentityErrors(createResult);
 
                 model.Roles = await GetRoleOptionsAsync();
                 model.GeneratedPassword = password;
@@ -79,7 +79,7 @@ public partial class UserManagementController
             }
 
             TempData["SuccessMessage"] =
-                $"User {user.UserName} berhasil dibuat. Password awal: {password}";
+                $"User {BuildDisplayName(user)} berhasil dibuat. Password awal: {password}";
 
             return RedirectToAction(nameof(Index));
         }

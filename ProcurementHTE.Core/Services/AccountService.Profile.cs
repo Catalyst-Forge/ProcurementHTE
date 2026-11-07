@@ -57,17 +57,15 @@ public partial class AccountService
             StringComparison.OrdinalIgnoreCase
         );
 
-        if (!string.Equals(user.UserName, request.UserName, StringComparison.OrdinalIgnoreCase))
-        {
-            var userNameResult = await _userManager.SetUserNameAsync(user, request.UserName);
-            EnsureSucceeded(userNameResult, "Gagal memperbarui username.");
-        }
-
         if (emailChanged)
         {
             var emailResult = await _userManager.SetEmailAsync(user, request.Email);
             EnsureSucceeded(emailResult, "Gagal memperbarui email.");
             user.EmailConfirmed = false;
+
+            // Identity needs a unique UserName, and nobody types one, so it follows the email.
+            var userNameResult = await _userManager.SetUserNameAsync(user, request.Email);
+            EnsureSucceeded(userNameResult, "Gagal memperbarui email.");
         }
 
         user.FirstName = request.FirstName ?? string.Empty;

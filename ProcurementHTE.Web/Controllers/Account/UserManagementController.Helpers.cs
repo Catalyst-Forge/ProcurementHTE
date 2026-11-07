@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Models;
@@ -20,6 +21,33 @@ public partial class UserManagementController
         var taken = await _userManager.Users.AnyAsync(u => u.Nip == nip && u.Id != excludeUserId);
         if (taken)
             ModelState.AddModelError("Form.Nip", "NIP ini sudah dipakai user lain.");
+    }
+
+    // A deleted account keeps its email so it can be restored, and Identity reports that
+    // email as taken. Say why here and point at the way to get it back.
+    private async Task ValidateEmailNotHeldByDeletedUserAsync(UserFormInputModel form, string? excludeUserId)
+    {
+        var email = _userManager.NormalizeEmail(form.Email);
+        var userName = _userManager.NormalizeName(form.Email);
+
+        var held = await _userManager.Users.AnyAsync(u =>
+            u.IsDeleted
+            && u.Id != excludeUserId
+            && (u.NormalizedEmail == email || u.NormalizedUserName == userName)
+        );
+
+        if (held)
+            ModelState.AddModelError(
+                "Form.Email",
+                "Email ini milik akun yang sudah dihapus. Pulihkan akun itu dari menu Data Terhapus, atau pakai email lain."
+            );
+    }
+
+    // UserName follows the email, so a taken address fails both checks with the same text.
+    private void AddIdentityErrors(IdentityResult result)
+    {
+        foreach (var description in result.Errors.Select(e => e.Description).Distinct())
+            ModelState.AddModelError(string.Empty, description);
     }
 
     private async Task<IReadOnlyList<RoleOptionViewModel>> GetRoleOptionsAsync()

@@ -1,3 +1,5 @@
+using ProcurementHTE.Core.Constants;
+
 namespace ProcurementHTE.Web.Authorization
 {
     public static class DashboardRoleHelper
@@ -6,29 +8,25 @@ namespace ProcurementHTE.Web.Authorization
 
         public const string ManagerTransportRole = "Manager Transport & Logistic";
         public const string AnalystHteRole = "Analyst HTE & LTS";
-        public const string HteRole = "HTE";
         public const string OperationRole = "Operation";
-        public const string AssistantManagerHteRole = "Assistant Manager HTE";
+        public const string AssistantManagerHteRole = RoleNames.AsstManager;
         public const string VicePresidentRole = "Vice President";
-        public const string HseRole = "HSE";
-        public const string SupplyChainManagementRole = "Supply Chain Management";
         public const string AppoRole = "AP-PO";
         public const string ArRole = "AR";
         public const string ApInvoiceRole = "AP-Invoice";
+        public const string AccrualRole = RoleNames.Accrual;
 
         public static readonly string[] GeneralRoles =
         [
             ManagerTransportRole,
             AnalystHteRole,
-            HteRole,
             OperationRole,
             AssistantManagerHteRole,
             VicePresidentRole,
-            HseRole,
-            SupplyChainManagementRole,
             AppoRole,
             ArRole,
             ApInvoiceRole,
+            AccrualRole,
         ];
 
         public static string GeneralRolesCsv => string.Join(',', GeneralRoles);
@@ -39,15 +37,13 @@ namespace ProcurementHTE.Web.Authorization
         {
             [ManagerTransportRole] = "ManagerTransportDashboard",
             [AnalystHteRole] = "AnalystHteDashboard",
-            [HteRole] = "HteDashboard",
             [OperationRole] = "OperationDashboard",
             [AssistantManagerHteRole] = "AssistantManagerHteDashboard",
             [VicePresidentRole] = "VicePresidentDashboard",
-            [HseRole] = "HseDashboard",
-            [SupplyChainManagementRole] = "SupplyChainManagementDashboard",
             [AppoRole] = "AppoDashboard",
             [ArRole] = "ArDashboard",
             [ApInvoiceRole] = "ApInvoiceDashboard",
+            [AccrualRole] = "ArDashboard",
         };
 
         public static bool IsAdmin(string? role) =>

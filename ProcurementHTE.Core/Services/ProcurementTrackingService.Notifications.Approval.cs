@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
 using ProcurementHTE.Core.Models;
 
@@ -50,7 +51,7 @@ public partial class ProcurementTrackingService
         var approverRole = previousStatus switch
         {
             ProcurementStatus.WaitingApprovalAnalyst => "Analyst HTE",
-            ProcurementStatus.WaitingApprovalAsstManager => "Assistant Manager HTE",
+            ProcurementStatus.WaitingApprovalAsstManager => RoleNames.AsstManager,
             ProcurementStatus.WaitingApprovalManager => "Manager Transport & Logistic",
             ProcurementStatus.WaitingApprovalVP => "Vice President",
             ProcurementStatus.WaitingApprovalOpDir => "Operation Director",
@@ -59,7 +60,7 @@ public partial class ProcurementTrackingService
         };
         var nextStep = newStatus switch
         {
-            ProcurementStatus.WaitingApprovalAsstManager => "Menunggu approval Assistant Manager",
+            ProcurementStatus.WaitingApprovalAsstManager => "Menunggu approval Asst. Manager",
             ProcurementStatus.WaitingApprovalManager => "Menunggu approval Manager",
             ProcurementStatus.WaitingApprovalVP => "Menunggu approval Vice President",
             ProcurementStatus.WaitingApprovalOpDir => "Menunggu approval Operation Director",
@@ -112,7 +113,7 @@ public partial class ProcurementTrackingService
         var rejectorRole = rejectedAtStatus switch
         {
             ProcurementStatus.WaitingApprovalAnalyst => "Analyst HTE",
-            ProcurementStatus.WaitingApprovalAsstManager => "Assistant Manager HTE",
+            ProcurementStatus.WaitingApprovalAsstManager => RoleNames.AsstManager,
             ProcurementStatus.WaitingApprovalManager => "Manager Transport & Logistic",
             ProcurementStatus.WaitingApprovalVP => "Vice President",
             ProcurementStatus.WaitingApprovalOpDir => "Operation Director",

@@ -34,7 +34,7 @@ namespace ProcurementHTE.Core.Services
                     message =
                         $"PR {prNumber} telah diapprove oleh {approverUserName} (Analyst HTE & LTS). Silakan review dan approve.";
                 }
-                else if (approverRole.Contains("Assistant", StringComparison.OrdinalIgnoreCase))
+                else if (approverRole.Contains("Asst", StringComparison.OrdinalIgnoreCase))
                 {
                     notificationType = NotificationTypes.ApprovedByAssistantManager;
                     targetUserId = prInfo.ManagerUserId ?? "";

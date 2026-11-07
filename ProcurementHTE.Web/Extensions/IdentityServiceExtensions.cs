@@ -7,6 +7,7 @@ using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
+using ProcurementHTE.Web.Authorization;
 
 namespace ProcurementHTE.Web.Extensions;
 
@@ -20,6 +21,7 @@ public static class IdentityServiceExtensions
         services
             .AddIdentity<User, Role>(ConfigureIdentityOptions)
             .AddEntityFrameworkStores<AppDbContext>()
+            .AddErrorDescriber<IndonesianIdentityErrorDescriber>()
             .AddDefaultTokenProviders()
             .AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>();
 

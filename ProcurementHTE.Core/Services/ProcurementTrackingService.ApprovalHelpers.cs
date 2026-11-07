@@ -26,7 +26,7 @@ public partial class ProcurementTrackingService
         return status switch
         {
             ProcurementStatus.WaitingApprovalAnalyst => "Analyst HTE",
-            ProcurementStatus.WaitingApprovalAsstManager => "Assistant Manager",
+            ProcurementStatus.WaitingApprovalAsstManager => "Asst. Manager",
             ProcurementStatus.WaitingApprovalManager => "Manager",
             ProcurementStatus.WaitingApprovalVP => "Vice President",
             ProcurementStatus.WaitingApprovalOpDir => "Operation Director",

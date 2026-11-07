@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
@@ -30,7 +31,7 @@ public partial class ProcurementsController
             viewModel.AnalystHteUserId
         );
         viewModel.AssistantManagerUsers = await BuildUserSelectListAsync(
-            "Assistant Manager HTE",
+            RoleNames.AsstManager,
             viewModel.AssistantManagerUserId
         );
         viewModel.ManagerUsers = await BuildUserSelectListAsync(

@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services
@@ -87,7 +88,7 @@ namespace ProcurementHTE.Core.Services
                     ? analystHteName
                     : await ResolveFirstUserNameByRoleAsync(roleName);
 
-            if (roleName.Equals("Assistant Manager HTE", StringComparison.OrdinalIgnoreCase))
+            if (roleName.Equals(RoleNames.AsstManager, StringComparison.OrdinalIgnoreCase))
                 return !string.IsNullOrWhiteSpace(asstMgrName)
                     ? asstMgrName
                     : await ResolveFirstUserNameByRoleAsync(roleName);

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Infrastructure.Data
@@ -18,17 +19,12 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Manager Transport & Logistic",
                 "Analyst HTE & LTS",
                 "Operation",
-                "Assistant Manager HTE",
+                RoleNames.AsstManager,
                 "Vice President",
-                "Operation Director",
-                "President Director",
-                "Dewan Direksi",
-                "Dewan Komisaris",
-                "HSE",
-                "Supply Chain Management",
                 "AP-PO",
                 "AR",
                 "AP-Invoice",
+                RoleNames.Accrual,
             ];
 
             foreach (var roleName in roles)
@@ -82,39 +78,7 @@ namespace ProcurementHTE.Infrastructure.Data
             );
 
             await AddPermissions(
-                "Operation Director",
-                Permissions.Procurement.Read,
-                Permissions.Vendor.Read,
-                Permissions.Doc.Read,
-                Permissions.Doc.Approve
-            );
-
-            await AddPermissions(
-                "President Director",
-                Permissions.Procurement.Read,
-                Permissions.Vendor.Read,
-                Permissions.Doc.Read,
-                Permissions.Doc.Approve
-            );
-
-            await AddPermissions(
-                "Dewan Direksi",
-                Permissions.Procurement.Read,
-                Permissions.Vendor.Read,
-                Permissions.Doc.Read,
-                Permissions.Doc.Approve
-            );
-
-            await AddPermissions(
-                "Dewan Komisaris",
-                Permissions.Procurement.Read,
-                Permissions.Vendor.Read,
-                Permissions.Doc.Read,
-                Permissions.Doc.Approve
-            );
-
-            await AddPermissions(
-                "Assistant Manager HTE",
+                RoleNames.AsstManager,
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Create,
                 Permissions.Procurement.Edit,
@@ -160,24 +124,6 @@ namespace ProcurementHTE.Infrastructure.Data
             );
 
             await AddPermissions(
-                "HSE",
-                Permissions.Procurement.Read,
-                Permissions.Vendor.Read,
-                Permissions.Doc.Read,
-                Permissions.Doc.Approve
-            );
-
-            await AddPermissions(
-                "Supply Chain Management",
-                Permissions.Procurement.Read,
-                Permissions.Procurement.Edit,
-                Permissions.Vendor.Read,
-                Permissions.Vendor.Create,
-                Permissions.Vendor.Edit,
-                Permissions.Doc.Read
-            );
-
-            await AddPermissions(
                 "AR",
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Edit,
@@ -188,6 +134,12 @@ namespace ProcurementHTE.Infrastructure.Data
                 "AP-Invoice",
                 Permissions.Procurement.Read,
                 Permissions.Procurement.Edit,
+                Permissions.Doc.Read
+            );
+
+            await AddPermissions(
+                RoleNames.Accrual,
+                Permissions.Procurement.Read,
                 Permissions.Doc.Read
             );
         }

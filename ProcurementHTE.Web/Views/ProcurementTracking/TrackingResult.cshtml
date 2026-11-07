@@ -19,7 +19,7 @@
     var canModify = isAdmin || (!string.IsNullOrEmpty(Model.AppoUserId) && Model.AppoUserId == currentUserId);
 
     var isAnalyst = User.IsInRole("Analyst HTE & LTS");
-    var isAsstManager = User.IsInRole("Assistant Manager HTE");
+    var isAsstManager = User.IsInRole(RoleNames.AsstManager);
     var isManager = User.IsInRole("Manager Transport & Logistic");
     var isVicePresident = User.IsInRole("Vice President");
     var canApprove = Model.IsWaitingApproval && (

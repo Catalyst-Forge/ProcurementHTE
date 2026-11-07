@@ -7,7 +7,7 @@ using ProcurementHTE.Web.Authorization;
 
 namespace ProcurementHTE.Web.Controllers.Dashboard
 {
-    [Authorize(Roles = "AR")]
+    [Authorize(Roles = $"{DashboardRoleHelper.ArRole},{DashboardRoleHelper.AccrualRole}")]
     [Route("Dashboard/AR")]
     public class ArDashboardController : DashboardBaseController
     {

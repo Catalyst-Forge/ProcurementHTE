@@ -69,7 +69,6 @@ public static class ListSortColumns
         Columns<User>(
             ("name", u => u.FullName),
             ("email", u => u.Email),
-            ("userName", u => u.UserName),
             ("jobTitle", u => u.JobTitle),
             ("status", u => u.IsActive),
             ("twoFactor", u => u.TwoFactorEnabled),

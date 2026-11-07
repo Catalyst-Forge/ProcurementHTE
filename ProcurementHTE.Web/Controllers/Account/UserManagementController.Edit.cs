@@ -25,7 +25,6 @@ public partial class UserManagementController
                 FirstName = user.FirstName ?? string.Empty,
                 LastName = user.LastName,
                 Email = user.Email ?? string.Empty,
-                UserName = user.UserName ?? string.Empty,
                 Nip = user.Nip,
                 JobTitle = user.JobTitle,
                 PhoneNumber = user.PhoneNumber,
@@ -46,6 +45,7 @@ public partial class UserManagementController
             return BadRequest();
 
         await ValidateNipIsUniqueAsync(model.Form, excludeUserId: id);
+        await ValidateEmailNotHeldByDeletedUserAsync(model.Form, excludeUserId: id);
         if (IsCurrentUser(id))
         {
             if (!model.Form.IsActive)
@@ -71,7 +71,7 @@ public partial class UserManagementController
             user.FirstName = model.Form.FirstName;
             user.LastName = model.Form.LastName ?? string.Empty;
             user.Email = model.Form.Email;
-            user.UserName = model.Form.UserName;
+            user.UserName = model.Form.Email;
             user.Nip = NormalizeNip(model.Form.Nip);
             user.JobTitle = model.Form.JobTitle;
             user.PhoneNumber = model.Form.PhoneNumber;
@@ -80,8 +80,7 @@ public partial class UserManagementController
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
-                foreach (var error in updateResult.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
+                AddIdentityErrors(updateResult);
 
                 model.Roles = await GetRoleOptionsAsync();
                 return View(model);
@@ -134,7 +133,7 @@ public partial class UserManagementController
                     return RedirectToForbidden();
             }
 
-            TempData["SuccessMessage"] = $"User {user.UserName} berhasil diperbarui.";
+            TempData["SuccessMessage"] = $"User {BuildDisplayName(user)} berhasil diperbarui.";
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)

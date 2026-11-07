@@ -15,8 +15,8 @@
 
     var prePickupStatuses = new[] { "Draft", "Created", "Waiting Pickup" };
     var isPrePickup = prePickupStatuses.Contains(statusName, StringComparer.OrdinalIgnoreCase);
-    var earlyEditRoles = new[] { "Admin", "Operation", "Assistant Manager HTE" };
-    var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS", "Supply Chain Management" };
+    var earlyEditRoles = new[] { "Admin", "Operation", RoleNames.AsstManager };
+    var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS" };
     var userRoles = User.Claims
         .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
         .Select(c => c.Value)

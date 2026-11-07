@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
 
 namespace ProcurementHTE.Infrastructure.Data
@@ -158,26 +159,21 @@ namespace ProcurementHTE.Infrastructure.Data
                 new[]
                 {
                     ("Analyst HTE & LTS", 1),
-                    ("Assistant Manager HTE", 2),
+                    (RoleNames.AsstManager, 2),
                     ("Manager Transport & Logistic", 3),
                 }
             ),
             (
                 "Rencana Kerja dan Syarat-Syarat (RKS)",
-                new[] { ("Assistant Manager HTE", 1), ("Manager Transport & Logistic", 2) }
+                new[] { (RoleNames.AsstManager, 1), ("Manager Transport & Logistic", 2) }
             ),
             (
                 "Risk Assessment (RA)",
-                new[]
-                {
-                    ("HSE", 1),
-                    ("Assistant Manager HTE", 2),
-                    ("Manager Transport & Logistic", 3),
-                }
+                new[] { (RoleNames.AsstManager, 1), ("Manager Transport & Logistic", 2) }
             ),
             (
                 "Owner Estimate (OE)",
-                new[] { ("Assistant Manager HTE", 1), ("Manager Transport & Logistic", 2) }
+                new[] { (RoleNames.AsstManager, 1), ("Manager Transport & Logistic", 2) }
             ),
         };
     }

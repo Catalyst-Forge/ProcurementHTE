@@ -38,7 +38,6 @@ public partial class AccountController
                 LastName = overview.LastName,
                 JobTitle = overview.JobTitle,
                 Email = overview.Email,
-                UserName = overview.UserName,
                 PhoneNumber = profilePhoneInput,
             },
             ChangePassword = new ChangePasswordInputModel(),

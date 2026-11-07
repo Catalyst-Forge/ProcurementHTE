@@ -19,8 +19,7 @@ public partial class UserManagementController
         {
             var search = filters.Search.Trim();
             query = query.Where(u =>
-                (u.UserName != null && u.UserName.Contains(search))
-                || (u.Email != null && u.Email.Contains(search))
+                (u.Email != null && u.Email.Contains(search))
                 || (u.FirstName != null && u.FirstName.Contains(search))
                 || (u.LastName != null && u.LastName.Contains(search))
                 || (u.JobTitle != null && u.JobTitle.Contains(search))
@@ -64,7 +63,7 @@ public partial class UserManagementController
                 Request.ReadListSort(),
                 ListSortColumns.Users,
                 u => u.Id,
-                o => o.OrderBy(u => u.UserName)
+                o => o.OrderBy(u => u.FirstName)
             )
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -84,7 +83,6 @@ public partial class UserManagementController
                     Id = user.Id,
                     DisplayName = BuildDisplayName(user),
                     Email = user.Email ?? string.Empty,
-                    UserName = user.UserName ?? string.Empty,
                     JobTitle = user.JobTitle ?? string.Empty,
                     Roles = roles.ToArray(),
                     EmailConfirmed = user.EmailConfirmed,
