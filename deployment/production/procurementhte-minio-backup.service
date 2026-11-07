@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup harian dokumen MinIO ProcurementHTE
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/procurementhte-minio-backup.sh
+User=root
+Group=root

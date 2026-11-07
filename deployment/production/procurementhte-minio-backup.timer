@@ -1,0 +1,11 @@
+[Unit]
+Description=Jalankan backup MinIO ProcurementHTE setiap hari
+
+[Timer]
+OnCalendar=*-*-* 02:45:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=procurementhte-minio-backup.service
+
+[Install]
+WantedBy=timers.target
