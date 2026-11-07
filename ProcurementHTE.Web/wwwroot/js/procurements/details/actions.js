@@ -23,7 +23,9 @@
 
     function confirmSubmit(options, formId) {
         Swal.fire(options).then(result => {
-            if (result.isConfirmed) document.getElementById(formId)?.submit();
+            if (!result.isConfirmed) return;
+            window.AppLoadingOverlay?.show();
+            document.getElementById(formId)?.submit();
         });
     }
 

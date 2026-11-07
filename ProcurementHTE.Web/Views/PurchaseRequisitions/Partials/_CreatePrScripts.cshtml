@@ -144,6 +144,8 @@
             const isValid = validateProcurementSelection();
             if (!isValid) {
                 e.preventDefault();
+                form.dataset.loadingActive = 'false';
+                window.AppLoadingOverlay?.hide();
                 procurementTableContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });

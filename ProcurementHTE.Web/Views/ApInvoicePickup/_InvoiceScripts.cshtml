@@ -43,6 +43,7 @@
                     reverseButtons: true
                 }).then(function(result) {
                     if (result.isConfirmed) {
+                        window.AppLoadingOverlay?.show();
                         form.submit();
                     }
                 });

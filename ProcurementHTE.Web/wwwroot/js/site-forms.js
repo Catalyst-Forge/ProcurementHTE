@@ -112,11 +112,13 @@
     return false;
   };
 
-  const shouldShowOverlayForHtmx = (source, target) => {
+  // Only a write covers the screen, so it cannot be sent twice. Moving between pages,
+  // sorting, and filtering are reads, and they get the thin bar at the top instead.
+  const shouldShowOverlayForHtmx = (source, target, verb) => {
     if (source && typeof source.closest === "function" && (source.closest(".delete-form") || source.closest("[data-no-loading-overlay]"))) {
       return false;
     }
-    return isWithinMainContent(target);
+    return verb !== "get" && isWithinMainContent(target);
   };
 
   const hxLoadingRequests = new WeakMap();
@@ -151,7 +153,7 @@
       return;
     }
 
-    const overlayNeeded = shouldShowOverlayForHtmx(source, target);
+    const overlayNeeded = shouldShowOverlayForHtmx(source, target, event.detail?.requestConfig?.verb);
     if (overlayNeeded) window.SiteApp.showGlobalLoadingOverlay();
 
     hxLoadingRequests.set(xhr, { overlayShown: overlayNeeded });

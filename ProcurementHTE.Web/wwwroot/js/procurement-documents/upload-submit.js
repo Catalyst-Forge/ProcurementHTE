@@ -135,7 +135,7 @@
                 submitBtn.dataset.loading = 'true';
                 submitBtn.dataset.originalHtml = submitBtn.innerHTML;
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
             });
         });
     }

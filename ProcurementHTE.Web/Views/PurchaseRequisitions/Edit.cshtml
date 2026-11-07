@@ -38,7 +38,7 @@
       asp-route-id="@Model.PrId" 
       method="post" 
       enctype="multipart/form-data"
-      hx-boost="false">
+      hx-boost="false" data-loading-overlay="true">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="PrId" />
 

@@ -38,7 +38,7 @@
       method="post" 
       enctype="multipart/form-data" 
       id="createPrForm"
-      hx-boost="false">
+      hx-boost="false" data-loading-overlay="true">
     @Html.AntiForgeryToken()
 
     @await Html.PartialAsync("Partials/_CreatePrInfo", Model)

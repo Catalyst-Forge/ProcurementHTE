@@ -47,7 +47,7 @@
         button.dataset.loading = 'true';
         button.dataset.originalHtml = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...';
 
         try {
             const response = await fetch('/PurchaseRequisitions/GenerateDocumentAjax', {

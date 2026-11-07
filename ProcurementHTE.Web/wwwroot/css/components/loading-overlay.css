@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  animation: global-loading-appear 150ms linear 300ms both;
 }
 
 .global-loading-overlay:not(.d-none) {
@@ -29,15 +30,56 @@
   box-shadow: 0 25px 55px rgba(var(--dx-ink-rgb), 0.45);
 }
 
-.content-loading-indicator {
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(1px);
-  align-items: center;
-  justify-content: center;
+@keyframes global-loading-appear {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Thin bar for reads. htmx adds .htmx-request while one runs, and the delay keeps a fast one silent. */
+.page-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1060;
+  height: 3px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.page-progress.htmx-request {
+  opacity: 1;
+  transition: opacity 120ms linear 300ms;
+}
+
+.page-progress::before {
+  content: "";
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--dx-blue-600);
+  animation: page-progress-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes page-progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-progress::before {
+    width: 100%;
+    animation: none;
+  }
 }
 
 .htmx-indicator {

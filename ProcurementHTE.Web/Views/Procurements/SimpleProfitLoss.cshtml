@@ -13,7 +13,7 @@
     </a>
 </header>
 
-<form asp-action="SimpleProfitLossPost" method="post" class="card shadow-sm" hx-boost="false">
+<form asp-action="SimpleProfitLossPost" method="post" class="card shadow-sm" hx-boost="false" data-loading-overlay="true">
     <div class="card-body">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="ProcurementId" />

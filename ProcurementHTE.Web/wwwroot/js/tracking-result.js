@@ -33,6 +33,7 @@
             cancelButtonText: 'Batal'
         }).then(function(result) {
             if (result.isConfirmed) {
+                window.AppLoadingOverlay?.show();
                 document.getElementById('approveForm').submit();
             }
         });
@@ -61,6 +62,7 @@
             cancelButtonText: 'Batal'
         }).then(function(result) {
             if (result.isConfirmed) {
+                window.AppLoadingOverlay?.show();
                 document.getElementById('rejectForm').submit();
             }
         });

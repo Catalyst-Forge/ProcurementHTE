@@ -65,7 +65,7 @@
             if (result.isConfirmed) {
                 // Show loading
                 Swal.fire({
-                    title: 'Processing...',
+                    title: 'Memproses...',
                     text: 'Mengirim return for revision...',
                     allowOutsideClick: false,
                     didOpen: function() {
@@ -146,7 +146,7 @@
             if (result.isConfirmed) {
                 // Show loading
                 Swal.fire({
-                    title: 'Processing...',
+                    title: 'Memproses...',
                     text: 'Mengirim revision...',
                     allowOutsideClick: false,
                     didOpen: function() {

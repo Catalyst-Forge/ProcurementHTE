@@ -1,6 +1,6 @@
 <div class="modal fade pr-submit-modal" id="submitInproModal" tabindex="-1" aria-labelledby="submitInproTitle" aria-hidden="true">
     <div class="modal-dialog">
-        <form asp-action="SubmitInpro" method="post" enctype="multipart/form-data" hx-boost="false" class="modal-content">
+        <form asp-action="SubmitInpro" method="post" enctype="multipart/form-data" hx-boost="false" class="modal-content" data-loading-overlay="true">
             @Html.AntiForgeryToken()
             <input type="hidden" name="prId" />
             <div class="modal-header">
@@ -37,7 +37,7 @@
 
 <div class="modal fade pr-submit-modal" id="submitHardcopyModal" tabindex="-1" aria-labelledby="submitHardcopyTitle" aria-hidden="true">
     <div class="modal-dialog">
-        <form asp-action="SubmitHardcopy" method="post" enctype="multipart/form-data" hx-boost="false" class="modal-content">
+        <form asp-action="SubmitHardcopy" method="post" enctype="multipart/form-data" hx-boost="false" class="modal-content" data-loading-overlay="true">
             @Html.AntiForgeryToken()
             <input type="hidden" name="prId" />
             <div class="modal-header">
@@ -60,7 +60,7 @@
 
 <div class="modal fade pr-submit-modal" id="submitPoModal" tabindex="-1" aria-labelledby="submitPoTitle" aria-hidden="true">
     <div class="modal-dialog">
-        <form asp-action="SubmitPo" method="post" hx-boost="false" class="modal-content">
+        <form asp-action="SubmitPo" method="post" hx-boost="false" class="modal-content" data-loading-overlay="true">
             @Html.AntiForgeryToken()
             <input type="hidden" name="prId" />
             <div class="modal-header">

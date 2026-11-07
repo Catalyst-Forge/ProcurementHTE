@@ -1,8 +1,6 @@
 (function () {
   "use strict";
 
-  let overlayStart = 0;
-  let overlayTimer = null;
   let overlayFailsafe = null;
   let overlaySuppressUntil = 0;
 
@@ -17,41 +15,31 @@
 
   window.SiteApp.suppressOverlay = function(ms = 0) {
     overlaySuppressUntil = performance.now() + ms;
-    window.SiteApp.hideGlobalLoadingOverlay(true);
+    window.SiteApp.hideGlobalLoadingOverlay();
   };
 
   window.SiteApp.isOverlaySuppressed = function() {
     return performance.now() < overlaySuppressUntil;
   };
 
+  // Blocks clicks at once so nothing is sent twice. The stylesheet keeps it invisible
+  // for the first 300ms, so a quick action does not flash.
   window.SiteApp.showGlobalLoadingOverlay = function() {
     const loadingOverlay = getOverlay();
     if (!loadingOverlay || loadingOverlay.dataset.visible === "true") return;
     overlaySuppressUntil = 0;
-    overlayStart = performance.now();
     loadingOverlay.dataset.visible = "true";
     loadingOverlay.classList.remove("d-none");
     clearTimeout(overlayFailsafe);
     overlayFailsafe = setTimeout(() => {
-      window.SiteApp.hideGlobalLoadingOverlay(true);
+      window.SiteApp.hideGlobalLoadingOverlay();
     }, 15000);
   };
 
-  window.SiteApp.hideGlobalLoadingOverlay = function(force = false) {
-    const loadingOverlay = getOverlay();
-    if (!loadingOverlay || loadingOverlay.dataset.visible !== "true") return;
-    const elapsed = performance.now() - overlayStart;
-    const delay = force ? 0 : Math.max(0, 1000 - elapsed);
-    clearTimeout(overlayTimer);
+  window.SiteApp.hideGlobalLoadingOverlay = function() {
     clearTimeout(overlayFailsafe);
     overlayFailsafe = null;
-    if (delay === 0) {
-      hideOverlayNow();
-      return;
-    }
-    overlayTimer = setTimeout(() => {
-      hideOverlayNow();
-    }, delay);
+    hideOverlayNow();
   };
 
   window.AppLoadingOverlay = {

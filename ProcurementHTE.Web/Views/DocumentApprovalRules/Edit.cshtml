@@ -19,7 +19,7 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <form asp-action="Edit" method="post" class="row g-3" hx-boost="false">
+        <form asp-action="Edit" method="post" class="row g-3" hx-boost="false" data-loading-overlay="true">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="DocumentApprovalRuleId" />
 
