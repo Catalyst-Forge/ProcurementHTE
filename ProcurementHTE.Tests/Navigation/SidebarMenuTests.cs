@@ -9,7 +9,7 @@ public class SidebarMenuTests
     [
         "Dashboard",
         "Procurements",
-        "PR Service",
+        "PR (Purchase Requisition)",
         "Laporan Data Procurement",
         "Pending Approvals",
         "Procurement Tracking",

@@ -11,7 +11,7 @@ public class DeletedRecordsViewModel
     public static readonly IReadOnlyList<(DeletedRecordKind Kind, string Label)> Tabs =
     [
         (DeletedRecordKind.Procurement, "Procurements"),
-        (DeletedRecordKind.PurchaseRequisition, "PR Service"),
+        (DeletedRecordKind.PurchaseRequisition, "PR (Purchase Requisition)"),
         (DeletedRecordKind.Vendor, "Vendors"),
         (DeletedRecordKind.JobType, "Procurement Types"),
         (DeletedRecordKind.DocumentType, "Document Types"),

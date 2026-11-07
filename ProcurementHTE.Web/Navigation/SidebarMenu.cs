@@ -68,7 +68,7 @@ public static class SidebarMenu
             "Pengadaan",
             [
                 new("Procurements", "bi-briefcase", "Procurements", "Index Procurements"),
-                new("PR Service", "bi-journal-text", "PurchaseRequisitions", "Index PR Service"),
+                new("PR (Purchase Requisition)", "bi-journal-text", "PurchaseRequisitions", "Index PR Service"),
                 new("Laporan Data Procurement", "bi-table", "Ldp", "LDP Data"),
             ]
         ),
