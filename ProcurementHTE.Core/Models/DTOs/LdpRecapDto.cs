@@ -40,6 +40,7 @@ namespace ProcurementHTE.Core.Models.DTOs
         // Invoice Data
         public string? SANo { get; set; }
         public string? SP3No { get; set; }
+        public string? PicApPo { get; set; }
 
         // Items
         public string? UnitItemPenawaran { get; set; }

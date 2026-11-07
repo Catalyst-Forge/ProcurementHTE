@@ -55,6 +55,7 @@
                 <th sort-key="TanggalSubmitIspa" sort-kind="date" filter-key="TanggalSubmitIspa" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">Tgl Submit INPRO</th>
                 <th sort-key="SANo" filter-key="SANo" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">SA No</th>
                 <th sort-key="SP3No" filter-key="SP3No" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">SP3 No</th>
+                <th sort-key="PicApPo" filter-key="PicApPo" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 150px;">PIC AP-PO</th>
                 <th class="position-sticky end-0 bg-light text-center ldp-pinned" style="--ldp-col-width: 140px; z-index: 2;">Aksi</th>
             </tr>
         </thead>
@@ -63,7 +64,7 @@
             @if (Model == null || !Model.Items.Any())
             {
                 <tr>
-                    <td colspan="46" class="text-center text-muted py-5">
+                    <td colspan="47" class="text-center text-muted py-5">
                         <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                         @if (!string.IsNullOrWhiteSpace(Model?.Search))
                         {
@@ -148,6 +149,7 @@
                         <td class="text-center ldp-col ldp-pr">@formatDate(item.TanggalSubmitIspa)</td>
                         <td class="ldp-col ldp-pr">@formatText(item.SANo)</td>
                         <td class="ldp-col ldp-pr">@formatText(item.SP3No)</td>
+                        <td class="ldp-col ldp-pr">@formatText(item.PicApPo)</td>
                         <td class="position-sticky end-0 bg-white text-center ldp-pinned" style="z-index: 1;">
                             @if (item.HasLdpDocument)
                             {

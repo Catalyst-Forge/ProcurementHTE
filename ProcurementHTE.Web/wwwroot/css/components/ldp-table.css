@@ -1,5 +1,5 @@
 /* --- LDP report table ---
-   The report has 46 columns, far more than fit on a screen, so it shows one group at a
+   The report has 47 columns, far more than fit on a screen, so it shows one group at a
    time. The table's data-view picks the group; .ldp-pinned cells show in every group.
    "all" keeps the full spreadsheet width, with each column at its --ldp-col-width. */
 .ldp-table[data-view="summary"] .ldp-col:not(.ldp-summary),

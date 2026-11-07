@@ -102,6 +102,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 // Invoice Data
                 SANo = p.SANo,
                 SP3No = p.SP3No,
+                PicApPo = p.AppoUser?.FullName,
 
                 // Items
                 UnitItemPenawaran = unitItems,

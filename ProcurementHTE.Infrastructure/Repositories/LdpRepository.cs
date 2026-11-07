@@ -34,6 +34,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             // Base query - start from Procurements
             var query = _context
                 .Procurements.Include(p => p.JobType)
+                .Include(p => p.AppoUser)
                 .Include(p => p.PurchaseRequisition)
                 .ThenInclude(pr => pr!.StatusHistories)
                 .Include(p => p.StatusHistories)
