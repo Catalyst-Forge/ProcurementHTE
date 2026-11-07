@@ -4,6 +4,12 @@ namespace ProcurementHTE.Web.Controllers.Account;
 
 public partial class UserManagementController
 {
+    private const string SelfDeactivationMessage =
+        "Tidak dapat menonaktifkan akun yang sedang digunakan.";
+
+    private bool IsCurrentUser(string userId) =>
+        string.Equals(_userManager.GetUserId(User), userId, StringComparison.OrdinalIgnoreCase);
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleActive(string id)
@@ -14,6 +20,12 @@ public partial class UserManagementController
         var user = await _userManager.FindByIdAsync(id);
         if (user == null || user.IsDeleted)
             return NotFound();
+
+        if (user.IsActive && IsCurrentUser(id))
+        {
+            TempData["ErrorMessage"] = SelfDeactivationMessage;
+            return RedirectToAction(nameof(Index));
+        }
 
         user.IsActive = !user.IsActive;
         await _userManager.UpdateAsync(user);

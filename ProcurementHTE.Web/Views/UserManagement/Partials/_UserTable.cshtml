@@ -74,7 +74,8 @@
                                       data-confirm-confirm-color="@(user.IsActive ? "#dc3545" : "#2563eb")"
                                       data-confirm-cancel="Batal">
                                     <button type="submit" class="btn btn-outline-warning"
-                                            title="@(user.IsActive ? "Nonaktifkan user" : "Aktifkan user")">
+                                            title="@(user.IsActive ? "Nonaktifkan user" : "Aktifkan user")"
+                                            @(isSelf ? "disabled" : "")>
                                         <i class="bi bi-power"></i>
                                     </button>
                                 </form>
