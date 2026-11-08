@@ -90,7 +90,8 @@
   background: transparent;
 }
 
-.settings-card > .card-header h5 {
+.settings-card > .card-header h5,
+.settings-card > .card-header h2 {
   font-size: 1.0625rem;
   font-weight: 600;
 }
@@ -234,7 +235,7 @@
 .authenticator-qr {
   border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--dx-card);
 }
 
 .authenticator-key {

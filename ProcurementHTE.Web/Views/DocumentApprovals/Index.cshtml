@@ -14,7 +14,7 @@
         <p class="text-muted mb-0">Kelola urutan approval untuk setiap mapping Job Type - Document.</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Approval Step</a>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Langkah Approval Baru</a>
     </div>
 </div>
 
@@ -47,8 +47,8 @@
                         title: title,
                         text: text,
                         showCancelButton: true,
-                        confirmButtonText: "Yes, delete",
-                        cancelButtonText: "Cancel",
+                        confirmButtonText: "Ya, hapus",
+                        cancelButtonText: "Batal",
                         confirmButtonColor: "var(--dx-danger)",
                         cancelButtonColor: "var(--dx-ink-muted)",
                         focusCancel: true
@@ -71,14 +71,14 @@
 
 <form method="get" class="border rounded-3 p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
     <div class="w-auto">
-        <label class="form-label small text-muted mb-1">Filter Job Type</label>
-        <select class="form-select" name="jobTypeId" onchange="this.form.submit()"
+        <label for="filterJobType" class="form-label small text-muted mb-1">Filter Job Type</label>
+        <select id="filterJobType" class="form-select" name="jobTypeId" data-auto-submit
                 asp-items="@(new SelectList(jobTypes, "JobTypeId", "TypeName", selectedJobType))">
-            <option value="">All Job Types</option>
+            <option value="">Semua Job Type</option>
         </select>
     </div>
     <div class="ms-auto">
-        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Muat ulang</button>
     </div>
 </form>
 
@@ -86,18 +86,18 @@
     <table class="table table-hover mobile-table">
         <thead class="table-light">
             <tr>
-                <th>Job Type</th>
-                <th>Document</th>
-                <th>Role</th>
-                <th class="text-center">Level</th>
-                <th class="text-center">Actions</th>
+                <th scope="col">Job Type</th>
+                <th scope="col">Document</th>
+                <th scope="col">Role</th>
+                <th scope="col" class="text-center">Level</th>
+                <th scope="col" class="text-center">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No approval steps available.</td>
+                    <td colspan="5" class="text-center text-muted py-4">Belum ada langkah approval.</td>
                 </tr>
             }
             else
@@ -137,6 +137,8 @@
                                     <input type="hidden" name="id" value="@item.DocumentApprovalId" />
                                     <button type="button"
                                             class="btn btn-outline-danger js-da-delete"
+                                            aria-label="Hapus"
+                                            title="Hapus"
                                             data-title="@deleteTitle"
                                             data-message="@deleteMessage">
                                         <i class="bi bi-trash"></i>

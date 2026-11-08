@@ -15,7 +15,7 @@
     var hxBoostValue = disableHxBoost ? "false" : "true";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,6 +31,7 @@
 </head>
 
 <body class="@bodyClass" data-active-page="@ViewBag.ActivePage" data-active-controller="@currentController" data-active-action="@currentAction">
+    <a class="skip-link" href="#app-content">Lewati ke konten utama</a>
     <div class="@layoutRowClass">
         @if (!hideSidebar)
         {
@@ -63,7 +64,7 @@
                     </div>
                 </div>
                 <main id="app-content"
-                      role="main"
+                      tabindex="-1"
                       class="pb-3"
                       hx-boost="@hxBoostValue"
                       hx-target="#app-content"

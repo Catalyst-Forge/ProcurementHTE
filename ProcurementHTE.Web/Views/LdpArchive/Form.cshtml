@@ -7,7 +7,7 @@
 }
 
 <header class="mb-3">
-    <a href="@(isEdit ? Url.Action("Details", new { id = Model.Id }) : Url.Action("Index"))" class="small">Kembali</a>
+    <a href="@(isEdit ? Url.Action("Details", new { id = Model.Id }) : Url.Action("Index"))" class="back-link"><i class="bi bi-chevron-left" aria-hidden="true"></i>Kembali</a>
     <h1 class="h4 mt-2 mb-1">@ViewData["Title"]</h1>
     @if (isEdit)
     {

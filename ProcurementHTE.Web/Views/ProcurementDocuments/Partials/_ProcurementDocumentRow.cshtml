@@ -20,19 +20,19 @@
             <div class="pt-1">
                 @if (Model.IsPending)
                 {
-                    <i class="bi bi-hourglass-split text-warning fs-4" title="Pending Approval"></i>
+                    <i class="bi bi-hourglass-split text-warning fs-4" title="Menunggu approval"></i>
                 }
                 else if (item.Uploaded)
                 {
-                    <i class="bi bi-file-earmark-check-fill text-success fs-4" title="Uploaded"></i>
+                    <i class="bi bi-file-earmark-check-fill text-success fs-4" title="Sudah diunggah"></i>
                 }
                 else if (item.IsUploadRequired)
                 {
-                    <i class="bi bi-file-earmark-medical-fill text-warning fs-4" title="Required"></i>
+                    <i class="bi bi-file-earmark-medical-fill text-warning fs-4" title="Wajib"></i>
                 }
                 else
                 {
-                    <i class="bi bi-file-earmark text-secondary fs-4" title="Optional"></i>
+                    <i class="bi bi-file-earmark text-secondary fs-4" title="Opsional"></i>
                 }
             </div>
 

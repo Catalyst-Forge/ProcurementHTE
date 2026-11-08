@@ -8,7 +8,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 mb-0">Edit Job Type Document</h1>
-    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali</a>
 </div>
 
 <div class="card shadow-sm">
@@ -48,7 +48,7 @@
             <div class="col-md-8 d-flex flex-wrap gap-3 align-items-center">
                 <div class="form-check">
                     <input asp-for="IsMandatory" class="form-check-input" type="checkbox" />
-                    <label class="form-check-label" asp-for="IsMandatory">Mandatory</label>
+                    <label class="form-check-label" asp-for="IsMandatory">Wajib</label>
                 </div>
                 <div class="form-check">
                     <input asp-for="IsGenerated" class="form-check-input" type="checkbox" />
@@ -56,7 +56,7 @@
                 </div>
                 <div class="form-check">
                     <input asp-for="IsUploadRequired" class="form-check-input" type="checkbox" />
-                    <label class="form-check-label" asp-for="IsUploadRequired">Upload</label>
+                    <label class="form-check-label" asp-for="IsUploadRequired">Unggah</label>
                 </div>
                 <div class="form-check">
                     <input asp-for="RequiresApproval" class="form-check-input" type="checkbox" />
@@ -65,13 +65,13 @@
             </div>
 
             <div class="col-12">
-                <label asp-for="Note" class="form-label">Note</label>
+                <label asp-for="Note" class="form-label">Catatan</label>
                 <textarea asp-for="Note" class="form-control" rows="2"></textarea>
             </div>
 
             <div class="col-12 d-flex justify-content-end gap-2">
-                <a asp-action="Index" class="btn btn-light">Cancel</a>
-                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save</button>
+                <a asp-action="Index" class="btn btn-light">Batal</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Simpan</button>
             </div>
         </form>
     </div>

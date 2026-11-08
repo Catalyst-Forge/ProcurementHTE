@@ -9,13 +9,13 @@
 
 <section class="card shadow-sm mb-3 p-2 rounded-4">
     <div class="card-body">
-        <h5 class="card-title fw-semibold">Link to Procurement <span class="text-danger">*</span></h5>
+        <h5 class="card-title fw-semibold">Tautkan ke Procurement <span class="text-danger">*</span></h5>
         <hr />
         <div class="row g-3 mb-3">
             <div class="col-md-4">
-                <label class="form-label">Filter by Vendor</label>
+                <label class="form-label" for="filterVendor">Filter Vendor</label>
                 <select class="form-select" id="filterVendor">
-                    <option value="">-- All Vendors --</option>
+                    <option value="">-- Semua Vendor --</option>
                     @foreach (var vendor in vendors)
                     {
                         <option value="@vendor.Value">@vendor.Text</option>
@@ -23,9 +23,9 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Filter by Category</label>
+                <label class="form-label" for="filterCategory">Filter Kategori</label>
                 <select class="form-select" id="filterCategory">
-                    <option value="">-- All Categories --</option>
+                    <option value="">-- Semua Kategori --</option>
                     @foreach (var category in categories)
                     {
                         <option value="@category.Value">@category.Text</option>
@@ -33,9 +33,9 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Filter by Job Type</label>
+                <label class="form-label" for="filterJobType">Filter Job Type</label>
                 <select class="form-select" id="filterJobType">
-                    <option value="">-- All Job Types --</option>
+                    <option value="">-- Semua Job Type --</option>
                     @foreach (var jobType in jobTypes)
                     {
                         <option value="@jobType.Value">@jobType.Text</option>
@@ -46,13 +46,13 @@
         <div class="row g-3 mb-3">
             <div class="col-md-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <label class="form-label mb-0">Available Procurements</label>
+                    <label class="form-label mb-0">Procurement yang tersedia</label>
                     <div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefreshProcurements">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                            <i class="bi bi-arrow-clockwise"></i> Muat ulang
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-primary" id="btnClearFilters">
-                            <i class="bi bi-x-circle"></i> Clear Filters
+                            <i class="bi bi-x-circle"></i> Hapus filter
                         </button>
                     </div>
                 </div>
@@ -64,23 +64,23 @@
                     <table class="table table-hover table-sm mb-0" id="procurementTable">
                         <thead class="table-light sticky-top">
                             <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" class="form-check-input" id="selectAll" title="Select All" />
+                                <th scope="col" style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll" title="Pilih semua" />
                                 </th>
-                                <th>Proc Number</th>
-                                <th>WO Number</th>
-                                <th>Job Name</th>
-                                <th>Start Date</th>
-                                <th>Category</th>
-                                <th>Job Type</th>
-                                <th>Vendor</th>
-                                <th>Status</th>
+                                <th scope="col">Proc Number</th>
+                                <th scope="col">WO Number</th>
+                                <th scope="col">Job Name</th>
+                                <th scope="col">Start Date</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Job Type</th>
+                                <th scope="col">Vendor</th>
+                                <th scope="col">Status</th>
                             </tr>
                         </thead>
                         <tbody id="procurementTableBody">
                             <tr>
                                 <td colspan="9" class="text-center text-muted py-4">
-                                    <i class="bi bi-hourglass-split"></i> Loading procurements...
+                                    <i class="bi bi-hourglass-split"></i> Memuat procurement...
                                 </td>
                             </tr>
                         </tbody>

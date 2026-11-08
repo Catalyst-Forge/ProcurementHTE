@@ -113,7 +113,7 @@
                         });
                     } else {
                         Swal.fire({
-                            title: 'Error',
+                            title: 'Gagal',
                             text: data.message || 'Gagal mengirim return for revision.',
                             icon: 'error',
                             confirmButtonColor: 'var(--dx-danger)'
@@ -122,7 +122,7 @@
                 })
                 .catch(function(error) {
                     Swal.fire({
-                        title: 'Error',
+                        title: 'Gagal',
                         text: 'Terjadi kesalahan: ' + error.message,
                         icon: 'error',
                         confirmButtonColor: 'var(--dx-danger)'
@@ -147,7 +147,7 @@
                 // Show loading
                 Swal.fire({
                     title: 'Memproses...',
-                    text: 'Mengirim revision...',
+                    text: 'Mengirim revisi...',
                     allowOutsideClick: false,
                     didOpen: function() {
                         Swal.showLoading();
@@ -187,7 +187,7 @@
                         });
                     } else {
                         Swal.fire({
-                            title: 'Error',
+                            title: 'Gagal',
                             text: data.message || 'Gagal submit revision.',
                             icon: 'error',
                             confirmButtonColor: 'var(--dx-danger)'
@@ -196,7 +196,7 @@
                 })
                 .catch(function(error) {
                     Swal.fire({
-                        title: 'Error',
+                        title: 'Gagal',
                         text: 'Terjadi kesalahan: ' + error.message,
                         icon: 'error',
                         confirmButtonColor: 'var(--dx-danger)'

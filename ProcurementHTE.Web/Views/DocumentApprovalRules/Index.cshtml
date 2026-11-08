@@ -19,22 +19,22 @@
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> New Rule
+            <i class="bi bi-plus-circle"></i> Rule Baru
         </a>
     </div>
 </div>
 
 <form method="get" class="border rounded-3 p-3 mb-3 d-flex flex-wrap gap-2 align-items-center">
     <div class="w-auto">
-        <label class="form-label small text-muted mb-1">Filter Document</label>
-        <select class="form-select" name="documentTypeId" onchange="this.form.submit()"
+        <label for="filterDocumentType" class="form-label small text-muted mb-1">Filter Dokumen</label>
+        <select id="filterDocumentType" class="form-select" name="documentTypeId" data-auto-submit
                 asp-items="docSelect">
-            <option value="">All Documents</option>
+            <option value="">Semua Dokumen</option>
         </select>
     </div>
     <div class="ms-auto">
         <button type="submit" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-clockwise"></i> Refresh
+            <i class="bi bi-arrow-clockwise"></i> Muat ulang
         </button>
     </div>
 </form>
@@ -43,23 +43,23 @@
     <table class="table table-hover mobile-table">
         <thead class="table-light">
             <tr>
-                <th>Document</th>
-                <th>Job Type</th>
-                <th>Category</th>
-                <th class="text-end">Min Amount</th>
-                <th class="text-end">Max Amount</th>
-                <th>Submitter</th>
-                <th>Approver</th>
-                <th class="text-center">Seq</th>
-                <th class="text-center">Active</th>
-                <th class="text-center">Actions</th>
+                <th scope="col">Document</th>
+                <th scope="col">Job Type</th>
+                <th scope="col">Category</th>
+                <th scope="col" class="text-end">Min Amount</th>
+                <th scope="col" class="text-end">Max Amount</th>
+                <th scope="col">Submitter</th>
+                <th scope="col">Approver</th>
+                <th scope="col" class="text-center">Seq</th>
+                <th scope="col" class="text-center">Aktif</th>
+                <th scope="col" class="text-center">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="10" class="text-center text-muted py-4">No approval rules.</td>
+                    <td colspan="10" class="text-center text-muted py-4">Belum ada approval rule.</td>
                 </tr>
             }
             else
@@ -132,7 +132,7 @@
                                             : string.Empty);
                                 }
                                 <form asp-action="Delete" method="post" class="d-inline delete-form"
-                                      data-confirm-title="Delete this rule?"
+                                      data-confirm-title="Hapus rule ini?"
                                       data-confirm-message="@ruleDeleteMessage"
                                       data-confirm-confirm="Yes, delete"
                                       data-confirm-cancel="Cancel">

@@ -4,7 +4,7 @@
     @if (Model.Document.IsMandatory)
     {
         <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
-            <i class="bi bi-exclamation-triangle me-1"></i>Required
+            <i class="bi bi-exclamation-triangle me-1"></i>Wajib
         </span>
     }
     @if (Model.Document.IsGenerated)
@@ -16,7 +16,7 @@
     @if (Model.Document.IsUploadRequired && !Model.Document.IsGenerated)
     {
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-            <i class="bi bi-upload me-1"></i>Upload
+            <i class="bi bi-upload me-1"></i>Unggah
         </span>
     }
     @if (Model.Document.RequiresApproval)

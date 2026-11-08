@@ -1,31 +1,10 @@
 @using ProcurementHTE.Web.Models.Admin
+@using ProcurementHTE.Web.Navigation
 @model UserManagementIndexViewModel
+@{
+    var currentPage = Model.Filters.Page <= 0 ? 1 : Model.Filters.Page;
+}
 
-<nav>
-    <ul class="pagination mb-0">
-        @{
-            var currentPage = Model.Filters.Page <= 0 ? 1 : Model.Filters.Page;
-        }
-
-        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-            <a class="page-link" href="@Context.Request.WithPage(currentPage - 1)">
-                &laquo;
-            </a>
-        </li>
-
-        @for (var i = 1; i <= Model.TotalPages; i++)
-        {
-            <li class="page-item @(i == currentPage ? "active" : "")">
-                <a class="page-link" href="@Context.Request.WithPage(i)">
-                    @i
-                </a>
-            </li>
-        }
-
-        <li class="page-item @(currentPage == Model.TotalPages ? "disabled" : "")">
-            <a class="page-link" href="@Context.Request.WithPage(currentPage + 1)">
-                &raquo;
-            </a>
-        </li>
-    </ul>
-</nav>
+<div class="d-flex justify-content-center">
+    <partial name="_PageLinks" model="@(new PageLinks(currentPage, Model.TotalPages, target => Context.Request.WithPage(target)))" />
+</div>

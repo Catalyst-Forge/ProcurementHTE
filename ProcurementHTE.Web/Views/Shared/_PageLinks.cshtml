@@ -1,0 +1,69 @@
+@using ProcurementHTE.Web.Navigation
+@model PageLinks
+@{
+    var totalPages = Math.Max(1, Model.TotalPages);
+    var page = Math.Clamp(Model.Page, 1, totalPages);
+    // Phones get the narrow window; the wide one would push 44px targets off the screen.
+    var rows = new[]
+    {
+        (Slots: PageWindow.Wide, Css: "d-none d-sm-flex"),
+        (Slots: PageWindow.Narrow, Css: "d-flex d-sm-none"),
+    };
+    // A list that swaps itself with htmx; Razor drops each attribute whose value is null.
+    var swaps = Model.HxGet is not null && Model.HxTarget is not null;
+    string? hxTarget = swaps ? Model.HxTarget : null;
+    string? hxSwap = swaps ? "innerHTML" : null;
+    string? hxIndicator = swaps ? Model.HxIndicator : null;
+    string? HxGet(int target) => swaps ? Model.HxGet!(target) : null;
+}
+
+<nav aria-label="@Model.Label" class="pager-links">
+    @foreach (var row in rows)
+    {
+        <ul class="pagination mb-0 gap-1 flex-wrap @row.Css">
+            <li class="page-item @(page > 1 ? "" : "disabled")">
+                @if (page > 1)
+                {
+                    <a class="page-link" href="@Model.Href(page - 1)" aria-label="Halaman sebelumnya"
+                       hx-get="@HxGet(page - 1)" hx-target="@hxTarget" hx-swap="@hxSwap" hx-indicator="@hxIndicator">
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                    </a>
+                }
+                else
+                {
+                    <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+                }
+            </li>
+
+            @foreach (var number in PageWindow.For(page, totalPages, row.Slots))
+            {
+                if (number is int target)
+                {
+                    <li class="page-item @(target == page ? "active" : "")">
+                        <a class="page-link" href="@Model.Href(target)"
+                           aria-current="@(target == page ? "page" : null)"
+                           hx-get="@HxGet(target)" hx-target="@hxTarget" hx-swap="@hxSwap" hx-indicator="@hxIndicator">@target</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item page-item--gap" aria-hidden="true"><span class="page-link">…</span></li>
+                }
+            }
+
+            <li class="page-item @(page < totalPages ? "" : "disabled")">
+                @if (page < totalPages)
+                {
+                    <a class="page-link" href="@Model.Href(page + 1)" aria-label="Halaman berikutnya"
+                       hx-get="@HxGet(page + 1)" hx-target="@hxTarget" hx-swap="@hxSwap" hx-indicator="@hxIndicator">
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </a>
+                }
+                else
+                {
+                    <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+                }
+            </li>
+        </ul>
+    }
+</nav>

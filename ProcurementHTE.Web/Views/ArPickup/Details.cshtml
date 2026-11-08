@@ -1,12 +1,12 @@
 @model ProcurementHTE.Core.Models.Procurement
 @{
-    ViewData["Title"] = "Account Receivable Details";
+    ViewData["Title"] = "Detail Account Receivable";
 }
 
 <header class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Account Receivable Details</h1>
     <a asp-action="Index" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i> Kembali ke daftar
     </a>
 </header>
 
@@ -174,7 +174,7 @@
 
                 @if (Model.AppoUser == null && Model.ApInvoiceUser == null && Model.ArUser == null)
                 {
-                    <p class="text-muted">No pickup history available</p>
+                    <p class="text-muted">Belum ada riwayat pickup</p>
                 }
             </div>
         </div>

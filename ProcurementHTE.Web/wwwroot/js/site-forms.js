@@ -2,12 +2,28 @@
   "use strict";
 
   const DEFAULT_CONFIRM = {
-    title: "Delete this record?",
-    text: "This action cannot be undone.",
-    confirmButtonText: "Yes, delete",
-    cancelButtonText: "Cancel",
+    title: "Hapus data ini?",
+    text: "Tindakan ini tidak bisa dibatalkan.",
+    confirmButtonText: "Ya, hapus",
+    cancelButtonText: "Batal",
     icon: "warning",
   };
+
+  // A select marked data-auto-submit submits its form on change, through htmx when the
+  // form is boosted. data-reset-page sends the list back to page 1.
+  document.addEventListener("change", (event) => {
+    const select = event.target instanceof Element ? event.target.closest("select[data-auto-submit]") : null;
+    const form = select?.form;
+    if (!form) return;
+    if (select.hasAttribute("data-reset-page") && form.elements.page) {
+      form.elements.page.value = "1";
+    }
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.submit();
+    }
+  });
 
   const decodeHtml = (value) => {
     if (!value) return value;

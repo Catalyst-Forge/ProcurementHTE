@@ -15,16 +15,16 @@
                 <table class="table align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th style="min-width:220px">Offer Item</th>
-                            <th class="text-end" style="width:100px">Qty Items</th>
-                            <th class="text-end" style="width:100px">Unit Items</th>
-                            <th class="text-end" style="width:140px">Jarak</th>
+                            <th scope="col" style="min-width:220px">Item Penawaran</th>
+                            <th scope="col" class="text-end" style="width:100px">Qty Items</th>
+                            <th scope="col" class="text-end" style="width:100px">Unit Items</th>
+                            <th scope="col" class="text-end" style="width:140px">Jarak</th>
                             @if (!isPengangkutan)
                             {
-                                <th class="text-end" style="width:160px">Quantity/Durasi</th>
-                                <th class="text-end" style="width:120px">Unit Revenue</th>
+                                <th scope="col" class="text-end" style="width:160px">Quantity/Durasi</th>
+                                <th scope="col" class="text-end" style="width:120px">Unit Revenue</th>
                             }
-                            <th class="text-end" style="width:220px">Revenue</th>
+                            <th scope="col" class="text-end" style="width:220px">Revenue</th>
                         </tr>
                     </thead>
                     <partial name="~/Views/Procurements/ProfitLoss/_ProfitLossBillingRows.cshtml" />

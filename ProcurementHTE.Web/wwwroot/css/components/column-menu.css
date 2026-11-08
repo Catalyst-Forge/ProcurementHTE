@@ -68,8 +68,12 @@
 
 .column-menu-item:hover,
 .column-menu-item:focus-visible {
-  outline: none;
   background: rgba(var(--dx-blue-600-rgb), 0.08);
+}
+
+.column-menu-item:focus-visible {
+  outline: 2px solid var(--dx-blue-600);
+  outline-offset: -2px;
 }
 
 .column-menu-item[aria-current="true"] {

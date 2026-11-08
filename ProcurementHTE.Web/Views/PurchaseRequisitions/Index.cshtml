@@ -25,20 +25,20 @@
     @if (canCreate)
     {
         <a asp-action="Create" class="btn btn-outline-primary" role="button">
-            <i class="bi bi-plus-circle"></i> Create New PR
+            <i class="bi bi-plus-circle"></i> Buat PR Baru
         </a>
     }
 </header>
 
 <form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
     <button type="button" class="btn btn-outline-secondary" id="btnRefresh">
-        <i class="bi bi-arrow-clockwise"></i> Refresh
+        <i class="bi bi-arrow-clockwise"></i> Muat ulang
     </button>
 
     <div class="input-group w-auto">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
         <input aria-label="Cari" class="form-control" type="search" name="search" id="searchBox" 
-               placeholder="Search PR..." value="@currentSearch" />
+               placeholder="Cari PR..." value="@currentSearch" />
     </div>
 
     <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
@@ -49,14 +49,14 @@
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th sort-key="prNumber" class="border-end">PR Number</th>
-                <th sort-key="requestDate" sort-kind="date" class="border-end">Request Date</th>
-                <th sort-key="description" class="border-end">Description</th>
-                <th sort-key="document" class="border-end">Document</th>
-                <th sort-key="procurements" sort-kind="number" class="border-end text-center">Linked Procurements</th>
-                <th sort-key="createdBy" class="border-end">Created By</th>
-                <th sort-key="createdAt" sort-kind="date" class="border-end">Created At</th>
-                <th class="text-center width-10-rem">Action</th>
+                <th scope="col" sort-key="prNumber" class="border-end">PR Number</th>
+                <th scope="col" sort-key="requestDate" sort-kind="date" class="border-end">Request Date</th>
+                <th scope="col" sort-key="description" class="border-end">Description</th>
+                <th scope="col" sort-key="document" class="border-end">Document</th>
+                <th scope="col" sort-key="procurements" sort-kind="number" class="border-end text-center">Linked Procurements</th>
+                <th scope="col" sort-key="createdBy" class="border-end">Created By</th>
+                <th scope="col" sort-key="createdAt" sort-kind="date" class="border-end">Created At</th>
+                <th scope="col" class="text-center width-10-rem">Aksi</th>
             </tr>
         </thead>
 
@@ -122,7 +122,7 @@
                                 </a>
                             }
                             <a class="btn btn-outline-info mb-sm-2 w-100" 
-                                asp-action="Details" asp-route-id="@item.PrId" role="button" title="Details">
+                                asp-action="Details" asp-route-id="@item.PrId" role="button" title="Detail">
                                 <i class="bi bi-eye-fill"></i> Detail
                             </a>
 
@@ -140,8 +140,8 @@
                                     <input type="hidden" name="id" value="@item.PrId" />
                                     <button type="submit"
                                             class="btn btn-outline-danger mb-sm-2 w-100"
-                                            title="Delete">
-                                        <i class="bi bi-trash-fill"></i> Delete
+                                            title="Hapus">
+                                        <i class="bi bi-trash-fill"></i> Hapus
                                     </button>
                                 </form>
                             }

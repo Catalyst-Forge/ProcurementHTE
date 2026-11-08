@@ -10,13 +10,13 @@
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th sort-key="procNum" class="border-end">Procurement No.</th>
-                <th sort-key="jobName" class="border-end">Job Name</th>
-                <th sort-key="wonum" class="border-end">WO Number</th>
-                <th sort-key="vendor" class="border-end">Vendor</th>
-                <th sort-key="pickedBy" class="border-end">Picked By APPO</th>
-                <th sort-key="@(isMyPickups ? "invoice" : "status")" class="border-end">Status</th>
-                <th class="text-center width-15-rem">Action</th>
+                <th scope="col" sort-key="procNum" class="border-end">Procurement No.</th>
+                <th scope="col" sort-key="jobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="wonum" class="border-end">WO Number</th>
+                <th scope="col" sort-key="vendor" class="border-end">Vendor</th>
+                <th scope="col" sort-key="pickedBy" class="border-end">Picked By APPO</th>
+                <th scope="col" sort-key="@(isMyPickups ? "invoice" : "status")" class="border-end">Status</th>
+                <th scope="col" class="text-center width-15-rem">Aksi</th>
             </tr>
         </thead>
 
@@ -79,8 +79,8 @@
                                 </a>
                             } else {
                                 <a asp-action="Details" asp-route-id="@item.ProcurementId"
-                                   class="btn btn-outline-info btn-sm me-1" title="View Details">
-                                    <i class="bi bi-eye"></i> Details
+                                   class="btn btn-outline-info btn-sm me-1" title="Lihat detail">
+                                    <i class="bi bi-eye"></i> Detail
                                 </a>
                                 @if (canPickup) {
                                     <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">

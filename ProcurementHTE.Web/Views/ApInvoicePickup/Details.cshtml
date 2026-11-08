@@ -1,7 +1,7 @@
 @model ProcurementHTE.Core.Models.Procurement
 @inject Microsoft.AspNetCore.Identity.UserManager<ProcurementHTE.Core.Models.User> UserManager
 @{
-    ViewData["Title"] = "Invoice Details";
+    ViewData["Title"] = "Detail Invoice";
     var currentUserId = UserManager.GetUserId(User);
     var isPickedByCurrentUser = Model.ApInvoiceUserId == currentUserId;
 }
@@ -9,7 +9,7 @@
 <header class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Invoice Details</h1>
     <a asp-action="Index" asp-route-tab="@(isPickedByCurrentUser ? "mypickups" : "waiting")" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i> Kembali ke daftar
     </a>
 </header>
 

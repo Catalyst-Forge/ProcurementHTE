@@ -11,10 +11,10 @@
 <section class="card shadow-sm mb-3 p-2 rounded-4">
     <fieldset class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <legend class="card-title fw-semibold mb-0">Offer Item</legend>
+            <legend class="card-title fw-semibold mb-0">Item Penawaran</legend>
             <div class="w-100 text-end">
                 <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-offer">
-                    <i class="bi bi-plus-lg"></i> <span class="ms-1">Add Item</span>
+                    <i class="bi bi-plus-lg"></i> <span class="ms-1">Tambah Item</span>
                 </button>
             </div>
         </div>
@@ -34,7 +34,7 @@
                                 <div class="col-md-5">
                                     <label class="form-label">Item <span class="text-danger">*</span></label>
                                     <input class="form-control" 
-                                           name="Offers[@(idx)].ItemPenawaran" 
+                                           name="Offers[@(idx)].ItemPenawaran" aria-label="Item" 
                                            value="@offer.ItemPenawaran" />
                                     @Html.ValidationMessage($"Offers[{idx}].ItemPenawaran", new { @class = "text-danger" })
                                 </div>
@@ -42,14 +42,14 @@
                                     <label class="form-label">Qty Items <span class="text-danger">*</span></label>
                                     <input type="number" min="1" step="1"
                                            class="form-control text-end"
-                                           name="Offers[@(idx)].Qty" 
+                                           name="Offers[@(idx)].Qty" aria-label="Qty Items" 
                                            value="@(offer.Qty > 0 ? offer.Qty : "")" />
                                     @Html.ValidationMessage($"Offers[{idx}].Qty", new { @class = "text-danger" })
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Unit Items <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" 
-                                           name="Offers[@(idx)].Unit" 
+                                           name="Offers[@(idx)].Unit" aria-label="Unit Items" 
                                            value="@offer.Unit"
                                            placeholder="Pcs, Unit, Set..." />
                                     @Html.ValidationMessage($"Offers[{idx}].Unit", new { @class = "text-danger" })
@@ -57,7 +57,7 @@
                                 <div class="col-md-3">
                                     <label class="form-label">Jarak</label>
                                     <input type="text" class="form-control"
-                                           name="Offers[@(idx)].Distance"
+                                           name="Offers[@(idx)].Distance" aria-label="Jarak"
                                            value="@offer.Distance"
                                            maxlength="100"
                                            placeholder="Contoh: 100 km" />

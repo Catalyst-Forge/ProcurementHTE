@@ -5,7 +5,7 @@
 
 <header class="hstack justify-content-between mb-3">
     <div>
-        <h2 class="mb-1">@ViewData["Title"]</h2>
+        <h1 class="h2 mb-1">@ViewData["Title"]</h1>
         <p class="text-muted mb-0">
             WO Number: <span class="fw-semibold">@Model.ProcNum</span>
             <span class="mx-2 text-secondary">|</span>
@@ -13,6 +13,6 @@
         </p>
     </div>
     <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.ProcurementId" role="button">
-        <i class="bi bi-arrow-left"></i> Back to list
+        <i class="bi bi-arrow-left"></i> Kembali ke daftar
     </a>
 </header>

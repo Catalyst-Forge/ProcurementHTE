@@ -12,15 +12,15 @@
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th sort-key="procNum" class="border-end">Procurement No.</th>
-                <th sort-key="jobName" class="border-end">Job Name</th>
-                <th sort-key="wonum" class="border-end">WO Number</th>
-                <th sort-key="startDate" sort-kind="date" class="border-end">Start Date</th>
-                <th sort-key="jobType" class="border-end">Job Type</th>
-                <th sort-key="region" class="border-end">Project Region</th>
-                <th sort-key="raNumber" class="border-end">RA Number</th>
-                <th sort-key="status" class="border-end">Status</th>
-                <th class="text-center width-15-rem">Action</th>
+                <th scope="col" sort-key="procNum" class="border-end">Procurement No.</th>
+                <th scope="col" sort-key="jobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="wonum" class="border-end">WO Number</th>
+                <th scope="col" sort-key="startDate" sort-kind="date" class="border-end">Start Date</th>
+                <th scope="col" sort-key="jobType" class="border-end">Job Type</th>
+                <th scope="col" sort-key="region" class="border-end">Project Region</th>
+                <th scope="col" sort-key="raNumber" class="border-end">RA Number</th>
+                <th scope="col" sort-key="status" class="border-end">Status</th>
+                <th scope="col" class="text-center width-15-rem">Aksi</th>
             </tr>
         </thead>
 
@@ -81,8 +81,8 @@
                         </td>
                         <td class="text-center">
                             <a asp-action="Details" asp-route-id="@item.ProcurementId" 
-                               class="btn btn-outline-info btn-sm me-1" title="View Details">
-                                <i class="bi bi-eye"></i> Details
+                               class="btn btn-outline-info btn-sm me-1" title="Lihat detail">
+                                <i class="bi bi-eye"></i> Detail
                             </a>
                             @if (!isMyPickups) {
                                 @if (canPickup) {
@@ -95,7 +95,7 @@
                                 }
                             } else if (canPickup && item.PrId == null && item.ProcurementStatus != ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled) {
                                 <a asp-controller="PurchaseRequisitions" asp-action="Create" class="btn btn-success btn-sm">
-                                    <i class="bi bi-journal-plus"></i> Create PR
+                                    <i class="bi bi-journal-plus"></i> Buat PR
                                 </a>
                             } else if (canPickup && item.PrId != null && item.ProcurementStatus != ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled && prStates.TryGetValue(item.PrId, out var prState) && prState.Step != null) {
                                 var (stepLabel, stepModal) = prState.Step switch {

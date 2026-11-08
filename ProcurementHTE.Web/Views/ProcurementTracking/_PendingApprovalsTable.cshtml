@@ -14,13 +14,13 @@
             <table class="table table-hover mb-0 mobile-table">
                 <thead class="table-light">
                     <tr>
-                        <th sort-key="procNum" class="px-3">Proc Number</th>
-                        <th sort-key="wonum">WO Number</th>
-                        <th sort-key="jobName">Job Name</th>
-                        <th sort-key="status" class="text-center">Status</th>
-                        <th sort-key="documentDate" sort-kind="date" class="text-center">Tanggal Dokumen</th>
-                        <th sort-key="sentAt" sort-kind="date" class="text-center">Dikirim</th>
-                        <th class="text-center">Aksi</th>
+                        <th scope="col" sort-key="procNum" class="px-3">Proc Number</th>
+                        <th scope="col" sort-key="wonum">WO Number</th>
+                        <th scope="col" sort-key="jobName">Job Name</th>
+                        <th scope="col" sort-key="status" class="text-center">Status</th>
+                        <th scope="col" sort-key="documentDate" sort-kind="date" class="text-center">Tanggal Dokumen</th>
+                        <th scope="col" sort-key="sentAt" sort-kind="date" class="text-center">Dikirim</th>
+                        <th scope="col" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -101,7 +101,7 @@
                                            asp-action="Details" 
                                            asp-route-procurementId="@item.ProcurementId"
                                            class="btn btn-sm btn-success"
-                                           title="Review Approval"
+                                           title="Tinjau approval"
                                            hx-boost="false">
                                             <i class="bi bi-check2-circle me-1"></i>Review
                                         </a>
@@ -117,71 +117,18 @@
         @if (totalPages > 1)
         {
             <div class="card-footer bg-white border-top" hx-boost="false">
-                <nav aria-label="Pending approvals pagination">
-                    <ul class="pagination pagination-sm mb-0 justify-content-center">
-                        <!-- Previous -->
-                        @if (currentPage > 1)
-                        {
-                            <li class="page-item">
-                                <button aria-label="Halaman sebelumnya" type="button" class="page-link" 
-                                    hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { sort = listSort?.Key, dir = listSort?.Descending == true ? "desc" : null, page = currentPage - 1, pageSize = pageSize, partial = true })"
-                                    hx-target="#pending-approvals-container"
-                                    hx-swap="innerHTML"
-                                    hx-indicator="#refresh-spinner">
-                                    <i class="bi bi-chevron-left"></i>
-                                </button>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="page-item disabled">
-                                <span class="page-link"><i class="bi bi-chevron-left"></i></span>
-                            </li>
-                        }
-
-                        @for (int i = 1; i <= totalPages; i++)
-                        {
-                            var isActive = i == currentPage;
-                            var pageNum = i;
-                            @if (isActive)
-                            {
-                                <li class="page-item active">
-                                    <span class="page-link">@pageNum</span>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="page-item">
-                                    <button type="button" class="page-link" 
-                                        hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { sort = listSort?.Key, dir = listSort?.Descending == true ? "desc" : null, page = pageNum, pageSize = pageSize, partial = true })"
-                                        hx-target="#pending-approvals-container"
-                                        hx-swap="innerHTML"
-                                        hx-indicator="#refresh-spinner">@pageNum</button>
-                                </li>
-                            }
-                        }
-
-                        <!-- Next -->
-                        @if (currentPage < totalPages)
-                        {
-                            <li class="page-item">
-                                <button aria-label="Halaman berikutnya" type="button" class="page-link" 
-                                    hx-get="@Url.Action("PendingApprovals", "ProcurementTracking", new { sort = listSort?.Key, dir = listSort?.Descending == true ? "desc" : null, page = currentPage + 1, pageSize = pageSize, partial = true })"
-                                    hx-target="#pending-approvals-container"
-                                    hx-swap="innerHTML"
-                                    hx-indicator="#refresh-spinner">
-                                    <i class="bi bi-chevron-right"></i>
-                                </button>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="page-item disabled">
-                                <span class="page-link"><i class="bi bi-chevron-right"></i></span>
-                            </li>
-                        }
-                    </ul>
-                </nav>
+                <div class="d-flex justify-content-center">
+                    <partial name="_PageLinks" model="@(new ProcurementHTE.Web.Navigation.PageLinks(
+                        currentPage,
+                        totalPages,
+                        target => Url.Action("PendingApprovals", "ProcurementTracking", new { sort = listSort?.Key, dir = listSort?.Descending == true ? "desc" : null, page = target, pageSize })!,
+                        "Navigasi halaman persetujuan")
+                    {
+                        HxGet = target => Url.Action("PendingApprovals", "ProcurementTracking", new { sort = listSort?.Key, dir = listSort?.Descending == true ? "desc" : null, page = target, pageSize, partial = true })!,
+                        HxTarget = "#pending-approvals-container",
+                        HxIndicator = "#refresh-spinner",
+                    })" />
+                </div>
             </div>
         }
     </div>

@@ -7,10 +7,10 @@
 <header class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h3 mb-0">Edit Purchase Requisition (PR)</h1>
-        <p class="text-muted mb-0 small">Update purchase requisition data and linked procurements</p>
+        <p class="text-muted mb-0 small">Perbarui data purchase requisition dan procurement yang ditautkan</p>
     </div>
     <a asp-action="Index" class="btn btn-outline-secondary" role="button">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i> Kembali ke daftar
     </a>
 </header>
 
@@ -25,7 +25,7 @@
             var msg = @Html.Raw(escapedMessages);
             Swal.fire({
                 icon: 'error',
-                title: 'Validation Error',
+                title: 'Data belum lengkap',
                 html: msg,
                 confirmButtonText: 'OK',
                 confirmButtonColor: 'var(--dx-blue-600)'
@@ -49,8 +49,8 @@
     @await Html.PartialAsync("_EditPrProcurements", Model)
 
     <div class="d-flex justify-content-end gap-2 mb-3">
-        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-        <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> Update PR</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Batal</a>
+        <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> Perbarui PR</button>
     </div>
 </form>
 

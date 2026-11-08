@@ -71,7 +71,7 @@
     window.showHardcopyEvidence = function(procurementId) {
         // Show loading
         Swal.fire({
-            title: 'Loading...',
+            title: 'Memuat...',
             text: 'Mengambil gambar hardcopy evidence...',
             allowOutsideClick: false,
             didOpen: function() {
@@ -87,7 +87,7 @@
             })
             .then(function(data) {
                 Swal.fire({
-                    title: 'Hardcopy Evidence',
+                    title: 'Bukti Hardcopy',
                     html: '<img src="' + data.url + '" class="img-fluid rounded" style="max-height: 70vh;" alt="Hardcopy Evidence">',
                     width: '80%',
                     showCloseButton: true,
@@ -99,7 +99,7 @@
             })
             .catch(function(error) {
                 Swal.fire({
-                    title: 'Error',
+                    title: 'Gagal',
                     text: error.message || 'Gagal mengambil hardcopy evidence',
                     icon: 'error'
                 });

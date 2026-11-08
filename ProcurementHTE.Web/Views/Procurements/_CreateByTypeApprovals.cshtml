@@ -15,7 +15,7 @@
             <div class="col-md-5">
                 <label asp-for="Procurement.AnalystHteUserId" class="form-label">Analyst HTE &amp; LTS</label>
                 <select asp-for="Procurement.AnalystHteUserId" class="form-select" asp-items="analystOptions">
-                    <option value="">Select Analyst</option>
+                    <option value="">Pilih Analyst</option>
                 </select>
                 <span class="text-danger" asp-validation-for="Procurement.AnalystHteUserId"></span>
             </div>
@@ -29,7 +29,7 @@
             <div class="col-md-5">
                 <label asp-for="Procurement.AssistantManagerUserId" class="form-label">@RoleNames.AsstManager</label>
                 <select asp-for="Procurement.AssistantManagerUserId" class="form-select" asp-items="assistantManagerOptions">
-                    <option value="">Select Asst. Manager</option>
+                    <option value="">Pilih Asst. Manager</option>
                 </select>
                 <span class="text-danger" asp-validation-for="Procurement.AssistantManagerUserId"></span>
             </div>
@@ -43,7 +43,7 @@
             <div class="col-md-5">
                 <label asp-for="Procurement.ManagerUserId" class="form-label">Manager Transport &amp; Logistic</label>
                 <select asp-for="Procurement.ManagerUserId" class="form-select" asp-items="managerOptions">
-                    <option value="">Select Manager</option>
+                    <option value="">Pilih Manager</option>
                 </select>
                 <span class="text-danger" asp-validation-for="Procurement.ManagerUserId"></span>
             </div>

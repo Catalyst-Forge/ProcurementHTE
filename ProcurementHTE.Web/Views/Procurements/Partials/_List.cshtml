@@ -35,28 +35,28 @@
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light text-center">
             <tr class="align-middle">
-                <th sort-key="jobName" class="border-end" style="min-width: 220px">Job Name</th>
-                <th sort-key="spmp" class="border-end" style="min-width: 120px">SPMP</th>
-                <th sort-key="wonum" class="border-end">WO Number</th>
-                <th sort-key="startDate" sort-kind="date" class="border-end" style="min-width: 110px">Start Date</th>
-                <th sort-key="jobType" class="border-end" style="min-width: 100px">Job Type</th>
-                <th sort-key="revenue" sort-kind="number" class="border-end" style="min-width: 130px">Revenue</th>
-                <th sort-key="cost" sort-kind="number" class="border-end" style="min-width: 130px">Cost</th>
-                <th sort-key="profitPercent" sort-kind="number" class="border-end" style="min-width: 70px">Profit %</th>
-                <th sort-key="vendor" class="border-end" style="min-width: 150px">Vendor</th>
-                <th sort-key="region" class="border-end" style="min-width: 130px">Project Region</th>
-                <th sort-key="analyst" class="border-end text-center" style="min-width: 150px">Analyst</th>
-                <th sort-key="asstManager" class="border-end text-center" style="min-width: 150px">Asst. Manager</th>
-                <th sort-key="manager" class="border-end text-center" style="min-width: 150px">Manager</th>
-                <th sort-key="status" class="border-end text-center">Status</th>
-                <th class="text-center position-sticky end-0 width-10-rem">Action</th>
+                <th scope="col" sort-key="jobName" class="border-end" style="min-width: 220px">Job Name</th>
+                <th scope="col" sort-key="spmp" class="border-end" style="min-width: 120px">SPMP</th>
+                <th scope="col" sort-key="wonum" class="border-end">WO Number</th>
+                <th scope="col" sort-key="startDate" sort-kind="date" class="border-end" style="min-width: 110px">Start Date</th>
+                <th scope="col" sort-key="jobType" class="border-end" style="min-width: 100px">Job Type</th>
+                <th scope="col" sort-key="revenue" sort-kind="number" class="border-end" style="min-width: 130px">Revenue</th>
+                <th scope="col" sort-key="cost" sort-kind="number" class="border-end" style="min-width: 130px">Cost</th>
+                <th scope="col" sort-key="profitPercent" sort-kind="number" class="border-end" style="min-width: 70px">Profit %</th>
+                <th scope="col" sort-key="vendor" class="border-end" style="min-width: 150px">Vendor</th>
+                <th scope="col" sort-key="region" class="border-end" style="min-width: 130px">Project Region</th>
+                <th scope="col" sort-key="analyst" class="border-end text-center" style="min-width: 150px">Analyst</th>
+                <th scope="col" sort-key="asstManager" class="border-end text-center" style="min-width: 150px">Asst. Manager</th>
+                <th scope="col" sort-key="manager" class="border-end text-center" style="min-width: 150px">Manager</th>
+                <th scope="col" sort-key="status" class="border-end text-center">Status</th>
+                <th scope="col" class="text-center position-sticky end-0 width-10-rem">Aksi</th>
             </tr>
         </thead>
 
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="15" class="text-center text-muted">No Procurement data found</td>
+                    <td colspan="15" class="text-center text-muted">Data procurement tidak ditemukan</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
@@ -163,7 +163,7 @@
                                     <button type="submit"
                                             class="btn btn-outline-danger btn-sm mb-sm-2 w-100">
                                         <i class="bi bi-trash-fill"></i>
-                                        <span class="ms-1">Delete</span>
+                                        <span class="ms-1">Hapus</span>
                                     </button>
                                 </form>
                             }
@@ -174,13 +174,13 @@
                                       hx-boost="false"
                                       hx-ignore="true"
                                       data-loading-overlay="true"
-                                      data-confirm-title="Cancel pekerjaan ini?"
+                                      data-confirm-title="Batalkan pekerjaan ini?"
                                       data-confirm-message="Pekerjaan akan berhenti diproses, tetapi tetap tercatat di LDP dengan keterangan Cancel.">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.ProcurementId" />
                                     <button type="submit" class="btn btn-outline-secondary btn-sm mb-sm-2 w-100">
                                         <i class="bi bi-x-circle"></i>
-                                        <span class="ms-1">Cancel</span>
+                                        <span class="ms-1">Batal</span>
                                     </button>
                                 </form>
                             }

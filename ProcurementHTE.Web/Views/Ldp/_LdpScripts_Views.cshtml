@@ -1,11 +1,12 @@
 <script>
     // Column groups: the table shows one group at a time so it fits without sideways
-    // scrolling. The choice survives paging and search, which reload the page.
+    // scrolling. The choice survives paging and search, which reload the page. LDP and
+    // Arsip LDP share this; each remembers its own choice through data-view-key.
     (function () {
-        const storageKey = 'ldp-view';
-        const table = document.getElementById('ldpTable');
+        const table = document.querySelector('.ldp-table');
         const tabs = document.querySelectorAll('[data-ldp-view]');
         if (!table || !tabs.length) return;
+        const storageKey = table.dataset.viewKey || 'ldp-view';
 
         function showView(view) {
             table.dataset.view = view;

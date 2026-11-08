@@ -28,10 +28,10 @@
             }
         };
 
-        const renderNoDataMessage = (ctx, canvas, message = "No data available") => {
+        const renderNoDataMessage = (ctx, canvas, message = "Belum ada data") => {
             if (!ctx || !canvas) return;
-            ctx.font = "16px Arial";
-            ctx.fillStyle = "#999";
+            ctx.font = `15px ${getComputedStyle(document.body).fontFamily}`;
+            ctx.fillStyle = dxColor("ink-muted");
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(message, canvas.width / 2, canvas.height / 2);

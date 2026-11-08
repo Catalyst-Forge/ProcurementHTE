@@ -8,11 +8,11 @@
 }
 <form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
     <input type="hidden" name="tab" value="@currentTab" />
-    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Muat ulang</button>
 
     <div class="input-group w-auto">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input aria-label="Cari" class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
+        <input aria-label="Cari" class="form-control" type="search" name="search" id="searchBox" placeholder="Ketik untuk mencari..." value="@currentSearch" />
     </div>
 
     <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />

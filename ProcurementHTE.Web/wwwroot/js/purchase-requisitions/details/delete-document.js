@@ -37,13 +37,13 @@
 
     async function deleteDocument(button) {
         const result = await Swal.fire({
-            title: 'Delete Document?',
-            html: `<p>Are you sure you want to delete <strong>${button.dataset.docName || ''}</strong>?</p>`,
+            title: 'Hapus dokumen?',
+            html: `<p>Dokumen <strong>${button.dataset.docName || ''}</strong> akan dihapus.</p>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: 'var(--dx-danger)',
-            confirmButtonText: '<i class="bi bi-trash"></i> Delete',
-            cancelButtonText: 'Cancel',
+            confirmButtonText: '<i class="bi bi-trash"></i> Hapus',
+            cancelButtonText: 'Batal',
             reverseButtons: true,
             focusCancel: true
         });

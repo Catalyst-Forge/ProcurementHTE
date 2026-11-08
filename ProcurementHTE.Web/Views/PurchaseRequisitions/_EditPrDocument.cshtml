@@ -15,7 +15,7 @@
                             <span class="fw-semibold">@Model.ExistingDocumentFileName</span>
                         </div>
                         <a asp-action="DownloadDocument" asp-route-id="@Model.PrId" class="btn btn-sm btn-outline-primary" target="_blank">
-                            <i class="bi bi-download"></i> Download
+                            <i class="bi bi-download"></i> Unduh
                         </a>
                     </div>
                     <input type="hidden" asp-for="ExistingDocumentFileName" />
@@ -31,7 +31,7 @@
                     Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB). 
                     @if (!string.IsNullOrEmpty(Model.ExistingDocumentFileName))
                     {
-                        <span>Leave empty to keep the current document.</span>
+                        <span>Kosongkan untuk mempertahankan dokumen saat ini.</span>
                     }
                 </small>
             </div>

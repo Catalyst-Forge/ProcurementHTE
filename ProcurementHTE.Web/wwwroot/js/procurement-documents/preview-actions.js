@@ -132,14 +132,14 @@
                 const fileName = this.dataset.fileName || '';
 
                 Swal.fire({
-                    title: 'Confirm Document Deletion',
-                    html: `<div class="text-start"><p class="mb-2">Are you sure you want to delete this document?</p><div class="alert alert-warning mb-0"><strong>${docName}</strong><br><small class="text-muted">${fileName}</small></div></div>`,
+                    title: 'Hapus dokumen?',
+                    html: `<div class="text-start"><p class="mb-2">Dokumen ini akan dihapus.</p><div class="alert alert-warning mb-0"><strong>${docName}</strong><br><small class="text-muted">${fileName}</small></div></div>`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: 'var(--dx-danger)',
                     cancelButtonColor: 'var(--dx-ink-muted)',
-                    confirmButtonText: '<i class="bi bi-trash me-1"></i> Yes, Delete',
-                    cancelButtonText: 'Cancel',
+                    confirmButtonText: '<i class="bi bi-trash me-1"></i> Ya, hapus',
+                    cancelButtonText: 'Batal',
                     reverseButtons: true,
                     focusCancel: true
                 }).then(result => {

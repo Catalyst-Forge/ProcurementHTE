@@ -39,7 +39,7 @@
 
             event.preventDefault();
             confirmSubmit({
-                title: 'Publish Procurement?',
+                title: 'Publish procurement ini?',
                 html: `Apakah Anda yakin ingin mempublish procurement <strong>${button.dataset.procnum}</strong>?<br><small class="text-muted">Status akan berubah menjadi "Waiting Pickup"</small>`,
                 icon: 'question',
                 showCancelButton: true,

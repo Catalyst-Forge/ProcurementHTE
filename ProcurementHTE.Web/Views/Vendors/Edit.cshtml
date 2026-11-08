@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
     <h1 class="h3">Edit Vendor</h1>
     <a asp-action="Index" class="btn btn-outline-secondary" role="button">
-        <i class="bi bi-arrow-left"></i> Back to list
+        <i class="bi bi-arrow-left"></i> Kembali ke daftar
     </a>
 </div>
 
@@ -77,18 +77,18 @@
 
     <section class="card mb-3 p-2 rounded-4">
         <fieldset class="card-body">
-            <legend class="card-title fw-semibold"><i class="bi bi-stickies text-primary me-1"></i> Notes</legend>
+            <legend class="card-title fw-semibold"><i class="bi bi-stickies text-primary me-1"></i> Catatan</legend>
             <hr />
             <div class="mb-3">
                 <label asp-for="Comment" class="form-label"></label>
-                <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Optional notes..."></textarea>
+                <textarea asp-for="Comment" class="form-control" maxlength="200" rows="3" placeholder="Catatan (opsional)..."></textarea>
                 <span asp-validation-for="Comment" class="text-danger small"></span>
             </div>
         </fieldset>
     </section>
 
     <div class="mb-3 w-100 d-flex justify-content-end">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Save Changes</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> Simpan Perubahan</button>
     </div>
 </form>
 

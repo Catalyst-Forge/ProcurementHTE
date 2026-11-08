@@ -9,14 +9,14 @@
     <table class="table align-middle mb-0">
         <thead class="table-light">
             <tr>
-                <th>Vendor</th>
+                <th scope="col">Vendor</th>
                 @if (showRound)
                 {
-                    <th class="text-center">Ronde</th>
+                    <th scope="col" class="text-center">Ronde</th>
                 }
-                <th>No Surat</th>
-                <th>Dokumen</th>
-                <th class="text-end">Diunggah</th>
+                <th scope="col">No Surat</th>
+                <th scope="col">Dokumen</th>
+                <th scope="col" class="text-end">Diunggah</th>
             </tr>
         </thead>
         <tbody>
@@ -36,7 +36,7 @@
                            asp-route-procurementId="@procurementId"
                            class="btn btn-sm btn-outline-primary"
                            hx-boost="false">
-                            <i class="bi bi-download"></i> Download
+                            <i class="bi bi-download"></i> Unduh
                         </a>
                     </td>
                     <td class="text-end">@letter.CreatedAt.ToLocalTime()</td>

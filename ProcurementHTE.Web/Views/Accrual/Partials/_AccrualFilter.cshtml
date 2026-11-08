@@ -5,12 +5,12 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Pencarian</label>
-                <input aria-label="Cari accrual" type="text" name="search" class="form-control" placeholder="No WO, Job Name, No Accrual..." value="@Model.Search" />
+                <label class="form-label" for="accrualSearch">Pencarian</label>
+                <input id="accrualSearch" type="text" name="search" class="form-control" placeholder="No WO, Job Name, No Accrual..." value="@Model.Search" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Filter Status</label>
-                <select name="filter" class="form-select">
+                <label class="form-label" for="accrualFilter">Filter Status</label>
+                <select id="accrualFilter" name="filter" class="form-select">
                     <option value="all" selected="@(Model.Filter == "all")">Semua</option>
                     <option value="pending" selected="@(Model.Filter == "pending")">Belum Diisi</option>
                     <option value="filled" selected="@(Model.Filter == "filled")">Sudah Diisi</option>

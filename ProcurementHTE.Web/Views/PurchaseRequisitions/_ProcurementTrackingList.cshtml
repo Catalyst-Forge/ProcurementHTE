@@ -20,12 +20,12 @@
                 <table class="table table-hover mb-0 mobile-table">
                     <thead class="table-light">
                         <tr>
-                            <th class="small text-muted ps-4">Procurement</th>
-                            <th class="small text-muted">Job Name</th>
-                            <th class="small text-muted text-center">Status</th>
-                            <th class="small text-muted text-center">Progress</th>
-                            <th class="small text-muted text-center">Documents</th>
-                            <th class="small text-muted text-center">Actions</th>
+                            <th scope="col" class="small text-muted ps-4">Procurement</th>
+                            <th scope="col" class="small text-muted">Job Name</th>
+                            <th scope="col" class="small text-muted text-center">Status</th>
+                            <th scope="col" class="small text-muted text-center">Progress</th>
+                            <th scope="col" class="small text-muted text-center">Documents</th>
+                            <th scope="col" class="small text-muted text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,7 +86,7 @@
                                            asp-action="Details"
                                            asp-route-procurementId="@proc.ProcurementId"
                                            class="btn btn-outline-primary btn-sm"
-                                           title="View Tracking">
+                                           title="Lihat tracking">
                                             <i class="bi bi-eye"></i> Track
                                         </a>
                                         @if (canPerformActions && proc.CurrentStatus == ProcurementHTE.Core.Enums.ProcurementStatus.OnCreateDP3)
@@ -102,7 +102,7 @@
                                                 <button type="submit"
                                                         id="send-approval-btn-@proc.ProcurementId"
                                                         class="btn btn-outline-success btn-sm"
-                                                        title="Send for Approval"
+                                                        title="Kirim untuk approval"
                                                         @(proc.AllMandatoryDocsReady ? "" : "disabled")>
                                                     <i class="bi bi-send"></i>
                                                 </button>

@@ -43,11 +43,11 @@
 
 <form method="get" id="filterForm" class="border rounded-3 d-flex flex-wrap gap-2 p-2 mb-2">
     <input type="hidden" name="tab" value="@currentTab" />
-    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    <button type="button" class="btn btn-outline-secondary" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Muat ulang</button>
 
     <div class="input-group w-auto">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input aria-label="Cari" class="form-control" type="search" name="search" id="searchBox" placeholder="Type to search..." value="@currentSearch" />
+        <input aria-label="Cari" class="form-control" type="search" name="search" id="searchBox" placeholder="Ketik untuk mencari..." value="@currentSearch" />
     </div>
 
     <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
@@ -58,13 +58,13 @@
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th sort-key="procNum" class="border-end">Procurement No.</th>
-                <th sort-key="jobName" class="border-end">Job Name</th>
-                <th sort-key="wonum" class="border-end">WO Number</th>
-                <th sort-key="vendor" class="border-end">Vendor</th>
-                <th sort-key="status" class="border-end">Status</th>
-                <th sort-key="noAccrual" class="border-end">Accrual Status</th>
-                <th class="text-center width-15-rem">Action</th>
+                <th scope="col" sort-key="procNum" class="border-end">Procurement No.</th>
+                <th scope="col" sort-key="jobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="wonum" class="border-end">WO Number</th>
+                <th scope="col" sort-key="vendor" class="border-end">Vendor</th>
+                <th scope="col" sort-key="status" class="border-end">Status</th>
+                <th scope="col" sort-key="noAccrual" class="border-end">Accrual Status</th>
+                <th scope="col" class="text-center width-15-rem">Aksi</th>
             </tr>
         </thead>
 
@@ -122,8 +122,8 @@
                                 </a>
                             } else {
                                 <a asp-action="Details" asp-route-id="@item.ProcurementId"
-                                   class="btn btn-outline-info btn-sm me-1" title="View Details">
-                                    <i class="bi bi-eye"></i> Details
+                                   class="btn btn-outline-info btn-sm me-1" title="Lihat detail">
+                                    <i class="bi bi-eye"></i> Detail
                                 </a>
                                 @if (canPickup) {
                                     <form method="post" asp-action="Pickup" asp-route-id="@item.ProcurementId" style="display: inline;" class="pickup-form">
@@ -143,33 +143,9 @@
 </div>
 
 @if (Model?.TotalPages > 1) {
-    <nav aria-label="Page navigation" class="mt-3">
-        <ul class="pagination justify-content-center">
-            @if (Model.Page > 1) {
-                <li class="page-item">
-                    <a class="page-link" href="@Context.Request.WithPage(Model.Page - 1)">
-                        Previous
-                    </a>
-                </li>
-            }
-
-            @for (var i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++) {
-                <li class="page-item @(i == Model.Page ? "active" : "")">
-                    <a class="page-link" href="@Context.Request.WithPage(i)">
-                        @i
-                    </a>
-                </li>
-            }
-
-            @if (Model.Page < Model.TotalPages) {
-                <li class="page-item">
-                    <a class="page-link" href="@Context.Request.WithPage(Model.Page + 1)">
-                        Next
-                    </a>
-                </li>
-            }
-        </ul>
-    </nav>
+    <div class="d-flex justify-content-center mt-3">
+        <partial name="_PageLinks" model="@(new ProcurementHTE.Web.Navigation.PageLinks(Model.Page, Model.TotalPages, target => Context.Request.WithPage(target)))" />
+    </div>
 }
 
 @section Scripts {
@@ -192,7 +168,7 @@
                 const procNum = this.dataset.procnum;
 
                 Swal.fire({
-                    title: 'Pickup Procurement?',
+                    title: 'Pickup procurement ini?',
                     html: `Apakah Anda yakin ingin pickup procurement <strong>${procNum}</strong> untuk accrual processing?<br><small class="text-muted">Setelah pickup, Anda dapat mengisi data accrual</small>`,
                     icon: 'question',
                     showCancelButton: true,

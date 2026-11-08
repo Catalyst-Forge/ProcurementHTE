@@ -4,7 +4,7 @@
 }
 
 .app-error-illustration {
-  background-color: #fff;
+  background-color: var(--dx-card);
 }
 
 .app-error-illustration svg {

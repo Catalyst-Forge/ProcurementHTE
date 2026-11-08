@@ -29,7 +29,7 @@
                                         data-doc-id="@doc.ProcDocumentId"
                                         data-doc-name="@doc.FileName"
                                         data-file-name="@doc.FileName">
-                                    <i class="bi bi-eye"></i> Preview
+                                    <i class="bi bi-eye"></i> Pratinjau
                                 </button>
                                 <a asp-controller="ProcurementDocuments"
                                    asp-action="Download"
@@ -39,7 +39,7 @@
                                    data-doc-id="@doc.ProcDocumentId"
                                    hx-boost="false"
                                    download>
-                                    <i class="bi bi-download"></i> Download
+                                    <i class="bi bi-download"></i> Unduh
                                 </a>
                             </div>
                         </div>
@@ -49,7 +49,7 @@
         }
         else
         {
-            <div class="alert alert-info mb-0">No documents available for this procurement.</div>
+            <div class="alert alert-info mb-0">Belum ada dokumen untuk procurement ini.</div>
         }
     </div>
 </section>
