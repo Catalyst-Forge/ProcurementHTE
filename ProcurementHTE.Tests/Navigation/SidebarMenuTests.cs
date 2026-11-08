@@ -12,6 +12,7 @@ public class SidebarMenuTests
         "Procurements",
         "PR (Purchase Requisition)",
         "Laporan Data Procurement",
+        "Arsip LDP",
         "Pending Approvals",
         "Procurement Tracking",
         "Account Payable Purchase Order",

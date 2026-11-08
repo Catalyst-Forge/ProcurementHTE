@@ -1,0 +1,39 @@
+using ProcurementHTE.Core.Common;
+
+namespace ProcurementHTE.Core.Models.DTOs;
+
+/// <summary>An archive row without its full spreadsheet values. Column keys are property names.</summary>
+public sealed class LdpArchiveListItem
+{
+    public string Id { get; init; } = default!;
+    public int SourceRow { get; init; }
+    public string? Wo { get; init; }
+    public string? NoSpk { get; init; }
+    public string? VendorName { get; init; }
+    public string? JobName { get; init; }
+    public string? JobType { get; init; }
+    public string? ContractType { get; init; }
+    public string? LtcName { get; init; }
+    public string? YearJob { get; init; }
+    public DateTime? StartDate { get; init; }
+    public DateTime? EndDate { get; init; }
+    public decimal? NilaiPnl { get; init; }
+    public decimal? NilaiRealisasi { get; init; }
+    public string? NoSpmp { get; init; }
+    public string? NoPr { get; init; }
+    public DateTime? PrCreatedAt { get; init; }
+    public string? NoPo { get; init; }
+    public string? NoSa { get; init; }
+    public string? NoSp3 { get; init; }
+    public string? PicPr { get; init; }
+    public string? PicOps { get; init; }
+    public string? Status { get; init; }
+}
+
+public sealed record LdpArchiveQuery(
+    string? Search,
+    IReadOnlyDictionary<string, string> Filters,
+    ListSort? Sort,
+    int Page,
+    int PageSize
+);

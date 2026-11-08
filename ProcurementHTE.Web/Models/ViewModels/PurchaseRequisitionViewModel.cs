@@ -27,6 +27,10 @@ public class PurchaseRequisitionCreateViewModel
 
     [Display(Name = "Selected Procurements")]
     public List<string> ProcurementIds { get; set; } = [];
+
+    [Display(Name = "Nilai PR (Rp)")]
+    [Range(typeof(decimal), "0", "999999999999999", ErrorMessage = "Nilai PR tidak valid.")]
+    public decimal? PrValue { get; set; }
 }
 
 public class PurchaseRequisitionEditViewModel
@@ -54,6 +58,10 @@ public class PurchaseRequisitionEditViewModel
 
     [Display(Name = "Selected Procurements")]
     public List<string> ProcurementIds { get; set; } = [];
+
+    [Display(Name = "Nilai PR (Rp)")]
+    [Range(typeof(decimal), "0", "999999999999999", ErrorMessage = "Nilai PR tidak valid.")]
+    public decimal? PrValue { get; set; }
 }
 
 public class PurchaseRequisitionListViewModel
@@ -84,6 +92,8 @@ public class PurchaseRequisitionDetailsViewModel
     public DateTime? UpdatedAt { get; set; }
 
     public List<ProcurementWithDocsViewModel> Procurements { get; set; } = [];
+
+    public PrBalance? Balance { get; set; }
 }
 
 public class ProcurementWithDocsViewModel

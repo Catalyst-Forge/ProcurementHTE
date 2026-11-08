@@ -1,0 +1,68 @@
+@using ProcurementHTE.Core.Constants
+@model ProcurementHTE.Web.Models.ViewModels.LdpArchiveFormModel
+@{
+    var isEdit = Model.Id is not null;
+    ViewData["Title"] = isEdit ? "Edit Arsip LDP" : "Tambah Pekerjaan ke Arsip LDP";
+    string InputType(string kind) => kind switch { "date" => "date", "number" => "number", _ => "text" };
+}
+
+<header class="mb-3">
+    <a href="@(isEdit ? Url.Action("Details", new { id = Model.Id }) : Url.Action("Index"))" class="small">Kembali</a>
+    <h1 class="h4 mt-2 mb-1">@ViewData["Title"]</h1>
+    @if (isEdit)
+    {
+        <p class="text-muted small mb-0">Kalau baris ini berasal dari Excel, impor berikutnya akan menimpa perubahan di sini.</p>
+    }
+</header>
+
+<form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id">
+    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+    <section class="card shadow-sm rounded-4 mb-3">
+        <div class="card-body">
+            <h2 class="h6 mb-3">Kolom utama</h2>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="Status" class="form-label">Status</label>
+                    <input asp-for="Status" class="form-control" />
+                </div>
+                @foreach (var column in LdpArchiveColumns.Typed)
+                {
+                    var name = $"Typed[{column.Property}]";
+                    var id = $"typed-{column.Property}";
+                    <div class="col-md-4">
+                        <label for="@id" class="form-label">@column.Label</label>
+                        <input id="@id" name="@name" type="@InputType(column.Kind)" class="form-control"
+                               value="@Model.Typed.GetValueOrDefault(column.Property)"
+                               step="@(column.Kind == "number" ? "any" : null)" />
+                        @Html.ValidationMessage(name, new { @class = "text-danger small" })
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (Model.Others.Count > 0)
+    {
+        <section class="card shadow-sm rounded-4 mb-3">
+            <div class="card-body">
+                <h2 class="h6 mb-3">Kolom lain dari Excel</h2>
+                <div class="row g-3">
+                    @for (var i = 0; i < Model.Others.Count; i++)
+                    {
+                        <div class="col-md-4">
+                            <input type="hidden" name="Others[@i].Label" value="@Model.Others[i].Label" />
+                            <label for="other-@i" class="form-label">@Model.Others[i].Label</label>
+                            <input id="other-@i" name="Others[@i].Value" class="form-control" value="@Model.Others[i].Value" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <div class="d-flex gap-2">
+        <a href="@(isEdit ? Url.Action("Details", new { id = Model.Id }) : Url.Action("Index"))" class="btn btn-outline-secondary">Batal</a>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+    </div>
+</form>

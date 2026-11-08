@@ -62,6 +62,7 @@ public partial class ProcurementsController
 
             TempData["SuccessMessage"] =
                 "Profit & Loss updated successfully and SPMP document was generated.";
+            await WarnIfPrOverdrawnAsync(viewModel.ProcurementId);
             return RedirectToAction(nameof(Details), new { id = viewModel.ProcurementId });
         }
         catch (KeyNotFoundException ex)

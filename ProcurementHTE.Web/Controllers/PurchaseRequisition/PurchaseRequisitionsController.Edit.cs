@@ -33,6 +33,7 @@ public partial class PurchaseRequisitionsController
                 Description = pr.Description,
                 ExistingDocumentFileName = pr.DocumentFileName,
                 ProcurementIds = pr.Procurements?.Select(p => p.ProcurementId).ToList() ?? [],
+                PrValue = (await _prBalance.GetAsync(pr.PrNumber)).Value,
             }
         );
     }
@@ -89,8 +90,10 @@ public partial class PurchaseRequisitionsController
             }
 
             await _purchaseRequisitionCommandService.UpdateAsync(existingPr, model.ProcurementIds);
+            await ApplyPrValueAsync(existingPr.PrNumber, model.PrValue);
             TempData["SuccessMessage"] =
                 $"Purchase Requisition {existingPr.PrNumber} updated successfully.";
+            await WarnIfPrOverdrawnAsync(existingPr.PrNumber);
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)

@@ -15,7 +15,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="4.0.24.2" />
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="DinkToPdf" Version="1.0.8" />
+    <PackageReference Include="ExcelDataReader" Version="3.9.0" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.12" />

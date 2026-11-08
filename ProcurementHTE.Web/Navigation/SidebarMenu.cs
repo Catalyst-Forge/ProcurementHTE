@@ -67,6 +67,7 @@ public static class SidebarMenu
                 new("Procurements", "bi-briefcase", "Procurements", "Index Procurements"),
                 new("PR (Purchase Requisition)", "bi-journal-text", "PurchaseRequisitions", "Index PR Service"),
                 new("Laporan Data Procurement", "bi-table", "Ldp", "LDP Data"),
+                new("Arsip LDP", "bi-archive", "LdpArchive", "Arsip LDP"),
             ]
         ),
         new(

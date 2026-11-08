@@ -11,6 +11,7 @@ namespace ProcurementHTE.Infrastructure.Data
         internal bool PermanentDeleteAllowed { get; set; }
 
         public DbSet<PermanentDeletionLog> PermanentDeletionLogs { get; set; }
+        public DbSet<LdpArchiveRow> LdpArchiveRows { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
         public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }
@@ -58,6 +59,7 @@ namespace ProcurementHTE.Infrastructure.Data
             builder.Entity<JobTypeDocuments>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<DocumentApprovals>().HasQueryFilter(e => !e.IsDeleted);
             builder.Entity<DocumentApprovalRule>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<LdpArchiveRow>().HasQueryFilter(e => !e.IsDeleted);
         }
     }
 }

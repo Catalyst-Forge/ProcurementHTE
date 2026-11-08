@@ -56,7 +56,7 @@
                 <th sort-key="SANo" filter-key="SANo" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">SA No</th>
                 <th sort-key="SP3No" filter-key="SP3No" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">SP3 No</th>
                 <th sort-key="PicApPo" filter-key="PicApPo" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 150px;">PIC AP-PO</th>
-                <th class="position-sticky end-0 bg-light text-center ldp-pinned" style="--ldp-col-width: 140px; z-index: 2;">Aksi</th>
+                <th class="position-sticky end-0 bg-light text-center ldp-pinned" style="--ldp-col-width: 150px; z-index: 2;">Aksi</th>
             </tr>
         </thead>
 
@@ -151,6 +151,13 @@
                         <td class="ldp-col ldp-pr">@formatText(item.SP3No)</td>
                         <td class="ldp-col ldp-pr">@formatText(item.PicApPo)</td>
                         <td class="position-sticky end-0 bg-white text-center ldp-pinned" style="z-index: 1;">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <div class="d-flex justify-content-center gap-1 mb-1">
+                                    <a asp-controller="Procurements" asp-action="Edit" asp-route-id="@item.ProcurementId" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    <a asp-controller="Procurements" asp-action="Delete" asp-route-id="@item.ProcurementId" class="btn btn-sm btn-outline-danger">Hapus</a>
+                                </div>
+                            }
                             @if (item.HasLdpDocument)
                             {
                                 <div class="btn-group btn-group-sm" role="group">

@@ -61,6 +61,7 @@ public partial class PurchaseRequisitionsController
             CreatedByUserName = pr.CreatedByUser?.FullName ?? pr.CreatedByUser?.UserName,
             CreatedAt = pr.CreatedAt,
             UpdatedAt = pr.UpdatedAt,
+            Balance = await _prBalance.GetAsync(pr.PrNumber),
         };
 
         foreach (var procurement in pr.Procurements ?? [])

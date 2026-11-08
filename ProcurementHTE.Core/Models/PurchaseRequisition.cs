@@ -24,6 +24,11 @@ public class PurchaseRequisition : BaseEntity
     [DisplayName("Description")]
     public string? Description { get; set; }
 
+    /// <summary>The same on every record that shares this PR number. See PrBalance.</summary>
+    [Column(TypeName = "decimal(18, 2)")]
+    [DisplayName("Nilai PR")]
+    public decimal? PrValue { get; set; }
+
     [MaxLength(255)]
     [DisplayName("Document File Name")]
     public string? DocumentFileName { get; set; }

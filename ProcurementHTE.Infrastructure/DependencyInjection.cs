@@ -44,6 +44,10 @@ public static class DependencyInjection
         services.AddScoped<IProcurementRepository, ProcurementRepository>();
         services.AddScoped<IDeletedRecordsService, DeletedRecordsService>();
         services.AddScoped<IRecordPurgeService, RecordPurgeService>();
+        services.AddScoped<IPrBalanceRepository, PrBalanceRepository>();
+        services.AddScoped<ILdpArchiveRepository, LdpArchiveRepository>();
+        services.AddScoped<ILdpArchiveImporter, LdpArchiveImporter>();
+        services.AddSingleton<IExcelExporter, ExcelExporter>();
         services.AddScoped<IInProgressProcurementQuery, InProgressProcurementQuery>();
         services.AddScoped<IPurchaseRequisitionRepository, PurchaseRequisitionRepository>();
         services.AddScoped<IVendorRepository, VendorRepository>();

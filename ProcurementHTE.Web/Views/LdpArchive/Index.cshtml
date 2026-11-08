@@ -1,0 +1,111 @@
+@model ProcurementHTE.Core.Common.PagedResult<ProcurementHTE.Core.Models.DTOs.LdpArchiveListItem>
+@{
+    ViewData["Title"] = "Arsip LDP";
+    var search = Context.Request.Query["search"].ToString();
+    var filtered = !string.IsNullOrWhiteSpace(search) || Context.Request.ReadListFilters().Count > 0;
+    var isAdmin = User.IsInRole("Admin");
+    string Date(DateTime? value) => value?.ToTanggalIndonesia("dd MMM yyyy") ?? "-";
+    string Money(decimal? value) => value is null ? "-" : value.ToIDR();
+}
+
+<header class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-0">Arsip LDP</h1>
+        <p class="text-muted mb-0 small">Pekerjaan berstatus Completed dari Excel LDP. Tidak masuk dashboard dan approval.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="@(Url.Action("Export") + Context.Request.QueryString)" class="btn btn-outline-primary" hx-boost="false">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Ekspor Excel
+        </a>
+        @if (isAdmin)
+        {
+            <a asp-action="Import" class="btn btn-outline-primary"><i class="bi bi-upload" aria-hidden="true"></i> Impor Excel</a>
+            <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah</a>
+        }
+    </div>
+</header>
+
+<form method="get" class="border rounded-3 d-flex flex-wrap align-items-center gap-2 p-2 mb-2">
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+        <input aria-label="Cari arsip" class="form-control" type="search" name="search" value="@search"
+               placeholder="Vendor, pekerjaan, No PR, No PO..." />
+    </div>
+    @foreach (var item in Context.Request.Query.Where(q => q.Key.StartsWith("f.") || q.Key is "sort" or "dir" or "pageSize"))
+    {
+        <input type="hidden" name="@item.Key" value="@item.Value" />
+    }
+    <button type="submit" class="btn btn-outline-primary">Cari</button>
+    @if (filtered)
+    {
+        <a href="@Url.Action("Index")" class="btn btn-link">Hapus pencarian dan filter</a>
+    }
+</form>
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle mb-0 mobile-table">
+        <thead class="table-light">
+            <tr>
+                <th sort-key="NoPr" filter-key="NoPr">No PR</th>
+                <th sort-key="PrCreatedAt" sort-kind="date">Tgl PR</th>
+                <th sort-key="Wo" filter-key="Wo">WO</th>
+                <th sort-key="VendorName" filter-key="VendorName">Vendor</th>
+                <th sort-key="JobName" filter-key="JobName">Pekerjaan</th>
+                <th sort-key="JobType" filter-key="JobType">Job Type</th>
+                <th sort-key="ContractType" filter-key="ContractType">Kontrak</th>
+                <th sort-key="YearJob" filter-key="YearJob">Tahun</th>
+                <th sort-key="NilaiPnl" sort-kind="number" class="text-end">Nilai P&amp;L</th>
+                <th sort-key="NilaiRealisasi" sort-kind="number" class="text-end">Realisasi</th>
+                <th sort-key="NoPo" filter-key="NoPo">No PO</th>
+                <th sort-key="NoSa" filter-key="NoSa">No SA</th>
+                <th sort-key="NoSp3" filter-key="NoSp3">No SP3</th>
+                <th sort-key="PicOps" filter-key="PicOps">PIC Ops</th>
+                <th><span class="visually-hidden">Detail</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="15" class="text-center text-muted py-4">
+                        @(filtered ? "Tidak ada arsip yang cocok." : "Arsip LDP belum diisi.")
+                    </td>
+                </tr>
+            }
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td data-label="No PR">@(item.NoPr ?? "-")</td>
+                    <td data-label="Tgl PR" class="text-nowrap">@Date(item.PrCreatedAt)</td>
+                    <td data-label="WO">@(item.Wo ?? "-")</td>
+                    <td data-label="Vendor">@(item.VendorName ?? "-")</td>
+                    <td data-label="Pekerjaan" class="text-break">@(item.JobName ?? "-")</td>
+                    <td data-label="Job Type">@(item.JobType ?? "-")</td>
+                    <td data-label="Kontrak">@(item.ContractType ?? "-")</td>
+                    <td data-label="Tahun">@(item.YearJob ?? "-")</td>
+                    <td data-label="Nilai P&amp;L" class="text-end text-nowrap">@Money(item.NilaiPnl)</td>
+                    <td data-label="Realisasi" class="text-end text-nowrap">@Money(item.NilaiRealisasi)</td>
+                    <td data-label="No PO">@(item.NoPo ?? "-")</td>
+                    <td data-label="No SA">@(item.NoSa ?? "-")</td>
+                    <td data-label="No SP3">@(item.NoSp3 ?? "-")</td>
+                    <td data-label="PIC Ops">@(item.PicOps ?? "-")</td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Detail</a>
+                        @if (isAdmin)
+                        {
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="delete-form d-inline"
+                                  data-confirm-title="Hapus baris arsip ini?"
+                                  data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
+                                  data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@await Html.PartialAsync("_Pager", Model)

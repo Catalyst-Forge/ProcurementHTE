@@ -68,9 +68,11 @@ public partial class PurchaseRequisitionsController
                 purchaseRequisition,
                 model.ProcurementIds ?? []
             );
+            await ApplyPrValueAsync(purchaseRequisition.PrNumber, model.PrValue);
 
             TempData["SuccessMessage"] =
                 $"Purchase Requisition {purchaseRequisition.PrNumber} created successfully.";
+            await WarnIfPrOverdrawnAsync(purchaseRequisition.PrNumber);
             return RedirectToAction(nameof(Details), new { id = purchaseRequisition.PrId });
         }
         catch (Exception ex)

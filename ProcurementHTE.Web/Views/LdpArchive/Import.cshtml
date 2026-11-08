@@ -1,0 +1,47 @@
+@model ProcurementHTE.Web.Models.ViewModels.LdpImportPageViewModel
+@{
+    ViewData["Title"] = "Impor Excel ke Arsip LDP";
+    var summary = Model.Summary;
+}
+
+<header class="mb-3">
+    <a asp-action="Index" class="small">Kembali ke Arsip LDP</a>
+    <h1 class="h4 mt-2 mb-1">Impor Excel ke Arsip LDP</h1>
+    <p class="text-muted small mb-0">
+        Dibaca dari sheet LDP(new). Yang masuk hanya pekerjaan selesai (No PO, No SA, dan No SP3 terisi) dan pekerjaan
+        yang mulai Juli–September 2026, semuanya berstatus Completed. Baris yang sudah pernah diimpor diganti dengan versi
+        Excel terbaru, jadi tidak ada data ganda.
+    </p>
+</header>
+
+@if (summary is null)
+{
+    <form method="post" asp-action="ImportPreview" enctype="multipart/form-data" class="card shadow-sm rounded-4" data-loading-overlay="true">
+        <div class="card-body">
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+            <label for="file" class="form-label">File Excel (.xlsx)</label>
+            <input id="file" name="file" type="file" accept=".xlsx" class="form-control mb-3" required />
+            <button type="submit" class="btn btn-primary">Lihat pratinjau</button>
+        </div>
+    </form>
+}
+else
+{
+    <section class="card shadow-sm rounded-4" aria-label="Pratinjau impor">
+        <div class="card-body">
+            <p class="mb-3">File <strong>@Model.FileName</strong> akan menghasilkan:</p>
+            <dl class="row mb-3">
+                <dt class="col-sm-4">Baris baru</dt><dd class="col-sm-8">@summary.New</dd>
+                <dt class="col-sm-4">Diperbarui dari Excel</dt><dd class="col-sm-8">@summary.Updated</dd>
+                <dt class="col-sm-4">Dipulihkan dari Data Terhapus</dt><dd class="col-sm-8">@summary.Restored</dd>
+                <dt class="col-sm-4">Tidak berubah</dt><dd class="col-sm-8">@summary.Unchanged</dd>
+                <dt class="col-sm-4">Tidak dimasukkan (belum selesai)</dt><dd class="col-sm-8">@summary.Excluded</dd>
+            </dl>
+            <form method="post" asp-action="ImportApply" class="d-flex gap-2" data-loading-overlay="true">
+                <input type="hidden" name="token" value="@Model.Token" />
+                <a asp-action="Import" class="btn btn-outline-secondary">Batal</a>
+                <button type="submit" class="btn btn-primary" disabled="@(summary.Changed == 0 ? "disabled" : null)">Impor sekarang</button>
+            </form>
+        </div>
+    </section>
+}

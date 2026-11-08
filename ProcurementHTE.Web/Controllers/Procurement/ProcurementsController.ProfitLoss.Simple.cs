@@ -68,6 +68,7 @@ public partial class ProcurementsController
         );
 
         TempData["SuccessMessage"] = "Profit & Loss tersimpan.";
+        await WarnIfPrOverdrawnAsync(viewModel.ProcurementId);
         if (procurement.ContractType == Core.Enums.ContractType.LTC)
             await GenerateSpmpForSimpleProfitLossAsync(viewModel.ProcurementId);
 

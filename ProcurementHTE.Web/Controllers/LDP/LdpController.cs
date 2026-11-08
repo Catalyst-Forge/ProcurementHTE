@@ -14,19 +14,22 @@ namespace ProcurementHTE.Web.Controllers.Ldp
         private readonly IObjectStorage _objectStorage;
         private readonly ILogger<LdpController> _logger;
         private readonly string _bucketName;
+        private readonly IExcelExporter _excel;
 
         public LdpController(
             ILdpService ldpService,
             IProcurementRepository procurementRepo,
             IObjectStorage objectStorage,
             ILogger<LdpController> logger,
-            IOptions<ObjectStorageOptions> storageOptions)
+            IOptions<ObjectStorageOptions> storageOptions,
+            IExcelExporter excel)
         {
             _ldpService = ldpService ?? throw new ArgumentNullException(nameof(ldpService));
             _procurementRepo = procurementRepo ?? throw new ArgumentNullException(nameof(procurementRepo));
             _objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bucketName = storageOptions.Value.Bucket;
+            _excel = excel;
         }
 
         [HttpGet]

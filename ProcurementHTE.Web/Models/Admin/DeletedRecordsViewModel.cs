@@ -20,6 +20,7 @@ public class DeletedRecordsViewModel
         (DeletedRecordKind.DocumentApproval, "Document Approvals"),
         (DeletedRecordKind.DocumentApprovalRule, "Approval Rules"),
         (DeletedRecordKind.User, "Users"),
+        (DeletedRecordKind.LdpArchive, "Arsip LDP"),
     ];
 
     public static string LabelFor(string kind) =>

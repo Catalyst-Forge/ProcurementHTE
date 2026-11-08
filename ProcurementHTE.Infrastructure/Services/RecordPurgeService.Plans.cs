@@ -29,6 +29,7 @@ public sealed partial class RecordPurgeService
             DeletedRecordKind.DocumentApproval => PlanDocumentApprovalAsync(id, ct),
             DeletedRecordKind.DocumentApprovalRule => PlanRuleAsync(id, ct),
             DeletedRecordKind.User => PlanUserAsync(id, ct),
+            DeletedRecordKind.LdpArchive => PlanArchiveRowAsync(id, ct),
             _ => Task.FromResult<PurgePlan?>(null),
         };
 
@@ -241,6 +242,14 @@ public sealed partial class RecordPurgeService
             await UnsharedFilesAsync([user.AvatarObjectKey], userId: id, ct: ct),
             await BlockersAsync<User>(id, fk => fk.DeleteBehavior == DeleteBehavior.Cascade, ct)
         );
+    }
+
+    private async Task<PurgePlan?> PlanArchiveRowAsync(string id, CancellationToken ct)
+    {
+        var row = await Deleted<LdpArchiveRow>().FirstOrDefaultAsync(x => x.LdpArchiveRowId == id, ct);
+        return row is null
+            ? null
+            : new PurgePlan(row.JobName ?? "(tanpa nama pekerjaan)", $"{row.VendorName} · PR {row.NoPr}", [row], 0, [], []);
     }
 
     private async Task<List<object>> DocumentMappingRowsAsync(IQueryable<JobTypeDocuments> query, CancellationToken ct)

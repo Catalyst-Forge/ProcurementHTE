@@ -21,6 +21,34 @@
                 <dt class="fw-semibold text-uppercase text-secondary small">Created By</dt>
                 <dd class="mb-0">@(Model.CreatedByUserName ?? "-")</dd>
             </dl>
+            @if (Model.Balance is { } balance)
+            {
+                <dl class="col-md-4 mb-2">
+                    <dt class="fw-semibold text-uppercase text-secondary small">Nilai PR</dt>
+                    <dd class="mb-0">@(balance.Value is { } value ? $"Rp {value:N0}" : "Belum diisi")</dd>
+                </dl>
+                <dl class="col-md-4 mb-2">
+                    <dt class="fw-semibold text-uppercase text-secondary small">Realisasi terpakai</dt>
+                    <dd class="mb-0">Rp @balance.Used.ToString("N0") <span class="text-muted small">dari @balance.Jobs pekerjaan</span></dd>
+                </dl>
+                <dl class="col-md-4 mb-2">
+                    <dt class="fw-semibold text-uppercase text-secondary small">Sisa</dt>
+                    @if (balance.Remaining is not { } remaining)
+                    {
+                        <dd class="text-muted mb-0">-</dd>
+                    }
+                    else if (balance.IsOverdrawn)
+                    {
+                        <dd class="text-danger fw-semibold mb-0">
+                            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Lebih Rp @((-remaining).ToString("N0"))
+                        </dd>
+                    }
+                    else
+                    {
+                        <dd class="mb-0">Rp @remaining.ToString("N0")</dd>
+                    }
+                </dl>
+            }
             <dl class="col-md-12 mb-2">
                 <dt class="fw-semibold text-uppercase text-secondary small">Description</dt>
                 <dd class="mb-0">@(Model.Description ?? "-")</dd>

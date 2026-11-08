@@ -11,6 +11,7 @@ public enum DeletedRecordKind
     DocumentApproval,
     DocumentApprovalRule,
     User,
+    LdpArchive,
 }
 
 public sealed record DeletedRecordItem(

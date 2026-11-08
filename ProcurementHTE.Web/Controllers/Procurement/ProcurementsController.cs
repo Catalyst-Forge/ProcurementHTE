@@ -30,6 +30,7 @@ public partial class ProcurementsController : Controller
     private readonly IProcurementTrackingService _trackingService;
     private readonly IPurchaseRequisitionCommandService _prCommandService;
     private readonly IQrCodeGenerator _qrCodeGenerator;
+    private readonly IPrBalanceRepository _prBalance;
     private readonly ILogger<ProcurementsController> _logger;
 
     public ProcurementsController(
@@ -50,6 +51,7 @@ public partial class ProcurementsController : Controller
         IProcurementTrackingService trackingService,
         IPurchaseRequisitionCommandService prCommandService,
         IQrCodeGenerator qrCodeGenerator,
+        IPrBalanceRepository prBalance,
         ILogger<ProcurementsController> logger
     )
     {
@@ -71,6 +73,7 @@ public partial class ProcurementsController : Controller
         _trackingService = trackingService;
         _prCommandService = prCommandService;
         _qrCodeGenerator = qrCodeGenerator;
+        _prBalance = prBalance;
         _logger = logger;
     }
 

@@ -24,6 +24,7 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
             [DeletedRecordKind.DocumentApproval] = await Deleted<DocumentApprovals>().CountAsync(ct),
             [DeletedRecordKind.DocumentApprovalRule] = await Deleted<DocumentApprovalRule>().CountAsync(ct),
             [DeletedRecordKind.User] = await db.Users.CountAsync(u => u.IsDeleted, ct),
+            [DeletedRecordKind.LdpArchive] = await Deleted<LdpArchiveRow>().CountAsync(ct),
         };
 
     public async Task<IReadOnlyList<DeletedRecordItem>> ListAsync(DeletedRecordKind kind, CancellationToken ct = default)
@@ -78,6 +79,10 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
                     x.DeletedAt,
                     x.DeletedBy))
                 .ToListAsync(ct),
+            DeletedRecordKind.LdpArchive => await Deleted<LdpArchiveRow>()
+                .OrderByDescending(x => x.DeletedAt).Take(ListLimit)
+                .Select(x => new Row(x.LdpArchiveRowId, x.JobName ?? "(tanpa nama pekerjaan)", (x.VendorName ?? "-") + " · PR " + (x.NoPr ?? "-"), x.DeletedAt, x.DeletedBy))
+                .ToListAsync(ct),
             DeletedRecordKind.User => await db.Users
                 .Where(u => u.IsDeleted)
                 .OrderByDescending(x => x.DeletedAt).Take(ListLimit)
@@ -120,6 +125,7 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
             DeletedRecordKind.DocumentApproval => await RestoreDocumentApprovalAsync(id, ct),
             DeletedRecordKind.DocumentApprovalRule => await RestoreRuleAsync(id, ct),
             DeletedRecordKind.User => await RestoreUserAsync(id, ct),
+            DeletedRecordKind.LdpArchive => await RestoreArchiveRowAsync(id, ct),
             _ => RestoreResult.Fail("Jenis data tidak dikenal."),
         };
 
@@ -269,6 +275,16 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
 
         item.IsDeleted = false;
         return RestoreResult.Ok("Aturan approval dipulihkan.");
+    }
+
+    private async Task<RestoreResult> RestoreArchiveRowAsync(string id, CancellationToken ct)
+    {
+        var row = await Deleted<LdpArchiveRow>().FirstOrDefaultAsync(x => x.LdpArchiveRowId == id, ct);
+        if (row is null)
+            return RestoreResult.Fail(NotFound);
+
+        row.IsDeleted = false;
+        return RestoreResult.Ok("Baris Arsip LDP dipulihkan.");
     }
 
     private async Task<RestoreResult> RestoreUserAsync(string id, CancellationToken ct)

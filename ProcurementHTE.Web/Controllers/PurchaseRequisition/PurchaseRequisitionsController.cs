@@ -35,6 +35,7 @@ public partial class PurchaseRequisitionsController : Controller
     private readonly ObjectStorageOptions _storageOptions;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IProcurementTrackingService _procurementTrackingService;
+    private readonly IPrBalanceRepository _prBalance;
     private readonly ILogger<PurchaseRequisitionsController> _logger;
 
     public PurchaseRequisitionsController(
@@ -53,6 +54,7 @@ public partial class PurchaseRequisitionsController : Controller
         IOptions<ObjectStorageOptions> storageOptions,
         IHttpClientFactory httpClientFactory,
         IProcurementTrackingService procurementTrackingService,
+        IPrBalanceRepository prBalance,
         ILogger<PurchaseRequisitionsController> logger
     )
     {
@@ -72,6 +74,7 @@ public partial class PurchaseRequisitionsController : Controller
             storageOptions?.Value ?? throw new ArgumentNullException(nameof(storageOptions));
         _httpClientFactory = httpClientFactory;
         _procurementTrackingService = procurementTrackingService;
+        _prBalance = prBalance;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 }

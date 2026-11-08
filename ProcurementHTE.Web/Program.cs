@@ -20,6 +20,7 @@ builder
 
 // MVC + app services
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationLayer();
 builder.Services.AddIdentityAndAuth(builder.Configuration);
