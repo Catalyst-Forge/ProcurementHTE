@@ -56,7 +56,7 @@ public class LdpArchiveController(
             ["Status", .. labels],
             rows.Select((row, index) =>
             {
-                var byLabel = cells[index].ToDictionary(cell => cell.Label, ExcelValue);
+                var byLabel = cells[index].GroupBy(cell => cell.Label).ToDictionary(group => group.Key, group => ExcelValue(group.First()));
                 return (IReadOnlyList<object?>)[row.Status, .. labels.Select(label => byLabel.GetValueOrDefault(label))];
             })
         );
@@ -113,7 +113,7 @@ public class LdpArchiveController(
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(string id, CancellationToken ct = default)
+    public async Task<IActionResult> Delete(string id, string? returnUrl = null, CancellationToken ct = default)
     {
         var row = await archive.FindForEditAsync(id, ct);
         if (row is null)
@@ -123,7 +123,7 @@ public class LdpArchiveController(
         await archive.SaveAsync(ct);
 
         TempData["SuccessMessage"] = "Baris dipindahkan ke Data Terhapus.";
-        return RedirectToAction(nameof(Index));
+        return Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -213,7 +213,7 @@ public class LdpArchiveController(
             row,
             form.Status,
             form.Typed,
-            form.Others.Where(other => other.Label.Length > 0).ToDictionary(other => other.Label, other => other.Value)
+            form.Others.Where(other => other.Label.Length > 0).GroupBy(other => other.Label).ToDictionary(group => group.Key, group => group.First().Value)
         );
         row.UpdatedAt = DateTime.UtcNow;
         row.UpdatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);

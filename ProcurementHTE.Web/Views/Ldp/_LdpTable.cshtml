@@ -56,7 +56,7 @@
                 <th sort-key="SANo" filter-key="SANo" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">SA No</th>
                 <th sort-key="SP3No" filter-key="SP3No" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 120px;">SP3 No</th>
                 <th sort-key="PicApPo" filter-key="PicApPo" class="border-end ldp-col ldp-pr" style="--ldp-col-width: 150px;">PIC AP-PO</th>
-                <th class="position-sticky end-0 bg-light text-center ldp-pinned" style="--ldp-col-width: 150px; z-index: 2;">Aksi</th>
+                <th class="position-sticky end-0 bg-light text-center ldp-pinned" style="--ldp-col-width: 190px; z-index: 2;">Aksi</th>
             </tr>
         </thead>
 
@@ -151,6 +151,26 @@
                         <td class="ldp-col ldp-pr">@formatText(item.SP3No)</td>
                         <td class="ldp-col ldp-pr">@formatText(item.PicApPo)</td>
                         <td class="position-sticky end-0 bg-white text-center ldp-pinned" style="z-index: 1;">
+                            @if (item.ArchiveRowId is not null)
+                            {
+                                <span class="badge text-bg-success mb-1">Completed</span>
+                                <div class="d-flex justify-content-center gap-1">
+                                    <a asp-controller="LdpArchive" asp-action="Details" asp-route-id="@item.ArchiveRowId" class="btn btn-sm btn-outline-primary">Detail</a>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <a asp-controller="LdpArchive" asp-action="Edit" asp-route-id="@item.ArchiveRowId" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <form asp-controller="LdpArchive" asp-action="Delete" asp-route-id="@item.ArchiveRowId" asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
+                                              method="post" class="delete-form d-inline"
+                                              data-confirm-title="Hapus pekerjaan ini?"
+                                              data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
+                                              data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
                             @if (User.IsInRole("Admin"))
                             {
                                 <div class="d-flex justify-content-center gap-1 mb-1">
@@ -187,6 +207,7 @@
                                         title="Upload Dokumen LDP">
                                     <i class="bi bi-upload me-1"></i>Upload
                                 </button>
+                            }
                             }
                         </td>
                     </tr>

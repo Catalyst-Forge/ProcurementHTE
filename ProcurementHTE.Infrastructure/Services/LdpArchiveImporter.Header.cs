@@ -29,6 +29,8 @@ public sealed partial class LdpArchiveImporter
         {
             var header = new Header();
             string? group = null;
+            var used = new HashSet<string>();
+            var invoiceStarted = false;
             for (var j = FirstColumn; j <= LastColumn; j++)
             {
                 // Left of FirstGroupColumn the group row holds column totals, not group names.
@@ -38,7 +40,19 @@ public sealed partial class LdpArchiveImporter
                 var ownName = name.Length > 0 ? name : null;
                 if (ownName is null && group is null)
                     continue;
-                header._columns[j] = (group, ownName, LdpArchiveColumns.LabelFor(group, ownName));
+
+                // The invoice stage repeats the PR stage's approval columns. Its copies get a
+                // suffix, so every label stays unique in the detail view, the edit form, and exports.
+                invoiceStarted |= group == LdpArchiveColumns.InvoiceGroup;
+                var label = LdpArchiveColumns.LabelFor(group, ownName);
+                if (!used.Add(label))
+                {
+                    var suffix = invoiceStarted ? " (Invoice)" : " (2)";
+                    for (var copy = 2; !used.Add(label + suffix); copy++)
+                        suffix = $" ({copy + 1})";
+                    label += suffix;
+                }
+                header._columns[j] = (group, ownName, label);
             }
 
             var missing = new List<string>();

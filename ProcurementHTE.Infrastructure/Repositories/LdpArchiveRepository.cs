@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -29,8 +30,7 @@ public sealed class LdpArchiveRepository(AppDbContext db) : ILdpArchiveRepositor
 
     public async Task<Core.Common.PagedResult<LdpArchiveListItem>> SearchAsync(LdpArchiveQuery query, CancellationToken ct = default)
     {
-        var items = await db.LdpArchiveRows
-            .AsNoTracking()
+        var items = await NotInLdp()
             .Select(row => new LdpArchiveListItem
             {
                 Id = row.LdpArchiveRowId,
@@ -75,7 +75,7 @@ public sealed class LdpArchiveRepository(AppDbContext db) : ILdpArchiveRepositor
 
     public async Task<IReadOnlyList<LdpArchiveRow>> ExportAsync(LdpArchiveQuery query, CancellationToken ct = default)
     {
-        var rows = await db.LdpArchiveRows.AsNoTracking().ToDictionaryAsync(row => row.LdpArchiveRowId, ct);
+        var rows = await NotInLdp().ToDictionaryAsync(row => row.LdpArchiveRowId, ct);
         var items = rows.Values.Select(row => new LdpArchiveListItem
         {
             Id = row.LdpArchiveRowId,
@@ -105,6 +105,14 @@ public sealed class LdpArchiveRepository(AppDbContext db) : ILdpArchiveRepositor
 
         return Arrange(items, query).Select(item => rows[item.Id]).ToList();
     }
+
+    // Jobs that started July to September 2026 are shown in the LDP instead.
+    private IQueryable<LdpArchiveRow> NotInLdp() =>
+        db.LdpArchiveRows.AsNoTracking().Where(row =>
+            row.StartDate == null
+            || row.StartDate < LdpArchiveColumns.PresentedFrom
+            || row.StartDate >= LdpArchiveColumns.PresentedBefore
+        );
 
     public Task<LdpArchiveRow?> FindForEditAsync(string id, CancellationToken ct = default) =>
         db.LdpArchiveRows.FirstOrDefaultAsync(row => row.LdpArchiveRowId == id, ct);

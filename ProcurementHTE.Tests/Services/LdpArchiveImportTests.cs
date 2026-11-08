@@ -45,9 +45,10 @@ public class LdpArchiveImportTests : IDisposable
         (7, null, "Tgl. Selesai"), (8, null, "Nama Pekerjaan"), (9, null, "Job Type"), (10, null, "Cntract Type"),
         (11, null, "LTC Name"), (15, null, "Year Job"), (17, null, "Nilai P&L"), (18, null, "Nilai Accrual"),
         (19, null, "Nilai Realisasi"), (20, null, "No. SPMP"),
-        (33, "PR", "Create"), (34, null, "No. PR"), (35, "PO/RO", "Tgl"), (36, null, "No.PO"),
-        (37, "Pic PR", ""), (38, "Pic Ops", ""), (39, "Keterangan", ""),
-        (40, "Tgl Process Inv Mitra", "No. Inv"), (41, null, "Nilai (IDR)"), (42, null, "No. SA"), (43, null, "No. SP3"),
+        (33, "PR", "Create"), (34, null, "No. PR"), (35, "Aprvl MGR", "Selesai"), (36, "PO/RO", "Tgl"), (37, null, "No.PO"),
+        (38, "Pic PR", ""), (39, "Pic Ops", ""), (40, "Keterangan", ""),
+        (41, "Tgl Process Inv Mitra", "No. Inv"), (42, null, "Nilai (IDR)"), (43, null, "No. SA"), (44, null, "No. SP3"),
+        (45, "Aprvl MGR", "Selesai"),
     ];
 
     private static readonly Dictionary<string, object?> Done = new()
@@ -56,6 +57,7 @@ public class LdpArchiveImportTests : IDisposable
         ["Nama Pekerjaan"] = "Angkut rig", ["Job Type"] = "Stb", ["Cntract Type"] = "Spot", ["Year Job"] = 2025,
         ["Nilai P&L"] = 1_250_000.5, ["Nilai Realisasi"] = 900_000, ["Create"] = new DateTime(2025, 2, 1),
         ["No. PR"] = "PR-100", ["No.PO"] = "PO-1", ["No. SA"] = "SA-1", ["No. SP3"] = "SP3-1", ["Pic Ops"] = "Budi",
+        ["Selesai"] = new DateTime(2025, 2, 20),
     };
 
     private static MemoryStream Workbook(params Dictionary<string, object?>[] rows)
@@ -149,6 +151,9 @@ public class LdpArchiveImportTests : IDisposable
         Assert.Contains("PR · No. PR", labels);
         Assert.Contains("Tgl Process Inv Mitra · No. SA", labels);
         Assert.Contains("Nilai P&L", labels);
+        Assert.Contains("Aprvl MGR · Selesai", labels);
+        Assert.Contains("Aprvl MGR · Selesai (Invoice)", labels);
+        Assert.Equal(labels.Count, labels.Distinct().Count());
     }
 
     [Fact]

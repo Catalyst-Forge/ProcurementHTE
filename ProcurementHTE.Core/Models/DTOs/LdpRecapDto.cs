@@ -40,6 +40,9 @@ namespace ProcurementHTE.Core.Models.DTOs
         // Invoice Data
         public string? SANo { get; set; }
         public string? SP3No { get; set; }
+
+        /// <summary>Set when the row comes from Arsip LDP instead of a Docutrax job.</summary>
+        public string? ArchiveRowId { get; set; }
         public string? PicApPo { get; set; }
 
         // Items
