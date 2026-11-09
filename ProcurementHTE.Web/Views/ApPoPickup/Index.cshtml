@@ -19,6 +19,7 @@
             Klik sel untuk mengisi. Status jadi Done setelah No PR, No PO, Submit INPRO, Submit Hard Copy, dan PIC APPO terisi.
         </p>
     </div>
+    @await Html.PartialAsync("_FinanceExcelButtons", canEdit)
 </header>
 
 @await Html.PartialAsync("_FinanceSearch", (string?)ViewBag.Search)

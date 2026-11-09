@@ -1,11 +1,13 @@
-using ProcurementHTE.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Caching.Memory;
 using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.DTOs;
+using ProcurementHTE.Web.Authorization;
 using ProcurementHTE.Web.Controllers.Finance;
 
 namespace ProcurementHTE.Web.Controllers.ApInvoicePickup
@@ -76,5 +78,37 @@ namespace ProcurementHTE.Web.Controllers.ApInvoicePickup
             string.IsNullOrEmpty(id)
                 ? NotFound()
                 : RedirectToAction("Details", "Ldp", new { id, from = "apinvoice" });
+
+        // Excel round trip: export the rows the page shows, then import an edited export back (preview first).
+        [HttpGet("Export")]
+        public Task<IActionResult> Export(string? search, [FromServices] IExcelExporter excel, CancellationToken ct) =>
+            FinanceImportEndpoints.ExportAsync(_queryService, excel, Request, FinanceTableKind.ApInvoice, "AP Invoice", search, ct);
+
+        [Authorize(Roles = ActionRoles.ApInvoice)]
+        [HttpGet("Import")]
+        public IActionResult Import() => FinanceImportEndpoints.Page(this, FinanceImportTarget.ApInvoice);
+
+        [Authorize(Roles = ActionRoles.ApInvoice)]
+        [HttpPost("ImportPreview")]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(FinanceImportEndpoints.MaxBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = FinanceImportEndpoints.MaxBytes)]
+        public Task<IActionResult> ImportPreview(
+            IFormFile? file,
+            [FromServices] IExcelTableReader reader,
+            [FromServices] IFinanceImportService imports,
+            [FromServices] IMemoryCache cache,
+            CancellationToken ct
+        ) => FinanceImportEndpoints.PreviewAsync(this, FinanceImportTarget.ApInvoice, file, reader, imports, cache, ct);
+
+        [Authorize(Roles = ActionRoles.ApInvoice)]
+        [HttpPost("ImportApply")]
+        [ValidateAntiForgeryToken]
+        public Task<IActionResult> ImportApply(
+            string? token,
+            [FromServices] IFinanceImportService imports,
+            [FromServices] IMemoryCache cache,
+            CancellationToken ct
+        ) => FinanceImportEndpoints.ApplyAsync(this, FinanceImportTarget.ApInvoice, token, imports, cache, ct);
     }
 }

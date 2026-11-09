@@ -1,13 +1,23 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using ProcurementHTE.Core.Finance;
+using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models.DTOs;
+using ProcurementHTE.Web.Controllers.Finance;
 
 namespace ProcurementHTE.Web.Controllers.Ldp
 {
     public partial class LdpController
     {
         // The columns of the LDP table, in its order.
-        private static readonly (string Header, string Property)[] ExportColumns =
+        /// <summary>
+        /// The LDP export. ID Docutrax leads, so the file can be imported back; the fill-in columns use
+        /// the headers FinanceImport.LdpColumns reads.
+        /// </summary>
+        public static readonly (string Header, string Property)[] ExportColumns =
         [
+            (FinanceImport.IdHeader, nameof(LdpRecapDto.ProcurementId)),
             ("No WO", nameof(LdpRecapDto.NoWo)), ("No SPK", nameof(LdpRecapDto.NoSpk)),
             ("Vendor Terpilih", nameof(LdpRecapDto.NamaVendor)), ("Tgl Mulai", nameof(LdpRecapDto.TglMulai)),
             ("Tgl Selesai", nameof(LdpRecapDto.TglSelesai)), ("Job Name", nameof(LdpRecapDto.TextPekerjaan)),
@@ -29,6 +39,10 @@ namespace ProcurementHTE.Web.Controllers.Ldp
             ("Approval Asst. Man", nameof(LdpRecapDto.TanggalApprovalAsstManager)), ("Approval Manager", nameof(LdpRecapDto.ManagerApprovalSelesai)),
             ("Approval VP", nameof(LdpRecapDto.VpApprovalSelesai)), ("Tgl Submit INPRO", nameof(LdpRecapDto.TanggalSubmitIspa)),
             ("SA No", nameof(LdpRecapDto.SANo)), ("SP3 No", nameof(LdpRecapDto.SP3No)), ("PIC AP-PO", nameof(LdpRecapDto.PicApPo)),
+            ("No PO", nameof(LdpRecapDto.NoPo)), ("Submit Hard Copy", nameof(LdpRecapDto.TglSubmitHardcopy)),
+            ("No Invoice", nameof(LdpRecapDto.NoInvoice)), ("Tgl Invoice", nameof(LdpRecapDto.TglInvoice)),
+            ("Tgl SA", nameof(LdpRecapDto.TglSa)), ("Tgl SP3", nameof(LdpRecapDto.TglSp3)),
+            ("Submit Loket", nameof(LdpRecapDto.TglSubmitLoket)), ("PIC AP-Invoice", nameof(LdpRecapDto.PicApInvoice)),
         ];
 
         [HttpGet]
@@ -45,5 +59,33 @@ namespace ProcurementHTE.Web.Controllers.Ldp
         }
 
         internal const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+        // An edited LDP export, imported back into the Docutrax jobs' fill-in fields. Admin only.
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Import() => FinanceImportEndpoints.Page(this, FinanceImportTarget.Ldp);
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        [RequestSizeLimit(FinanceImportEndpoints.MaxBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = FinanceImportEndpoints.MaxBytes)]
+        public Task<IActionResult> ImportPreview(
+            IFormFile? file,
+            [FromServices] IExcelTableReader reader,
+            [FromServices] IFinanceImportService imports,
+            [FromServices] IMemoryCache cache,
+            CancellationToken ct
+        ) => FinanceImportEndpoints.PreviewAsync(this, FinanceImportTarget.Ldp, file, reader, imports, cache, ct);
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public Task<IActionResult> ImportApply(
+            string? token,
+            [FromServices] IFinanceImportService imports,
+            [FromServices] IMemoryCache cache,
+            CancellationToken ct
+        ) => FinanceImportEndpoints.ApplyAsync(this, FinanceImportTarget.Ldp, token, imports, cache, ct);
     }
 }

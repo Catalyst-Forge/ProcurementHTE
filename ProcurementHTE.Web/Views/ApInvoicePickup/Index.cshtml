@@ -18,6 +18,7 @@
             Klik sel untuk mengisi, atau nama pekerjaan untuk detailnya. Status jadi Done setelah No Invoice, No SA, No SP3 beserta tanggalnya, dan Submit Loket terisi.
         </p>
     </div>
+    @await Html.PartialAsync("_FinanceExcelButtons", canEdit)
 </header>
 
 @await Html.PartialAsync("_FinanceSearch", (string?)ViewBag.Search)

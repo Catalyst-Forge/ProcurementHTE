@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Caching.Memory;
 using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -216,5 +217,37 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
             ViewBag.AssistantManagerName = Resolve(procurement.AssistantManagerUserId);
             ViewBag.ManagerName = Resolve(procurement.ManagerUserId);
         }
+
+        // Excel round trip: export the rows the page shows, then import an edited export back (preview first).
+        [HttpGet("Export")]
+        public Task<IActionResult> Export(string? search, [FromServices] IExcelExporter excel, CancellationToken ct) =>
+            FinanceImportEndpoints.ExportAsync(_queryService, excel, Request, FinanceTableKind.ApPo, "AP Purchase Order", search, ct);
+
+        [Authorize(Roles = ActionRoles.ApPo)]
+        [HttpGet("Import")]
+        public IActionResult Import() => FinanceImportEndpoints.Page(this, FinanceImportTarget.ApPo);
+
+        [Authorize(Roles = ActionRoles.ApPo)]
+        [HttpPost("ImportPreview")]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(FinanceImportEndpoints.MaxBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = FinanceImportEndpoints.MaxBytes)]
+        public Task<IActionResult> ImportPreview(
+            IFormFile? file,
+            [FromServices] IExcelTableReader reader,
+            [FromServices] IFinanceImportService imports,
+            [FromServices] IMemoryCache cache,
+            CancellationToken ct
+        ) => FinanceImportEndpoints.PreviewAsync(this, FinanceImportTarget.ApPo, file, reader, imports, cache, ct);
+
+        [Authorize(Roles = ActionRoles.ApPo)]
+        [HttpPost("ImportApply")]
+        [ValidateAntiForgeryToken]
+        public Task<IActionResult> ImportApply(
+            string? token,
+            [FromServices] IFinanceImportService imports,
+            [FromServices] IMemoryCache cache,
+            CancellationToken ct
+        ) => FinanceImportEndpoints.ApplyAsync(this, FinanceImportTarget.ApPo, token, imports, cache, ct);
     }
 }

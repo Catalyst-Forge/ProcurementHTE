@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<ILdpArchiveRepository, LdpArchiveRepository>();
         services.AddScoped<ILdpArchiveRangeRepository, LdpArchiveRangeRepository>();
         services.AddScoped<IListPeriodYears, ListPeriodYears>();
+        services.AddSingleton<IExcelTableReader, ExcelTableReader>();
         services.AddScoped<ILdpArchiveImporter, LdpArchiveImporter>();
         services.AddSingleton<IExcelExporter, ExcelExporter>();
         services.AddScoped<IInProgressProcurementQuery, InProgressProcurementQuery>();

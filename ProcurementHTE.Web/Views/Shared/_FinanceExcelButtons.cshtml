@@ -1,0 +1,14 @@
+@* Export and import buttons of a finance table's header. The export takes the page's query (search,
+   column filters, month and year, sort); import shows only to a role that may fill the table. *@
+@model bool
+<div class="d-flex flex-wrap align-items-center gap-2">
+    <a href="@(Url.Action("Export") + Context.Request.QueryString)" class="btn btn-outline-primary" hx-boost="false">
+        <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Ekspor Excel
+    </a>
+    @if (Model)
+    {
+        <a asp-action="Import" class="btn btn-outline-primary">
+            <i class="bi bi-upload" aria-hidden="true"></i> Impor Excel
+        </a>
+    }
+</div>

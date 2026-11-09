@@ -11,6 +11,9 @@
         </a>
         @if (User.IsInRole("Admin"))
         {
+            <a asp-controller="Ldp" asp-action="Import" class="btn btn-outline-primary">
+                <i class="bi bi-upload" aria-hidden="true"></i> Impor Excel
+            </a>
             <a asp-controller="Procurements" asp-action="Create" class="btn btn-primary">
                 <i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah Pekerjaan
             </a>

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using ProcurementHTE.Core.Authorization;
 using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
+using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Authorization;
 using ProcurementHTE.Web.Controllers.Finance;
 using ProcurementHTE.Web.Models.ViewModels;
@@ -142,6 +144,38 @@ public class AccrualController : Controller
             return BadRequest(new { success = false, message = "Gagal menyimpan data accrual" });
         }
     }
+
+    // Excel round trip: export the rows the page shows, then import an edited export back (preview first).
+    [HttpGet("Export")]
+    public Task<IActionResult> Export(string? search, [FromServices] IExcelExporter excel, CancellationToken ct) =>
+        FinanceImportEndpoints.ExportAsync(_queryService, excel, Request, FinanceTableKind.Accrual, "Data Accrual", search, ct);
+
+    [Authorize(Roles = ActionRoles.Accrual)]
+    [HttpGet("Import")]
+    public IActionResult Import() => FinanceImportEndpoints.Page(this, FinanceImportTarget.Accrual);
+
+    [Authorize(Roles = ActionRoles.Accrual)]
+    [HttpPost("ImportPreview")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(FinanceImportEndpoints.MaxBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = FinanceImportEndpoints.MaxBytes)]
+    public Task<IActionResult> ImportPreview(
+        IFormFile? file,
+        [FromServices] IExcelTableReader reader,
+        [FromServices] IFinanceImportService imports,
+        [FromServices] IMemoryCache cache,
+        CancellationToken ct
+    ) => FinanceImportEndpoints.PreviewAsync(this, FinanceImportTarget.Accrual, file, reader, imports, cache, ct);
+
+    [Authorize(Roles = ActionRoles.Accrual)]
+    [HttpPost("ImportApply")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> ImportApply(
+        string? token,
+        [FromServices] IFinanceImportService imports,
+        [FromServices] IMemoryCache cache,
+        CancellationToken ct
+    ) => FinanceImportEndpoints.ApplyAsync(this, FinanceImportTarget.Accrual, token, imports, cache, ct);
 }
 
 public class AccrualSaveRequest
