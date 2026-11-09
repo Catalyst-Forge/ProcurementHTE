@@ -40,6 +40,48 @@ html {
   font-size: max(0.75em, 0.75rem);
 }
 
+/* --- Buttons ---
+   One shape for every button: 8px corners (6px small), a 600-weight label, and an icon that
+   keeps the same gap to its label. Blue-600 is the only colour that means "act here":
+   - primary: solid blue with the action glow from DESIGN.md, deepening to blue-700;
+   - outline-primary: a quiet blue tint for second actions (Ekspor, Impor, Dokumen);
+   - secondary and outline-secondary: neutral, a hairline on white or field wash;
+   - danger and warning outlines: their hairline at rest, a tinted ground on hover, never a
+     full red or yellow fill before the user commits.
+   Focus is a 2px blue outline at 2px offset; a press moves the button down 1px. */
+.btn {
+  --bs-btn-border-radius: 0.5rem;
+  --bs-btn-font-weight: 600;
+  letter-spacing: 0.005em;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.btn-sm,
+.btn-group-sm > .btn {
+  --bs-btn-border-radius: 0.375rem;
+}
+
+.btn:not(:disabled):not(.disabled):active {
+  transform: translateY(1px);
+}
+
+/* A label with a leading icon: one gap, whatever spacing classes the icon carries. */
+.btn:has(> .bi):not(.btn-row, .finance-send) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.btn:has(> .bi):not(.btn-row, .finance-send) > .bi {
+  margin-inline: 0 !important;
+}
+
 .btn-primary {
   --bs-btn-bg: var(--dx-blue-600);
   --bs-btn-border-color: var(--dx-blue-600);
@@ -50,18 +92,76 @@ html {
   --bs-btn-disabled-bg: var(--dx-blue-600);
   --bs-btn-disabled-border-color: var(--dx-blue-600);
   --bs-btn-focus-shadow-rgb: var(--dx-blue-600-rgb);
+  box-shadow: 0 6px 14px -8px rgba(var(--dx-blue-600-rgb), 0.65);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 18px -8px rgba(var(--dx-blue-700-rgb), 0.7);
+}
+
+.btn-primary:disabled,
+.btn-primary.disabled {
+  box-shadow: none;
 }
 
 .btn-outline-primary {
-  --bs-btn-color: var(--dx-blue-600);
-  --bs-btn-border-color: var(--dx-blue-600);
-  --bs-btn-hover-bg: var(--dx-blue-600);
-  --bs-btn-hover-border-color: var(--dx-blue-600);
-  --bs-btn-active-bg: var(--dx-blue-700);
-  --bs-btn-active-border-color: var(--dx-blue-700);
-  --bs-btn-disabled-color: var(--dx-blue-600);
-  --bs-btn-disabled-border-color: var(--dx-blue-600);
+  --bs-btn-color: var(--dx-blue-700);
+  --bs-btn-bg: color-mix(in srgb, var(--dx-blue-600) 7%, var(--dx-card));
+  --bs-btn-border-color: color-mix(in srgb, var(--dx-blue-600) 22%, var(--dx-card));
+  --bs-btn-hover-color: var(--dx-blue-800);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--dx-blue-600) 13%, var(--dx-card));
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--dx-blue-600) 38%, var(--dx-card));
+  --bs-btn-active-color: var(--dx-blue-800);
+  --bs-btn-active-bg: color-mix(in srgb, var(--dx-blue-600) 18%, var(--dx-card));
+  --bs-btn-active-border-color: color-mix(in srgb, var(--dx-blue-600) 45%, var(--dx-card));
+  --bs-btn-disabled-color: var(--dx-blue-700);
+  --bs-btn-disabled-bg: color-mix(in srgb, var(--dx-blue-600) 7%, var(--dx-card));
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--dx-blue-600) 22%, var(--dx-card));
   --bs-btn-focus-shadow-rgb: var(--dx-blue-600-rgb);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--dx-ink);
+  --bs-btn-bg: var(--dx-card);
+  --bs-btn-border-color: var(--dx-line);
+  --bs-btn-hover-color: var(--dx-ink);
+  --bs-btn-hover-bg: var(--dx-field);
+  --bs-btn-hover-border-color: var(--dx-line-strong);
+  --bs-btn-active-color: var(--dx-ink);
+  --bs-btn-active-bg: var(--dx-ground);
+  --bs-btn-active-border-color: var(--dx-line-strong);
+  --bs-btn-disabled-color: var(--dx-ink-muted);
+  --bs-btn-disabled-bg: var(--dx-card);
+  --bs-btn-disabled-border-color: var(--dx-line);
+}
+
+.btn-outline-secondary > .bi {
+  color: var(--dx-ink-muted);
+}
+
+.btn-secondary,
+.btn-light {
+  --bs-btn-color: var(--dx-ink);
+  --bs-btn-bg: var(--dx-field);
+  --bs-btn-border-color: var(--dx-line);
+  --bs-btn-hover-color: var(--dx-ink);
+  --bs-btn-hover-bg: var(--dx-ground);
+  --bs-btn-hover-border-color: var(--dx-line-strong);
+  --bs-btn-active-color: var(--dx-ink);
+  --bs-btn-active-bg: var(--dx-ground);
+  --bs-btn-active-border-color: var(--dx-line-strong);
+  --bs-btn-disabled-color: var(--dx-ink-muted);
+  --bs-btn-disabled-bg: var(--dx-field);
+  --bs-btn-disabled-border-color: var(--dx-line);
+}
+
+.btn-success {
+  --bs-btn-bg: var(--dx-success);
+  --bs-btn-border-color: var(--dx-success);
+  --bs-btn-hover-bg: var(--dx-success-ink);
+  --bs-btn-hover-border-color: var(--dx-success-ink);
+  --bs-btn-active-bg: var(--dx-success-ink);
+  --bs-btn-active-border-color: var(--dx-success-ink);
 }
 
 .btn-info {
@@ -82,15 +182,16 @@ html {
 
 .btn-outline-info {
   --bs-btn-color: var(--dx-info);
-  --bs-btn-border-color: var(--dx-info);
-  --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: var(--dx-info);
-  --bs-btn-hover-border-color: var(--dx-info);
-  --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: var(--dx-info-hover);
-  --bs-btn-active-border-color: var(--dx-info-hover);
+  --bs-btn-bg: var(--dx-card);
+  --bs-btn-border-color: color-mix(in srgb, var(--dx-info) 35%, var(--dx-card));
+  --bs-btn-hover-color: var(--dx-info-hover);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--dx-info) 9%, var(--dx-card));
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--dx-info) 55%, var(--dx-card));
+  --bs-btn-active-color: var(--dx-info-active);
+  --bs-btn-active-bg: color-mix(in srgb, var(--dx-info) 15%, var(--dx-card));
+  --bs-btn-active-border-color: var(--dx-info);
   --bs-btn-disabled-color: var(--dx-info);
-  --bs-btn-disabled-border-color: var(--dx-info);
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--dx-info) 35%, var(--dx-card));
   --bs-btn-focus-shadow-rgb: var(--dx-info-rgb);
 }
 
@@ -108,28 +209,60 @@ html {
 
 .btn-outline-danger {
   --bs-btn-color: var(--dx-danger);
-  --bs-btn-border-color: var(--dx-danger);
-  --bs-btn-hover-bg: var(--dx-danger);
-  --bs-btn-hover-border-color: var(--dx-danger);
-  --bs-btn-active-bg: var(--dx-danger-hover);
-  --bs-btn-active-border-color: var(--dx-danger-hover);
+  --bs-btn-bg: var(--dx-card);
+  --bs-btn-border-color: var(--dx-danger-line);
+  --bs-btn-hover-color: var(--dx-danger-hover);
+  --bs-btn-hover-bg: var(--dx-danger-ground);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--dx-danger) 45%, var(--dx-card));
+  --bs-btn-active-color: var(--dx-danger-hover);
+  --bs-btn-active-bg: color-mix(in srgb, var(--dx-danger) 12%, var(--dx-card));
+  --bs-btn-active-border-color: var(--dx-danger);
   --bs-btn-disabled-color: var(--dx-danger);
-  --bs-btn-disabled-border-color: var(--dx-danger);
+  --bs-btn-disabled-bg: var(--dx-card);
+  --bs-btn-disabled-border-color: var(--dx-danger-line);
   --bs-btn-focus-shadow-rgb: var(--dx-danger-rgb);
 }
 
 .btn-outline-warning {
   --bs-btn-color: var(--dx-warning-ink);
-  --bs-btn-border-color: var(--dx-warning-line);
-  --bs-btn-hover-color: #000;
-  --bs-btn-hover-bg: var(--dx-warning);
-  --bs-btn-hover-border-color: var(--dx-warning);
-  --bs-btn-active-color: #000;
-  --bs-btn-active-bg: var(--dx-warning);
-  --bs-btn-active-border-color: var(--dx-warning);
+  --bs-btn-bg: var(--dx-card);
+  --bs-btn-border-color: color-mix(in srgb, var(--dx-warning-line) 45%, var(--dx-card));
+  --bs-btn-hover-color: var(--dx-warning-ink);
+  --bs-btn-hover-bg: var(--dx-warning-ground);
+  --bs-btn-hover-border-color: var(--dx-warning-line);
+  --bs-btn-active-color: var(--dx-warning-ink);
+  --bs-btn-active-bg: color-mix(in srgb, var(--dx-warning) 35%, var(--dx-card));
+  --bs-btn-active-border-color: var(--dx-warning-line);
   --bs-btn-disabled-color: var(--dx-warning-ink);
-  --bs-btn-disabled-border-color: var(--dx-warning-line);
+  --bs-btn-disabled-bg: var(--dx-card);
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--dx-warning-line) 45%, var(--dx-card));
   --bs-btn-focus-shadow-rgb: var(--dx-warning-line-rgb);
+}
+
+.btn-link {
+  --bs-btn-font-weight: 500;
+  text-underline-offset: 0.2em;
+}
+
+/* The row count beside a list's header actions: the buttons' shape, but quiet, since it is
+   not something to press. */
+.page-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--dx-line);
+  border-radius: 0.5rem;
+  background: var(--dx-field);
+  color: var(--dx-ink-muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.page-count strong {
+  color: var(--dx-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .text-warning {
@@ -156,16 +289,27 @@ body {
   margin-bottom: 60px;
 }
 
-.btn:focus,
-.btn:active:focus,
-.btn-link.nav-link:focus,
 .form-control:focus,
 .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--dx-blue-600);
 }
 
-.btn-outline-secondary {
-  --bs-btn-border-color: var(--bs-border-color);
+/* Buttons show focus to the keyboard only, as a 2px blue outline (DESIGN.md). */
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus {
+  box-shadow: none;
+}
+
+.btn-primary:focus,
+.btn-primary:active:focus {
+  box-shadow: 0 6px 14px -8px rgba(var(--dx-blue-600-rgb), 0.65);
+}
+
+.btn:focus-visible,
+.btn-link.nav-link:focus-visible {
+  outline: 2px solid var(--dx-blue-600);
+  outline-offset: 2px;
 }
 
 .content {
