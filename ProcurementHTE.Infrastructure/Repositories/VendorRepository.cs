@@ -10,11 +10,13 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
         private readonly IListSortProvider _listSort;
+        private readonly IListFilterProvider? _listFilter;
 
-        public VendorRepository(AppDbContext context, IListSortProvider listSort)
+        public VendorRepository(AppDbContext context, IListSortProvider listSort, IListFilterProvider? listFilter = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _listSort = listSort;
+            _listFilter = listFilter;
         }
 
         public async Task<int> CountAsync()
@@ -68,6 +70,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     || (byVendorName && v.VendorName != null && v.VendorName.Contains(s))
                 );
             }
+
+            query = query.FilterBy(_listFilter?.Filters, ListSortColumns.Vendors);
 
             return query.ToPagedResultAsync(
                 page,

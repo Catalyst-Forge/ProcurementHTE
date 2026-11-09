@@ -52,6 +52,8 @@ public partial class UserManagementController
             }
         }
 
+        query = query.FilterBy(Request.ReadListFilters(), ListSortColumns.Users);
+
         var totalCount = await query.CountAsync();
         var activeCount = await query.CountAsync(u => u.IsActive);
         var inactiveCount = totalCount - activeCount;

@@ -482,12 +482,14 @@ public static class FinanceTable
             }
     );
 
+    // What a search matches: the value as the table shows it, plus the forms people type
+    // ("13000000" for 13.000.000, "09/11/2026" or "2026-11-09" for 09 Nov 2026).
     private static string Text(object? value) =>
         value switch
         {
             null => string.Empty,
-            DateTime date => FormatDate(date),
-            decimal number => FormatMoney(number),
+            DateTime date => $"{FormatDate(date)} {date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)} {date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}",
+            decimal number => $"{FormatMoney(number)} {number.ToString("0.##", CultureInfo.InvariantCulture)}",
             _ => value.ToString() ?? string.Empty,
         };
 

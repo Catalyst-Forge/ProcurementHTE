@@ -1,5 +1,6 @@
 // The card behind every sortable column header. Server-sorted headers carry their URLs
-// (SortableHeaderTagHelper); browser-sorted ones get a column-sort event (table-sort.js).
+// (SortableHeaderTagHelper); browser-sorted ones get a column-sort event, and a search on
+// them a column-filter event (table-sort.js, data-filter-client).
 (function () {
   "use strict";
 
@@ -9,6 +10,10 @@
     number: ["Terkecil dulu", "Terbesar dulu"],
   };
   const FILTER_PREFIX = "f.";
+  const SEARCH_HINTS = {
+    date: "Contoh: 09 Nov 2026, Nov 2026, 2026",
+    number: "Contoh: 13.000.000",
+  };
   const GAP = 4;
   const EDGE = 8;
 
@@ -93,13 +98,22 @@
     input.className = "form-control form-control-sm";
     input.value = button.dataset.filterValue ?? "";
     input.autocomplete = "off";
+    if (SEARCH_HINTS[button.dataset.kind]) input.placeholder = SEARCH_HINTS[button.dataset.kind];
+
+    // A browser-sorted table filters its own rows; a server list reloads with f.key=value.
+    const apply = (value) => {
+      closeMenu();
+      if (button.dataset.filterClient) {
+        button.dispatchEvent(new CustomEvent("column-filter", { detail: { value } }));
+      } else {
+        navigate(urlForFilter(button.dataset.filterKey, value));
+      }
+    };
 
     box.append(label, input);
     box.addEventListener("submit", (event) => {
       event.preventDefault();
-      const url = urlForFilter(button.dataset.filterKey, input.value.trim());
-      closeMenu();
-      navigate(url);
+      apply(input.value.trim());
     });
 
     if (button.dataset.filterValue) {
@@ -107,11 +121,7 @@
       clear.type = "button";
       clear.className = "column-menu-clear";
       clear.textContent = "Hapus filter";
-      clear.addEventListener("click", () => {
-        const url = urlForFilter(button.dataset.filterKey, "");
-        closeMenu();
-        navigate(url);
-      });
+      clear.addEventListener("click", () => apply(""));
       box.append(clear);
     }
     return box;
@@ -150,7 +160,7 @@
     if (!box) return;
 
     const active = [...document.querySelectorAll(".column-header[data-filter-value]")].filter(
-      (button) => button.dataset.filterValue
+      (button) => button.dataset.filterValue && !button.dataset.filterClient
     );
     box.replaceChildren();
     box.hidden = active.length === 0;

@@ -115,6 +115,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 );
             }
 
+            query = query.FilterBy(_listFilter?.Filters, ListSortColumns.PendingApprovals);
+
             var totalCount = await query.CountAsync(ct);
             var items = await query
                 .SortBy(

@@ -10,9 +10,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
         private readonly IListSortProvider _listSort;
+        private readonly IListFilterProvider? _listFilter;
 
-        public JobTypesRepository(AppDbContext context, IListSortProvider listSort)
+        public JobTypesRepository(AppDbContext context, IListSortProvider listSort, IListFilterProvider? listFilter = null)
         {
+            _listFilter = listFilter;
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _listSort = listSort;
         }
@@ -50,6 +52,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     || (byDesc && type.Description != null && type.Description.Contains(s))
                 );
             }
+
+            query = query.FilterBy(_listFilter?.Filters, ListSortColumns.JobTypes);
 
             return query.ToPagedResultAsync(
                 page,

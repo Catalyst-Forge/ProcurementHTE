@@ -1,5 +1,6 @@
-// Click-to-sort for tables without paging. Paged lists sort on the server instead, through
-// <th sort-key>. Skipped: tables with data-no-sort, form fields, rowspans, or spanning rows.
+// Click-to-sort and column search for tables without paging. Paged lists sort and search on
+// the server instead, through <th sort-key filter-key>. Skipped: tables with data-no-sort,
+// form fields, rowspans, or spanning rows.
 (function () {
   "use strict";
 
@@ -63,6 +64,62 @@
     button.append(mark);
   }
 
+  const normalize = (text) => text.replace(/\s+/g, " ").trim().toLowerCase();
+
+  // A row stays when every searched column contains its value. "13000000" also finds
+  // 13.000.000, and a date column also takes 09/11/2026 for 09 Nov 2026.
+  function cellMatches(cell, term) {
+    const text = normalize(cell?.textContent ?? "");
+    if (text.includes(term)) return true;
+    if (/^\d+$/.test(term) && text.replace(/\./g, "").includes(term)) return true;
+    const date = parseDate(text);
+    const wanted = parseDate(term);
+    return date !== null && wanted !== null && date === wanted;
+  }
+
+  function applyFilters(table) {
+    const filters = table.columnFilters;
+    const body = table.tBodies[0];
+    let shown = 0;
+    for (const row of body.rows) {
+      if (row.dataset.filterEmpty) continue;
+      const keep = [...filters].every(([index, term]) => cellMatches(row.cells[index], term));
+      row.hidden = !keep;
+      if (keep) shown++;
+    }
+
+    let empty = body.querySelector("tr[data-filter-empty]");
+    if (shown === 0 && filters.size > 0) {
+      if (!empty) {
+        empty = body.insertRow();
+        empty.dataset.filterEmpty = "true";
+        const cell = empty.insertCell();
+        cell.colSpan = table.tHead.rows[0].cells.length;
+        cell.className = "text-center text-muted py-4";
+        cell.textContent = "Tidak ada data yang cocok dengan pencarian kolom.";
+      }
+    } else {
+      empty?.remove();
+    }
+  }
+
+  function filterBy(table, button, index, value) {
+    const term = normalize(value);
+    if (term) table.columnFilters.set(index, term);
+    else table.columnFilters.delete(index);
+
+    if (term) button.dataset.filterValue = value;
+    else delete button.dataset.filterValue;
+    button.querySelector(".column-filter-mark")?.remove();
+    if (term) {
+      const mark = document.createElement("span");
+      mark.className = "column-filter-mark";
+      mark.setAttribute("aria-hidden", "true");
+      button.append(mark);
+    }
+    applyFilters(table);
+  }
+
   function columnKind(table, index) {
     const first = [...table.tBodies[0].rows].map((row) => sortValue(row.cells[index])).find((v) => !v.empty);
     if (first?.date != null) return "date";
@@ -83,6 +140,7 @@
   function enhance(table) {
     if (!canSort(table)) return;
     table.dataset.sortReady = "true";
+    table.columnFilters = new Map();
 
     [...table.tHead.rows[0].cells].forEach((header, index) => {
       const label = header.textContent.replace(/\s+/g, " ").trim().toLowerCase();
@@ -99,7 +157,10 @@
       button.setAttribute("aria-haspopup", "dialog");
       button.setAttribute("aria-expanded", "false");
       button.append(text);
+      button.dataset.filterKey = String(index);
+      button.dataset.filterClient = "true";
       button.addEventListener("column-sort", (event) => sortBy(table, button, event.detail.descending));
+      button.addEventListener("column-filter", (event) => filterBy(table, button, index, event.detail.value));
       header.append(button);
     });
   }

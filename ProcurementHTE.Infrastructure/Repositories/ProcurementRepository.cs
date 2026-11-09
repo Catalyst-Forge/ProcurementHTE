@@ -63,6 +63,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
                             p.ProfitLosses.Any(pl => EF.Functions.Like(pl.SelectedVendor.VendorName, like))
                         );
                         break;
+                    default:
+                        // Start Date and the other sortable columns: the shared search by column type.
+                        if (ListSortColumns.Procurements.TryGetValue(key, out var column))
+                            query = query.Where(ListFilterExtensions.Matches(column, value));
+                        break;
                 }
             }
 
