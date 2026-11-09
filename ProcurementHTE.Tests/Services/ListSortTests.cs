@@ -86,6 +86,8 @@ public partial class ListSortTests
     [InlineData("NoWo", "WO", 3)]
     [InlineData("NoWo", "zzz", 0)]
     [InlineData("NotAColumn", "zzz", 3)]
+    [InlineData("Progress", "On Progress", 3)]
+    [InlineData("Progress", "Done", 0)]
     public async Task Ldp_filters_every_row_and_recounts(string column, string value, int expected)
     {
         await using var db = NewDb();
@@ -207,9 +209,23 @@ public partial class ListSortTests
     {
         var used = SortKey().Matches(File.ReadAllText(ViewPath("Ldp/_LdpTable.cshtml"))).Select(m => m.Groups[1].Value).ToList();
 
-        // SPMP, Job Name, Vendor, No PR, No PO, No SA, No SP3, Submit Loket; the rest is on the detail page.
-        Assert.Equal(8, used.Count);
+        // SPMP, Job Name, Vendor, No PR, No PO, No SA, No SP3, Submit Loket, and Aksi (the status);
+        // the rest is on the detail page.
+        Assert.Equal(9, used.Count);
         Assert.All(used, key => Assert.NotNull(LdpRepository.FindColumn(key)));
+    }
+
+    [Fact]
+    public void Every_ldp_archive_header_key_is_a_list_property()
+    {
+        var text = File.ReadAllText(ViewPath("LdpArchive/Index.cshtml"));
+        var used = SortKey().Matches(text).Select(m => m.Groups[1].Value)
+            .Concat(FilterKey().Matches(text).Select(m => m.Groups[1].Value))
+            .ToList();
+
+        // The LDP columns without Submit Loket, which the old spreadsheet does not have.
+        Assert.Equal(16, used.Count);
+        Assert.All(used, key => Assert.NotNull(LdpArchiveRepository.FindColumn(key)));
     }
 
     private static string ViewPath(string view)

@@ -4,7 +4,8 @@
     Func<string?, string> formatText = value => !string.IsNullOrWhiteSpace(value) ? value : "-";
 }
 @* The LDP shows the main columns only. A job's name, or its eye icon, opens every column:
-   Ldp/Details for a job run in Docutrax, LdpArchive/Details for an archived one. *@
+   Ldp/Details for a job run in Docutrax, LdpArchive/Details for an archived one.
+   Aksi starts with the row's status: Done once every column here is filled (LdpProgress). *@
 <div class="table-responsive border rounded-3 mb-2">
     <table id="ldpTable" class="table table-hover align-middle mb-0 mobile-table finance-table ldp-table">
         <thead class="table-light">
@@ -17,7 +18,7 @@
                 <th scope="col" sort-key="SANo" filter-key="SANo" class="border-end">No SA</th>
                 <th scope="col" sort-key="SP3No" filter-key="SP3No" class="border-end">No SP3</th>
                 <th scope="col" sort-key="TglSubmitLoket" sort-kind="date" filter-key="TglSubmitLoket" class="border-end">Submit Loket</th>
-                <th scope="col">Aksi</th>
+                <th scope="col" sort-key="Progress" filter-key="Progress">Aksi</th>
             </tr>
         </thead>
 
@@ -67,35 +68,38 @@
                         <td data-label="No SA">@formatText(item.SANo)</td>
                         <td data-label="No SP3">@formatText(item.SP3No)</td>
                         <td data-label="Submit Loket">@formatDate(item.TglSubmitLoket)</td>
-                        <td data-label="Aksi" class="text-center">
-                            <div class="row-actions">
-                                <a class="btn btn-row" href="@detailUrl" aria-label="Detail" title="Detail">
-                                    <i class="bi bi-eye" aria-hidden="true"></i>
-                                </a>
-                                @if (isAdmin && archived)
-                                {
-                                    <a class="btn btn-row" asp-controller="LdpArchive" asp-action="Edit" asp-route-id="@item.ArchiveRowId" aria-label="Edit" title="Edit">
-                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                        <td data-label="Aksi">
+                            <div class="finance-actions">
+                                @await Html.PartialAsync("_FinanceStatus", (item.IsCancelled, item.Progress == ProcurementHTE.Core.Common.LdpProgress.Done))
+                                <div class="row-actions">
+                                    <a class="btn btn-row" href="@detailUrl" aria-label="Detail" title="Detail">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
                                     </a>
-                                    <form asp-controller="LdpArchive" asp-action="Delete" asp-route-id="@item.ArchiveRowId" asp-route-returnUrl="@returnUrl"
-                                          method="post" class="delete-form"
-                                          data-confirm-title="Hapus pekerjaan ini?"
-                                          data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
-                                          data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
-                                        <button type="submit" class="btn btn-row btn-row--danger" aria-label="Hapus" title="Hapus">
+                                    @if (isAdmin && archived)
+                                    {
+                                        <a class="btn btn-row" asp-controller="LdpArchive" asp-action="Edit" asp-route-id="@item.ArchiveRowId" aria-label="Edit" title="Edit">
+                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        </a>
+                                        <form asp-controller="LdpArchive" asp-action="Delete" asp-route-id="@item.ArchiveRowId" asp-route-returnUrl="@returnUrl"
+                                              method="post" class="delete-form"
+                                              data-confirm-title="Hapus pekerjaan ini?"
+                                              data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
+                                              data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
+                                            <button type="submit" class="btn btn-row btn-row--danger" aria-label="Hapus" title="Hapus">
+                                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (isAdmin)
+                                    {
+                                        <a class="btn btn-row" asp-controller="Procurements" asp-action="Edit" asp-route-id="@item.ProcurementId" aria-label="Edit" title="Edit">
+                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        </a>
+                                        <a class="btn btn-row btn-row--danger" asp-controller="Procurements" asp-action="Delete" asp-route-id="@item.ProcurementId" aria-label="Hapus" title="Hapus">
                                             <i class="bi bi-trash" aria-hidden="true"></i>
-                                        </button>
-                                    </form>
-                                }
-                                else if (isAdmin)
-                                {
-                                    <a class="btn btn-row" asp-controller="Procurements" asp-action="Edit" asp-route-id="@item.ProcurementId" aria-label="Edit" title="Edit">
-                                        <i class="bi bi-pencil" aria-hidden="true"></i>
-                                    </a>
-                                    <a class="btn btn-row btn-row--danger" asp-controller="Procurements" asp-action="Delete" asp-route-id="@item.ProcurementId" aria-label="Hapus" title="Hapus">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </a>
-                                }
+                                        </a>
+                                    }
+                                </div>
                             </div>
                         </td>
                     </tr>

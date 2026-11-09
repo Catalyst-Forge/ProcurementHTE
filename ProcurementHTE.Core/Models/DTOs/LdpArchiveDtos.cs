@@ -28,6 +28,9 @@ public sealed class LdpArchiveListItem
     public string? PicPr { get; init; }
     public string? PicOps { get; init; }
     public string? Status { get; init; }
+
+    /// <summary>Done or On Progress, as in the LDP; see <see cref="LdpProgress"/>. Sorts and filters as a column.</summary>
+    public string Progress => LdpProgress.Of(NoSpmp, JobName, VendorName, NoPr, NoPo, NoSa, NoSp3, null, archived: true);
 }
 
 public sealed record LdpArchiveQuery(

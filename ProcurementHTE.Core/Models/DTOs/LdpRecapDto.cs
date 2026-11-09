@@ -54,6 +54,12 @@ namespace ProcurementHTE.Core.Models.DTOs
 
         /// <summary>Set when the row comes from Arsip LDP instead of a Docutrax job.</summary>
         public string? ArchiveRowId { get; set; }
+
+        public bool IsCancelled { get; set; }
+
+        /// <summary>Done, On Progress, or Cancel; see <see cref="Common.LdpProgress"/>. Sorts and filters as a column.</summary>
+        public string Progress =>
+            Common.LdpProgress.Of(NoSpmp, TextPekerjaan, NamaVendor, NoPr, NoPo, SANo, SP3No, TglSubmitLoket, ArchiveRowId is not null, IsCancelled);
         public string? PicApPo { get; set; }
 
         // Items

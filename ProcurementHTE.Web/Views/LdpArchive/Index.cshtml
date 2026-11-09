@@ -5,15 +5,13 @@
     var search = Context.Request.Query["search"].ToString();
     var filtered = !string.IsNullOrWhiteSpace(search) || Context.Request.ReadListFilters().Count > 0;
     var isAdmin = User.IsInRole("Admin");
-    string Date(DateTime? value) => value?.ToTanggalIndonesia("dd MMM yyyy") ?? "-";
-    string Money(decimal? value) => value is null ? "-" : value.ToIDR();
     string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value;
 }
 
 <header class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
     <div class="page-header-text">
         <h1 class="h3 mb-0">Arsip LDP</h1>
-        <p class="text-muted mb-0">Pekerjaan Completed dari Excel LDP. Yang mulai Juli–September 2026 tampil di LDP. Tidak masuk dashboard dan approval.</p>
+        <p class="text-muted mb-0">Pekerjaan Completed dari Excel LDP. Yang mulai Juli–September 2026 tampil di LDP. Tidak masuk dashboard dan approval. Klik nama pekerjaan untuk semua kolomnya.</p>
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
         <span class="badge bg-info fs-6">Total: @Model.Total.ToString("N0", CultureInfo.GetCultureInfo("id-ID")) data</span>
@@ -47,38 +45,28 @@
 
 <div class="column-filter-chips" data-column-filter-chips hidden></div>
 
+@* The same columns as the LDP. A job's name, or its eye icon, opens every column of the row.
+   The old spreadsheet has no Submit Loket, so that column stays "-" here. *@
 <div class="table-responsive border rounded-3 mb-2">
-    <table class="table table-hover align-middle table-sm mb-0 mobile-table ldp-table" data-view="all">
+    <table class="table table-hover align-middle mb-0 mobile-table finance-table ldp-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th scope="col" sort-key="NoPr" filter-key="NoPr" class="border-end position-sticky start-0 bg-light ldp-pinned" style="--ldp-col-width: 120px; z-index: 2;">No PR</th>
-                <th scope="col" sort-key="PrCreatedAt" sort-kind="date" class="border-end ldp-col ldp-summary" style="--ldp-col-width: 110px;">Tgl PR</th>
-                <th scope="col" sort-key="VendorName" filter-key="VendorName" class="border-end ldp-col ldp-summary" style="--ldp-col-width: 170px;">Vendor</th>
-                <th scope="col" sort-key="JobName" filter-key="JobName" class="border-end ldp-col ldp-summary" style="--ldp-col-width: 300px;">Pekerjaan</th>
-                <th scope="col" sort-key="JobType" filter-key="JobType" class="border-end ldp-col ldp-summary" style="--ldp-col-width: 100px;">Job Type</th>
-                <th scope="col" sort-key="ContractType" filter-key="ContractType" class="border-end ldp-col ldp-summary" style="--ldp-col-width: 90px;">Kontrak</th>
-                <th scope="col" sort-key="Wo" filter-key="Wo" class="border-end ldp-col ldp-job" style="--ldp-col-width: 180px;">WO</th>
-                <th scope="col" sort-key="NoSpk" filter-key="NoSpk" class="border-end ldp-col ldp-job" style="--ldp-col-width: 140px;">No SPK</th>
-                <th scope="col" sort-key="LtcName" filter-key="LtcName" class="border-end ldp-col ldp-job" style="--ldp-col-width: 160px;">LTC</th>
-                <th scope="col" sort-key="YearJob" filter-key="YearJob" class="border-end ldp-col ldp-job" style="--ldp-col-width: 80px;">Tahun</th>
-                <th scope="col" sort-key="StartDate" sort-kind="date" class="border-end ldp-col ldp-job" style="--ldp-col-width: 110px;">Tgl Mulai</th>
-                <th scope="col" sort-key="EndDate" sort-kind="date" class="border-end ldp-col ldp-job" style="--ldp-col-width: 110px;">Tgl Selesai</th>
-                <th scope="col" sort-key="PicPr" filter-key="PicPr" class="border-end ldp-col ldp-job" style="--ldp-col-width: 110px;">PIC PR</th>
-                <th scope="col" sort-key="PicOps" filter-key="PicOps" class="border-end ldp-col ldp-job" style="--ldp-col-width: 110px;">PIC Ops</th>
-                <th scope="col" sort-key="NilaiPnl" sort-kind="number" class="border-end text-end ldp-col ldp-finance" style="--ldp-col-width: 140px;">Nilai P&amp;L</th>
-                <th scope="col" sort-key="NilaiRealisasi" sort-kind="number" class="border-end text-end ldp-col ldp-summary ldp-finance" style="--ldp-col-width: 140px;">Realisasi</th>
-                <th scope="col" sort-key="NoSpmp" filter-key="NoSpmp" class="border-end ldp-col ldp-finance" style="--ldp-col-width: 140px;">No SPMP</th>
-                <th scope="col" sort-key="NoPo" filter-key="NoPo" class="border-end ldp-col ldp-docs" style="--ldp-col-width: 130px;">No PO</th>
-                <th scope="col" sort-key="NoSa" filter-key="NoSa" class="border-end ldp-col ldp-docs" style="--ldp-col-width: 130px;">No SA</th>
-                <th scope="col" sort-key="NoSp3" filter-key="NoSp3" class="border-end ldp-col ldp-docs" style="--ldp-col-width: 200px;">No SP3</th>
-                <th scope="col" class="position-sticky end-0 bg-light text-center ldp-pinned" style="--ldp-col-width: 190px; z-index: 2;">Aksi</th>
+                <th scope="col" sort-key="NoSpmp" filter-key="NoSpmp" class="border-end">SPMP</th>
+                <th scope="col" sort-key="JobName" filter-key="JobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="VendorName" filter-key="VendorName" class="border-end">Vendor Terpilih</th>
+                <th scope="col" sort-key="NoPr" filter-key="NoPr" class="border-end">No PR</th>
+                <th scope="col" sort-key="NoPo" filter-key="NoPo" class="border-end">No PO</th>
+                <th scope="col" sort-key="NoSa" filter-key="NoSa" class="border-end">No SA</th>
+                <th scope="col" sort-key="NoSp3" filter-key="NoSp3" class="border-end">No SP3</th>
+                <th scope="col" class="border-end" title="Excel LDP lama tidak mencatat Submit Loket">Submit Loket</th>
+                <th scope="col" sort-key="Progress" filter-key="Progress">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @if (Model.Items.Count == 0)
             {
                 <tr>
-                    <td colspan="21" class="text-center text-muted py-4">
+                    <td colspan="9" class="text-center text-muted py-4">
                         @(filtered ? "Tidak ada arsip yang cocok." : "Arsip LDP belum diisi.")
                     </td>
                 </tr>
@@ -86,43 +74,39 @@
             @foreach (var item in Model.Items)
             {
                 <tr>
-                    <td data-label="No PR" class="position-sticky start-0 bg-white ldp-pinned" style="z-index: 1;">
-                        @Text(item.NoPr)
-                        <small class="ldp-job-hint" title="@item.JobName">@item.JobName</small>
+                    <td data-label="SPMP" title="@item.NoSpmp">@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.NoSpmp) ?? "-")</td>
+                    <td data-label="Job Name" class="finance-col-wrap">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold text-decoration-none">@Text(item.JobName)</a>
                     </td>
-                    <td data-label="Tgl PR" class="text-nowrap ldp-col ldp-summary">@Date(item.PrCreatedAt)</td>
-                    <td data-label="Vendor" class="ldp-col ldp-summary"><span class="ldp-clamp" title="@item.VendorName">@Text(item.VendorName)</span></td>
-                    <td data-label="Pekerjaan" class="ldp-col ldp-summary"><span class="ldp-clamp" title="@item.JobName">@Text(item.JobName)</span></td>
-                    <td data-label="Job Type" class="ldp-col ldp-summary">@Text(item.JobType)</td>
-                    <td data-label="Kontrak" class="ldp-col ldp-summary">@Text(item.ContractType)</td>
-                    <td data-label="WO" class="ldp-col ldp-job">@Text(item.Wo)</td>
-                    <td data-label="No SPK" class="ldp-col ldp-job">@Text(item.NoSpk)</td>
-                    <td data-label="LTC" class="ldp-col ldp-job"><span class="ldp-clamp" title="@item.LtcName">@Text(item.LtcName)</span></td>
-                    <td data-label="Tahun" class="ldp-col ldp-job">@Text(item.YearJob)</td>
-                    <td data-label="Tgl Mulai" class="text-nowrap ldp-col ldp-job">@Date(item.StartDate)</td>
-                    <td data-label="Tgl Selesai" class="text-nowrap ldp-col ldp-job">@Date(item.EndDate)</td>
-                    <td data-label="PIC PR" class="ldp-col ldp-job">@Text(item.PicPr)</td>
-                    <td data-label="PIC Ops" class="ldp-col ldp-job">@Text(item.PicOps)</td>
-                    <td data-label="Nilai P&amp;L" class="text-end text-nowrap ldp-col ldp-finance">@Money(item.NilaiPnl)</td>
-                    <td data-label="Realisasi" class="text-end text-nowrap ldp-col ldp-summary ldp-finance">@Money(item.NilaiRealisasi)</td>
-                    <td data-label="No SPMP" class="ldp-col ldp-finance">@Text(item.NoSpmp)</td>
-                    <td data-label="No PO" class="ldp-col ldp-docs">@Text(item.NoPo)</td>
-                    <td data-label="No SA" class="ldp-col ldp-docs">@Text(item.NoSa)</td>
-                    <td data-label="No SP3" class="ldp-col ldp-docs">@Text(item.NoSp3)</td>
-                    <td data-label="Aksi" class="position-sticky end-0 bg-white text-center ldp-pinned" style="z-index: 1;">
-                        <div class="d-flex justify-content-center gap-1">
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Detail</a>
-                            @if (isAdmin)
-                            {
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
-                                      method="post" class="delete-form d-inline"
-                                      data-confirm-title="Hapus baris arsip ini?"
-                                      data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
-                                      data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
-                                </form>
-                            }
+                    <td data-label="Vendor Terpilih" class="finance-col-wrap">@Text(item.VendorName)</td>
+                    <td data-label="No PR">@Text(item.NoPr)</td>
+                    <td data-label="No PO">@Text(item.NoPo)</td>
+                    <td data-label="No SA">@Text(item.NoSa)</td>
+                    <td data-label="No SP3">@Text(item.NoSp3)</td>
+                    <td data-label="Submit Loket">-</td>
+                    <td data-label="Aksi">
+                        <div class="finance-actions">
+                            @await Html.PartialAsync("_FinanceStatus", (false, item.Progress == ProcurementHTE.Core.Common.LdpProgress.Done))
+                            <div class="row-actions">
+                                <a class="btn btn-row" asp-action="Details" asp-route-id="@item.Id" aria-label="Detail" title="Detail">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </a>
+                                @if (isAdmin)
+                                {
+                                    <a class="btn btn-row" asp-action="Edit" asp-route-id="@item.Id" aria-label="Edit" title="Edit">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
+                                          method="post" class="delete-form"
+                                          data-confirm-title="Hapus baris arsip ini?"
+                                          data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
+                                          data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
+                                        <button type="submit" class="btn btn-row btn-row--danger" aria-label="Hapus" title="Hapus">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
                         </div>
                     </td>
                 </tr>

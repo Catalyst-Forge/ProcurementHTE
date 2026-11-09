@@ -66,6 +66,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return new LdpRecapDto
             {
                 ProcurementId = p.ProcurementId,
+                IsCancelled = p.ProcurementStatus == ProcurementStatus.Cancelled,
 
                 // Basic Info
                 NoWo = p.Wonum,
