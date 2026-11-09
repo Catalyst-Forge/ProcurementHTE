@@ -43,7 +43,7 @@
             @foreach (var row in Model.Items)
             {
                 <tr>
-                    <td data-label="SPMP">@Text(row.Spmp)</td>
+                    <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
                     <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
                     <td data-label="No PR">@Text(row.PrNumber)</td>
                     <td data-label="Nilai P&amp;L" class="text-end">@FinanceTable.FormatMoney(row.NilaiPnl)</td>

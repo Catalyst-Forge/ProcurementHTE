@@ -366,6 +366,20 @@ public static class FinanceTable
     /// <summary>Keys the tables may use in sort-key and filter-key.</summary>
     public static IReadOnlyCollection<string> ColumnKeys => Columns.Keys.ToList();
 
+    /// <summary>
+    /// The SPMP number without its reference suffix, as the tables show it:
+    /// "0003/PDC-1110/2026-S0" becomes "0003". The full number stays on the detail pages.
+    /// </summary>
+    public static string? ShortSpmp(string? spmp)
+    {
+        if (string.IsNullOrWhiteSpace(spmp))
+            return null;
+
+        var trimmed = spmp.Trim();
+        var slash = trimmed.IndexOf('/');
+        return slash > 0 ? trimmed[..slash].Trim() : trimmed;
+    }
+
     public static string FormatDate(DateTime? date) => date?.ToString("dd MMM yyyy", Id) ?? "-";
 
     public static string FormatMoney(decimal? value) => value.HasValue ? value.Value.ToString("N0", Id) : "-";

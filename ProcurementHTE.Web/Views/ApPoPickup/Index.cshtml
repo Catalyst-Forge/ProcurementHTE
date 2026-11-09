@@ -51,7 +51,7 @@
             @foreach (var row in Model.Items)
             {
                 <tr>
-                    <td data-label="SPMP">@(string.IsNullOrWhiteSpace(row.Spmp) ? "-" : row.Spmp)</td>
+                    <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
                     <td data-label="Job Name" class="finance-col-wrap">
                         <a href="@Url.Action("Index", "ProcurementDocuments", new { procurementId = row.ProcurementId })" class="fw-semibold text-decoration-none">@row.JobName</a>
                     </td>

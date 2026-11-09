@@ -58,7 +58,7 @@
                     var canDeleteThisItem = User.IsInRole("Admin") || (canManage && canDelete.Succeeded && !isPublished);
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="SPMP">
-                            @(string.IsNullOrWhiteSpace(item.SpmpNumber) ? "-" : item.SpmpNumber)
+                            @(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.SpmpNumber) ?? "-")
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
                             @item.JobName

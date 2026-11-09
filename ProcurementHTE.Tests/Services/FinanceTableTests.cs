@@ -363,6 +363,17 @@ public class FinanceTableTests
         Assert.Single(page.Items);
     }
 
+    [Theory]
+    [InlineData("0003/PDC-1110/2026-S0", "0003")]
+    [InlineData("4841/PDC-1110/2026-S0", "4841")]
+    [InlineData(" 4514 ", "4514")]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void Tables_show_the_spmp_number_without_its_suffix(string? spmp, string? shown)
+    {
+        Assert.Equal(shown, FinanceTable.ShortSpmp(spmp));
+    }
+
     [Fact]
     public void Published_statuses_leave_out_draft_and_created()
     {
