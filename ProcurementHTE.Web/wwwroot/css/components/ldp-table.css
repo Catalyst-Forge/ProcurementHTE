@@ -122,3 +122,86 @@
 .ldp-details__group dd {
   font-variant-numeric: tabular-nums;
 }
+
+/* --- Job detail page (Views/Shared/_JobDetailHeader and _JobDetailBody) ---
+   The columns the tables show, as label-over-value tiles that flow into as many columns as fit;
+   then the tracking; then every column. */
+.job-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.875rem 1.5rem;
+}
+
+.job-summary__item {
+  min-width: 0;
+}
+
+.job-summary dt {
+  margin-bottom: 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color);
+}
+
+.job-summary dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The Tracking page's cards space themselves for a single column; side by side they start level. */
+.job-tracking > [class*="col-"] > .card:first-child {
+  margin-top: 0 !important;
+}
+
+/* An archived job's stages, in order, each with the date the spreadsheet recorded. */
+.job-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.625rem;
+  padding: 0;
+  list-style: none;
+}
+
+.job-steps__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+}
+
+.job-steps__mark {
+  grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  color: var(--bs-secondary-color);
+  background: var(--bs-tertiary-bg);
+}
+
+.job-steps__item.is-done .job-steps__mark {
+  color: var(--bs-success-text-emphasis);
+  background: var(--bs-success-bg-subtle);
+}
+
+.job-steps__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.job-steps__date {
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.job-excel > summary {
+  cursor: pointer;
+}

@@ -22,6 +22,7 @@ public class LdpArchiveController(
     ILdpArchiveRepository archive,
     ILdpArchiveImporter importer,
     ILdpArchiveRangeService ranges,
+    ILdpService ldp,
     IExcelExporter excel,
     IMemoryCache cache
 ) : Controller
@@ -37,15 +38,23 @@ public class LdpArchiveController(
         return View(await archive.SearchAsync(Query(search, page, pageSize), ct));
     }
 
+    // The same detail page as a Docutrax job's, with tracking from the spreadsheet dates and
+    // every spreadsheet value. Arsip LDP and the LDP open it; from names the way back.
     [HttpGet]
-    public async Task<IActionResult> Details(string id, CancellationToken ct = default)
+    public async Task<IActionResult> Details(string id, string? from = null, CancellationToken ct = default)
     {
         var row = await archive.GetAsync(id, ct);
-        if (row is null)
+        var job = row is null ? null : await ldp.GetArchiveByIdAsync(id, ct);
+        if (row is null || job is null)
             return NotFound();
 
-        var values = JsonSerializer.Deserialize<List<LdpArchiveValue>>(row.ValuesJson, JsonOptions) ?? [];
-        return View(new LdpArchiveDetailsViewModel { Row = row, Values = values });
+        return View(new JobDetailViewModel
+        {
+            Job = job,
+            ArchiveSteps = LdpArchiveTracking.Steps(row),
+            ExcelValues = JsonSerializer.Deserialize<List<LdpArchiveValue>>(row.ValuesJson, JsonOptions) ?? [],
+            Origin = JobDetailOrigin.From(from, JobDetailOrigin.Arsip),
+        });
     }
 
     [HttpGet]

@@ -1,14 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
-using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Models.ViewModels;
-
-public class LdpArchiveDetailsViewModel
-{
-    public required LdpArchiveRow Row { get; init; }
-    public required IReadOnlyList<LdpArchiveValue> Values { get; init; }
-}
 
 /// <summary>One spreadsheet cell, as the import script wrote it: a label, a type, and a value.</summary>
 public sealed class LdpArchiveValue

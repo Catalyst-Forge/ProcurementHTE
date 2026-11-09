@@ -10,7 +10,9 @@ public partial class ProcurementDocumentsController
 {
     [Authorize(Roles = ActionRoles.ApPo)]
     [HttpGet("ProcurementDocuments/Index/{procurementId}")]
-    public async Task<IActionResult> Index(string procurementId)
+    // AP-PO opens this page from a job's name (from=appo): the job's detail and tracking then
+    // lead the page, above the SPH, SNH, and documents it already shows.
+    public async Task<IActionResult> Index(string procurementId, string? from = null)
     {
         if (string.IsNullOrWhiteSpace(procurementId))
         {
@@ -63,6 +65,17 @@ public partial class ProcurementDocumentsController
                     }),
                 ],
             };
+
+            if (string.Equals(from, JobDetailOrigin.ApPo.Key, StringComparison.OrdinalIgnoreCase)
+                && await _ldp.GetByProcurementIdAsync(procurementId) is { } job)
+            {
+                vm.Detail = new JobDetailViewModel
+                {
+                    Job = job,
+                    Tracking = await _trackingService.GetTrackingByProcurementIdAsync(procurementId),
+                    Origin = JobDetailOrigin.ApPo,
+                };
+            }
 
             return View(vm);
         }

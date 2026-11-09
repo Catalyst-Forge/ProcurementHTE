@@ -102,6 +102,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
             return MapToDto(procurement, letters);
         }
 
+        /// <summary>One Arsip LDP row as an LDP row, for its detail page. Null when it does not exist.</summary>
+        public async Task<LdpRecapDto?> GetArchiveByIdAsync(string archiveRowId, CancellationToken ct = default)
+        {
+            var row = await _context.LdpArchiveRows.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.LdpArchiveRowId == archiveRowId, ct);
+            return row is null ? null : MapArchive(row);
+        }
+
         // Everything an LDP row is worked out from.
         private IQueryable<Core.Models.Procurement> JobsWithLdpData() =>
             _context

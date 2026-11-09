@@ -24,6 +24,7 @@ public partial class ProcurementDocumentsController : Controller
     private readonly IProcurementDocumentGenerator _documentGenerator;
     private readonly IDocumentTypeRepository _docTypeRepo;
     private readonly IProcurementTrackingService _trackingService;
+    private readonly ILdpService _ldp;
 
     public ProcurementDocumentsController(
         IProcurementDocumentQuery query,
@@ -34,7 +35,8 @@ public partial class ProcurementDocumentsController : Controller
         IHttpClientFactory http,
         IProcurementDocumentGenerator documentGenerator,
         IDocumentTypeRepository docTypeRepo,
-        IProcurementTrackingService trackingService
+        IProcurementTrackingService trackingService,
+        ILdpService ldp
     )
     {
         _query = query;
@@ -46,5 +48,6 @@ public partial class ProcurementDocumentsController : Controller
         _documentGenerator = documentGenerator;
         _docTypeRepo = docTypeRepo;
         _trackingService = trackingService;
+        _ldp = ldp;
     }
 }

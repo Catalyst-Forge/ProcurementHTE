@@ -82,7 +82,7 @@
                 <tr>
                     <td data-label="SPMP" title="@item.NoSpmp">@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.NoSpmp) ?? "-")</td>
                     <td data-label="Job Name" class="finance-col-wrap text-start">
-                        <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold text-decoration-none ldp-clamp" title="@item.JobName">@Text(item.JobName)</a>
+                        <a asp-action="Details" asp-route-id="@item.Id" asp-route-from="arsip" class="fw-semibold text-decoration-none ldp-clamp" title="@item.JobName">@Text(item.JobName)</a>
                     </td>
                     <td data-label="Job Type">@Text(item.JobType)</td>
                     <td data-label="Contract Type">@Text(item.ContractType)</td>
@@ -98,7 +98,7 @@
                         <div class="finance-actions">
                             @await Html.PartialAsync("_FinanceStatus", (false, item.Progress == ProcurementHTE.Core.Common.LdpProgress.Done))
                             <div class="row-actions">
-                                <a class="btn btn-row" asp-action="Details" asp-route-id="@item.Id" aria-label="Detail" title="Detail">
+                                <a class="btn btn-row" asp-action="Details" asp-route-id="@item.Id" asp-route-from="arsip" aria-label="Detail" title="Detail">
                                     <i class="bi bi-eye" aria-hidden="true"></i>
                                 </a>
                                 @if (isAdmin)

@@ -45,7 +45,9 @@
             {
                 <tr>
                     <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
-                    <td data-label="Job Name" class="finance-col-wrap text-start">@row.JobName</td>
+                    <td data-label="Job Name" class="finance-col-wrap text-start">
+                        <a asp-controller="Ldp" asp-action="Details" asp-route-id="@row.ProcurementId" asp-route-from="accrual" class="fw-semibold text-decoration-none">@row.JobName</a>
+                    </td>
                     <td data-label="Project Region">@(row.ProjectRegion ?? "-")</td>
                     <td data-label="No PR">@Text(row.PrNumber)</td>
                     <td data-label="Nilai P&amp;L" class="text-end">@FinanceTable.FormatMoney(row.NilaiPnl)</td>

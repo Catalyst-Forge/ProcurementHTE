@@ -59,8 +59,8 @@
                 {
                     var archived = item.ArchiveRowId is not null;
                     var detailUrl = archived
-                        ? Url.Action("Details", "LdpArchive", new { id = item.ArchiveRowId })
-                        : Url.Action("Details", "Ldp", new { id = item.ProcurementId });
+                        ? Url.Action("Details", "LdpArchive", new { id = item.ArchiveRowId, from = "ldp" })
+                        : Url.Action("Details", "Ldp", new { id = item.ProcurementId, from = "ldp" });
                     <tr>
                         <td data-label="SPMP" title="@item.NoSpmp">@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.NoSpmp) ?? "-")</td>
                         <td data-label="Job Name" class="finance-col-wrap text-start">

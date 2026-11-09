@@ -15,6 +15,7 @@ namespace ProcurementHTE.Web.Controllers.Ldp
         private readonly ILogger<LdpController> _logger;
         private readonly string _bucketName;
         private readonly IExcelExporter _excel;
+        private readonly IProcurementTrackingService _tracking;
 
         public LdpController(
             ILdpService ldpService,
@@ -22,7 +23,8 @@ namespace ProcurementHTE.Web.Controllers.Ldp
             IObjectStorage objectStorage,
             ILogger<LdpController> logger,
             IOptions<ObjectStorageOptions> storageOptions,
-            IExcelExporter excel)
+            IExcelExporter excel,
+            IProcurementTrackingService tracking)
         {
             _ldpService = ldpService ?? throw new ArgumentNullException(nameof(ldpService));
             _procurementRepo = procurementRepo ?? throw new ArgumentNullException(nameof(procurementRepo));
@@ -30,6 +32,7 @@ namespace ProcurementHTE.Web.Controllers.Ldp
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _bucketName = storageOptions.Value.Bucket;
             _excel = excel;
+            _tracking = tracking ?? throw new ArgumentNullException(nameof(tracking));
         }
 
         [HttpGet]
@@ -63,15 +66,26 @@ namespace ProcurementHTE.Web.Controllers.Ldp
             }
         }
 
-        /// <summary>Every LDP column of one job; the table shows only the main ones.</summary>
+        /// <summary>
+        /// One job's detail page: every LDP column and its tracking. LDP, AP-Invoice, and Data Accrual
+        /// open it; <paramref name="from"/> names the list the back button returns to.
+        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Details(string id, CancellationToken ct = default)
+        public async Task<IActionResult> Details(string id, string? from = null, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(id))
                 return NotFound();
 
             var item = await _ldpService.GetByProcurementIdAsync(id, ct);
-            return item is null ? NotFound() : View(item);
+            if (item is null)
+                return NotFound();
+
+            return View(new JobDetailViewModel
+            {
+                Job = item,
+                Tracking = await _tracking.GetTrackingByProcurementIdAsync(id, ct),
+                Origin = JobDetailOrigin.From(from),
+            });
         }
 
         [HttpPost]

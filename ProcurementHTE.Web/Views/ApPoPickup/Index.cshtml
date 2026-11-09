@@ -55,7 +55,7 @@
                 <tr>
                     <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
                     <td data-label="Job Name" class="finance-col-wrap text-start">
-                        <a href="@Url.Action("Index", "ProcurementDocuments", new { procurementId = row.ProcurementId })" class="fw-semibold text-decoration-none">@row.JobName</a>
+                        <a href="@Url.Action("Index", "ProcurementDocuments", new { procurementId = row.ProcurementId, from = "appo" })" class="fw-semibold text-decoration-none">@row.JobName</a>
                     </td>
                     <td data-label="Project Region">@(row.ProjectRegion ?? "-")</td>
                     <td data-label="No PR">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.PrNumber, row.PrNumber))</td>

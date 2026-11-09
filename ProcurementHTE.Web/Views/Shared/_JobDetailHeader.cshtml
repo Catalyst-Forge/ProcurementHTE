@@ -1,0 +1,55 @@
+@using ProcurementHTE.Core.Common
+@model ProcurementHTE.Web.Models.ViewModels.JobDetailViewModel
+@* The header of a job's detail page: the way back to the list it came from, the job's name and
+   status, and the actions on it. Shared by Ldp/Details, LdpArchive/Details, and the AP-PO view
+   of ProcurementDocuments. *@
+@{
+    var job = Model.Job;
+    var isAdmin = User.IsInRole("Admin");
+    var source = Model.IsArchived ? "Arsip LDP, dari Excel LDP lama" : "Pekerjaan Docutrax";
+    var onDocumentsPage = Model.Origin == ProcurementHTE.Web.Models.ViewModels.JobDetailOrigin.ApPo;
+}
+
+<header class="mb-3">
+    <a href="@Url.Action("Index", Model.Origin.Controller)" class="back-link">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>@Model.Origin.Label
+    </a>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mt-2">
+        <div class="page-header-text">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <h1 class="h4 mb-0 text-break">@(string.IsNullOrWhiteSpace(job.TextPekerjaan) ? "Pekerjaan tanpa nama" : job.TextPekerjaan)</h1>
+                @await Html.PartialAsync("_FinanceStatus", (job.IsCancelled, job.Progress == LdpProgress.Done))
+            </div>
+            <p class="text-muted small mb-0">@source</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            @if (!Model.IsArchived && !onDocumentsPage)
+            {
+                <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-procurementId="@job.ProcurementId" class="btn btn-outline-primary">
+                    <i class="bi bi-folder2-open" aria-hidden="true"></i> Dokumen pekerjaan
+                </a>
+            }
+            @if (isAdmin && Model.IsArchived)
+            {
+                <a asp-controller="LdpArchive" asp-action="Edit" asp-route-id="@job.ArchiveRowId" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil" aria-hidden="true"></i> Edit
+                </a>
+                <form asp-controller="LdpArchive" asp-action="Delete" asp-route-id="@job.ArchiveRowId" method="post" class="delete-form"
+                      data-confirm-title="Hapus baris arsip ini?"
+                      data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
+                      data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
+                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash" aria-hidden="true"></i> Hapus</button>
+                </form>
+            }
+            else if (isAdmin && !job.IsCancelled)
+            {
+                <a asp-controller="Procurements" asp-action="Edit" asp-route-id="@job.ProcurementId" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil" aria-hidden="true"></i> Edit
+                </a>
+                <a asp-controller="Procurements" asp-action="Delete" asp-route-id="@job.ProcurementId" class="btn btn-outline-danger">
+                    <i class="bi bi-trash" aria-hidden="true"></i> Hapus
+                </a>
+            }
+        </div>
+    </div>
+</header>

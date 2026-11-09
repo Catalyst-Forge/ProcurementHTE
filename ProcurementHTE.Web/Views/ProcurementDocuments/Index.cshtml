@@ -23,7 +23,16 @@
 }
 
 <div class="container-fluid py-4">
-    @await Html.PartialAsync("Partials/_ProcurementDocumentsHeader", Model)
+    @if (Model.Detail is { } detail)
+    {
+        @await Html.PartialAsync("_JobDetailHeader", detail)
+        @await Html.PartialAsync("_JobDetailBody", detail)
+        <h2 class="h5 mt-4 mb-3">Dokumen pekerjaan</h2>
+    }
+    else
+    {
+        @await Html.PartialAsync("Partials/_ProcurementDocumentsHeader", Model)
+    }
     @await Html.PartialAsync("Partials/_ProcurementDocumentsSummaryCard", summaryStats)
     @await Html.PartialAsync("Partials/_ProcurementDocumentsRoundLetters", Model)
     @await Html.PartialAsync("Partials/_ProcurementDocumentsTable", Model)

@@ -7,6 +7,9 @@ public class ProcurementRequiredDocsVm
     public string ProcurementId { get; set; } = default!;
     public string JobTypeId { get; set; } = default!;
     public List<RequiredDocItemDto> Items { get; set; } = [];
+
+    /// <summary>The job's detail and tracking, shown above the documents when AP-PO opens the page.</summary>
+    public JobDetailViewModel? Detail { get; set; }
 }
 
 public class UploadProcDocumentVm

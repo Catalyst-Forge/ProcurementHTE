@@ -67,55 +67,14 @@ namespace ProcurementHTE.Web.Controllers.ApInvoicePickup
                 ct
             );
 
+        /// <summary>
+        /// The old invoice detail page. The invoice is filled in the AP-Invoice table now, so the
+        /// job's detail page, shared with LDP and Data Accrual, takes its place.
+        /// </summary>
         [HttpGet("Details/{id}")]
-        public async Task<IActionResult> Details(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
-
-            try
-            {
-                var procurement = await _queryService.GetProcurementByIdAsync(id);
-                if (procurement == null)
-                    return NotFound();
-
-                return View(procurement);
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Gagal memuat detail procurement: {ex.Message}";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [Authorize(Roles = ActionRoles.ApInvoice)]
-        [HttpPost("UpdateInvoiceData/{id}")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateInvoiceData(
-            string id,
-            string? saNo,
-            string? sp3No
-        )
-        {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                if (string.IsNullOrEmpty(userId))
-                {
-                    TempData["ErrorMessage"] = "User tidak ditemukan";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                await _workflowService.UpdateInvoiceDataAsync(id, saNo, sp3No, userId);
-                TempData["SuccessMessage"] = "Data invoice berhasil diperbarui";
-
-                return RedirectToAction(nameof(Details), new { id });
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Gagal memperbarui data invoice: {ex.Message}";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-        }
+        public IActionResult Details(string id) =>
+            string.IsNullOrEmpty(id)
+                ? NotFound()
+                : RedirectToAction("Details", "Ldp", new { id, from = "apinvoice" });
     }
 }

@@ -16,6 +16,8 @@ namespace ProcurementHTE.Core.Interfaces
         /// <summary>One job with every LDP column, for its detail page.</summary>
         Task<LdpRecapDto?> GetByProcurementIdAsync(string procurementId, CancellationToken ct = default);
 
+        Task<LdpRecapDto?> GetArchiveByIdAsync(string archiveRowId, CancellationToken ct = default);
+
         /// <summary>Every row the current search, filters, and sort match, for an export.</summary>
         Task<IReadOnlyList<LdpRecapDto>> GetAllForExportAsync(string? search, CancellationToken ct = default);
     }

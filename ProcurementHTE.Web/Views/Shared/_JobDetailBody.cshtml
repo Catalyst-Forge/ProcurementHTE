@@ -1,0 +1,185 @@
+@using ProcurementHTE.Core.Finance
+@model ProcurementHTE.Web.Models.ViewModels.JobDetailViewModel
+@* The body of a job's detail page: the LDP columns the tables show, the job's tracking, then
+   every LDP column in groups. A Docutrax job's tracking is the Tracking page's own cards; an
+   Arsip LDP row's comes from its spreadsheet dates. *@
+@{
+    var item = Model.Job;
+    string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value;
+    string Date(DateTime? value) => FinanceTable.FormatDate(value);
+    string DateTimeText(DateTime? value) => value?.ToString("dd MMM yyyy HH:mm", System.Globalization.CultureInfo.GetCultureInfo("id-ID")) ?? "-";
+    string Money(decimal? value) => FinanceTable.FormatMoney(value);
+
+    var summary = new (string Label, string Value)[]
+    {
+        ("SPMP", Text(item.NoSpmp)),
+        ("Job Type", Text(item.JobType)),
+        ("Contract Type", Text(item.ContractType)),
+        ("Project Region", Text(item.ProjectRegion)),
+        ("Start Date", Date(item.TglMulai)),
+        ("Vendor Terpilih", Text(item.NamaVendor)),
+        ("No PR", Text(item.NoPr)),
+        ("No PO", Text(item.NoPo)),
+        ("No SA", Text(item.SANo)),
+        ("No SP3", Text(item.SP3No)),
+        ("Submit Loket", Model.IsArchived ? "Tidak dicatat di Excel" : Date(item.TglSubmitLoket)),
+    };
+
+    var sections = new (string Title, (string Label, string Value)[] Rows)[]
+    {
+        ("Pekerjaan", [
+            ("No WO", Text(item.NoWo)),
+            ("No SPK", Text(item.NoSpk)),
+            ("LTC Name", Text(item.LtcName)),
+            ("Project Code", Text(item.ProjectCode)),
+            ("No HTE", Text(item.NoHte)),
+            ("No Rig", Text(item.NoRig)),
+            ("Year Job", item.YearJob?.ToString() ?? "-"),
+            ("Tgl Selesai", Date(item.TglSelesai)),
+            ("Text Pekerjaan PR", Text(item.TextPekerjaanPr)),
+            ("50K", Text(item.Flag50K)),
+            ("Unit Item", Text(item.UnitItemPenawaran)),
+            ("Keterangan-1", Text(item.Keterangan1)),
+        ]),
+        ("Vendor dan nilai", [
+            ("Surat Penawaran", Text(item.SuratPenawaranVendor)),
+            ("Nilai PnL", Money(item.NilaiPnl)),
+            ("Nilai Accrual", Money(item.NilaiAccrual)),
+            ("Nilai Realisasi", Money(item.NilaiRealisasi)),
+        ]),
+        ("Accrual", [
+            ("No Accrual", Text(item.NoAccrual)),
+            ("Potensi Accrual", Money(item.PotensiAccrual)),
+            ("Tgl Accrual", Date(item.TglAccrual)),
+            ("Status Accrual", Text(item.StatusAccrual)),
+        ]),
+        ("PR dan PO", [
+            ("Tgl Buat PR", DateTimeText(item.TanggalBuatPr)),
+            ("Tgl Rilis PR", DateTimeText(item.TanggalRilisPr)),
+            ("Tgl Submit INPRO", Date(item.TanggalSubmitIspa)),
+            ("Submit Hard Copy", Date(item.TglSubmitHardcopy)),
+            ("No RA", Text(item.NoRa)),
+            ("PIC AP-PO", Text(item.PicApPo)),
+        ]),
+        ("Invoice", [
+            ("No Invoice", Text(item.NoInvoice)),
+            ("Tgl Invoice", Date(item.TglInvoice)),
+            ("Tgl SA", Date(item.TglSa)),
+            ("Tgl SP3", Date(item.TglSp3)),
+            ("PIC AP-Invoice", Text(item.PicApInvoice)),
+        ]),
+        ("Approval", [
+            ("Approval Analyst", Date(item.TanggalApprovalAnalyst)),
+            ("Approval Asst. Manager", Date(item.TanggalApprovalAsstManager)),
+            ("Approval Manager", Date(item.ManagerApprovalSelesai)),
+            ("Approval VP", Date(item.VpApprovalSelesai)),
+        ]),
+        ("Dokumen", [
+            ("Memorandum", Text(item.Memorandum)),
+            ("Tgl Doc", Date(item.TglDoc)),
+            ("RKS Tgl Selesai", Date(item.RksTglSelesai)),
+            ("BOQ Tgl Selesai", Date(item.BoqTglSelesai)),
+            ("Memo Tgl Selesai", Date(item.MemoTglSelesai)),
+            ("RA Tgl Selesai", Date(item.RaTglSelesai)),
+            ("Link Dokumen", string.IsNullOrWhiteSpace(item.LinkDokumen) ? "-" : "Ada"),
+        ]),
+    };
+}
+
+<section class="card shadow-sm rounded-4 mb-3" aria-labelledby="job-summary-title">
+    <div class="card-body">
+        <h2 class="visually-hidden" id="job-summary-title">Ringkasan</h2>
+        <dl class="job-summary mb-0">
+            @foreach (var (label, value) in summary)
+            {
+                <div class="job-summary__item">
+                    <dt>@label</dt>
+                    <dd class="@(value == "-" || value.StartsWith("Tidak dicatat") ? "text-muted fw-normal" : null)">@value</dd>
+                </div>
+            }
+        </dl>
+    </div>
+</section>
+
+@if (Model.Tracking is { } tracking)
+{
+    <div class="row g-3 mb-3 job-tracking">
+        <div class="col-xl-8">
+            @await Html.PartialAsync("~/Views/ProcurementTracking/_TrackingProgressCard.cshtml", tracking)
+            @await Html.PartialAsync("~/Views/ProcurementTracking/_TrackingHistoryCard.cshtml", tracking)
+        </div>
+        <div class="col-xl-4">
+            @await Html.PartialAsync("~/Views/ProcurementTracking/_TrackingResponsibleUsersCard.cshtml", tracking)
+        </div>
+    </div>
+}
+else if (Model.ArchiveSteps is { } steps)
+{
+    <section class="card shadow-sm rounded-4 mb-3" aria-labelledby="job-steps-title">
+        <div class="card-body">
+            <h2 class="h6 mb-1" id="job-steps-title">Tracking</h2>
+            <p class="text-muted small mb-3">
+                @(steps.Any(step => step.Done)
+                    ? "Disusun dari tanggal yang dicatat di Excel LDP lama."
+                    : "Excel LDP lama tidak mencatat tanggal tahapan pekerjaan ini.")
+            </p>
+            <ol class="job-steps mb-0">
+                @foreach (var step in steps)
+                {
+                    <li class="job-steps__item @(step.Done ? "is-done" : null)">
+                        <span class="job-steps__mark" aria-hidden="true">
+                            <i class="bi @(step.Done ? "bi-check-lg" : "bi-circle")"></i>
+                        </span>
+                        <span class="job-steps__label">@step.Label</span>
+                        <span class="job-steps__date">@(step.Done ? Date(step.Date) : "Belum ada tanggal")</span>
+                    </li>
+                }
+            </ol>
+        </div>
+    </section>
+}
+
+<section class="card shadow-sm rounded-4 mb-3" aria-labelledby="job-columns-title">
+    <div class="card-body">
+        <h2 class="h6 mb-3" id="job-columns-title">Semua kolom LDP</h2>
+        <div class="ldp-details">
+            @foreach (var group in sections)
+            {
+                var headingId = "ldp-" + group.Title.Replace(" ", "-").ToLowerInvariant();
+                <section class="ldp-details__group" aria-labelledby="@headingId">
+                    <h3 class="h6 mb-2 text-secondary" id="@headingId">@group.Title</h3>
+                    <dl class="row mb-0">
+                        @foreach (var (label, value) in group.Rows)
+                        {
+                            <dt class="col-5 fw-semibold text-secondary small">@label</dt>
+                            <dd class="col-7 text-break @(value == "-" ? "text-muted" : null)">@value</dd>
+                        }
+                    </dl>
+                </section>
+            }
+        </div>
+    </div>
+</section>
+
+@if (Model.ExcelValues is { } values)
+{
+    <details class="card shadow-sm rounded-4 mb-3 job-excel">
+        <summary class="card-body fw-semibold">Semua kolom Excel (@values.Count)</summary>
+        <div class="card-body pt-0">
+            @if (values.Count == 0)
+            {
+                <p class="text-muted mb-0">Tidak ada kolom tersimpan.</p>
+            }
+            else
+            {
+                <dl class="row mb-0">
+                    @foreach (var value in values)
+                    {
+                        <dt class="col-sm-5 col-lg-4 fw-semibold text-secondary small">@value.Label</dt>
+                        <dd class="col-sm-7 col-lg-8 text-break">@(string.IsNullOrWhiteSpace(value.Display) ? "-" : value.Display)</dd>
+                    }
+                </dl>
+            }
+        </div>
+    </details>
+}

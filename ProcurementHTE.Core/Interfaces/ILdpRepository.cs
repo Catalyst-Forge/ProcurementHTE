@@ -14,5 +14,8 @@ namespace ProcurementHTE.Core.Interfaces
         Task<int> CountAsync(CancellationToken ct = default);
 
         Task<LdpRecapDto?> GetByProcurementIdAsync(string procurementId, CancellationToken ct = default);
+
+        /// <summary>One Arsip LDP row as an LDP row, for its detail page. Null when it does not exist.</summary>
+        Task<LdpRecapDto?> GetArchiveByIdAsync(string archiveRowId, CancellationToken ct = default);
     }
 }

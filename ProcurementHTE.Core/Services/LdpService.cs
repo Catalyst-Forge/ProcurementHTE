@@ -37,6 +37,9 @@ namespace ProcurementHTE.Core.Services
         public Task<LdpRecapDto?> GetByProcurementIdAsync(string procurementId, CancellationToken ct = default) =>
             _ldpRepository.GetByProcurementIdAsync(procurementId, ct);
 
+        public Task<LdpRecapDto?> GetArchiveByIdAsync(string archiveRowId, CancellationToken ct = default) =>
+            _ldpRepository.GetArchiveByIdAsync(archiveRowId, ct);
+
         public async Task<int> CountAsync(CancellationToken ct = default)
         {
             return await _ldpRepository.CountAsync(ct);
