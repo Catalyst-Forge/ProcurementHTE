@@ -5,22 +5,20 @@
   font-size: 0.75rem;
 }
 
+/* The table fits its container instead of scrolling sideways: text breaks at spaces
+   (never inside a number) and the cells are tight. */
 .finance-table th,
 .finance-table td {
-  white-space: nowrap;
-  padding: 0.375rem;
+  padding: 0.3rem 0.25rem;
 }
 
-/* Headers may break onto a second line so long labels do not widen their column. */
 .finance-table thead th {
-  white-space: normal;
   vertical-align: bottom;
 }
 
 .finance-table .finance-col-wrap {
-  min-width: 9rem;
+  min-width: 7rem;
   max-width: 14rem;
-  white-space: normal;
 }
 
 .finance-cell-edit {
