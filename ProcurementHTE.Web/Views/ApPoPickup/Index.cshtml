@@ -50,7 +50,7 @@
             }
             @foreach (var row in Model.Items)
             {
-                <tr data-finance-job="@row.JobName">
+                <tr>
                     <td data-label="SPMP">@(string.IsNullOrWhiteSpace(row.Spmp) ? "-" : row.Spmp)</td>
                     <td data-label="Job Name" class="finance-col-wrap">
                         <a href="@Url.Action("Index", "ProcurementDocuments", new { procurementId = row.ProcurementId })" class="fw-semibold text-decoration-none">@row.JobName</a>
@@ -122,7 +122,6 @@
                 const input = form.querySelector('input[name="raNumber"]');
                 Swal.fire({
                     title: 'Nomor RA',
-                    text: this.dataset.procnum,
                     input: 'text',
                     inputValue: input.value,
                     inputAttributes: { maxlength: 100, 'aria-label': 'Nomor RA' },

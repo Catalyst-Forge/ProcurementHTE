@@ -44,7 +44,7 @@
             @foreach (var row in Model.Items)
             {
                 var hasAccrual = !string.IsNullOrWhiteSpace(row.NoAccrual);
-                <tr data-finance-job="@row.ProcNum · @row.JobName">
+                <tr>
                     <td data-label="Procurement No.">@row.ProcNum</td>
                     <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
                     <td data-label="WO Number">@(string.IsNullOrWhiteSpace(row.Wonum) ? "-" : row.Wonum)</td>

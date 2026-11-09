@@ -42,7 +42,7 @@
             }
             @foreach (var row in Model.Items)
             {
-                <tr data-finance-job="@row.JobName">
+                <tr>
                     <td data-label="SPMP">@Text(row.Spmp)</td>
                     <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
                     <td data-label="No PR">@Text(row.PrNumber)</td>

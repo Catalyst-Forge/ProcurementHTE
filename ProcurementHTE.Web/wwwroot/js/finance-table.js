@@ -48,11 +48,9 @@
     const kind = cell.dataset.financeInput;
     const isDate = kind === "date";
     const label = cell.dataset.financeLabel;
-    const job = cell.closest("tr")?.dataset.financeJob ?? "";
 
     const result = await window.Swal.fire({
       title: label,
-      text: job,
       input: isDate ? "date" : "text",
       inputValue: cell.dataset.financeValue ?? "",
       inputAttributes: isDate
