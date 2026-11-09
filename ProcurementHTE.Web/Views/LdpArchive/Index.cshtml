@@ -45,18 +45,10 @@
     }
 </form>
 
-<ul class="nav nav-tabs mb-3" aria-label="Kelompok kolom arsip">
-    <li class="nav-item"><button type="button" class="nav-link active" data-ldp-view="summary" aria-pressed="true">Ringkasan</button></li>
-    <li class="nav-item"><button type="button" class="nav-link" data-ldp-view="job" aria-pressed="false">Pekerjaan</button></li>
-    <li class="nav-item"><button type="button" class="nav-link" data-ldp-view="finance" aria-pressed="false">Keuangan</button></li>
-    <li class="nav-item"><button type="button" class="nav-link" data-ldp-view="docs" aria-pressed="false">Dokumen</button></li>
-    <li class="nav-item"><button type="button" class="nav-link" data-ldp-view="all" aria-pressed="false">Semua Kolom</button></li>
-</ul>
 <div class="column-filter-chips" data-column-filter-chips hidden></div>
 
-@* Same column groups as the LDP: one group at a time so the table fits the screen. *@
 <div class="table-responsive border rounded-3 mb-2">
-    <table class="table table-hover align-middle table-sm mb-0 mobile-table ldp-table" data-view="summary" data-view-key="ldp-archive-view">
+    <table class="table table-hover align-middle table-sm mb-0 mobile-table ldp-table" data-view="all">
         <thead class="table-light">
             <tr class="align-middle">
                 <th scope="col" sort-key="NoPr" filter-key="NoPr" class="border-end position-sticky start-0 bg-light ldp-pinned" style="--ldp-col-width: 120px; z-index: 2;">No PR</th>
@@ -142,5 +134,4 @@
 @await Html.PartialAsync("_Pager", Model)
 
 @section Scripts {
-    @await Html.PartialAsync("~/Views/Ldp/_LdpScripts_Views.cshtml")
 }
