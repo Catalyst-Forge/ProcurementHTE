@@ -25,7 +25,8 @@ public static class FinanceTableEndpoints
             request.ReadListSort(),
             page,
             PageSizes.Contains(pageSize) ? pageSize : 25,
-            ct
+            ct,
+            request.ReadListPeriod()
         );
 
     /// <summary>

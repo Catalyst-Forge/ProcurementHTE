@@ -1,0 +1,57 @@
+@using ProcurementHTE.Core.Common
+@using ProcurementHTE.Web.Extensions
+@model ProcurementHTE.Web.ViewComponents.PeriodFilterViewModel
+@* Month and year of the jobs' start date. The options opt out of the option tag helper (<!option>), so
+   selected="@false" drops the attribute instead of rendering it. Picking either reloads the list on page 1 (js/period-filter.js);
+   without JavaScript, the Terapkan button does. Inside a list's search form it adds two fields to that
+   form; standalone it brings its own form, which keeps the rest of the query. *@
+@{
+    var clearUrl = Context.Request.WithQuery(
+        (ListQueryExtensions.PeriodMonthKey, null), (ListQueryExtensions.PeriodYearKey, null), ("page", null), ("partial", null));
+    var keep = Context.Request.Query
+        .Where(item => item.Key is not (ListQueryExtensions.PeriodMonthKey or ListQueryExtensions.PeriodYearKey or "page" or "partial"));
+
+    async Task Picker()
+    {
+        <div class="period-filter" role="group" aria-label="Periode tanggal mulai">
+            <span class="period-filter__label" aria-hidden="true"><i class="bi bi-calendar3"></i> Start Date</span>
+            <select name="@ListQueryExtensions.PeriodMonthKey" class="form-select" aria-label="Bulan" data-period-select>
+                <option value="">Semua bulan</option>
+                @for (var month = 1; month <= 12; month++)
+                {
+                    <!option value="@month" selected="@(Model.Current.Month == month)">@ListPeriod.MonthNames[month - 1]</!option>
+                }
+            </select>
+            <select name="@ListQueryExtensions.PeriodYearKey" class="form-select" aria-label="Tahun" data-period-select>
+                <option value="">Semua tahun</option>
+                @foreach (var year in Model.Years)
+                {
+                    <!option value="@year" selected="@(Model.Current.Year == year)">@year</!option>
+                }
+            </select>
+            <noscript><button type="submit" class="btn btn-outline-primary">Terapkan</button></noscript>
+            @if (!Model.Current.IsEmpty)
+            {
+                <a class="btn btn-link px-1" href="@clearUrl">Hapus periode</a>
+            }
+        </div>
+    }
+}
+
+@if (Model.Standalone)
+{
+    <form method="get" class="border rounded-3 d-flex flex-wrap align-items-center gap-2 p-2 mb-3">
+        @foreach (var item in keep)
+        {
+            foreach (var value in item.Value)
+            {
+                <input type="hidden" name="@item.Key" value="@value" />
+            }
+        }
+        @{ await Picker(); }
+    </form>
+}
+else
+{
+    await Picker();
+}

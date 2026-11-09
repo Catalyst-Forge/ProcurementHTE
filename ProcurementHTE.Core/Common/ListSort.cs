@@ -14,6 +14,9 @@ public interface IListSortProvider
 public interface IListFilterProvider
 {
     IReadOnlyDictionary<string, string> Filters { get; }
+
+    /// <summary>The month and year picked above the list; empty unless the request has one.</summary>
+    ListPeriod Period => ListPeriod.None;
 }
 
 public static class ListSortExtensions

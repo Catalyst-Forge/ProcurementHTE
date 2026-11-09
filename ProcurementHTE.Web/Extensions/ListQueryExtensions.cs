@@ -36,6 +36,13 @@ public static class ListQueryExtensions
                 StringComparer.OrdinalIgnoreCase
             );
 
+    /// <summary>The month and year picked above the list, sent as bulan=1..12 and tahun=yyyy.</summary>
+    public static ListPeriod ReadListPeriod(this HttpRequest request) =>
+        ListPeriod.Read(request.Query[PeriodMonthKey].ToString(), request.Query[PeriodYearKey].ToString());
+
+    public const string PeriodMonthKey = "bulan";
+    public const string PeriodYearKey = "tahun";
+
     public static string WithoutListFilters(this HttpRequest request) =>
         request.WithQuery(
             request
@@ -87,4 +94,6 @@ public sealed class QueryListStateProvider(IHttpContextAccessor accessor)
 
     public IReadOnlyDictionary<string, string> Filters =>
         accessor.HttpContext?.Request.ReadListFilters() ?? new Dictionary<string, string>();
+
+    public ListPeriod Period => accessor.HttpContext?.Request.ReadListPeriod() ?? ListPeriod.None;
 }

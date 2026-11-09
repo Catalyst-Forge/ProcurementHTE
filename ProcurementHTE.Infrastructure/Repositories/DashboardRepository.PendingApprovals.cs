@@ -116,6 +116,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             }
 
             query = query.FilterBy(_listFilter?.Filters, ListSortColumns.PendingApprovals);
+            if (_listFilter is not null)
+                query = _listFilter.Period.Apply(query, p => p.StartDate);
 
             var totalCount = await query.CountAsync(ct);
             var items = await query

@@ -288,6 +288,26 @@ summary:focus-visible {
   }
 }
 
+/* The month and year picker above a job list (Views/Shared/Components/PeriodFilter). It sits in the
+   list's search bar and wraps to its own line on a narrow screen. */
+.period-filter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.period-filter .form-select {
+  width: auto;
+  min-width: 8.5rem;
+}
+
+.period-filter__label {
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
 /* Job tables (Procurements, LDP, Arsip LDP, the finance tables, Pending Approvals): a value
    sits in the middle of its column, as the client asked, except Job Name and PIC names,
    which start at the left (.text-start), and amounts, which end at the right (.text-end).

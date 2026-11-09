@@ -63,11 +63,12 @@ public partial class ProcurementService
         ListSort? sort,
         int page,
         int pageSize,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        ListPeriod? period = null
     )
     {
         var jobs = await _procurementRepository.GetPublishedForFinanceAsync(ct);
-        return FinanceTable.Query(jobs.Select(FinanceTable.ToRow), search, filters, sort, page, pageSize);
+        return FinanceTable.Query(jobs.Select(FinanceTable.ToRow), search, filters, sort, page, pageSize, period);
     }
 
     public Task<PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(

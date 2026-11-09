@@ -66,6 +66,7 @@ public sealed record FinanceTableRow
     public string? Vendor { get; init; }
     public string? JobType { get; init; }
     public string? ProjectRegion { get; init; }
+    public DateTime? StartDate { get; init; }
     public string? StatusName { get; init; }
     public ProcurementStatus Stage { get; init; }
     public bool IsCancelled { get; init; }
@@ -193,6 +194,7 @@ public static class FinanceTable
             Vendor = pnl?.SelectedVendor?.VendorName,
             JobType = p.JobType?.TypeName,
             ProjectRegion = p.ProjectRegion.ToString(),
+            StartDate = p.StartDate == default ? null : p.StartDate,
             StatusName = p.Status?.StatusName,
             Stage = p.ProcurementStatus,
             IsCancelled = IsCancelled(p),
@@ -426,17 +428,21 @@ public static class FinanceTable
             ["arStatus"] = r => r.IsCancelled ? "Cancel" : r.ArDone ? "Done" : "On Progress",
         };
 
-    /// <summary>Search across the visible text, per-column filters, sort, and the page.</summary>
+    /// <summary>The month and year picked, search across the visible text, per-column filters, sort, and the page.</summary>
     public static PagedResult<FinanceTableRow> Query(
         IEnumerable<FinanceTableRow> rows,
         string? search,
         IReadOnlyDictionary<string, string> filters,
         ListSort? sort,
         int page,
-        int pageSize
+        int pageSize,
+        ListPeriod? period = null
     )
     {
         IEnumerable<FinanceTableRow> query = rows;
+
+        if (period is { IsEmpty: false })
+            query = query.Where(row => period.Contains(row.StartDate));
 
         if (!string.IsNullOrWhiteSpace(search))
         {

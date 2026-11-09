@@ -149,6 +149,9 @@ public sealed class LdpArchiveRepository(AppDbContext db) : ILdpArchiveRepositor
             items = items.Where(item => SearchedColumns.Any(column => Shows(column.GetValue(item), search)));
         }
 
+        if (query.Period is { IsEmpty: false } period)
+            items = items.Where(item => period.Contains(item.StartDate));
+
         foreach (var (key, value) in query.Filters)
         {
             if (FindColumn(key) is { } column)

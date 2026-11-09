@@ -11,6 +11,8 @@
                value="@(Model.Search ?? "")" />
     </div>
 
+    @await Component.InvokeAsync("PeriodFilter", new { source = "ldp" })
+
     <input type="hidden" name="page" id="pageHidden" value="@Model.Page" />
     <input type="hidden" name="pageSize" id="pageSizeHidden" value="@Model.PageSize" />
 </form>

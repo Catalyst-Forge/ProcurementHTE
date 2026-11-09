@@ -30,7 +30,8 @@ namespace ProcurementHTE.Core.Interfaces
             ListSort? sort,
             int page,
             int pageSize,
-            CancellationToken ct = default
+            CancellationToken ct = default,
+            ListPeriod? period = null
         );
 
         Task<PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(

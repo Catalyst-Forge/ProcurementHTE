@@ -26,7 +26,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 query = query.Where(proc => proc.UserId == userId);
 
             if (_listFilter != null)
+            {
                 query = ApplyColumnFilters(query, _listFilter.Filters);
+                query = _listFilter.Period.Apply(query, p => p.StartDate);
+            }
 
             return await query.ToPagedResultAsync(
                 page,

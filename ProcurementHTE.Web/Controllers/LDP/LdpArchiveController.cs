@@ -247,7 +247,7 @@ public class LdpArchiveController(
         $"ldp-import:{User.FindFirstValue(ClaimTypes.NameIdentifier)}:{token}";
 
     private LdpArchiveQuery Query(string? search, int page, int pageSize) =>
-        new(search, Request.ReadListFilters(), Request.ReadListSort(), page, pageSize);
+        new(search, Request.ReadListFilters(), Request.ReadListSort(), page, pageSize, Request.ReadListPeriod());
 
     private bool Validate(LdpArchiveFormModel form)
     {

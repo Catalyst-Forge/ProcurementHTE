@@ -97,6 +97,8 @@
     </div>
 
     <!-- Table Container -->
+    @await Component.InvokeAsync("PeriodFilter", new { source = "procurements", standalone = true })
+
     <div id="pending-approvals-container" hx-boost="false">
         @await Html.PartialAsync("_PendingApprovalsTable", Model)
     </div>

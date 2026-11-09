@@ -39,6 +39,7 @@
         <input type="hidden" name="@item.Key" value="@item.Value" />
     }
     <button type="submit" class="btn btn-outline-primary">Cari</button>
+    @await Component.InvokeAsync("PeriodFilter", new { source = "archive" })
     @if (filtered)
     {
         <a href="@Url.Action("Index")" class="btn btn-link">Hapus pencarian dan filter</a>

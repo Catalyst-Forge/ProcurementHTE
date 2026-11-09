@@ -13,6 +13,7 @@
         <input aria-label="Cari" class="form-control" type="search" name="search" value="@Model" placeholder="Cari SPMP, pekerjaan, nomor, PIC..." />
     </div>
     <button type="submit" class="btn btn-outline-primary">Cari</button>
+    @await Component.InvokeAsync("PeriodFilter", new { source = "procurements" })
     @foreach (var (key, value) in filters)
     {
         <input type="hidden" name="f.@key" value="@value" />

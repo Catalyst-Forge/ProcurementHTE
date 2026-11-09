@@ -44,5 +44,6 @@ public sealed record LdpArchiveQuery(
     IReadOnlyDictionary<string, string> Filters,
     ListSort? Sort,
     int Page,
-    int PageSize
+    int PageSize,
+    ListPeriod? Period = null
 );

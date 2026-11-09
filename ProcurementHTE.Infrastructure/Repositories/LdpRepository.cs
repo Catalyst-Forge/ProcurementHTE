@@ -55,8 +55,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var sort = _listSort.Current;
             var sortProperty = FindColumn(sort?.Key);
             var filters = KnownFilters(_listFilter.Filters);
+            var period = _listFilter.Period;
             var archived = await PresentedArchiveAsync(search, ct);
-            var needsAllRows = sortProperty is not null || filters.Count > 0 || archived.Count > 0;
+            var needsAllRows = sortProperty is not null || filters.Count > 0 || !period.IsEmpty || archived.Count > 0;
             var procurements = await (
                 needsAllRows ? query : query.Skip((page - 1) * pageSize).Take(pageSize)
             ).ToListAsync(ct);
@@ -75,7 +76,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             if (needsAllRows)
             {
-                var matches = items.Concat(archived).Where(item => filters.All(filter => filter.Matches(item)));
+                var matches = items.Concat(archived)
+                    .Where(item => period.Contains(item.TglMulai) && filters.All(filter => filter.Matches(item)));
                 matches = sortProperty is not null
                     ? Sort(matches, sortProperty, sort!.Descending)
                     : matches.OrderByDescending(item => item.TglMulai);
