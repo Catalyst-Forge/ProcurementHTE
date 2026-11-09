@@ -23,6 +23,12 @@ public partial class ProcurementsController
         if (string.IsNullOrWhiteSpace(editViewModel.JobName))
             ModelState.AddModelError(nameof(editViewModel.JobName), "Nama pekerjaan wajib diisi");
 
+        await ValidateUniqueSpmpAsync(
+            editViewModel.SpmpNumber,
+            editViewModel.StartDate,
+            editViewModel.ProcurementId,
+            nameof(editViewModel.SpmpNumber)
+        );
         ValidateEditDates(editViewModel);
         ValidateEditApprovers(editViewModel);
 

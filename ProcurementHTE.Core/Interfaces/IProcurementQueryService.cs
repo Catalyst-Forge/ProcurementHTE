@@ -20,6 +20,9 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct
         );
         Task<int> CountAllProcurementsAsync(CancellationToken ct);
+        /// <summary>SPMP numbers are unique within a job year: true when another active job already has this one.</summary>
+        Task<bool> IsSpmpNumberTakenAsync(string? spmpNumber, DateTime startDate, string? exceptProcurementId, CancellationToken ct = default);
+
         /// <summary>A page of the AP-PO, AP-Invoice, or AR table: search, column filters, sort.</summary>
         Task<PagedResult<ProcurementHTE.Core.Finance.FinanceTableRow>> GetFinanceTableAsync(
             string? search,

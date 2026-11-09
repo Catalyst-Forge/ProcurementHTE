@@ -490,3 +490,66 @@ public class SpmpIdentifierTests
         Assert.Equal("SPMP 4841", tracking.DisplayId);
     }
 }
+
+public class SpmpUniquenessTests
+{
+    private sealed record NoSort(ListSort? Current) : IListSortProvider;
+
+    private static ProcurementHTE.Infrastructure.Data.AppDbContext Db() =>
+        new(new DbContextOptionsBuilder<ProcurementHTE.Infrastructure.Data.AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    [Fact]
+    public async Task An_spmp_number_is_taken_only_within_the_same_job_year()
+    {
+        await using var db = Db();
+        var y2026 = new DateTime(2026, 3, 1);
+        db.Procurements.AddRange(
+            new Procurement { ProcurementId = "a", ProcNum = "PROC-A", SpmpNumber = "0003/PDC-1110/2026-S0", StartDate = y2026 },
+            new Procurement { ProcurementId = "gone", ProcNum = "PROC-G", SpmpNumber = "0009/PDC-1110/2026-S0", StartDate = y2026, IsDeleted = true }
+        );
+        await db.SaveChangesAsync();
+        var repo = new ProcurementHTE.Infrastructure.Repositories.ProcurementRepository(db, new NoSort(null));
+
+        Assert.True(await repo.SpmpNumberTakenAsync("0003", 2026, exceptProcurementId: null));
+        Assert.True(await repo.SpmpNumberTakenAsync("0003/PDC-1110/2026-S0", 2026, exceptProcurementId: "b"));
+        Assert.False(await repo.SpmpNumberTakenAsync("0003", 2027, exceptProcurementId: null));
+        Assert.False(await repo.SpmpNumberTakenAsync("0003", 2026, exceptProcurementId: "a"));
+        Assert.False(await repo.SpmpNumberTakenAsync("0009", 2026, exceptProcurementId: null));
+        Assert.False(await repo.SpmpNumberTakenAsync("00031", 2026, exceptProcurementId: null));
+    }
+
+    [Fact]
+    public void Spmp_uniqueness_query_translates_for_sql_server()
+    {
+        var options = new DbContextOptionsBuilder<ProcurementHTE.Infrastructure.Data.AppDbContext>()
+            .UseSqlServer("Server=localhost;Database=translate-only;Trusted_Connection=True;TrustServerCertificate=True")
+            .Options;
+        using var db = new ProcurementHTE.Infrastructure.Data.AppDbContext(options);
+
+        var sql = ProcurementHTE.Infrastructure.Repositories.ProcurementRepository
+            .SpmpNumberTaken(db.Procurements, "0003", 2026, "a")
+            .ToQueryString();
+
+        Assert.Contains("DATEPART(year", sql);
+        Assert.Contains("[SpmpNumber]", sql);
+    }
+
+    [Fact]
+    public async Task A_deleted_job_cannot_come_back_next_to_a_job_with_its_spmp()
+    {
+        await using var db = Db();
+        db.Procurements.AddRange(
+            new Procurement { ProcurementId = "active", ProcNum = "PROC-1", SpmpNumber = "0003/PDC-1110/2026-S0", JobName = "Aktif", StartDate = new DateTime(2026, 2, 1) },
+            new Procurement { ProcurementId = "deleted", ProcNum = "PROC-2", SpmpNumber = "0003/PDC-1110/2026-S0", JobName = "Terhapus", StartDate = new DateTime(2026, 9, 1), IsDeleted = true }
+        );
+        await db.SaveChangesAsync();
+
+        var result = await new ProcurementHTE.Infrastructure.Services.DeletedRecordsService(db)
+            .RestoreAsync(ProcurementHTE.Core.Models.DTOs.DeletedRecordKind.Procurement, "deleted");
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("SPMP 0003", result.Message);
+    }
+}

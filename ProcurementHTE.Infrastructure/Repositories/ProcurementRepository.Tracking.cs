@@ -21,7 +21,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
+            // SPMP numbers restart every year: the newest job with the number comes first.
             return await BuildTrackingQuery()
+                .OrderByDescending(p => p.StartDate)
                 .FirstOrDefaultAsync(
                     p => p.ProcNum == procNum
                         || p.Wonum == procNum

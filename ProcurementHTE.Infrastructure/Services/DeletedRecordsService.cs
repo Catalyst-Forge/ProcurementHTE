@@ -147,9 +147,18 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
         if (number != null && await db.Procurements.AnyAsync(p => p.ProcNum == number, ct))
             return RestoreResult.Fail($"Nomor {number} sudah dipakai procurement lain yang aktif.");
 
+        // SPMP numbers are unique within a job year, so a job cannot come back next to another
+        // job with its number in the same year.
+        if (!string.IsNullOrWhiteSpace(item.SpmpNumber)
+            && item.StartDate != default
+            && await Repositories.ProcurementRepository
+                .SpmpNumberTaken(db.Procurements, item.SpmpNumber, item.StartDate.Year, item.ProcurementId)
+                .AnyAsync(ct))
+            return RestoreResult.Fail($"{item.SpmpLabel} tahun {item.StartDate.Year} sudah dipakai pekerjaan lain yang aktif.");
+
         item.ProcNum = number;
         item.IsDeleted = false;
-        return RestoreResult.Ok($"Procurement {number ?? item.JobName} dipulihkan.");
+        return RestoreResult.Ok($"{item.DisplayId} dipulihkan.");
     }
 
     private async Task<RestoreResult> RestorePurchaseRequisitionAsync(string id, CancellationToken ct)

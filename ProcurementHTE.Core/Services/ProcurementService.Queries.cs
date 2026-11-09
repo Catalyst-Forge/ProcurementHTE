@@ -46,6 +46,17 @@ public partial class ProcurementService
         return _procurementRepository.CountAsync(ct);
     }
 
+    // A job without a start date (a draft) has no job year yet, so it is checked once the date is in.
+    public async Task<bool> IsSpmpNumberTakenAsync(
+        string? spmpNumber,
+        DateTime startDate,
+        string? exceptProcurementId,
+        CancellationToken ct = default
+    ) =>
+        !string.IsNullOrWhiteSpace(spmpNumber)
+        && startDate != default
+        && await _procurementRepository.SpmpNumberTakenAsync(spmpNumber.Trim(), startDate.Year, exceptProcurementId, ct);
+
     public async Task<PagedResult<FinanceTableRow>> GetFinanceTableAsync(
         string? search,
         IReadOnlyDictionary<string, string> filters,

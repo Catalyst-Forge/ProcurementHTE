@@ -65,6 +65,12 @@ public partial class ProcurementsController
         proc.StatusId = status.StatusId;
 
         ValidateProcurementForm(procurementViewModel, isDraft);
+        await ValidateUniqueSpmpAsync(
+            proc.SpmpNumber,
+            proc.StartDate,
+            exceptProcurementId: null,
+            $"{nameof(procurementViewModel.Procurement)}.{nameof(Procurement.SpmpNumber)}"
+        );
         LogCreateModelState("after procurement form validation");
         if (!ModelState.IsValid)
         {

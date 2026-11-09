@@ -30,6 +30,12 @@ namespace ProcurementHTE.Core.Interfaces
         /// </summary>
         Task<IReadOnlyList<Procurement>> GetAllForSelectionAsync();
 
+        /// <summary>
+        /// True when an active job other than <paramref name="exceptProcurementId"/> has this SPMP number
+        /// (the part before the first "/") in the same job year. SPMP numbers restart every year.
+        /// </summary>
+        Task<bool> SpmpNumberTakenAsync(string spmpNumber, int jobYear, string? exceptProcurementId, CancellationToken ct = default);
+
         /// <summary>Every job Operation has published, with what the finance tables show.</summary>
         Task<IReadOnlyList<Procurement>> GetPublishedForFinanceAsync(CancellationToken ct = default);
 

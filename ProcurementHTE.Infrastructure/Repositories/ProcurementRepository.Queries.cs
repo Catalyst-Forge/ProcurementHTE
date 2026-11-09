@@ -102,6 +102,31 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public Task<bool> SpmpNumberTakenAsync(
+            string spmpNumber,
+            int jobYear,
+            string? exceptProcurementId,
+            CancellationToken ct = default
+        ) => SpmpNumberTaken(_context.Procurements, spmpNumber, jobYear, exceptProcurementId).AnyAsync(ct);
+
+        /// <summary>The uniqueness query, public so a test can print its SQL Server form.</summary>
+        public static IQueryable<Procurement> SpmpNumberTaken(
+            IQueryable<Procurement> procurements,
+            string spmpNumber,
+            int jobYear,
+            string? exceptProcurementId
+        )
+        {
+            var number = Core.Finance.FinanceTable.ShortSpmp(spmpNumber) ?? spmpNumber.Trim();
+            var withSuffix = number + "/";
+            return procurements.Where(p =>
+                p.SpmpNumber != null
+                && (p.SpmpNumber == number || p.SpmpNumber.StartsWith(withSuffix))
+                && p.StartDate.Year == jobYear
+                && (exceptProcurementId == null || p.ProcurementId != exceptProcurementId)
+            );
+        }
+
         public async Task<IReadOnlyList<Procurement>> GetPublishedForFinanceAsync(
             CancellationToken ct = default
         ) => await PublishedForFinance(_context).ToListAsync(ct);

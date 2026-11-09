@@ -6,6 +6,19 @@ namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
 public partial class ProcurementsController
 {
+    /// <summary>
+    /// SPMP numbers restart every year but never repeat within one, so a number another active
+    /// job has in the same job year (the start date's year) is refused.
+    /// </summary>
+    private async Task ValidateUniqueSpmpAsync(string? spmpNumber, DateTime startDate, string? exceptProcurementId, string field)
+    {
+        if (await _queryService.IsSpmpNumberTakenAsync(spmpNumber, startDate, exceptProcurementId))
+            ModelState.AddModelError(
+                field,
+                $"Nomor SPMP {ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(spmpNumber)} sudah dipakai pekerjaan lain di tahun {startDate.Year}. Nomor SPMP tidak boleh sama dalam satu tahun."
+            );
+    }
+
     private void ValidateProcurementForm(ProcurementCreateViewModel vm, bool isDraft)
     {
         var proc = vm.Procurement;
