@@ -247,6 +247,17 @@ summary:focus-visible {
   outline: none;
 }
 
+/* Tables carry many columns, so they use a smaller type than the page text to keep more of
+   them in view. Buttons inside a table follow the same size. */
+.table {
+  font-size: 0.8125rem;
+}
+
+.table .btn-sm,
+.table .btn-group-sm > .btn {
+  font-size: 0.75rem;
+}
+
 /* A visually-hidden header label is absolutely positioned. Without a positioned scroll
    container it escaped the table's own scrolling and widened the whole page. */
 .table-responsive {

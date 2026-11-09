@@ -16,8 +16,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-.ldp-table:not([data-view="all"]) {
-  font-size: 0.8125rem;
+/* The LDP shows every column at once, so it uses the densest table type. */
+.ldp-table {
+  font-size: 0.75rem;
 }
 
 .ldp-table[data-view="all"] th {
