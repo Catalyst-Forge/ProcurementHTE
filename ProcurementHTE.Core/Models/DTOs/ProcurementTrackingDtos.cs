@@ -127,15 +127,16 @@ namespace ProcurementHTE.Core.Models.DTOs
         public bool AllMandatoryDocsReady => TotalMandatoryDocs > 0 && MissingMandatoryDocs == 0;
 
         // Can Send Approval - All conditions must be met
-        // Approval may go out before the documents or the P&L are complete.
-        public bool CanSendApproval => CurrentStatus == ProcurementStatus.OnCreateDP3;
+        // Documents may follow later; the P&L must be there, since it decides whether the VP signs.
+        public bool CanSendApproval => CurrentStatus == ProcurementStatus.OnCreateDP3 && PnLSummary?.HasData == true;
 
         /// <summary>An approver signed and the job waits for AP-PO to send it to the next level.</summary>
         public bool ApprovalAwaitingSend { get; set; }
 
         /// <summary>Who AP-PO's next "Sending Approval" goes to, or null when nothing waits.</summary>
         public string? NextApprovalTarget =>
-            CurrentStatus == ProcurementStatus.OnCreateDP3 ? Finance.FinanceTable.ApproverFor(ProcurementStatus.WaitingApprovalAnalyst)
+            CanSendApproval ? Finance.FinanceTable.ApproverFor(ProcurementStatus.WaitingApprovalAnalyst)
+            : CurrentStatus == ProcurementStatus.OnCreateDP3 ? null
             : ApprovalAwaitingSend ? Finance.FinanceTable.ApproverFor(CurrentStatus)
             : null;
 

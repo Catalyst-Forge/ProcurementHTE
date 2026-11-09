@@ -215,12 +215,16 @@ public class FinanceTableTests
     }
 
     [Fact]
-    public void First_send_goes_to_the_analyst_even_without_documents_or_profit_and_loss()
+    public void First_send_goes_to_the_analyst_without_documents_but_needs_a_profit_and_loss()
     {
-        var row = FinanceTable.ToRow(Job(withPnl: false));
+        var withPnl = FinanceTable.ToRow(Job());
+        Assert.True(withPnl.CanSendApproval);
+        Assert.Equal("Analyst HTE", withPnl.NextApprovalTarget);
+        Assert.False(withPnl.NeedsProfitLossToSend);
 
-        Assert.True(row.CanSendApproval);
-        Assert.Equal("Analyst HTE", row.NextApprovalTarget);
+        var withoutPnl = FinanceTable.ToRow(Job(withPnl: false));
+        Assert.False(withoutPnl.CanSendApproval);
+        Assert.True(withoutPnl.NeedsProfitLossToSend);
     }
 
     [Fact]
@@ -265,7 +269,16 @@ public class FinanceTableTests
         Assert.True(tracking.IsWaitingApproval);
         Assert.Null(tracking.NextApprovalTarget);
 
-        var draft = new ProcurementTrackingDto { CurrentStatus = ProcurementStatus.OnCreateDP3 };
+        var draft = new ProcurementTrackingDto
+        {
+            CurrentStatus = ProcurementStatus.OnCreateDP3,
+            TotalMandatoryDocs = 6,
+            UploadedMandatoryDocs = 0,
+        };
+        Assert.False(draft.CanSendApproval);
+        Assert.Null(draft.NextApprovalTarget);
+
+        draft.PnLSummary = new PnLSummaryCardDto { ProfitLossId = "pnl" };
         Assert.True(draft.CanSendApproval);
         Assert.Equal("Analyst HTE", draft.NextApprovalTarget);
     }

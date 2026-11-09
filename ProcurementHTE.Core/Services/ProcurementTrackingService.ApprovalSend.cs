@@ -27,6 +27,10 @@ public partial class ProcurementTrackingService
         }
 
 
+        // Documents may follow later, but the P&L value decides whether the chain reaches the VP.
+        if (!ProcurementHTE.Core.Finance.FinanceTable.HasProfitLoss(procurement))
+            return Failed("P&L belum diisi. Isi P&L dulu sebelum kirim approval.");
+
         procurement.ApprovalToken = GenerateApprovalToken();
         procurement.ApprovalTokenGeneratedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.ApprovalSentByUserId = sentByUserId;

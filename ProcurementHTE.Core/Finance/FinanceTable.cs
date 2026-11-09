@@ -128,7 +128,15 @@ public sealed record FinanceTableRow
     public string? WaitingOn =>
         !IsCancelled && !ApprovalAwaitingSend ? FinanceTable.ApproverFor(Stage) : null;
 
-    public bool CanSendApproval => NextApprovalTarget != null;
+    /// <summary>
+    /// The first send needs a P&amp;L, since its value decides whether the VP signs.
+    /// Documents may follow later.
+    /// </summary>
+    public bool CanSendApproval =>
+        NextApprovalTarget != null && (Stage != ProcurementStatus.OnCreateDP3 || HasProfitLoss);
+
+    /// <summary>A published job that cannot go to the Analyst yet because it has no P&amp;L.</summary>
+    public bool NeedsProfitLossToSend => !IsCancelled && Stage == ProcurementStatus.OnCreateDP3 && !HasProfitLoss;
 
     private static bool Filled(string? value) => !string.IsNullOrWhiteSpace(value);
 }
@@ -215,6 +223,7 @@ public static class FinanceTable
         };
     }
 
+    /// <summary>The P&amp;L decides whether approval reaches the VP, so approval waits for it.</summary>
     public static bool HasProfitLoss(Procurement p) => p.ProfitLosses?.Any(pl => !pl.IsDeleted) == true;
 
     public static bool IsCancelled(Procurement p) =>

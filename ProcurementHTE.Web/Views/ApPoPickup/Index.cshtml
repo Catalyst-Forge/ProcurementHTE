@@ -78,6 +78,10 @@
                                     <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send me-1" aria-hidden="true"></i>Sending Approval @row.NextApprovalTarget</button>
                                 </form>
                             }
+                            else if (canEdit && row.NeedsProfitLossToSend)
+                            {
+                                <span class="finance-stage text-warning-emphasis">Isi P&amp;L dulu untuk kirim approval</span>
+                            }
                             else if (row.WaitingOn != null)
                             {
                                 <span class="finance-stage"><i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Menunggu approval @row.WaitingOn</span>
