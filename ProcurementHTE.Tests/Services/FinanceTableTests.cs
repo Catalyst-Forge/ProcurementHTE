@@ -354,6 +354,22 @@ public class FinanceTableTests
     }
 
     [Fact]
+    public void Ra_number_column_sorts_and_filters()
+    {
+        var jobs = Rows().ToList();
+        var withRa = Job();
+        withRa.ProcurementId = "d";
+        withRa.RaNumber = "RA-77";
+        jobs.Add(FinanceTable.ToRow(withRa));
+
+        var sorted = FinanceTable.Query(jobs, null, NoFilters, new ListSort("raNumber", false), 1, 25);
+        var filtered = FinanceTable.Query(jobs, null, new Dictionary<string, string> { ["raNumber"] = "ra-7" }, null, 1, 25);
+
+        Assert.Equal("d", sorted.Items[0].ProcurementId);
+        Assert.Equal(["d"], filtered.Items.Select(r => r.ProcurementId));
+    }
+
+    [Fact]
     public void A_page_past_the_end_shows_the_last_page()
     {
         var page = FinanceTable.Query(Rows(), null, NoFilters, null, 9, 2);

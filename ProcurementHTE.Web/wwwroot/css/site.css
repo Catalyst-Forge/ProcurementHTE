@@ -325,9 +325,11 @@ summary:focus-visible {
   }
 }
 
+/* The content gutter: 2rem a side on laptop widths, so a wide table keeps its columns
+   on screen, and 4rem a side from 1600px. */
 @media (min-width: 992px) {
   .gx-8 {
-    --bs-gutter-x: 8rem;
+    --bs-gutter-x: 4rem;
   }
 
   #sidebar {
@@ -341,6 +343,12 @@ summary:focus-visible {
 
   .procurement-content {
     grid-template-columns: 2fr 1fr;
+  }
+}
+
+@media (min-width: 1600px) {
+  .gx-8 {
+    --bs-gutter-x: 8rem;
   }
 }
 

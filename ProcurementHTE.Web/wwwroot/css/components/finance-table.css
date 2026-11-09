@@ -1,48 +1,75 @@
-/* AP-PO, AP-Invoice, and AR tables: cells filled by clicking them. */
+/* AP-PO, AP-Invoice, Data Accrual, and AR tables: cells filled by clicking them.
 
-/* Dense like the LDP: every column of the role's work on one screen. */
-.finance-table {
+   A row reads as one line whenever the screen has room, the way Data Accrual does.
+   A value (a number, a date, an amount, a name) never breaks inside itself. Only Job Name
+   and Vendor wrap, and a cell holding several items (a number with its date, a status
+   with the approval step) wraps between them when its column runs out of room. The table
+   still fits its container instead of scrolling sideways. */
+
+.table.finance-table {
   font-size: 0.75rem;
 }
 
-/* The table fits its container instead of scrolling sideways: text breaks at spaces
-   (never inside a number) and the cells are tight. */
 .finance-table th,
 .finance-table td {
-  padding: 0.3rem 0.25rem;
+  padding: 0.375rem 0.25rem;
 }
 
-.finance-table .finance-col-wrap {
-  min-width: 7rem;
-  max-width: 14rem;
+.finance-table td {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
+.finance-table td.finance-col-wrap {
+  min-width: 6.5rem;
+  white-space: normal;
+}
+
+/* A PIC name may wrap at its space on a narrow screen. */
+.finance-table td.finance-col-name,
+.finance-col-name .finance-cell-edit {
+  white-space: normal;
+  text-align: left;
+}
+
+/* A cell the role fills. It looks like plain text at rest; hover and keyboard focus show
+   that it opens the edit dialog. An empty one shows only an icon: a pencil for a number
+   or a name, a calendar for a date. */
 .finance-cell-edit {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  max-width: 100%;
-  min-height: 2rem;
-  padding: 0.125rem 0.375rem;
-  margin: -0.125rem -0.375rem;
+  min-height: 1.75rem;
+  padding: 0 0.375rem;
+  margin: -0.25rem -0.375rem;
   border: 1px dashed transparent;
   border-radius: var(--bs-border-radius-sm);
   background: none;
   color: inherit;
   font: inherit;
-  text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .finance-cell-edit .bi {
   color: var(--dx-ink-muted);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.finance-cell-edit:not(.is-empty) .bi,
+.finance-cell-edit.is-empty .finance-cell-value {
+  display: none;
 }
 
 .finance-cell-edit:hover,
 .finance-cell-edit:focus-visible {
   border-color: var(--dx-blue-600);
   background: var(--bs-primary-bg-subtle);
+}
+
+.finance-cell-edit:hover .bi,
+.finance-cell-edit:focus-visible .bi {
+  color: var(--dx-blue-600);
 }
 
 .finance-cell-edit:focus-visible {
@@ -54,35 +81,78 @@
   color: var(--dx-ink-muted);
 }
 
-.finance-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.375rem;
-}
-
-.finance-actions form {
+.finance-table form {
   margin: 0;
 }
 
-/* "Sending Approval Asst. Manager" wraps instead of widening the Aksi column. */
-.finance-actions .btn {
-  max-width: 8.5rem;
+/* Number and date of one document (No Invoice & Tgl, No SA & Tgl, No SP3 & Tgl), each
+   filled on its own: side by side, or the date under the number in a narrow column. */
+.finance-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.875rem;
+}
+
+/* Aksi: the status badge, then the approval step. Side by side, or stacked when narrow. */
+.finance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}
+
+.finance-actions > .badge {
+  flex: none;
+}
+
+/* The approval step's one action, no taller than the status badge row. "Sending Approval"
+   and the approver name each stay whole, so a narrow column breaks it into two lines. */
+.finance-send {
+  --bs-btn-padding-y: 0.1875rem;
+  --bs-btn-padding-x: 0.5rem;
+  --bs-btn-font-size: 0.75rem;
+  --bs-btn-font-weight: 600;
+  --bs-btn-line-height: 1.3;
+  --bs-btn-border-radius: var(--bs-border-radius-sm);
   white-space: normal;
   text-align: left;
 }
 
+/* Where the approval stands when there is nothing to send. */
 .finance-stage {
   font-size: 0.75rem;
+  line-height: 1.3;
   color: var(--dx-ink-muted);
   white-space: normal;
-  max-width: 12rem;
 }
 
-/* Number and date of one document (No Invoice & Tgl, No SA & Tgl, No SP3 & Tgl), each filled on its own. */
-.finance-pair {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
+.finance-stage .bi {
+  margin-right: 0.25rem;
+}
+
+.finance-stage--warning {
+  color: var(--dx-warning-ink);
+}
+
+/* Words inside the send button and the stage line that stay on one line together. */
+.finance-keep {
+  white-space: nowrap;
+}
+
+/* From 1440px the columns have room to stay whole: the badge and the approval step share
+   one line, PIC names do not wrap, and Job Name gets more width before it wraps. */
+@media (min-width: 1440px) {
+  .finance-actions {
+    flex-wrap: nowrap;
+  }
+
+  .finance-table td.finance-col-name,
+  .finance-col-name .finance-cell-edit {
+    white-space: nowrap;
+  }
+
+  .finance-table td.finance-col-wrap {
+    min-width: 9rem;
+  }
 }

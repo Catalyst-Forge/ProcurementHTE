@@ -1,4 +1,4 @@
-// Cells of the AP-PO, AP-Invoice, and AR tables: click to fill, saved in place.
+// Cells of the AP-PO, AP-Invoice, Data Accrual, and AR tables: click to fill, saved in place.
 // A cell is a <button data-finance-field> inside a table with data-field-url.
 (function () {
   "use strict";
@@ -90,6 +90,7 @@
       text.textContent = answer.display;
       text.classList.toggle("finance-cell-empty", value === "");
     }
+    cell.classList.toggle("is-empty", value === "");
     cell.dataset.financeValue = value;
     showStatus(cell.closest("tr"), answer.done);
   });

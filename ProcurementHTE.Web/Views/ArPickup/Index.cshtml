@@ -52,7 +52,7 @@
                     <td data-label="No Accrual">@(hasAccrual ? row.NoAccrual : "-")</td>
                     <td data-label="Potensi Accrual" class="text-end">@FinanceTable.FormatMoney(row.PotensiAccrual)</td>
                     <td data-label="Status Accrual">@(string.IsNullOrWhiteSpace(row.StatusAccrual) ? "-" : row.StatusAccrual)</td>
-                    <td data-label="PIC AR">@await Html.PartialAsync("_FinanceCell", new FinanceCellViewModel(SaveUrl(row), FinanceField.PicAr, row.PicAr, null, canEdit && !row.IsCancelled))</td>
+                    <td data-label="PIC AR" class="finance-col-name">@await Html.PartialAsync("_FinanceCell", new FinanceCellViewModel(SaveUrl(row), FinanceField.PicAr, row.PicAr, null, canEdit && !row.IsCancelled))</td>
                     <td data-label="Aksi">
                         <div class="finance-actions">
                             @await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ArDone))

@@ -15,7 +15,7 @@
     <div>
         <h1 class="h3 mb-1">Account Payable Invoice</h1>
         <p class="text-muted mb-0">
-            Klik sel untuk mengisi. Status jadi Done setelah No Invoice, No SA, No SP3 beserta tanggalnya, dan Submit Loket terisi.
+            Klik sel untuk mengisi, atau nama pekerjaan untuk detailnya. Status jadi Done setelah No Invoice, No SA, No SP3 beserta tanggalnya, dan Submit Loket terisi.
         </p>
     </div>
 </header>
@@ -52,7 +52,9 @@
             {
                 <tr>
                     <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
-                    <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
+                    <td data-label="Job Name" class="finance-col-wrap">
+                        <a asp-action="Details" asp-route-id="@row.ProcurementId" class="fw-semibold text-decoration-none">@row.JobName</a>
+                    </td>
                     <td data-label="No PR">@Text(row.PrNumber)</td>
                     <td data-label="Nilai P&amp;L" class="text-end">@FinanceTable.FormatMoney(row.NilaiPnl)</td>
                     <td data-label="Nilai Accrual" class="text-end">@FinanceTable.FormatMoney(row.NilaiAccrual)</td>
@@ -77,12 +79,7 @@
                         </div>
                     </td>
                     <td data-label="Submit Loket">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.LoketDate, null, row.LoketDate))</td>
-                    <td data-label="Aksi">
-                        <div class="finance-actions">
-                            @await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ApInvoiceDone))
-                            <a asp-action="Details" asp-route-id="@row.ProcurementId" class="btn btn-outline-info btn-sm"><i class="bi bi-eye" aria-hidden="true"></i> Detail</a>
-                        </div>
-                    </td>
+                    <td data-label="Aksi">@await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ApInvoiceDone))</td>
                 </tr>
             }
         </tbody>

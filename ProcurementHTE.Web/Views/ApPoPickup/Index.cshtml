@@ -35,6 +35,7 @@
                 <th scope="col" sort-key="nilaiAccrual" sort-kind="number" class="border-end">Nilai Accrual</th>
                 <th scope="col" sort-key="nilaiRealisasi" sort-kind="number" class="border-end">Nilai Realisasi</th>
                 <th scope="col" sort-key="poNumber" filter-key="poNumber" class="border-end">No PO</th>
+                <th scope="col" sort-key="raNumber" filter-key="raNumber" class="border-end">No RA</th>
                 <th scope="col" sort-key="inpro" sort-kind="date" class="border-end">Submit INPRO</th>
                 <th scope="col" sort-key="hardcopy" sort-kind="date" class="border-end">Submit Hard Copy</th>
                 <th scope="col" sort-key="picAppo" filter-key="picAppo" class="border-end">PIC APPO</th>
@@ -45,7 +46,7 @@
             @if (Model.Items.Count == 0)
             {
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-4">Belum ada pekerjaan yang di-publish Operation</td>
+                    <td colspan="12" class="text-center text-muted py-4">Belum ada pekerjaan yang di-publish Operation</td>
                 </tr>
             }
             @foreach (var row in Model.Items)
@@ -57,12 +58,34 @@
                     </td>
                     <td data-label="No PR">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.PrNumber, row.PrNumber))</td>
                     <td data-label="Nilai P&amp;L" class="text-end">@FinanceTable.FormatMoney(row.NilaiPnl)</td>
-                    <td data-label="Nilai Accrual">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.NilaiAccrual, null, money: row.NilaiAccrual))</td>
-                    <td data-label="Nilai Realisasi">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.NilaiRealisasi, null, money: row.NilaiRealisasi))</td>
+                    <td data-label="Nilai Accrual" class="text-end">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.NilaiAccrual, null, money: row.NilaiAccrual))</td>
+                    <td data-label="Nilai Realisasi" class="text-end">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.NilaiRealisasi, null, money: row.NilaiRealisasi))</td>
                     <td data-label="No PO">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.PoNumber, row.PoNumber))</td>
+                    <td data-label="No RA">
+                        @if (!row.RequiresRaNumber)
+                        {
+                            <span class="finance-cell-empty" title="Kontrak LTC dan RO tidak memakai RA">-</span>
+                        }
+                        else if (canEdit && row.CanChangeRaNumber)
+                        {
+                            var noRa = string.IsNullOrWhiteSpace(row.RaNumber);
+                            <form asp-action="SaveRaNumber" asp-route-id="@row.ProcurementId" method="post">
+                                <input type="hidden" name="raNumber" value="@row.RaNumber" />
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <button type="button" class="finance-cell-edit btn-ra-number @(noRa ? "is-empty" : null)" aria-label="Ubah No RA" title="Ubah No RA">
+                                    <span class="finance-cell-value">@(noRa ? "-" : row.RaNumber)</span>
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="@(string.IsNullOrWhiteSpace(row.RaNumber) ? "finance-cell-empty" : null)">@(string.IsNullOrWhiteSpace(row.RaNumber) ? "-" : row.RaNumber)</span>
+                        }
+                    </td>
                     <td data-label="Submit INPRO">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.InproDate, null, row.InproDate))</td>
                     <td data-label="Submit Hard Copy">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.HardcopyDate, null, row.HardcopyDate))</td>
-                    <td data-label="PIC APPO">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.PicAppo, row.PicAppo))</td>
+                    <td data-label="PIC APPO" class="finance-col-name">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.PicAppo, row.PicAppo))</td>
                     <td data-label="Aksi">
                         <div class="finance-actions">
                             @await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ApPoDone))
@@ -75,37 +98,26 @@
                                       data-confirm-confirm-color="var(--dx-blue-600)"
                                       data-confirm-cancel="Batal">
                                     <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send me-1" aria-hidden="true"></i>Sending Approval @row.NextApprovalTarget</button>
+                                    <button type="submit" class="btn btn-primary finance-send">
+                                        <span class="finance-keep">Sending Approval</span> <span class="finance-keep">@row.NextApprovalTarget</span>
+                                    </button>
                                 </form>
                             }
                             else if (canEdit && row.NeedsProfitLossToSend)
                             {
-                                <span class="finance-stage text-warning-emphasis">Isi P&amp;L dulu untuk kirim approval</span>
+                                <span class="finance-stage finance-stage--warning">
+                                    <span class="finance-keep"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>Isi P&amp;L dulu</span> <span class="finance-keep">untuk kirim approval</span>
+                                </span>
                             }
                             else if (row.WaitingOn != null)
                             {
-                                <span class="finance-stage"><i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Menunggu approval @row.WaitingOn</span>
+                                <span class="finance-stage">
+                                    <span class="finance-keep"><i class="bi bi-hourglass-split" aria-hidden="true"></i>Menunggu approval</span> <span class="finance-keep">@row.WaitingOn</span>
+                                </span>
                             }
                             else if (row.Stage != ProcurementStatus.OnCreateDP3)
                             {
                                 <span class="finance-stage">@FinanceTable.StageLabel(row.Stage)</span>
-                            }
-                            @if (row.RequiresRaNumber)
-                            {
-                                @if (canEdit && row.CanChangeRaNumber)
-                                {
-                                    <form asp-action="SaveRaNumber" asp-route-id="@row.ProcurementId" method="post">
-                                        <input type="hidden" name="raNumber" value="@row.RaNumber" />
-                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                        <button type="button" class="btn btn-outline-primary btn-sm btn-ra-number">
-                                            @(string.IsNullOrWhiteSpace(row.RaNumber) ? "Isi Nomor RA" : $"RA: {row.RaNumber}")
-                                        </button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <span class="small text-muted">RA: @(string.IsNullOrWhiteSpace(row.RaNumber) ? "-" : row.RaNumber)</span>
-                                }
                             }
                         </div>
                     </td>

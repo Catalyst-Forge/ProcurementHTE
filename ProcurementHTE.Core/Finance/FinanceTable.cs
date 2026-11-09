@@ -401,6 +401,7 @@ public static class FinanceTable
             ["nilaiAccrual"] = r => r.NilaiAccrual,
             ["nilaiRealisasi"] = r => r.NilaiRealisasi,
             ["poNumber"] = r => r.PoNumber,
+            ["raNumber"] = r => r.RaNumber,
             ["inpro"] = r => r.InproDate,
             ["hardcopy"] = r => r.HardcopyDate,
             ["picAppo"] = r => r.PicAppo,

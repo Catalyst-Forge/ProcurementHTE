@@ -30,6 +30,9 @@ public sealed record FinanceCellViewModel(
             _ => string.IsNullOrWhiteSpace(Text) ? "-" : Text!,
         };
 
+    /// <summary>What an empty cell shows instead of "-": a calendar for a date, a pencil otherwise.</summary>
+    public string EmptyIcon => Spec.Input == FinanceFieldInput.Date ? "bi-calendar-plus" : "bi-pencil";
+
     public bool IsEmpty =>
         Spec.Input switch
         {
