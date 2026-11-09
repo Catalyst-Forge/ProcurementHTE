@@ -65,7 +65,7 @@ public static class SidebarMenu
             "Pengadaan",
             [
                 new("Procurements", "bi-briefcase", "Procurements", "Index Procurements"),
-                new("Laporan Data Procurement", "bi-table", "Ldp", "LDP Data"),
+                new("LDP", "bi-table", "Ldp", "LDP Data"),
                 new("Arsip LDP", "bi-archive", "LdpArchive", "Arsip LDP"),
             ]
         ),
@@ -92,8 +92,8 @@ public static class SidebarMenu
         new(
             "Keuangan",
             [
-                new("Account Payable Purchase Order", "bi-clipboard-check", "ApPoPickup", "AP-PO Pickup"),
-                new("Account Payable Invoice", "bi-receipt", "ApInvoicePickup", "AP-Invoice Pickup"),
+                new("AP Purchase Order", "bi-clipboard-check", "ApPoPickup", "AP-PO Pickup"),
+                new("AP Invoice", "bi-receipt", "ApInvoicePickup", "AP-Invoice Pickup"),
                 new("Data Accrual", "bi-calculator", "Accrual", "Data Accrual"),
             ]
         ),

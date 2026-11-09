@@ -10,12 +10,12 @@ public class SidebarMenuTests
     [
         "Dashboard",
         "Procurements",
-        "Laporan Data Procurement",
+        "LDP",
         "Arsip LDP",
         "Pending Approvals",
         "Procurement Tracking",
-        "Account Payable Purchase Order",
-        "Account Payable Invoice",
+        "AP Purchase Order",
+        "AP Invoice",
         "Data Accrual",
     ];
 
@@ -57,7 +57,7 @@ public class SidebarMenuTests
     {
         var labels = VisibleLabels("AP-Invoice", "AR");
 
-        Assert.Contains("Account Payable Invoice", labels);
+        Assert.Contains("AP Invoice", labels);
         Assert.Contains("Data Accrual", labels);
         Assert.DoesNotContain("Account Receivable", labels);
         Assert.Equal(labels.Length, labels.Distinct().Count());
