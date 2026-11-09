@@ -133,7 +133,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                     p.ProcurementStatus.ToString(),
                     GetStatusDescription(p.ProcurementStatus),
                     p.DocumentDate,
-                    p.ApprovalTokenGeneratedAt
+                    p.ApprovalTokenGeneratedAt,
+                    p.SpmpNumber
                 ))
                 .ToListAsync(ct);
 

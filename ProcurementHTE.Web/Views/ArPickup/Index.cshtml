@@ -23,7 +23,7 @@
     <table class="table table-hover align-middle mb-0 mobile-table finance-table">
         <thead class="table-light">
             <tr class="align-middle">
-                <th scope="col" sort-key="procNum" filter-key="procNum" class="border-end">Procurement No.</th>
+                <th scope="col" sort-key="spmp" filter-key="spmp" class="border-end">SPMP</th>
                 <th scope="col" sort-key="jobName" filter-key="jobName" class="border-end">Job Name</th>
                 <th scope="col" sort-key="wonum" filter-key="wonum" class="border-end">WO Number</th>
                 <th scope="col" sort-key="vendor" filter-key="vendor" class="border-end">Vendor</th>
@@ -45,7 +45,7 @@
             {
                 var hasAccrual = !string.IsNullOrWhiteSpace(row.NoAccrual);
                 <tr>
-                    <td data-label="Procurement No.">@row.ProcNum</td>
+                    <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
                     <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
                     <td data-label="WO Number">@(string.IsNullOrWhiteSpace(row.Wonum) ? "-" : row.Wonum)</td>
                     <td data-label="Vendor" class="finance-col-wrap">@(row.Vendor ?? "-")</td>
@@ -58,7 +58,7 @@
                             @await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ArDone))
                             @if (canFillAccrual && !row.IsCancelled)
                             {
-                                <a asp-controller="Accrual" asp-action="Index" asp-route-search="@row.ProcNum" class="btn btn-outline-primary btn-sm">
+                                <a asp-controller="Accrual" asp-action="Index" asp-route-search="@(FinanceTable.ShortSpmp(row.Spmp) ?? row.JobName)" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-calculator" aria-hidden="true"></i> @(hasAccrual ? "Edit Accrual" : "Isi Accrual")
                                 </a>
                             }

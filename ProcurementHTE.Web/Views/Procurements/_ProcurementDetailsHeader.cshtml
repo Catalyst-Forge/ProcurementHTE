@@ -20,13 +20,13 @@
              aria-label="Aksi">
             @if (Model.CanPublish)
             {
-                <button type="button" class="btn btn-success btn-publish" data-procurement-id="@procurement.ProcurementId" data-procnum="@procurement.ProcNum">
+                <button type="button" class="btn btn-success btn-publish" data-procurement-id="@procurement.ProcurementId" data-procnum="@procurement.DisplayName">
                     <i class="bi bi-send-fill"></i> Publish
                 </button>
             }
             @if (Model.CanUnpublish)
             {
-                <button type="button" class="btn btn-warning btn-unpublish" data-procurement-id="@procurement.ProcurementId" data-procnum="@procurement.ProcNum">
+                <button type="button" class="btn btn-warning btn-unpublish" data-procurement-id="@procurement.ProcurementId" data-procnum="@procurement.DisplayName">
                     <i class="bi bi-arrow-counterclockwise"></i> Batal Publish
                 </button>
             }

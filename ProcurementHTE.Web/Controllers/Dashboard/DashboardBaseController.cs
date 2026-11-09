@@ -79,7 +79,7 @@ namespace ProcurementHTE.Web.Controllers.Dashboard
                 RecentProcurementsList = recentProcurements
                     .Select(item => new DashboardProcurementViewModel
                     {
-                        ProcNum = item.ProcNum ?? "-",
+                        ProcNum = item.DisplayId,
                         JobName = item.JobName ?? item.Note,
                         JobTypeName = item.JobType?.TypeName,
                         StatusName = item.Status?.StatusName ?? "-",

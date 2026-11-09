@@ -43,7 +43,7 @@ public partial class ProcurementTrackingService
         );
 
         await NotifyApPoUsersAsync(
-            title: $"Procurement {procurement.ProcNum} di-cancel",
+            title: $"{procurement.DisplayName} di-cancel",
             message: $"WO: {procurement.Wonum}",
             notificationType: "ProcurementCancelled",
             actionUrl: $"/Procurements/Details/{procurementId}",

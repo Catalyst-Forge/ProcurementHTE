@@ -54,7 +54,7 @@ public partial class ProcurementTrackingController
     {
         if (string.IsNullOrWhiteSpace(procNum))
         {
-            TempData["Error"] = "Nomor Procurement tidak boleh kosong.";
+            TempData["Error"] = "Nomor SPMP atau WO tidak boleh kosong.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -62,7 +62,7 @@ public partial class ProcurementTrackingController
         if (tracking == null)
         {
             TempData["Error"] =
-                $"Procurement dengan nomor '{procNum}' tidak ditemukan. Coba cari dengan Proc Number, WO Number, atau SPMP Number.";
+                $"Pekerjaan dengan nomor '{procNum}' tidak ditemukan. Coba cari dengan nomor SPMP atau nomor WO.";
             return RedirectToAction(nameof(Index));
         }
 

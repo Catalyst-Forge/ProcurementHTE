@@ -26,7 +26,7 @@ public partial class ProcurementTrackingService
         var symptomNames = string.Join(", ", symptoms.GetDataIssues().GetSelectedDisplayNames());
         await _notificationService.SendNotificationAsync(
             userId: picOpsUserId,
-            title: $"Procurement {procurement.ProcNum} perlu revisi data",
+            title: $"{procurement.DisplayName} perlu revisi data",
             message: $"WO: {procurement.Wonum}\nIssue: {symptomNames}\nCatatan: {rejectionNote}",
             notificationType: "NeedsRevisionData",
             actionUrl: $"/Procurements/Edit/{procurement.ProcurementId}",
@@ -49,7 +49,7 @@ public partial class ProcurementTrackingService
             : $"WO: {procurement.Wonum}\nIssue: {symptomNames}\nCatatan: {rejectionNote}";
 
         await NotifyApPoUsersAsync(
-            title: $"Procurement {procurement.ProcNum} perlu revisi PR/Dokumen",
+            title: $"{procurement.DisplayName} perlu revisi PR/Dokumen",
             message: message,
             notificationType: "NeedsRevisionPR",
             actionUrl: $"/ProcurementTracking/Details/{procurement.ProcurementId}",
@@ -68,7 +68,7 @@ public partial class ProcurementTrackingService
     {
         await _notificationService.SendNotificationAsync(
             userId: appoUserId,
-            title: $"Procurement {procurement.ProcNum} dilepas dari PR",
+            title: $"{procurement.DisplayName} dilepas dari PR",
             message: $"WO: {procurement.Wonum}\nProcurement telah dilepas dari PR {oldPrId} karena tidak bisa digabung.\nProcurement ini perlu di-pickup ulang.",
             notificationType: "ProcurementUnlinked",
             actionUrl: $"/ProcurementTracking/Details/{procurement.ProcurementId}",
@@ -86,7 +86,7 @@ public partial class ProcurementTrackingService
         await _notificationService.SendNotificationToRoleAsync(
             roleName: "AP-PO",
             title: "Procurement perlu di-pickup",
-            message: $"WO: {procurement.Wonum}\nProcurement {procurement.ProcNum} tersedia untuk di-pickup.\n(Revisi ke-{procurement.RevisionCount})",
+            message: $"WO: {procurement.Wonum}\n{procurement.DisplayName} kembali ke tabel AP-PO.\n(Revisi ke-{procurement.RevisionCount})",
             notificationType: "ProcurementNeedsPickup",
             actionUrl: $"/Procurements/Details/{procurement.ProcurementId}",
             referenceId: procurement.ProcurementId,

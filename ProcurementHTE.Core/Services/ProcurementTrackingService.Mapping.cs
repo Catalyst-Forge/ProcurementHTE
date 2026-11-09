@@ -19,6 +19,7 @@ public partial class ProcurementTrackingService
         {
             ProcurementId = procurement.ProcurementId,
             ProcNum = procurement.ProcNum ?? string.Empty,
+            SpmpNumber = procurement.SpmpNumber,
             Wonum = procurement.Wonum,
             JobName = procurement.JobName ?? string.Empty,
             DocumentDate = procurement.DocumentDate,

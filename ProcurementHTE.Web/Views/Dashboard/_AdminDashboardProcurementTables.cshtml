@@ -24,7 +24,7 @@
                             {
                                 <tr>
                                     <td>
-                                        <strong>@proc.ProcNum</strong><br>
+                                        <strong>@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(proc.SpmpNumber) is { } spmp ? "SPMP " + spmp : "-")</strong><br>
                                         <small class="text-muted">@proc.CreatedDate.ToString("dd MMM yyyy")</small>
                                     </td>
                                     <td><small>@proc.JobTypeName</small></td>
@@ -57,7 +57,7 @@
                             {
                                 <tr>
                                     <td>
-                                        <strong>@approval.ProcNum</strong><br>
+                                        <strong>@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(approval.SpmpNumber) is { } spmp ? "SPMP " + spmp : "-")</strong><br>
                                         <small class="text-muted">@approval.DocumentName</small>
                                     </td>
                                     <td class="text-center">

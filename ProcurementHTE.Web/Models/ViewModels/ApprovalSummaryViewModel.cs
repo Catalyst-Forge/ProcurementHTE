@@ -8,6 +8,9 @@ namespace ProcurementHTE.Web.Models.ViewModels
         [DisplayName("Proc No.")]
         public string ProcNum { get; set; } = string.Empty;
 
+        [DisplayName("SPMP")]
+        public string? SpmpNumber { get; set; }
+
         [DisplayName("Document")]
         public string DocumentName { get; set; } = string.Empty;
 

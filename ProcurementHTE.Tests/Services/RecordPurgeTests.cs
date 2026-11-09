@@ -50,7 +50,7 @@ public class RecordPurgeTests : IDisposable
 
     private async Task<Procurement> DeletedJobAsync(string? inproKey = null, bool isDeleted = true)
     {
-        var job = new Procurement { ProcNum = "PROC-1", JobName = "Angkut rig", IsDeleted = isDeleted, IspaFileObjectKey = inproKey };
+        var job = new Procurement { ProcNum = "PROC-1", SpmpNumber = "0003/PDC-1110/2026-S0", JobName = "Angkut rig", IsDeleted = isDeleted, IspaFileObjectKey = inproKey };
         _db.Procurements.Add(job);
         await _db.SaveChangesAsync();
         return job;
@@ -86,7 +86,7 @@ public class RecordPurgeTests : IDisposable
 
         var log = Assert.Single(await _db.PermanentDeletionLogs.ToListAsync());
         Assert.Equal("Procurement", log.Kind);
-        Assert.Equal("PROC-1", log.Title);
+        Assert.Equal("SPMP 0003", log.Title);
         Assert.Equal(Reason, log.Reason);
         Assert.Equal(2, log.RelatedRows);
         Assert.Equal(2, log.FileCount);

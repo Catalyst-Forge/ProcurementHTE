@@ -77,7 +77,7 @@ public partial class ProcurementTrackingService
         else if (nextApprover != null)
         {
             await NotifyApPoUsersAsync(
-                title: $"Procurement {procurement.ProcNum} sudah di-approve {FinanceTable.ApproverFor(currentStatus)}",
+                title: $"{procurement.DisplayName} sudah di-approve {FinanceTable.ApproverFor(currentStatus)}",
                 message: $"WO: {procurement.Wonum} - Kirim approval ke {nextApprover} dari tabel AP-PO",
                 notificationType: "ReadyToSendApproval",
                 actionUrl: "/ApPoPickup",

@@ -459,3 +459,34 @@ public class ApprovalAwaitingSendQueryTests
         Assert.Equal(1, await repo.GetPendingApprovalCountByUserAsync("admin", ["Admin"]));
     }
 }
+
+public class SpmpIdentifierTests
+{
+    [Fact]
+    public void People_see_the_spmp_number_not_the_proc_number()
+    {
+        var job = new Procurement { ProcNum = "PROC000172", SpmpNumber = "0003/PDC-1110/2026-S0", JobName = "Sewa trailer" };
+
+        Assert.Equal("SPMP 0003", job.DisplayId);
+        Assert.Equal("SPMP 0003 (Sewa trailer)", job.DisplayName);
+        Assert.DoesNotContain("PROC", job.DisplayName);
+    }
+
+    [Fact]
+    public void A_job_without_spmp_goes_by_its_name()
+    {
+        var job = new Procurement { ProcNum = "PROC000173", JobName = "Sewa crane" };
+
+        Assert.Equal("Sewa crane", job.DisplayId);
+        Assert.Equal("Sewa crane", job.DisplayName);
+        Assert.Equal("(tanpa SPMP)", FinanceTable.SpmpTitle(job.SpmpNumber));
+    }
+
+    [Fact]
+    public void Tracking_heading_uses_the_spmp_number()
+    {
+        var tracking = new ProcurementTrackingDto { ProcNum = "PROC000172", SpmpNumber = "4841/PDC-1110/2026-S0", JobName = "Angkut" };
+
+        Assert.Equal("SPMP 4841", tracking.DisplayId);
+    }
+}

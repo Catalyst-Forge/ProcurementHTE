@@ -58,6 +58,7 @@ public static class ListSortColumns
     public static readonly IReadOnlyDictionary<string, Expression<Func<Procurement, object?>>> PendingApprovals =
         Columns<Procurement>(
             ("procNum", p => p.ProcNum),
+            ("spmp", p => p.SpmpNumber),
             ("wonum", p => p.Wonum),
             ("jobName", p => p.JobName),
             ("status", p => p.ProcurementStatus),

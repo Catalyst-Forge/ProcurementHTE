@@ -22,7 +22,7 @@ public partial class ProcurementsController
                 dto.ProcurementId,
                 pnlDocTypeId,
                 pdfBytes,
-                $"Profit_Loss_{procurement.ProcNum}.pdf",
+                $"Profit_Loss_{FileLabel(procurement)}.pdf",
                 "Profit & Loss auto-generated"
             );
         }
@@ -68,7 +68,7 @@ public partial class ProcurementsController
             procurementId,
             spmpDocTypeId,
             spmpPdfBytes,
-            $"SPMP_{procurement.ProcNum}.pdf",
+            $"SPMP_{FileLabel(procurement)}.pdf",
             description
         );
     }
@@ -124,4 +124,10 @@ public partial class ProcurementsController
             .FirstOrDefault(doc => doc.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
             ?.DocumentTypeId;
     }
+
+    // File names follow the SPMP number people know the job by, e.g. SPMP_0003.pdf.
+    private static string FileLabel(Procurement procurement) =>
+        ProcurementHTE.Web.Utils.ProcurementReferenceNumberFormatter.SanitizeFileName(
+            ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(procurement.SpmpNumber) ?? procurement.JobName ?? "pekerjaan"
+        );
 }

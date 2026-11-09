@@ -4,11 +4,11 @@
 
 @{
     var currentSearch = Context.Request.Query["search"].ToString();
-    var currentFields = (Context.Request.Query["fields"].ToString() ?? "ProcNum,JobName")
+    var currentFields = (Context.Request.Query["fields"].ToString() ?? "SpmpNumber,JobName")
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
     var columns = new (string Key, string Label)[] {
-        ("ProcNum","Procurement No."),
+        ("SpmpNumber","SPMP"),
         ("Wonum","WO Number"),
         ("JobName","Job Name"),
         ("JobType","Job Type"),

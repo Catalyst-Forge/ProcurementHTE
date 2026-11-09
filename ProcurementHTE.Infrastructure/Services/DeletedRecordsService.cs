@@ -33,7 +33,7 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
         {
             DeletedRecordKind.Procurement => await Deleted<Procurement>()
                 .OrderByDescending(x => x.DeletedAt).Take(ListLimit)
-                .Select(x => new Row(x.ProcurementId, x.ProcNum ?? "(tanpa nomor)", x.JobName, x.DeletedAt, x.DeletedBy))
+                .Select(x => new Row(x.ProcurementId, Core.Finance.FinanceTable.SpmpTitle(x.SpmpNumber), x.JobName, x.DeletedAt, x.DeletedBy))
                 .ToListAsync(ct),
             DeletedRecordKind.PurchaseRequisition => await Deleted<PurchaseRequisition>()
                 .OrderByDescending(x => x.DeletedAt).Take(ListLimit)

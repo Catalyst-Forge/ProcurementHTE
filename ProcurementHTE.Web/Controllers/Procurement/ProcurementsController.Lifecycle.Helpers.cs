@@ -14,7 +14,7 @@ public partial class ProcurementsController
 
         await _notificationService.NotifyProcurementPublishedAsync(
             procurementId,
-            procurement.ProcNum ?? "-",
+            procurement.DisplayName,
             currentUser?.Id ?? "",
             publisherName,
             HttpContext.RequestAborted

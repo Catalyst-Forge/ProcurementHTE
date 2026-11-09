@@ -73,7 +73,7 @@ public partial class ProcurementTrackingService
         return new ProcurementTrackingResponse
         {
             Success = true,
-            Message = $"Approval {procurement.ProcNum} dikirim ke {target}.",
+            Message = $"Approval {procurement.DisplayName} dikirim ke {target}.",
         };
     }
 

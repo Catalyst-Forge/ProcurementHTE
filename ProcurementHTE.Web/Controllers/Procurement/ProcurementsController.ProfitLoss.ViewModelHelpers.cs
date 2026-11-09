@@ -63,7 +63,7 @@ public partial class ProcurementsController
 
     private async Task SetProfitLossViewBagsAsync(Procurement procurement)
     {
-        ViewBag.ProcNum = procurement.ProcNum;
+        ViewBag.ProcNum = procurement.DisplayId;
         ViewBag.IssueDate = procurement.CreatedAt.ToString("d MMMM yyyy");
         ViewBag.JobTypeName = procurement.JobType?.TypeName ?? "Unknown";
         ViewBag.UnitTypes = await _unitTypeRepository.GetActiveAsync();

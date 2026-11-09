@@ -29,7 +29,7 @@
                                 <tr>
                                     <td>
                                         <a asp-controller="Procurement" asp-action="Details" asp-route-id="@proc.ProcNum" class="text-decoration-none">
-                                            <strong>@proc.ProcNum</strong>
+                                            <strong>@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(proc.SpmpNumber) is { } spmp ? "SPMP " + spmp : "-")</strong>
                                         </a>
                                         <br>
                                         <small class="text-muted">@proc.CreatedDate.ToString("dd MMM yyyy")</small>
@@ -78,7 +78,7 @@
                             @foreach (var approval in Model.PendingApprovalsDetail)
                             {
                                 <tr>
-                                    <td><strong>@approval.ProcNum</strong></td>
+                                    <td><strong>@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(approval.SpmpNumber) is { } spmp ? "SPMP " + spmp : "-")</strong></td>
                                     <td><small>@approval.DocumentName</small></td>
                                     <td><span class="badge bg-secondary">@approval.ApprovalRole</span></td>
                                     <td class="text-center">

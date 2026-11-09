@@ -380,6 +380,9 @@ public static class FinanceTable
         return slash > 0 ? trimmed[..slash].Trim() : trimmed;
     }
 
+    /// <summary>"SPMP 0003", or "(tanpa SPMP)" for a job that never got one.</summary>
+    public static string SpmpTitle(string? spmp) => ShortSpmp(spmp) is { } number ? $"SPMP {number}" : "(tanpa SPMP)";
+
     public static string FormatDate(DateTime? date) => date?.ToString("dd MMM yyyy", Id) ?? "-";
 
     public static string FormatMoney(decimal? value) => value.HasValue ? value.Value.ToString("N0", Id) : "-";

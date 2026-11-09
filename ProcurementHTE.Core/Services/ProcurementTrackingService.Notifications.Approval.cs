@@ -24,7 +24,7 @@ public partial class ProcurementTrackingService
 
         await _notificationService.SendNotificationAsync(
             userId: approverUserId,
-            title: $"Procurement {procurement.ProcNum} menunggu approval Anda",
+            title: $"{procurement.DisplayName} menunggu approval Anda",
             message: $"WO: {procurement.Wonum} - {procurement.JobName}",
             notificationType: "ApprovalRequest",
             actionUrl: $"/ProcurementTracking/Details/{procurement.ProcurementId}",
@@ -71,7 +71,7 @@ public partial class ProcurementTrackingService
 
         await _notificationService.SendNotificationAsync(
             userId: submitterUserId,
-            title: $"Procurement {procurement.ProcNum} telah di-approve oleh {approverRole}",
+            title: $"{procurement.DisplayName} telah di-approve oleh {approverRole}",
             message: $"WO: {procurement.Wonum} - {nextStep}",
             notificationType: $"ApprovedBy{approverRole.Replace(" ", "")}",
             actionUrl: $"/ProcurementTracking/Details/{procurement.ProcurementId}",
@@ -84,7 +84,7 @@ public partial class ProcurementTrackingService
     private async Task SendReadyForIspaNotification(Procurement procurement, CancellationToken ct)
     {
         await NotifyApPoUsersAsync(
-            title: $"Procurement {procurement.ProcNum} sudah selesai approval",
+            title: $"{procurement.DisplayName} sudah selesai approval",
             message: $"WO: {procurement.Wonum} - Semua approval telah selesai",
             notificationType: "ReadyForISPA",
             actionUrl: "/ApPoPickup",
@@ -122,7 +122,7 @@ public partial class ProcurementTrackingService
 
         await _notificationService.SendNotificationAsync(
             userId: submitterUserId,
-            title: $"Procurement {procurement.ProcNum} ditolak oleh {rejectorRole}",
+            title: $"{procurement.DisplayName} ditolak oleh {rejectorRole}",
             message: message,
             notificationType: "PrRejected",
             actionUrl: $"/ProcurementTracking/Details/{procurement.ProcurementId}",

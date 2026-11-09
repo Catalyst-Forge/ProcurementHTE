@@ -97,7 +97,7 @@
                                     <form asp-action="SaveRaNumber" asp-route-id="@row.ProcurementId" method="post">
                                         <input type="hidden" name="raNumber" value="@row.RaNumber" />
                                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                        <button type="button" class="btn btn-outline-primary btn-sm btn-ra-number" data-procnum="@row.ProcNum">
+                                        <button type="button" class="btn btn-outline-primary btn-sm btn-ra-number">
                                             @(string.IsNullOrWhiteSpace(row.RaNumber) ? "Isi Nomor RA" : $"RA: {row.RaNumber}")
                                         </button>
                                     </form>

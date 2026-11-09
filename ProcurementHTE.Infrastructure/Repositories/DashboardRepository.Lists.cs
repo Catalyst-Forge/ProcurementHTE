@@ -22,6 +22,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .Select(proc => new ProcurementSummary
                 {
                     ProcNum = proc.ProcNum ?? string.Empty,
+                    SpmpNumber = proc.SpmpNumber,
                     JobTypeName = proc.JobType != null ? proc.JobType.TypeName : string.Empty,
                     StatusName = proc.Status != null ? proc.Status.StatusName : string.Empty,
                     CreatedBy =
@@ -55,6 +56,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                         pr.Procurements.FirstOrDefault() != null
                             ? pr.Procurements.First().ProcNum ?? "-"
                             : "-",
+                    SpmpNumber = pr.Procurements.Select(p => p.SpmpNumber).FirstOrDefault(),
                     DocumentName = pr.PrNumber ?? "-",
                     ApprovalRole = pr.Status.ToString(),
                     CreatedDate = pr.CreatedAt,

@@ -18,8 +18,8 @@
             </div>
             <div class="card-body">
                 <div class="row mb-2">
-                    <div class="col-md-4 fw-semibold">Procurement No:</div>
-                    <div class="col-md-8">@Model.ProcNum</div>
+                    <div class="col-md-4 fw-semibold">SPMP:</div>
+                    <div class="col-md-8">@(Model.SpmpNumber ?? "-")</div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-md-4 fw-semibold">Job Name:</div>
@@ -108,7 +108,7 @@
 
                     <p class="text-muted mb-3">Isi data accrual lewat menu Data Accrual.</p>
                     <div class="d-grid">
-                        <a asp-controller="Accrual" asp-action="Index" asp-route-search="@Model.ProcNum" class="btn btn-primary">
+                        <a asp-controller="Accrual" asp-action="Index" asp-route-search="@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(Model.SpmpNumber) ?? Model.JobName)" class="btn btn-primary">
                             <i class="bi bi-calculator"></i> Buka Data Accrual
                         </a>
                     </div>

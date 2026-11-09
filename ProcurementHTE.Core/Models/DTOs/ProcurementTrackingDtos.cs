@@ -10,6 +10,11 @@ namespace ProcurementHTE.Core.Models.DTOs
     {
         public string ProcurementId { get; set; } = null!;
         public string ProcNum { get; set; } = null!;
+        public string? SpmpNumber { get; set; }
+
+        /// <summary>The job as headings name it: "SPMP 0003", or the job name before it has an SPMP.</summary>
+        public string DisplayId =>
+            Finance.FinanceTable.ShortSpmp(SpmpNumber) is { } spmp ? $"SPMP {spmp}" : JobName ?? "-";
         public string? Wonum { get; set; }
         public string JobName { get; set; } = null!;
         public DateTime DocumentDate { get; set; }

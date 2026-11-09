@@ -23,7 +23,10 @@ namespace ProcurementHTE.Infrastructure.Repositories
         {
             return await BuildTrackingQuery()
                 .FirstOrDefaultAsync(
-                    p => p.ProcNum == procNum || p.Wonum == procNum || p.SpmpNumber == procNum,
+                    p => p.ProcNum == procNum
+                        || p.Wonum == procNum
+                        || p.SpmpNumber == procNum
+                        || (p.SpmpNumber != null && p.SpmpNumber.StartsWith(procNum + "/")),
                     ct
                 );
         }

@@ -5,11 +5,11 @@
     ViewData["Title"] = "Document Type Data";
     ViewData["DisableHxBoost"] = true;
     var currentSearch = Context.Request.Query["search"].ToString();
-    var currentFields = (Context.Request.Query["fields"].ToString() ?? "ProcNum,Description")
+    var currentFields = (Context.Request.Query["fields"].ToString() ?? "Name,Description")
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
     var columns = new (string Key, string Label)[] {
-        ("ProcNum","Procurement No."),
+        ("Name","Name"),
         ("Description","Description"),
         ("Status","Status"),
     };

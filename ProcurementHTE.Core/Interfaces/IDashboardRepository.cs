@@ -77,6 +77,7 @@ namespace ProcurementHTE.Core.Interfaces
         string CurrentStatus,
         string CurrentStatusDescription,
         DateTime DocumentDate,
-        DateTime? SentForApprovalAt
+        DateTime? SentForApprovalAt,
+        string? SpmpNumber = null
     );
 }

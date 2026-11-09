@@ -24,7 +24,7 @@ public partial class ProcurementsController
         if (!allowed.Contains(pageSize))
             pageSize = 10;
 
-        var selectedFields = (fields ?? "ProcNum, JobName")
+        var selectedFields = (fields ?? "SpmpNumber, JobName")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

@@ -59,6 +59,20 @@ public partial class Procurement
     public bool ApprovalAwaitingSend { get; set; }
 
     /// <summary>
+    /// People know a job by its SPMP number, not the internal PROC number: "SPMP 0003".
+    /// Null while the job has no SPMP yet.
+    /// </summary>
+    public string? SpmpLabel =>
+        Finance.FinanceTable.ShortSpmp(SpmpNumber) is { } number ? $"SPMP {number}" : null;
+
+    /// <summary>The job as headings and lists name it: "SPMP 0003", or the job name before it has an SPMP.</summary>
+    public string DisplayId => SpmpLabel ?? JobName ?? "-";
+
+    /// <summary>The job in notification and dialog text: "SPMP 0003 (Sewa trailer)".</summary>
+    public string DisplayName =>
+        SpmpLabel is { } label ? (string.IsNullOrWhiteSpace(JobName) ? label : $"{label} ({JobName})") : JobName ?? "-";
+
+    /// <summary>
     /// Only spot Angkutan jobs get their P&amp;L PDF made when the P&amp;L is saved. Every other job
     /// uploads its own, and a generated file can always be replaced by an upload.
     /// </summary>

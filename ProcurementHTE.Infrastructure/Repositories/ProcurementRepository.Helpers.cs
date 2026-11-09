@@ -26,6 +26,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
         )
         {
             var byProcNum = fields.Contains("ProcNum", StringComparer.OrdinalIgnoreCase);
+            var bySpmp = fields.Contains("SpmpNumber", StringComparer.OrdinalIgnoreCase);
             var byWonum = fields.Contains("Wonum", StringComparer.OrdinalIgnoreCase);
             var byJobName = fields.Contains("JobName", StringComparer.OrdinalIgnoreCase);
             var byProjectCode = fields.Contains("ProjectCode", StringComparer.OrdinalIgnoreCase);
@@ -34,6 +35,11 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             return query.Where(procurement =>
                 (
+                    bySpmp
+                    && procurement.SpmpNumber != null
+                    && EF.Functions.Like(procurement.SpmpNumber, like)
+                )
+                || (
                     byProcNum
                     && procurement.ProcNum != null
                     && EF.Functions.Like(procurement.ProcNum, like)

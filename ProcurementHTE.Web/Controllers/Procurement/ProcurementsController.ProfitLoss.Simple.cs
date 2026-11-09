@@ -25,7 +25,7 @@ public partial class ProcurementsController
             new SimpleProfitLossViewModel
             {
                 ProcurementId = procurementId,
-                ProcNum = procurement.ProcNum,
+                ProcNum = procurement.DisplayId,
                 ContractType = procurement.ContractType.ToString(),
                 SelectedVendorId = pnl?.SelectedVendorId ?? string.Empty,
                 Revenue = pnl?.AccrualAmount,
@@ -50,7 +50,7 @@ public partial class ProcurementsController
 
         if (!ModelState.IsValid || firstOffer == null)
         {
-            viewModel.ProcNum = procurement.ProcNum;
+            viewModel.ProcNum = procurement.DisplayId;
             viewModel.ContractType = procurement.ContractType.ToString();
             viewModel.Vendors = await LoadVendorOptionsAsync();
             return View(nameof(SimpleProfitLoss), viewModel);

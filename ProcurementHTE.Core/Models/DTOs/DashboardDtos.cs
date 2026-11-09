@@ -3,6 +3,7 @@ namespace ProcurementHTE.Core.Models.DTOs
     public class ProcurementSummary
     {
         public string ProcNum { get; set; } = string.Empty;
+        public string? SpmpNumber { get; set; }
         public string JobTypeName { get; set; } = string.Empty;
         public string StatusName { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
@@ -13,6 +14,7 @@ namespace ProcurementHTE.Core.Models.DTOs
     public class ApprovalSummary
     {
         public string ProcNum { get; set; } = string.Empty;
+        public string? SpmpNumber { get; set; }
         public string DocumentName { get; set; } = string.Empty;
         public string ApprovalRole { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }

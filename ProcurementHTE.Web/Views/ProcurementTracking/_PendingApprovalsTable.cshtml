@@ -14,7 +14,7 @@
             <table class="table table-hover mb-0 mobile-table">
                 <thead class="table-light">
                     <tr>
-                        <th scope="col" sort-key="procNum" class="px-3">Proc Number</th>
+                        <th scope="col" sort-key="spmp" class="px-3">SPMP</th>
                         <th scope="col" sort-key="wonum">WO Number</th>
                         <th scope="col" sort-key="jobName">Job Name</th>
                         <th scope="col" sort-key="status" class="text-center">Status</th>
@@ -54,7 +54,7 @@
                                        asp-route-procurementId="@item.ProcurementId"
                                        class="fw-semibold text-decoration-none"
                                        hx-boost="false">
-                                        @item.ProcNum
+                                        @(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.SpmpNumber) is { } spmp ? "SPMP " + spmp : "-")
                                     </a>
                                 </td>
                                 <td>

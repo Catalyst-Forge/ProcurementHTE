@@ -11,6 +11,7 @@ namespace ProcurementHTE.Web.Mappers
             return new ProcurementSummaryViewModel
             {
                 ProcNum = dto.ProcNum,
+                SpmpNumber = dto.SpmpNumber,
                 JobTypeName = dto.JobTypeName,
                 StatusName = dto.StatusName,
                 CreatedBy = dto.CreatedBy,
@@ -32,6 +33,7 @@ namespace ProcurementHTE.Web.Mappers
             return new ApprovalSummaryViewModel
             {
                 ProcNum = dto.ProcNum,
+                SpmpNumber = dto.SpmpNumber,
                 DocumentName = dto.DocumentName,
                 ApprovalRole = dto.ApprovalRole,
                 CreatedDate = dto.CreatedDate,

@@ -78,7 +78,7 @@ public sealed partial class RecordPurgeService
         );
 
         return new PurgePlan(
-            job.ProcNum ?? "(tanpa nomor)",
+            Core.Finance.FinanceTable.SpmpTitle(job.SpmpNumber),
             job.JobName,
             rows,
             relatedRows,
