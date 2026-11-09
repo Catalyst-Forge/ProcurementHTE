@@ -12,10 +12,6 @@
   padding: 0.3rem 0.25rem;
 }
 
-.finance-table thead th {
-  vertical-align: bottom;
-}
-
 .finance-table .finance-col-wrap {
   min-width: 7rem;
   max-width: 14rem;

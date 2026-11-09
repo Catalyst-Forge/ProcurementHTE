@@ -258,6 +258,13 @@ summary:focus-visible {
   font-size: 0.75rem;
 }
 
+/* Every column title is centred, number columns included; the cells keep their own
+   alignment. Wins over .text-start and .text-end on the header cells. */
+.table > thead th {
+  text-align: center !important;
+  vertical-align: middle;
+}
+
 /* A visually-hidden header label is absolutely positioned. Without a positioned scroll
    container it escaped the table's own scrolling and widened the whole page. */
 .table-responsive {
