@@ -139,6 +139,7 @@
         const form = document.getElementById('filterForm');
         const searchBox = document.getElementById('searchBox');
         const pageHidden = document.getElementById('pageHidden');
+        if (!form || !searchBox || !pageHidden) return; // the detail page has no search
 
         // Enter di search langsung submit (page reset ke 1)
         searchBox.addEventListener('keydown', function (e) {

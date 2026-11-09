@@ -207,7 +207,8 @@ public partial class ListSortTests
     {
         var used = SortKey().Matches(File.ReadAllText(ViewPath("Ldp/_LdpTable.cshtml"))).Select(m => m.Groups[1].Value).ToList();
 
-        Assert.Equal(45, used.Count);
+        // SPMP, Job Name, Vendor, No PR, No PO, No SA, No SP3, Submit Loket; the rest is on the detail page.
+        Assert.Equal(8, used.Count);
         Assert.All(used, key => Assert.NotNull(LdpRepository.FindColumn(key)));
     }
 

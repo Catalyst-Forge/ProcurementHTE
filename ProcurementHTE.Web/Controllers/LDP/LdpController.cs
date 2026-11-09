@@ -63,6 +63,17 @@ namespace ProcurementHTE.Web.Controllers.Ldp
             }
         }
 
+        /// <summary>Every LDP column of one job; the table shows only the main ones.</summary>
+        [HttpGet]
+        public async Task<IActionResult> Details(string id, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return NotFound();
+
+            var item = await _ldpService.GetByProcurementIdAsync(id, ct);
+            return item is null ? NotFound() : View(item);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadDocument(

@@ -87,6 +87,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 TanggalSubmitIspa = Date("Submit INPRO"),
                 SANo = row.NoSa,
                 SP3No = row.NoSp3,
+                NoPo = row.NoPo,
+                NoInvoice = row.NoInvoice,
                 PicApPo = row.PicPr,
             };
         }

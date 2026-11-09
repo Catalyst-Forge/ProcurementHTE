@@ -12,5 +12,7 @@ namespace ProcurementHTE.Core.Interfaces
         );
 
         Task<int> CountAsync(CancellationToken ct = default);
+
+        Task<LdpRecapDto?> GetByProcurementIdAsync(string procurementId, CancellationToken ct = default);
     }
 }

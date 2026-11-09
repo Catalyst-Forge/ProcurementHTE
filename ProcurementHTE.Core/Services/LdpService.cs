@@ -34,6 +34,9 @@ namespace ProcurementHTE.Core.Services
         public async Task<IReadOnlyList<LdpRecapDto>> GetAllForExportAsync(string? search, CancellationToken ct = default) =>
             (await _ldpRepository.GetAllAsync(1, int.MaxValue, search, ct)).Items;
 
+        public Task<LdpRecapDto?> GetByProcurementIdAsync(string procurementId, CancellationToken ct = default) =>
+            _ldpRepository.GetByProcurementIdAsync(procurementId, ct);
+
         public async Task<int> CountAsync(CancellationToken ct = default)
         {
             return await _ldpRepository.CountAsync(ct);

@@ -31,20 +31,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
             CancellationToken ct = default
         )
         {
-            // Base query - start from Procurements
-            var query = _context
-                .Procurements.Include(p => p.JobType)
-                .Include(p => p.AppoUser)
-                .Include(p => p.PurchaseRequisition)
-                .ThenInclude(pr => pr!.StatusHistories)
-                .Include(p => p.StatusHistories)
-                .Include(p => p.ProcOffers)
-                .Include(p => p.ProcDocuments!)
-                .ThenInclude(pd => pd.DocumentType)
-                .Include(p => p.ProfitLosses)
-                .ThenInclude(pl => pl.SelectedVendor)
-                .AsNoTracking()
-                .AsSplitQuery();
+            var query = JobsWithLdpData();
 
             // Apply search filter - focus on No WO and Job Name
             if (!string.IsNullOrWhiteSpace(search))
@@ -100,6 +87,36 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             return (items, totalCount);
         }
+
+        /// <summary>One job as an LDP row, for its detail page. Null when it does not exist.</summary>
+        public async Task<LdpRecapDto?> GetByProcurementIdAsync(string procurementId, CancellationToken ct = default)
+        {
+            var procurement = await JobsWithLdpData().FirstOrDefaultAsync(p => p.ProcurementId == procurementId, ct);
+            if (procurement is null)
+                return null;
+
+            var letters = await _context
+                .VendorRoundLetters.Where(vrl => vrl.ProcurementId == procurementId)
+                .AsNoTracking()
+                .ToListAsync(ct);
+            return MapToDto(procurement, letters);
+        }
+
+        // Everything an LDP row is worked out from.
+        private IQueryable<Core.Models.Procurement> JobsWithLdpData() =>
+            _context
+                .Procurements.Include(p => p.JobType)
+                .Include(p => p.AppoUser)
+                .Include(p => p.PurchaseRequisition)
+                .ThenInclude(pr => pr!.StatusHistories)
+                .Include(p => p.StatusHistories)
+                .Include(p => p.ProcOffers)
+                .Include(p => p.ProcDocuments!)
+                .ThenInclude(pd => pd.DocumentType)
+                .Include(p => p.ProfitLosses)
+                .ThenInclude(pl => pl.SelectedVendor)
+                .AsNoTracking()
+                .AsSplitQuery();
 
         public async Task<int> CountAsync(CancellationToken ct = default)
         {

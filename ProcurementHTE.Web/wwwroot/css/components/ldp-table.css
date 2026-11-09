@@ -73,3 +73,20 @@
     line-clamp: none;
   }
 }
+
+/* --- LDP detail page (Views/Ldp/Details.cshtml) ---
+   Every LDP column of one job, in groups that flow into two columns on a wide screen. */
+.ldp-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 1.5rem 2.5rem;
+}
+
+.ldp-details__group dt,
+.ldp-details__group dd {
+  margin-bottom: 0.375rem;
+}
+
+.ldp-details__group dd {
+  font-variant-numeric: tabular-nums;
+}

@@ -103,6 +103,15 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 SANo = p.SANo,
                 SP3No = p.SP3No,
                 PicApPo = p.PicAppo ?? p.AppoUser?.FullName,
+                NoPo = p.PoNumber,
+                NoRa = p.RaNumber,
+                TglSubmitHardcopy = p.HardcopySubmittedAt,
+                NoInvoice = p.InvoiceNumber,
+                TglInvoice = p.InvoiceDate,
+                TglSa = p.SaDate,
+                TglSp3 = p.Sp3Date,
+                TglSubmitLoket = p.LoketSubmitDate,
+                PicApInvoice = p.PicApInvoice,
 
                 // Items
                 UnitItemPenawaran = unitItems,

@@ -1,0 +1,164 @@
+@using ProcurementHTE.Core.Finance
+@model ProcurementHTE.Core.Models.DTOs.LdpRecapDto
+@{
+    ViewData["Title"] = "Detail LDP";
+    var item = Model;
+    string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value;
+    string Date(DateTime? value) => FinanceTable.FormatDate(value);
+    string DateTimeText(DateTime? value) => value?.ToString("dd MMM yyyy HH:mm", System.Globalization.CultureInfo.GetCultureInfo("id-ID")) ?? "-";
+    string Money(decimal? value) => FinanceTable.FormatMoney(value);
+
+    var sections = new (string Title, (string Label, string Value)[] Rows)[]
+    {
+        ("Pekerjaan", [
+            ("No SPMP", Text(item.NoSpmp)),
+            ("No WO", Text(item.NoWo)),
+            ("No SPK", Text(item.NoSpk)),
+            ("Job Name", Text(item.TextPekerjaan)),
+            ("Job Type", Text(item.JobType)),
+            ("Contract Type", Text(item.ContractType)),
+            ("LTC Name", Text(item.LtcName)),
+            ("Project Region", Text(item.ProjectRegion)),
+            ("Project Code", Text(item.ProjectCode)),
+            ("No HTE", Text(item.NoHte)),
+            ("No Rig", Text(item.NoRig)),
+            ("Year Job", item.YearJob?.ToString() ?? "-"),
+            ("Tgl Mulai", Date(item.TglMulai)),
+            ("Tgl Selesai", Date(item.TglSelesai)),
+            ("Text Pekerjaan PR", Text(item.TextPekerjaanPr)),
+            ("50K", Text(item.Flag50K)),
+            ("Unit Item", Text(item.UnitItemPenawaran)),
+            ("Keterangan-1", Text(item.Keterangan1)),
+        ]),
+        ("Vendor dan nilai", [
+            ("Vendor Terpilih", Text(item.NamaVendor)),
+            ("Surat Penawaran", Text(item.SuratPenawaranVendor)),
+            ("Nilai PnL", Money(item.NilaiPnl)),
+            ("Nilai Accrual", Money(item.NilaiAccrual)),
+            ("Nilai Realisasi", Money(item.NilaiRealisasi)),
+        ]),
+        ("Accrual", [
+            ("No Accrual", Text(item.NoAccrual)),
+            ("Potensi Accrual", Money(item.PotensiAccrual)),
+            ("Tgl Accrual", Date(item.TglAccrual)),
+            ("Status Accrual", Text(item.StatusAccrual)),
+        ]),
+        ("PR dan PO", [
+            ("No PR", Text(item.NoPr)),
+            ("Tgl Buat PR", DateTimeText(item.TanggalBuatPr)),
+            ("Tgl Rilis PR", DateTimeText(item.TanggalRilisPr)),
+            ("No PO", Text(item.NoPo)),
+            ("Tgl Submit INPRO", Date(item.TanggalSubmitIspa)),
+            ("Submit Hard Copy", Date(item.TglSubmitHardcopy)),
+            ("No RA", Text(item.NoRa)),
+            ("PIC AP-PO", Text(item.PicApPo)),
+        ]),
+        ("Invoice", [
+            ("No Invoice", Text(item.NoInvoice)),
+            ("Tgl Invoice", Date(item.TglInvoice)),
+            ("No SA", Text(item.SANo)),
+            ("Tgl SA", Date(item.TglSa)),
+            ("No SP3", Text(item.SP3No)),
+            ("Tgl SP3", Date(item.TglSp3)),
+            ("Submit Loket", Date(item.TglSubmitLoket)),
+            ("PIC AP-Invoice", Text(item.PicApInvoice)),
+        ]),
+        ("Approval", [
+            ("Approval Analyst", Date(item.TanggalApprovalAnalyst)),
+            ("Approval Asst. Manager", Date(item.TanggalApprovalAsstManager)),
+            ("Approval Manager", Date(item.ManagerApprovalSelesai)),
+            ("Approval VP", Date(item.VpApprovalSelesai)),
+        ]),
+        ("Dokumen", [
+            ("Memorandum", Text(item.Memorandum)),
+            ("Tgl Doc", Date(item.TglDoc)),
+            ("RKS Tgl Selesai", Date(item.RksTglSelesai)),
+            ("BOQ Tgl Selesai", Date(item.BoqTglSelesai)),
+            ("Memo Tgl Selesai", Date(item.MemoTglSelesai)),
+            ("RA Tgl Selesai", Date(item.RaTglSelesai)),
+            ("Link Dokumen", string.IsNullOrWhiteSpace(item.LinkDokumen) ? "-" : "Ada"),
+        ]),
+    };
+}
+
+<header class="mb-3">
+    <a asp-action="Index" class="back-link"><i class="bi bi-chevron-left" aria-hidden="true"></i>Kembali ke LDP</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mt-2">
+        <div class="page-header-text">
+            <h1 class="h4 mb-1 text-break">@Text(item.TextPekerjaan)</h1>
+            <p class="text-muted mb-0 small">
+                @FinanceTable.SpmpTitle(item.NoSpmp) · @Text(item.NamaVendor) · No PR @Text(item.NoPr)
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-controller="ProcurementDocuments" asp-action="Index" asp-route-procurementId="@item.ProcurementId" class="btn btn-outline-primary">
+                <i class="bi bi-folder2-open" aria-hidden="true"></i> Dokumen pekerjaan
+            </a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-controller="Procurements" asp-action="Edit" asp-route-id="@item.ProcurementId" class="btn btn-outline-secondary">Edit</a>
+                <a asp-controller="Procurements" asp-action="Delete" asp-route-id="@item.ProcurementId" class="btn btn-outline-danger">Hapus</a>
+            }
+        </div>
+    </div>
+</header>
+
+<section class="card shadow-sm rounded-4" aria-label="Semua kolom LDP">
+    <div class="card-body ldp-details">
+        @foreach (var group in sections)
+        {
+            var headingId = "ldp-" + group.Title.Replace(" ", "-").ToLowerInvariant();
+            <section class="ldp-details__group" aria-labelledby="@headingId">
+                <h2 class="h6 mb-2" id="@headingId">@group.Title</h2>
+                <dl class="row mb-0">
+                    @foreach (var (label, value) in group.Rows)
+                    {
+                        <dt class="col-5 fw-semibold text-secondary small">@label</dt>
+                        <dd class="col-7 text-break @(value == "-" ? "text-muted" : null)">@value</dd>
+                    }
+                </dl>
+            </section>
+        }
+
+        <section class="ldp-details__group" aria-labelledby="ldp-dokumen-ldp">
+            <h2 class="h6 mb-2" id="ldp-dokumen-ldp">Dokumen LDP</h2>
+            @if (item.HasLdpDocument)
+            {
+                <p class="mb-2 text-break">
+                    <i class="bi bi-file-earmark-text" aria-hidden="true"></i> @item.LdpFileName
+                    @if (item.LdpUploadedAt.HasValue)
+                    {
+                        <span class="text-muted small d-block">Diunggah @DateTimeText(item.LdpUploadedAt)</span>
+                    }
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-download-ldp"
+                            data-procurement-id="@item.ProcurementId" data-filename="@item.LdpFileName">
+                        <i class="bi bi-download" aria-hidden="true"></i> Unduh
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-ldp"
+                            data-procurement-id="@item.ProcurementId">
+                        <i class="bi bi-arrow-repeat" aria-hidden="true"></i> Ganti
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-ldp"
+                            data-procurement-id="@item.ProcurementId" data-filename="@item.LdpFileName">
+                        <i class="bi bi-trash" aria-hidden="true"></i> Hapus
+                    </button>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-2">Belum ada dokumen LDP.</p>
+                <button type="button" class="btn btn-sm btn-primary btn-upload-ldp" data-procurement-id="@item.ProcurementId">
+                    <i class="bi bi-upload" aria-hidden="true"></i> Unggah dokumen LDP
+                </button>
+            }
+        </section>
+    </div>
+</section>
+
+@await Html.PartialAsync("_LdpUploadModal")
+
+@section Scripts {
+    @await Html.PartialAsync("_LdpScripts")
+}

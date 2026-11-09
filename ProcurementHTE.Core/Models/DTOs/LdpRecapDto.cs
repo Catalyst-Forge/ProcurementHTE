@@ -41,6 +41,17 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string? SANo { get; set; }
         public string? SP3No { get; set; }
 
+        // AP-PO and AP-Invoice cells (finance tables), shown in the LDP table and detail
+        public string? NoPo { get; set; }
+        public string? NoRa { get; set; }
+        public DateTime? TglSubmitHardcopy { get; set; }
+        public string? NoInvoice { get; set; }
+        public DateTime? TglInvoice { get; set; }
+        public DateTime? TglSa { get; set; }
+        public DateTime? TglSp3 { get; set; }
+        public DateTime? TglSubmitLoket { get; set; }
+        public string? PicApInvoice { get; set; }
+
         /// <summary>Set when the row comes from Arsip LDP instead of a Docutrax job.</summary>
         public string? ArchiveRowId { get; set; }
         public string? PicApPo { get; set; }
