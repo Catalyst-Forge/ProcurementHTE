@@ -107,8 +107,8 @@
 }
 
 /* The approval step's one action: a soft blue pill as tall as the status badge, so it does
-   not outweigh the row; it fills blue on hover. "Sending Approval" and the approver name each
-   stay whole, so a narrow column breaks it into two lines. */
+   not outweigh the row; it fills blue on hover. It shows the send icon and the next approver;
+   its title and aria-label read "Sending Approval <approver>" in full. */
 .btn.finance-send {
   --bs-btn-padding-y: 0.125rem;
   --bs-btn-padding-x: 0.4375rem;
@@ -125,8 +125,7 @@
   --bs-btn-active-color: #fff;
   --bs-btn-active-bg: var(--dx-blue-700);
   --bs-btn-active-border-color: var(--dx-blue-700);
-  white-space: normal;
-  text-align: left;
+  white-space: nowrap;
 }
 
 .btn.finance-send:focus-visible {
@@ -162,7 +161,7 @@
 }
 
 /* From 1440px the columns have room to stay whole: the badge and the approval step share
-   one line, PIC names do not wrap, and Job Name keeps a wider minimum before it wraps. */
+   one line, PIC names do not wrap, and Job Name gets more width before it wraps. */
 @media (min-width: 1440px) {
   .finance-actions {
     flex-wrap: nowrap;
@@ -174,13 +173,6 @@
   }
 
   .finance-table td.finance-col-wrap {
-    min-width: 8rem;
-  }
-}
-
-/* From 1512px the send button keeps "Sending Approval Asst. Manager" on one line. */
-@media (min-width: 1512px) {
-  .btn.finance-send {
-    white-space: nowrap;
+    min-width: 9rem;
   }
 }

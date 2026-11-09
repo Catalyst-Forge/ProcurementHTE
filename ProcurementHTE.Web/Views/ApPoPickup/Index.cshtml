@@ -98,8 +98,10 @@
                                       data-confirm-confirm-color="var(--dx-blue-600)"
                                       data-confirm-cancel="Batal">
                                     <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                    <button type="submit" class="btn finance-send">
-                                        <span class="finance-keep"><i class="bi bi-send" aria-hidden="true"></i>Sending Approval</span> <span class="finance-keep">@row.NextApprovalTarget</span>
+                                    <button type="submit" class="btn finance-send"
+                                            aria-label="@($"Sending Approval {row.NextApprovalTarget}")"
+                                            title="@($"Sending Approval {row.NextApprovalTarget}")">
+                                        <i class="bi bi-send" aria-hidden="true"></i>@row.NextApprovalTarget
                                     </button>
                                 </form>
                             }
