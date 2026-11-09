@@ -265,6 +265,17 @@ summary:focus-visible {
   vertical-align: middle;
 }
 
+/* An empty cell ("-", or only the fill-in icon of a finance table) sits in the middle of its
+   column, under the centred title, whatever the column's own alignment. js/table-empty-cells.js
+   marks it. In the phone card layout the cell is a flex row, so this changes nothing there. */
+.table > tbody > tr > td.cell-empty {
+  text-align: center !important;
+}
+
+.table td.cell-empty .finance-pair {
+  justify-content: center;
+}
+
 /* A visually-hidden header label is absolutely positioned. Without a positioned scroll
    container it escaped the table's own scrolling and widened the whole page. */
 .table-responsive {

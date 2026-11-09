@@ -91,6 +91,7 @@
       text.classList.toggle("finance-cell-empty", value === "");
     }
     cell.classList.toggle("is-empty", value === "");
+    window.markEmptyCells?.(cell.closest("td"));
     cell.dataset.financeValue = value;
     showStatus(cell.closest("tr"), answer.done);
   });
