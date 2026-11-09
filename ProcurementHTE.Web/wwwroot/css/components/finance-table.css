@@ -12,7 +12,7 @@
 
 .finance-table th,
 .finance-table td {
-  padding: 0.375rem 0.25rem;
+  padding: 0.375rem 0.1875rem;
 }
 
 .finance-table td {
@@ -21,7 +21,7 @@
 }
 
 .finance-table td.finance-col-wrap {
-  min-width: 6.5rem;
+  min-width: 5rem;
   white-space: normal;
 }
 
@@ -102,6 +102,11 @@
   gap: 0.25rem 0.5rem;
 }
 
+/* The status badge is slimmer than Bootstrap's, so 13 columns fit a 1366px screen. */
+.finance-table .badge {
+  padding: 0.25em 0.4em;
+}
+
 .finance-actions > .badge {
   flex: none;
 }
@@ -161,7 +166,8 @@
 }
 
 /* From 1440px the columns have room to stay whole: the badge and the approval step share
-   one line, PIC names do not wrap, and Job Name gets more width before it wraps. */
+   one line and PIC names do not wrap. Job Name keeps its narrow minimum: with Project Region
+   added, a wider one pushed AP-PO past its box at 1440px. */
 @media (min-width: 1440px) {
   .finance-actions {
     flex-wrap: nowrap;
@@ -170,9 +176,5 @@
   .finance-table td.finance-col-name,
   .finance-col-name .finance-cell-edit {
     white-space: nowrap;
-  }
-
-  .finance-table td.finance-col-wrap {
-    min-width: 9rem;
   }
 }

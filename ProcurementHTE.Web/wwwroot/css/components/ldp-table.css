@@ -91,6 +91,13 @@
   overflow-wrap: anywhere;
 }
 
+/* No PR, No PO, No SA, and No SP3. The old spreadsheet can hold several numbers in one cell
+   ("1004769847 1004769843"), so these wrap too and stop at two lines like Job Name. */
+.ldp-table.finance-table td.ldp-col-code {
+  min-width: 4.5rem;
+  white-space: normal;
+}
+
 .ldp-table .btn.btn-row {
   width: 1.625rem;
   height: 1.625rem;
