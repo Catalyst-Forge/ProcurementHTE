@@ -75,11 +75,20 @@
 }
 
 /* --- LDP detail page (Views/Ldp/Details.cshtml) ---
-   Every LDP column of one job, in groups that flow into two columns on a wide screen. */
+   Every LDP column of one job, in groups that pack into newspaper columns on a wide screen,
+   so a long group (Pekerjaan) leaves no gap beside a short one. */
 .ldp-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-  gap: 1.5rem 2.5rem;
+  column-width: 26rem;
+  column-gap: 3rem;
+}
+
+.ldp-details__group {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+}
+
+.ldp-details__group:last-child {
+  margin-bottom: 0;
 }
 
 .ldp-details__group dt,
