@@ -21,6 +21,7 @@ namespace ProcurementHTE.Web.Controllers.Ldp;
 public class LdpArchiveController(
     ILdpArchiveRepository archive,
     ILdpArchiveImporter importer,
+    ILdpArchiveRangeService ranges,
     IExcelExporter excel,
     IMemoryCache cache
 ) : Controller
@@ -30,8 +31,11 @@ public class LdpArchiveController(
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 25, CancellationToken ct = default) =>
-        View(await archive.SearchAsync(Query(search, page, pageSize), ct));
+    public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 25, CancellationToken ct = default)
+    {
+        ViewData["LdpArchiveRange"] = await ranges.GetAsync(ct);
+        return View(await archive.SearchAsync(Query(search, page, pageSize), ct));
+    }
 
     [HttpGet]
     public async Task<IActionResult> Details(string id, CancellationToken ct = default)
@@ -128,7 +132,8 @@ public class LdpArchiveController(
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public IActionResult Import() => View(new LdpImportPageViewModel());
+    public async Task<IActionResult> Import(CancellationToken ct = default) =>
+        View(new LdpImportPageViewModel { Range = await ranges.GetAsync(ct) });
 
     // Reads the file and shows what an import would change. Nothing is written yet: the
     // parsed rows wait in memory for the Admin who uploaded them to confirm.
@@ -139,22 +144,23 @@ public class LdpArchiveController(
     [RequestFormLimits(MultipartBodyLengthLimit = MaxImportBytes)]
     public async Task<IActionResult> ImportPreview(IFormFile? file, CancellationToken ct = default)
     {
+        var range = await ranges.GetAsync(ct);
         if (file is null || file.Length == 0 || !Path.GetExtension(file.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
         {
             ModelState.AddModelError(string.Empty, "Pilih file Excel berformat .xlsx.");
-            return View(nameof(Import), new LdpImportPageViewModel());
+            return View(nameof(Import), new LdpImportPageViewModel { Range = range });
         }
 
         LdpImportFile parsed;
         try
         {
             await using var stream = file.OpenReadStream();
-            parsed = importer.Read(stream, Path.GetFileName(file.FileName));
+            parsed = importer.Read(stream, Path.GetFileName(file.FileName), range);
         }
         catch (LdpImportException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            return View(nameof(Import), new LdpImportPageViewModel());
+            return View(nameof(Import), new LdpImportPageViewModel { Range = range });
         }
 
         var token = Guid.NewGuid().ToString("N");
@@ -164,6 +170,7 @@ public class LdpArchiveController(
             Token = token,
             FileName = parsed.FileName,
             Summary = await importer.PreviewAsync(parsed, ct),
+            Range = parsed.Range,
         });
     }
 
@@ -185,6 +192,46 @@ public class LdpArchiveController(
             $"Impor selesai: {summary.New} baru, {summary.Updated} diperbarui, {summary.Restored} dipulihkan, {summary.Unchanged} tidak berubah.";
         return RedirectToAction(nameof(Index));
     }
+
+    // The start dates of archived jobs that show in the LDP instead of here.
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Range(CancellationToken ct = default)
+    {
+        var current = await ranges.GetAsync(ct);
+        return View(await RangePage(current.From, current.To, ct));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Range(LdpArchiveRangeViewModel form, CancellationToken ct = default)
+    {
+        var result = await ranges.ChangeAsync(form.From, form.To, User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct);
+        switch (result)
+        {
+            case LdpArchiveRangeResult.Invalid invalid:
+                ModelState.AddModelError(string.Empty, invalid.Message);
+                return View(await RangePage(form.From, form.To, ct));
+
+            case LdpArchiveRangeResult.Changed changed:
+                TempData["SuccessMessage"] = $"Rentang LDP diubah menjadi {changed.Range.Text}."
+                    + (changed.Widened ? " Impor ulang Excel LDP untuk memasukkan pekerjaan yang belum selesai di bulan yang baru." : "");
+                return RedirectToAction(nameof(Index));
+
+            default:
+                TempData["SuccessMessage"] = "Rentang tidak berubah.";
+                return RedirectToAction(nameof(Range));
+        }
+    }
+
+    private async Task<LdpArchiveRangeViewModel> RangePage(DateTime? from, DateTime? to, CancellationToken ct) => new()
+    {
+        From = from,
+        To = to,
+        Current = await ranges.GetAsync(ct),
+        History = await ranges.HistoryAsync(ct),
+    };
 
     // Scoped to the uploader, so another Admin cannot confirm someone else's file.
     private string CacheKey(string token) =>

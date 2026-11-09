@@ -12,6 +12,7 @@ namespace ProcurementHTE.Infrastructure.Data
 
         public DbSet<PermanentDeletionLog> PermanentDeletionLogs { get; set; }
         public DbSet<LdpArchiveRow> LdpArchiveRows { get; set; }
+        public DbSet<LdpArchiveRangeChange> LdpArchiveRangeChanges { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
         public DbSet<PurchaseRequisition> PurchaseRequisitions { get; set; }

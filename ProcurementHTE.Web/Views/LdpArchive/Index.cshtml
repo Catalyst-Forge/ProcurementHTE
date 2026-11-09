@@ -5,13 +5,14 @@
     var search = Context.Request.Query["search"].ToString();
     var filtered = !string.IsNullOrWhiteSpace(search) || Context.Request.ReadListFilters().Count > 0;
     var isAdmin = User.IsInRole("Admin");
+    var range = ViewData["LdpArchiveRange"] as ProcurementHTE.Core.Common.LdpArchiveRange ?? ProcurementHTE.Core.Common.LdpArchiveRange.Default;
     string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value;
 }
 
 <header class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
     <div class="page-header-text">
         <h1 class="h3 mb-0">Arsip LDP</h1>
-        <p class="text-muted mb-0">Pekerjaan Completed dari Excel LDP. Yang mulai Juli–September 2026 tampil di LDP. Tidak masuk dashboard dan approval. Klik nama pekerjaan untuk semua kolomnya.</p>
+        <p class="text-muted mb-0">Pekerjaan Completed dari Excel LDP. Yang mulai @range.Text tampil di LDP. Tidak masuk dashboard dan approval. Klik nama pekerjaan untuk semua kolomnya.</p>
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
         <span class="badge bg-info fs-6">Total: @Model.Total.ToString("N0", CultureInfo.GetCultureInfo("id-ID")) data</span>
@@ -20,6 +21,7 @@
         </a>
         @if (isAdmin)
         {
+            <a asp-action="Range" class="btn btn-outline-primary"><i class="bi bi-calendar-range" aria-hidden="true"></i> Atur rentang</a>
             <a asp-action="Import" class="btn btn-outline-primary"><i class="bi bi-upload" aria-hidden="true"></i> Impor Excel</a>
             <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> Tambah</a>
         }

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using ExcelDataReader;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
@@ -19,21 +20,21 @@ public sealed partial class LdpArchiveImporter(AppDbContext db) : ILdpArchiveImp
     private const int FirstGroupColumn = 33;
     private const int MinFilledCells = 5;
 
-    public LdpImportFile Read(Stream workbook, string fileName)
+    public LdpImportFile Read(Stream workbook, string fileName, LdpArchiveRange range)
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         using var reader = ExcelReaderFactory.CreateReader(workbook);
         do
         {
             if (string.Equals(reader.Name, LdpArchiveColumns.Sheet, StringComparison.OrdinalIgnoreCase))
-                return ReadSheet(reader, fileName);
+                return ReadSheet(reader, fileName, range);
         } while (reader.NextResult());
 
         throw new LdpImportException($"Sheet \"{LdpArchiveColumns.Sheet}\" tidak ditemukan di file ini.");
     }
 
     // Streams the sheet row by row: the workbook is large, and only 86 columns matter.
-    private static LdpImportFile ReadSheet(IExcelDataReader reader, string fileName)
+    private static LdpImportFile ReadSheet(IExcelDataReader reader, string fileName, LdpArchiveRange range)
     {
         object?[]? previous = null;
         Header? header = null;
@@ -60,7 +61,7 @@ public sealed partial class LdpArchiveImporter(AppDbContext db) : ILdpArchiveImp
             if (cells.Count(cell => LdpArchiveColumns.IsFilled(Text(cell))) < MinFilledCells || header.IsPlaceholder(cells))
                 continue;
 
-            if (!header.BelongsInArchive(cells))
+            if (!header.BelongsInArchive(cells, range))
             {
                 excluded++;
                 continue;
@@ -76,7 +77,7 @@ public sealed partial class LdpArchiveImporter(AppDbContext db) : ILdpArchiveImp
         if (header is null)
             throw new LdpImportException("Baris judul kolom (Nama Vendor, No. PR) tidak ditemukan di sheet LDP(new).");
 
-        return new LdpImportFile { FileName = fileName, Rows = rows, Excluded = excluded };
+        return new LdpImportFile { FileName = fileName, Rows = rows, Excluded = excluded, Range = range };
     }
 
     private static bool IsHeaderRow(object?[] cells)

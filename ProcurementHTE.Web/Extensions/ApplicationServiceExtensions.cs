@@ -28,6 +28,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IJobTypeDocumentService, JobTypeDocumentService>();
         services.AddScoped<IJobTypeDocumentAdminService, JobTypeDocumentAdminService>();
         services.AddScoped<IDocumentApprovalRuleService, DocumentApprovalRuleService>();
+        services.AddScoped<ILdpArchiveRangeService, LdpArchiveRangeService>();
         services.AddScoped<IDocumentApprovalsService, DocumentApprovalsService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();

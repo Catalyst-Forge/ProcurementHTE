@@ -346,6 +346,49 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.ToTable("JobTypes");
                 });
 
+            modelBuilder.Entity("ProcurementHTE.Core.Models.LdpArchiveRangeChange", b =>
+                {
+                    b.Property<string>("LdpArchiveRangeChangeId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedByName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ChangedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("PreviousStartFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("PreviousStartTo")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("StartFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("StartTo")
+                        .HasColumnType("date");
+
+                    b.HasKey("LdpArchiveRangeChangeId");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.ToTable("LdpArchiveRangeChanges", t =>
+                        {
+                            t.HasTrigger("TR_LdpArchiveRangeChanges_AppendOnly");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("ProcurementHTE.Core.Models.LdpArchiveRow", b =>
                 {
                     b.Property<string>("LdpArchiveRowId")

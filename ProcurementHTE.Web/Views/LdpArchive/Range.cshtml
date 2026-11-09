@@ -1,0 +1,90 @@
+@model ProcurementHTE.Web.Models.ViewModels.LdpArchiveRangeViewModel
+@{
+    ViewData["Title"] = "Rentang Arsip di LDP";
+    string When(DateTime utc) => utc.ToLocalTime().ToString("dd MMM yyyy HH:mm");
+}
+
+<header class="mb-3">
+    <a asp-action="Index" class="back-link"><i class="bi bi-chevron-left" aria-hidden="true"></i>Kembali ke Arsip LDP</a>
+    <h1 class="h4 mt-2 mb-1">Rentang Arsip di LDP</h1>
+    <p class="text-muted small mb-0">
+        Baris Arsip LDP yang tanggal mulainya di dalam rentang ini tampil di LDP, sisanya tetap di Arsip LDP.
+        Yang berlaku sekarang: <strong>@Model.Current.Text</strong>.
+    </p>
+</header>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <form method="post" asp-action="Range" class="card shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                <div class="row g-3 mb-2">
+                    <div class="col-sm-6">
+                        <label asp-for="From" class="form-label"></label>
+                        <input asp-for="From" class="form-control" required />
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="To" class="form-label"></label>
+                        <input asp-for="To" class="form-control" required />
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">Tanggal awal dan akhir ikut dihitung.</p>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-6">
+        <aside class="alert alert-info small h-100 mb-0" aria-labelledby="range-notes">
+            <p class="fw-semibold mb-2" id="range-notes">Sebelum mengubah</p>
+            <ul class="mb-0 ps-3">
+                <li class="mb-1">
+                    Memperlebar rentang tidak langsung memunculkan pekerjaan yang belum selesai di bulan yang baru.
+                    Pekerjaan itu baru masuk setelah Excel LDP diimpor ulang.
+                </li>
+                <li class="mb-1">Mempersempit rentang tidak menghapus apa pun. Baris di luar rentang pindah ke Arsip LDP.</li>
+                <li>
+                    Kalau rentang menyentuh bulan yang sudah dijalankan di Docutrax, pekerjaan yang tercatat di Excel dan
+                    juga dibuat di Docutrax bisa tampil dua kali di LDP.
+                </li>
+            </ul>
+        </aside>
+    </div>
+</div>
+
+<section class="card shadow-sm rounded-4" aria-labelledby="range-history">
+    <div class="card-body">
+        <h2 class="h6 mb-2" id="range-history">Riwayat perubahan</h2>
+        @if (Model.History.Count == 0)
+        {
+            <p class="text-muted mb-0">
+                Belum pernah diubah. Rentang bawaan @ProcurementHTE.Core.Common.LdpArchiveRange.Default.Text berlaku.
+            </p>
+        }
+        else
+        {
+            <div class="table-responsive border rounded-3">
+                <table class="table table-hover align-middle mb-0 mobile-table finance-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="border-end">Waktu</th>
+                            <th scope="col" class="border-end">Diubah oleh</th>
+                            <th scope="col" class="border-end">Dari</th>
+                            <th scope="col">Menjadi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var change in Model.History)
+                        {
+                            <tr>
+                                <td data-label="Waktu">@When(change.ChangedAt)</td>
+                                <td data-label="Diubah oleh" class="finance-col-wrap">@change.ChangedByName</td>
+                                <td data-label="Dari">@change.PreviousRange.Text</td>
+                                <td data-label="Menjadi" class="fw-semibold">@change.Range.Text</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

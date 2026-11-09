@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -76,13 +77,11 @@ public sealed partial class LdpArchiveImporter
         public bool IsPlaceholder(object?[] cells) =>
             Text(cells[_typed["VendorName"]]).StartsWith("Column", StringComparison.OrdinalIgnoreCase);
 
-        public bool BelongsInArchive(object?[] cells)
+        /// <summary>A finished job (No PO, No SA, and No SP3 filled), or any job started within the LDP range.</summary>
+        public bool BelongsInArchive(object?[] cells, LdpArchiveRange range)
         {
             var done = new[] { "NoPo", "NoSa", "NoSp3" }.All(column => LdpArchiveColumns.IsFilled(Text(cells[_typed[column]])));
-            return done
-                || cells[_typed["StartDate"]] is DateTime start
-                    && start.Date >= LdpArchiveColumns.PresentedFrom
-                    && start.Date <= LdpArchiveColumns.PresentedTo;
+            return done || range.Contains(cells[_typed["StartDate"]] as DateTime?);
         }
 
         public LdpArchiveRow ToRow(object?[] cells, int rowNumber)

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -65,4 +66,7 @@ public class LdpImportPageViewModel
     public string? Token { get; init; }
     public string? FileName { get; init; }
     public LdpImportSummary? Summary { get; init; }
+
+    /// <summary>The LDP range in force, or the one the previewed file was read with.</summary>
+    public LdpArchiveRange Range { get; init; } = LdpArchiveRange.Default;
 }

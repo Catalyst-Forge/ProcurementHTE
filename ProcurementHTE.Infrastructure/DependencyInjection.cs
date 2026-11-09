@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IRecordPurgeService, RecordPurgeService>();
         services.AddScoped<IPrBalanceRepository, PrBalanceRepository>();
         services.AddScoped<ILdpArchiveRepository, LdpArchiveRepository>();
+        services.AddScoped<ILdpArchiveRangeRepository, LdpArchiveRangeRepository>();
         services.AddScoped<ILdpArchiveImporter, LdpArchiveImporter>();
         services.AddSingleton<IExcelExporter, ExcelExporter>();
         services.AddScoped<IInProgressProcurementQuery, InProgressProcurementQuery>();

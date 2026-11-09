@@ -2,6 +2,7 @@ using System.Text.Json;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -102,7 +103,10 @@ public class LdpArchiveImportTests : IDisposable
         return copy;
     }
 
-    private LdpImportFile Read(params Dictionary<string, object?>[] rows) => _importer.Read(Workbook(rows), "ldp.xlsx");
+    private LdpImportFile Read(params Dictionary<string, object?>[] rows) => Read(LdpArchiveRange.Default, rows);
+
+    private LdpImportFile Read(LdpArchiveRange range, params Dictionary<string, object?>[] rows) =>
+        _importer.Read(Workbook(rows), "ldp.xlsx", range);
 
     private static Dictionary<string, object?>[] Sample() =>
     [
@@ -123,6 +127,22 @@ public class LdpArchiveImportTests : IDisposable
         Assert.Equal(2, file.Excluded);
         Assert.Equal([8, 9, 11], file.Rows.Select(row => row.SourceRow));
         Assert.All(file.Rows, row => Assert.Equal("Completed", row.Status));
+    }
+
+    [Fact]
+    public void An_unfinished_job_is_kept_only_when_it_started_within_the_range_given()
+    {
+        var october = With(Done, ("No. SA", null), ("Tgl. Mulai", new DateTime(2026, 10, 15)), ("Nama Pekerjaan", "Standby Oktober"));
+        var julyToOctober = new LdpArchiveRange(new DateTime(2026, 7, 1), new DateTime(2026, 10, 31));
+
+        var widened = Read(julyToOctober, october);
+        var standard = Read(october);
+
+        Assert.Equal(["Standby Oktober"], widened.Rows.Select(row => row.JobName));
+        Assert.Equal(julyToOctober, widened.Range);
+        Assert.Empty(standard.Rows);
+        Assert.Equal(1, standard.Excluded);
+        Assert.Equal(LdpArchiveRange.Default, standard.Range);
     }
 
     [Fact]
@@ -165,7 +185,7 @@ public class LdpArchiveImportTests : IDisposable
         workbook.SaveAs(stream);
         stream.Position = 0;
 
-        var error = Assert.Throws<LdpImportException>(() => _importer.Read(stream, "lain.xlsx"));
+        var error = Assert.Throws<LdpImportException>(() => _importer.Read(stream, "lain.xlsx", LdpArchiveRange.Default));
         Assert.Contains("LDP(new)", error.Message);
     }
 

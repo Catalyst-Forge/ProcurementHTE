@@ -1,6 +1,5 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Core.Services;
@@ -10,14 +9,14 @@ namespace ProcurementHTE.Infrastructure.Repositories
     public partial class LdpRepository
     {
         /// <summary>
-        /// Archived jobs that started July to September 2026, shaped as LDP rows. They are
-        /// presented as completed in the LDP itself, next to the jobs run in Docutrax.
+        /// Archived jobs that started within the LDP range (an Admin setting), shaped as LDP rows.
+        /// They show in the LDP itself, next to the jobs run in Docutrax.
         /// </summary>
         private async Task<List<LdpRecapDto>> PresentedArchiveAsync(string? search, CancellationToken ct)
         {
-            var rows = await _context
-                .LdpArchiveRows.AsNoTracking()
-                .Where(row => row.StartDate >= LdpArchiveColumns.PresentedFrom && row.StartDate < LdpArchiveColumns.PresentedBefore)
+            var range = await LdpArchiveRangeRepository.CurrentAsync(_context, ct);
+            var rows = await LdpArchiveRangeRepository
+                .InRange(_context.LdpArchiveRows.AsNoTracking(), range)
                 .ToListAsync(ct);
 
             var items = rows.Select(MapArchive);

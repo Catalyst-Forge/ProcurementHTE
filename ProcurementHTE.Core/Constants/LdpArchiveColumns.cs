@@ -13,11 +13,8 @@ public static class LdpArchiveColumns
     /// <summary>The spreadsheet writes "-" or 0 where a number is still missing.</summary>
     public static bool IsFilled(string? text) => !string.IsNullOrWhiteSpace(text) && text.Trim() is not ("-" or "0");
 
-    // Jobs that started July to September 2026 are presented as completed, done or not, and
-    // they show in the LDP itself. Every other archived job shows in Arsip LDP.
-    public static readonly DateTime PresentedFrom = new(2026, 7, 1);
-    public static readonly DateTime PresentedTo = new(2026, 9, 30);
-    public static readonly DateTime PresentedBefore = PresentedTo.AddDays(1);
+    // Which archived jobs show in the LDP instead of Arsip LDP is an Admin setting: see
+    // Common.LdpArchiveRange and Infrastructure's LdpArchiveRangeRepository.
 
     public sealed record Column(string Property, string? Group, string? Name, string Kind)
     {
