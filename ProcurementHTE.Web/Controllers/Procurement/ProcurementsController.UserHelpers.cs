@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
@@ -118,25 +117,6 @@ public partial class ProcurementsController
         return map;
     }
 
-    private bool CanUserEditProcurementByStatus(Procurement procurement)
-    {
-        var statusName = procurement.Status?.StatusName ?? "";
-        var prePickupStatuses = new[] { "Draft", "Created", "Waiting Pickup" };
-        var earlyEditRoles = new[] { "Admin", "Operation", RoleNames.AsstManager };
-        var lateEditRoles = new[] { "AR", "AP-Invoice", "Analyst HTE & LTS" };
-
-        var isPrePickup = prePickupStatuses.Contains(statusName, StringComparer.OrdinalIgnoreCase);
-        var userRoles = User.Claims
-            .Where(claim => claim.Type == ClaimTypes.Role)
-            .Select(claim => claim.Value)
-            .ToList();
-
-        if (userRoles.Any(role => earlyEditRoles.Contains(role, StringComparer.OrdinalIgnoreCase)))
-            return true;
-
-        return !(
-            userRoles.Any(role => lateEditRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
-            && isPrePickup
-        );
-    }
+    private bool CanUserEditProcurementByStatus(Procurement procurement) =>
+        Core.Services.ProcurementService.CanEdit(procurement, User.IsInRole("Admin"));
 }

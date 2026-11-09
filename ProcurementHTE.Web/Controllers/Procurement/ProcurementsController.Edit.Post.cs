@@ -31,7 +31,7 @@ public partial class ProcurementsController
 
         if (!CanUserEditProcurementByStatus(procForAuthCheck))
         {
-            TempData["ErrorMessage"] = "Anda tidak memiliki akses untuk mengedit procurement dengan status ini.";
+            TempData["ErrorMessage"] = "Pekerjaan yang sudah di-publish hanya bisa diedit Admin, dan pekerjaan yang dibatalkan tidak bisa diedit.";
             return RedirectToAction(nameof(Details), new { id });
         }
 

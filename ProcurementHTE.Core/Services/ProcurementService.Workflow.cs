@@ -157,6 +157,22 @@ public partial class ProcurementService
             );
     }
 
+    /// <summary>
+    /// Only Admin changes a job that is already published (the client's rule for running jobs);
+    /// everyone else edits it while it is Draft or Created. A cancelled job is not edited.
+    /// </summary>
+    public static bool CanEdit(Procurement procurement, bool isAdmin)
+    {
+        var status = procurement.Status?.StatusName;
+        if (procurement.ProcurementStatus == Enums.ProcurementStatus.Cancelled
+            || string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return isAdmin
+            || string.Equals(status, "Draft", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "Created", StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>A published job can go back to Created until AP-PO sends it for approval.</summary>
     public static bool CanUnpublish(Procurement procurement) =>
         procurement.ProcurementStatus == Enums.ProcurementStatus.OnCreateDP3

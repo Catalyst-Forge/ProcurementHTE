@@ -12,6 +12,7 @@
     var canDelete = await AuthZ.AuthorizeAsync(User, Permissions.Procurement.Delete);
     var canManage = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Procurement);
     var canCancel = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Cancel);
+    var isAdmin = User.IsInRole("Admin");
     
 }
 
@@ -54,8 +55,8 @@
                         && !statusName.Equals("Completed", StringComparison.OrdinalIgnoreCase)
                         && !statusName.Equals("Closed", StringComparison.OrdinalIgnoreCase)
                         && !statusName.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
-                    var canEditThisItem = canManage && canEdit.Succeeded && !isPublished;
-                    var canDeleteThisItem = User.IsInRole("Admin") || (canManage && canDelete.Succeeded && !isPublished);
+                    var canEditThisItem = canManage && canEdit.Succeeded && ProcurementHTE.Core.Services.ProcurementService.CanEdit(item, isAdmin);
+                    var canDeleteThisItem = isAdmin || (canManage && canDelete.Succeeded && !isPublished);
                     <tr>
                         <td class="d-flex d-sm-table-cell" data-label="SPMP">
                             @(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.SpmpNumber) ?? "-")
