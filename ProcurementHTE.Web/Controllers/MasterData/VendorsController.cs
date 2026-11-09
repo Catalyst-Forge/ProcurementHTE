@@ -202,7 +202,7 @@ namespace ProcurementHTE.Web.Controllers.MasterData
                 var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
                 await _vendorCommandService.DeleteVendorAsync(vendor, currentUserId);
 
-                TempData["SuccessMessage"] = "Vendor deleted successfully.";
+                TempData["SuccessMessage"] = "Vendor dihapus. Admin bisa memulihkannya dari menu Data Terhapus.";
             }
             catch (Exception ex)
             {

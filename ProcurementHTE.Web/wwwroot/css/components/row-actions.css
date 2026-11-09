@@ -1,0 +1,58 @@
+/* --- Row actions ---
+   The Aksi column of a list: small icon buttons on one line, the same in every table, so a
+   row stays one line tall. Each button carries aria-label and title, so its name shows on
+   hover and reaches screen readers. Muted at rest; the colour of its intent shows on hover
+   and focus. Use on .btn so the touch sizing in site.css still gives a 44px target. */
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.row-actions form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.btn.btn-row {
+  --row-intent: var(--dx-blue-600);
+  --bs-btn-padding-x: 0;
+  --bs-btn-padding-y: 0;
+  --bs-btn-border-width: 0;
+  --bs-btn-border-radius: 6px;
+  --bs-btn-color: var(--dx-ink-muted);
+  --bs-btn-hover-color: var(--row-intent);
+  --bs-btn-active-color: var(--row-intent);
+  --bs-btn-disabled-color: var(--dx-ink-muted);
+  --bs-btn-disabled-opacity: 0.35;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  font-size: 0.9375rem;
+  line-height: 1;
+}
+
+.btn.btn-row:hover,
+.btn.btn-row:focus-visible,
+.btn.btn-row:active {
+  background: color-mix(in srgb, var(--row-intent) 10%, transparent);
+}
+
+.btn.btn-row:focus-visible {
+  outline: 2px solid var(--dx-blue-600);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+.btn-row--danger {
+  --row-intent: var(--dx-danger);
+}
+
+.btn-row--warning {
+  --row-intent: var(--dx-warning-ink);
+}

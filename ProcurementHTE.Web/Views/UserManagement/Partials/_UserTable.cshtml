@@ -12,82 +12,83 @@
                 <th scope="col" sort-key="status">Status</th>
                 <th scope="col" sort-key="twoFactor">2FA</th>
                 <th scope="col" sort-key="lastLogin" sort-kind="date">Last Login</th>
-                <th scope="col" style="width: 140px;"></th>
+                <th scope="col">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @if (Model.Users.Any())
             {
+                var currentUserId = User?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 foreach (var user in Model.Users)
                 {
+                    var isSelf = string.Equals(user.Id, currentUserId, StringComparison.OrdinalIgnoreCase);
                     <tr>
-                        <td>@user.DisplayName</td>
+                        <td class="text-nowrap">@user.DisplayName</td>
                         <td>@user.Email</td>
                         <td>@user.JobTitle</td>
                         <td>
                             @if (user.Roles.Any())
                             {
-                                foreach (var role in user.Roles)
-                                {
-                                    <span class="badge bg-primary me-1">@role</span>
-                                }
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">@role</span>
+                                    }
+                                </div>
                             }
                         </td>
                         <td>
                             @if (user.IsActive)
                             {
-                                <span class="badge bg-success">Aktif</span>
+                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Aktif</span>
                             }
                             else
                             {
-                                <span class="badge bg-danger">Nonaktif</span>
+                                <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">Nonaktif</span>
                             }
                         </td>
                         <td>
                             @if (user.TwoFactorEnabled)
                             {
-                                <span class="badge bg-info">Aktif</span>
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">Aktif</span>
                             }
                             else
                             {
-                                <span class="badge bg-secondary">-</span>
+                                <span class="text-muted">-</span>
                             }
                         </td>
-                        <td>
+                        <td class="text-nowrap">
                             @(user.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")
                         </td>
-                        <td class="text-end">
-                            @{
-                                var currentUserId = User?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                                var isSelf = string.Equals(user.Id, currentUserId, StringComparison.OrdinalIgnoreCase);
-                            }
-                            <div class="btn-group btn-group-sm">
-                                <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary" title="Edit user">
-                                    <i class="bi bi-pencil-square"></i>
+                        <td class="text-center">
+                            <div class="row-actions">
+                                <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-row" aria-label="Edit user" title="Edit user">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form asp-action="ToggleActive" asp-route-id="@user.Id" method="post" class="d-inline delete-form"
+                                <form asp-action="ToggleActive" asp-route-id="@user.Id" method="post" class="delete-form"
                                       data-confirm-title="@(user.IsActive ? $"Nonaktifkan {user.DisplayName}?" : $"Aktifkan {user.DisplayName}?")"
                                       data-confirm-message="@(user.IsActive ? "User langsung tidak bisa login dan semua sesinya diakhiri." : "User bisa login lagi.")"
                                       data-confirm-confirm="@(user.IsActive ? "Nonaktifkan" : "Aktifkan")"
                                       data-confirm-confirm-color="@(user.IsActive ? "var(--dx-danger)" : "var(--dx-blue-600)")"
                                       data-confirm-cancel="Batal">
-                                    <button type="submit" class="btn btn-outline-warning"
+                                    <button type="submit" class="btn btn-row btn-row--warning"
+                                            aria-label="@(user.IsActive ? "Nonaktifkan user" : "Aktifkan user")"
                                             title="@(user.IsActive ? "Nonaktifkan user" : "Aktifkan user")"
                                             @(isSelf ? "disabled" : "")>
-                                        <i class="bi bi-power"></i>
+                                        <i class="bi bi-power" aria-hidden="true"></i>
                                     </button>
                                 </form>
-                                <form asp-action="Delete" asp-route-id="@user.Id" method="post" class="d-inline delete-form"
+                                <form asp-action="Delete" asp-route-id="@user.Id" method="post" class="delete-form"
                                       data-confirm-title="Hapus @user.DisplayName?"
                                       data-confirm-message="User langsung tidak bisa login. Admin bisa memulihkannya dari menu Data Terhapus."
                                       data-confirm-confirm="Hapus user"
                                       data-confirm-cancel="Batal">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit"
-                                            class="btn btn-outline-danger"
+                                    <button type="submit" class="btn btn-row btn-row--danger"
+                                            aria-label="Hapus user"
                                             title="Hapus user"
                                             @(isSelf ? "disabled" : "")>
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
                             </div>

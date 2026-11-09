@@ -40,7 +40,7 @@
 </form>
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover mobile-table">
+    <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr>
                 <th scope="col">Document</th>
@@ -67,11 +67,11 @@
                 foreach (var item in Model)
                 {
                     var jobTypeLabel = string.IsNullOrWhiteSpace(item.JobType?.TypeName)
-                        ? "All"
+                        ? "Semua"
                         : item.JobType!.TypeName;
                     var categoryLabel = item.ProcurementCategory.HasValue
                         ? item.ProcurementCategory.ToString()
-                        : "All";
+                        : "Semua";
                     var submitterLabel = roleMap.TryGetValue(item.SubmitterRoleId, out var sName)
                         ? sName
                         : item.SubmitterRoleId;
@@ -83,7 +83,7 @@
                         <td>@jobTypeLabel</td>
                         <td>@categoryLabel</td>
                         <td class="text-end">@(item.MinAmount.ToString("N0"))</td>
-                        <td class="text-end">@(item.MaxAmount == decimal.MaxValue ? "Unlimited" : item.MaxAmount.ToString("N0"))</td>
+                        <td class="text-end">@(item.MaxAmount == decimal.MaxValue ? "Tanpa batas" : item.MaxAmount.ToString("N0"))</td>
                         <td>
                             @submitterLabel
                             @if (!string.IsNullOrWhiteSpace(submitterUserLabel))
@@ -114,19 +114,19 @@
                         </td>
                         <td class="text-center">@item.Sequence</td>
                         <td class="text-center">
-                            <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
-                                @(item.IsActive ? "Yes" : "No")
+                            <span class="badge @(item.IsActive ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle")">
+                                @(item.IsActive ? "Ya" : "Tidak")
                             </span>
                         </td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm">
-                                <a aria-label="Edit" asp-action="Edit" asp-route-id="@item.DocumentApprovalRuleId" class="btn btn-outline-secondary">
-                                    <i class="bi bi-pencil"></i>
+                            <div class="row-actions">
+                                <a aria-label="Edit" title="Edit" asp-action="Edit" asp-route-id="@item.DocumentApprovalRuleId" class="btn btn-row">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 @{
                                     // A rule without a procurement type applies to every type.
                                     var running = inProgress.Count(item.JobTypeId, item.ProcurementCategory);
-                                    var ruleDeleteMessage = "Admin can restore it from Deleted Records."
+                                    var ruleDeleteMessage = "Admin bisa memulihkannya dari menu Data Terhapus."
                                         + (running > 0
                                             ? $" Perhatian: aturan ini berlaku untuk tipe dan kategori yang dipakai {running} procurement yang sedang berjalan. Dokumen yang dibuat setelah ini memakai aturan yang tersisa."
                                             : string.Empty);
@@ -134,12 +134,12 @@
                                 <form asp-action="Delete" method="post" class="d-inline delete-form"
                                       data-confirm-title="Hapus rule ini?"
                                       data-confirm-message="@ruleDeleteMessage"
-                                      data-confirm-confirm="Yes, delete"
-                                      data-confirm-cancel="Cancel">
+                                      data-confirm-confirm="Hapus"
+                                      data-confirm-cancel="Batal">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.DocumentApprovalRuleId" />
-                                    <button type="submit" class="btn btn-outline-danger" aria-label="Delete rule">
-                                        <i class="bi bi-trash"></i>
+                                    <button type="submit" class="btn btn-row btn-row--danger" aria-label="Hapus rule" title="Hapus rule">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
                             </div>

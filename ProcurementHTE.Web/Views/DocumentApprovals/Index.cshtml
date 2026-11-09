@@ -29,8 +29,8 @@
                 const form = btn.closest("form");
                 if (!form) return;
 
-                const title = btn.dataset.title || "Delete this approval step?";
-                const text = btn.dataset.message || "Admin can restore it from Deleted Records.";
+                const title = btn.dataset.title || "Hapus langkah approval ini?";
+                const text = btn.dataset.message || "Admin bisa memulihkannya dari menu Data Terhapus.";
 
                 const submitForm = () => {
                     form.dataset.confirming = "true";
@@ -83,7 +83,7 @@
 </form>
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover mobile-table">
+    <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr>
                 <th scope="col">Job Type</th>
@@ -110,12 +110,12 @@
                         <td>@item.Role?.Name</td>
                         <td class="text-center">@item.Level</td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm">
-                                <a aria-label="Edit" asp-action="Edit" asp-route-id="@item.DocumentApprovalId" class="btn btn-outline-secondary">
-                                    <i class="bi bi-pencil"></i>
+                            <div class="row-actions">
+                                <a aria-label="Edit" title="Edit" asp-action="Edit" asp-route-id="@item.DocumentApprovalId" class="btn btn-row">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 @{
-                                    var deleteTitle = "Delete this approval step?";
+                                    var deleteTitle = "Hapus langkah approval ini?";
                                     var running = item.JobTypeDocument == null
                                         ? 0
                                         : inProgress.Count(item.JobTypeDocument.JobTypeId, item.JobTypeDocument.ProcurementCategory);
@@ -136,12 +136,12 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.DocumentApprovalId" />
                                     <button type="button"
-                                            class="btn btn-outline-danger js-da-delete"
+                                            class="btn btn-row btn-row--danger js-da-delete"
                                             aria-label="Hapus"
                                             title="Hapus"
                                             data-title="@deleteTitle"
                                             data-message="@deleteMessage">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
                             </div>

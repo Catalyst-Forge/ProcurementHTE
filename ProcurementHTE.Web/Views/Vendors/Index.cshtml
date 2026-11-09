@@ -90,7 +90,7 @@
         <tbody>
             @if (!Model.Items.Any() || Model == null) {
                 <tr>
-                    <td colspan="5" class="text-center text-muted">Belum ada vendor</td>
+                    <td colspan="3" class="text-center text-muted">Belum ada vendor</td>
                 </tr>
             } else {
                 foreach (var v in Model.Items) {
@@ -113,31 +113,30 @@
                             <span>@v.City, @v.Province</span>
                         </td>
 
-                        <td class="text-center text-nowrap">
-                            <a class="link-warning link-opacity-50-hover text-decoration-none me-2"
-                               asp-action="Edit" asp-route-id="@v.VendorId" title="Edit" role="button">
-                                <i class="bi bi-pencil-fill"></i>
-                            </a>
-
-                            <a class="link-info link-opacity-50-hover text-decoration-none me-2"
-                               asp-action="Details" asp-route-id="@v.VendorId" title="Detail" role="button">
-                                <span class="visually-hidden">Edit</span>
-                                <i class="bi bi-eye-fill"></i>
-                            </a>
-
-                            <form asp-action="DeleteConfirmed"
-                                  asp-route-id="@v.VendorId"
-                                  method="post"
-                                  class="d-inline delete-form"\r\n                                  hx-boost="false"\r\n                                  hx-ignore="true"
-                                  data-loading-overlay="true"
-                                  data-confirm-title="Delete @v.VendorName?"
-                                  data-confirm-message="You are about to delete &quot;@v.VendorName&quot;. This action cannot be undone.">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn link-danger link-opacity-50-hover text-decoration-none me-2 mb-1 p-0" title="Hapus">
-                                    <span class="visually-hidden">Hapus</span>
-                                    <i class="bi bi-trash-fill"></i>
-                                </button>
-                            </form>
+                        <td class="text-center">
+                            <div class="row-actions">
+                                <a class="btn btn-row" asp-action="Details" asp-route-id="@v.VendorId" aria-label="Detail" title="Detail">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </a>
+                                <a class="btn btn-row" asp-action="Edit" asp-route-id="@v.VendorId" aria-label="Edit" title="Edit">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                <form asp-action="DeleteConfirmed"
+                                      asp-route-id="@v.VendorId"
+                                      method="post"
+                                      class="delete-form"
+                                      hx-boost="false"
+                                      hx-ignore="true"
+                                      data-loading-overlay="true"
+                                      data-confirm-title="Hapus @v.VendorName?"
+                                      data-confirm-message="&quot;@v.VendorName&quot; akan dihapus. Admin bisa memulihkannya dari menu Data Terhapus."
+                                      data-confirm-confirm="Hapus">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-row btn-row--danger" aria-label="Hapus" title="Hapus">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }

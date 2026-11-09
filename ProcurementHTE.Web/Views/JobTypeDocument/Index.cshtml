@@ -29,8 +29,8 @@
                 const form = btn.closest("form");
                 if (!form) return;
 
-                const title = btn.dataset.title || "Delete this mapping?";
-                const text = btn.dataset.message || "Admin can restore it from Deleted Records.";
+                const title = btn.dataset.title || "Hapus mapping ini?";
+                const text = btn.dataset.message || "Admin bisa memulihkannya dari menu Data Terhapus.";
 
                 const submitForm = () => {
                     form.dataset.confirming = "true";
@@ -83,7 +83,7 @@
 </form>
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover mobile-table">
+    <table class="table table-hover align-middle mobile-table">
         <thead class="table-light">
             <tr>
                 <th scope="col">Job Type</th>
@@ -99,7 +99,7 @@
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">Belum ada mapping.</td>
+                    <td colspan="7" class="text-center text-muted py-4">Belum ada mapping.</td>
                 </tr>
             }
             else
@@ -120,12 +120,12 @@
                             }
                             else
                             {
-                                <span class="badge bg-secondary-subtle text-secondary">All</span>
+                                <span class="badge bg-secondary-subtle text-secondary">Semua</span>
                             }
                         </td>
                         <td class="text-center">@item.Sequence</td>
                         <td class="text-center">
-                            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                            <div class="d-flex flex-nowrap gap-1 justify-content-center">
                                 @if (item.IsMandatory) { <span class="badge bg-danger-subtle text-danger">Wajib</span> }
                                 @if (item.IsGenerated) { <span class="badge bg-success-subtle text-success">Generate</span> }
                                 @if (item.IsUploadRequired) { <span class="badge bg-primary-subtle text-primary">Unggah</span> }
@@ -134,12 +134,12 @@
                         </td>
                         <td class="small text-muted">@item.Note</td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm">
-                                <a aria-label="Edit" asp-action="Edit" asp-route-id="@item.JobTypeDocumentId" class="btn btn-outline-secondary">
-                                    <i class="bi bi-pencil"></i>
+                            <div class="row-actions">
+                                <a aria-label="Edit" title="Edit" asp-action="Edit" asp-route-id="@item.JobTypeDocumentId" class="btn btn-row">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 @{
-                                    var deleteTitle = "Delete this mapping?";
+                                    var deleteTitle = "Hapus mapping ini?";
                                     var running = inProgress.Count(item.JobTypeId, item.ProcurementCategory);
                                     var deleteMessage =
                                         $"Job Type: {item.JobType?.TypeName ?? "-"}, Document: {item.DocumentType?.Name ?? "-"}."
@@ -158,12 +158,12 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.JobTypeDocumentId" />
                                     <button type="button"
-                                            class="btn btn-outline-danger js-jtd-delete"
+                                            class="btn btn-row btn-row--danger js-jtd-delete"
                                             aria-label="Hapus"
                                             title="Hapus"
                                             data-title="@deleteTitle"
                                             data-message="@deleteMessage">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
                             </div>

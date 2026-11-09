@@ -71,7 +71,7 @@
         const title = decodeHtml(form.dataset.confirmTitle) || DEFAULT_CONFIRM.title;
         const message = decodeHtml(form.dataset.confirmMessage) || DEFAULT_CONFIRM.text;
         const html = decodeHtml(form.dataset.confirmHtml);
-        const confirmText = form.dataset.confirmConfirm || "Delete";
+        const confirmText = form.dataset.confirmConfirm || DEFAULT_CONFIRM.confirmButtonText;
         const cancelText = form.dataset.confirmCancel || DEFAULT_CONFIRM.cancelButtonText;
 
         confirmAction({

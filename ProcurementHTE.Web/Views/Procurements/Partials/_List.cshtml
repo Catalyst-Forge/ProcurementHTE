@@ -25,7 +25,7 @@
                 <th scope="col" sort-key="region" filter-key="region" class="border-end">Project Region</th>
                 <th scope="col" sort-key="startDate" sort-kind="date" class="border-end">Start Date</th>
                 <th scope="col" sort-key="vendor" filter-key="vendor" class="border-end">Vendor</th>
-                <th scope="col" class="text-center position-sticky end-0 width-10-rem">Aksi</th>
+                <th scope="col" class="text-center">Aksi</th>
             </tr>
         </thead>
 
@@ -61,7 +61,7 @@
                             @(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.SpmpNumber) ?? "-")
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Job Name">
-                            @item.JobName
+                            <a asp-action="Details" asp-route-id="@item.ProcurementId" class="fw-semibold text-decoration-none">@item.JobName</a>
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Job Type">
                             @(item.JobType?.TypeName ?? "-")
@@ -75,58 +75,52 @@
                         <td class="d-flex d-sm-table-cell" data-label="Vendor">
                             @vendorName
                         </td>
-                        <td class="text-md-center d-flex d-sm-table-cell position-sticky end-0 width-10-rem" data-label="Action">
-                            @if (canEditThisItem) {
-                                <a class="btn btn-outline-warning btn-sm mb-sm-2 w-100" asp-action="Edit" asp-route-id="@item.ProcurementId" role="button">
-                                    <i class="bi bi-pencil-fill"></i>
-                                    <span class="ms-1">Edit</span>
+                        <td class="text-center d-flex d-sm-table-cell" data-label="Aksi">
+                            <div class="row-actions">
+                                <a class="btn btn-row" asp-action="Details" asp-route-id="@item.ProcurementId" aria-label="Detail" title="Detail">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
                                 </a>
-                            }
-                            <a class="btn btn-outline-info btn-sm mb-sm-2 w-100" asp-action="Details" asp-route-id="@item.ProcurementId" role="button">
-                                <i class="bi bi-eye-fill"></i>
-                                <span class="ms-1">Detail</span>
-                            </a>
-                            @if (canDeleteThisItem) {
-                                var deleteTitle = string.IsNullOrWhiteSpace(item.Wonum)
-                                ? "Delete procurement?"
-                                : $"Delete {item.Wonum}?";
-                                var deleteMessage = string.IsNullOrWhiteSpace(item.JobName)
-                                ? "Admin can restore it from Deleted Records."
-                                : $"You are about to delete \"{item.JobName}\". Admin can restore it from Deleted Records.";
-                                <form asp-action="Delete"
-                                      method="post"
-                                      class="d-inline delete-form"
-                                      hx-boost="false"
-                                      hx-ignore="true"
-                                      data-loading-overlay="true"
-                                      data-confirm-title="@deleteTitle"
-                                      data-confirm-message="@System.Text.Encodings.Web.HtmlEncoder.Default.Encode(deleteMessage)">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@item.ProcurementId" />
-                                    <button type="submit"
-                                            class="btn btn-outline-danger btn-sm mb-sm-2 w-100">
-                                        <i class="bi bi-trash-fill"></i>
-                                        <span class="ms-1">Hapus</span>
-                                    </button>
-                                </form>
-                            }
-                            @if (canCancelThisItem) {
-                                <form asp-action="Cancel"
-                                      method="post"
-                                      class="d-inline delete-form"
-                                      hx-boost="false"
-                                      hx-ignore="true"
-                                      data-loading-overlay="true"
-                                      data-confirm-title="Batalkan pekerjaan ini?"
-                                      data-confirm-message="Pekerjaan akan berhenti diproses, tetapi tetap tercatat di LDP dengan keterangan Cancel.">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@item.ProcurementId" />
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm mb-sm-2 w-100">
-                                        <i class="bi bi-x-circle"></i>
-                                        <span class="ms-1">Batal</span>
-                                    </button>
-                                </form>
-                            }
+                                @if (canEditThisItem) {
+                                    <a class="btn btn-row" asp-action="Edit" asp-route-id="@item.ProcurementId" aria-label="Edit" title="Edit">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                }
+                                @if (canCancelThisItem) {
+                                    <form asp-action="Cancel"
+                                          method="post"
+                                          class="delete-form"
+                                          hx-boost="false"
+                                          hx-ignore="true"
+                                          data-loading-overlay="true"
+                                          data-confirm-title="Batalkan pekerjaan ini?"
+                                          data-confirm-message="Pekerjaan akan berhenti diproses, tetapi tetap tercatat di LDP dengan keterangan Cancel."
+                                          data-confirm-confirm="Batalkan pekerjaan"
+                                          data-confirm-cancel="Kembali">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.ProcurementId" />
+                                        <button type="submit" class="btn btn-row btn-row--warning" aria-label="Batalkan pekerjaan" title="Batalkan pekerjaan">
+                                            <i class="bi bi-x-circle" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+                                @if (canDeleteThisItem) {
+                                    <form asp-action="Delete"
+                                          method="post"
+                                          class="delete-form"
+                                          hx-boost="false"
+                                          hx-ignore="true"
+                                          data-loading-overlay="true"
+                                          data-confirm-title="@($"Hapus {item.DisplayId}?")"
+                                          data-confirm-message="@($"\"{item.JobName}\" akan dihapus. Admin bisa memulihkannya dari menu Data Terhapus.")"
+                                          data-confirm-confirm="Hapus">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.ProcurementId" />
+                                        <button type="submit" class="btn btn-row btn-row--danger" aria-label="Hapus" title="Hapus">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
                         </td>
                     </tr>
                 }
