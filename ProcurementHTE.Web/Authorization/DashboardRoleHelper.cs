@@ -40,7 +40,8 @@ namespace ProcurementHTE.Web.Authorization
             [OperationRole] = "OperationDashboard",
             [AssistantManagerHteRole] = "AssistantManagerHteDashboard",
             [VicePresidentRole] = "VicePresidentDashboard",
-            [AppoRole] = "AppoDashboard",
+            // AP-PO works from its table, so the table is its dashboard.
+            [AppoRole] = "ApPoPickup",
             [ArRole] = "ArDashboard",
             [ApInvoiceRole] = "ApInvoiceDashboard",
             [AccrualRole] = "ArDashboard",

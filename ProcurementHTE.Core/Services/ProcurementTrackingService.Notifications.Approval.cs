@@ -83,15 +83,11 @@ public partial class ProcurementTrackingService
 
     private async Task SendReadyForIspaNotification(Procurement procurement, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(procurement.AppoUserId))
-            return;
-
-        await _notificationService.SendNotificationAsync(
-            userId: procurement.AppoUserId,
-            title: $"Procurement {procurement.ProcNum} siap untuk submit INPRO",
+        await NotifyApPoUsersAsync(
+            title: $"Procurement {procurement.ProcNum} sudah selesai approval",
             message: $"WO: {procurement.Wonum} - Semua approval telah selesai",
             notificationType: "ReadyForISPA",
-            actionUrl: $"/Procurements/Details/{procurement.ProcurementId}",
+            actionUrl: "/ApPoPickup",
             referenceId: procurement.ProcurementId,
             createdByUserId: null,
             ct: ct

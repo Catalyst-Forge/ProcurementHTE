@@ -8,6 +8,7 @@ public partial class ProcurementTrackingController
 {
     [HttpPost("SendApproval")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = ActionRoles.ApPo)]
     public async Task<IActionResult> SendApproval(string procurementId, CancellationToken ct)
     {
         var userId = CurrentUserId();
@@ -27,7 +28,7 @@ public partial class ProcurementTrackingController
             return RedirectToDetails(procurementId);
         }
 
-        var result = await _trackingService.SendForApprovalAsync(procurementId, userId, ct);
+        var result = await _trackingService.SendApprovalStepAsync(procurementId, userId, ct);
         SetTrackingResultMessage(result.Success, result.Message);
         return RedirectToDetails(procurementId);
     }

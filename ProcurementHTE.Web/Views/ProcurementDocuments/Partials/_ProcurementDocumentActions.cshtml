@@ -13,6 +13,8 @@
     @if (item.IsGenerated)
     {
         @await Html.PartialAsync("Partials/_ProcurementDocumentGenerateForm", Model)
+        @* Any generated document can be swapped for the user's own file, before or after generating. *@
+        @await Html.PartialAsync("Partials/_ProcurementDocumentUploadForm", Model, new ViewDataDictionary(ViewData) { ["UploadTitle"] = "Atau upload file sendiri (PDF)" })
     }
 
     @if (Model.IsUploaded && !string.IsNullOrEmpty(item.ProcDocumentId))

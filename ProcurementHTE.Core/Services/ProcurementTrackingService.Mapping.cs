@@ -48,6 +48,7 @@ public partial class ProcurementTrackingService
             ApprovalTokenGeneratedAt = procurement.ApprovalTokenGeneratedAt,
             ApprovalSentByUserName = procurement.ApprovalSentByUser?.FullName,
             AppoUserId = procurement.AppoUserId,
+            ApprovalAwaitingSend = procurement.ApprovalAwaitingSend,
             AnalystHteUserName = procurement.AnalystHteUser?.FullName,
             AssistantManagerUserName = procurement.AssistantManagerUser?.FullName,
             ManagerUserName = procurement.ManagerUser?.FullName,

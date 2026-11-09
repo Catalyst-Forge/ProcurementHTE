@@ -1,0 +1,33 @@
+@* Search box above a finance table. Column filters come from the column menu (f.key), kept on submit. *@
+@using ProcurementHTE.Web.Extensions
+@model string?
+@{
+    var filters = Context.Request.ReadListFilters();
+    var sort = Context.Request.Query["sort"].ToString();
+    var dir = Context.Request.Query["dir"].ToString();
+    var pageSize = Context.Request.Query["pageSize"].ToString();
+}
+<form method="get" class="border rounded-3 d-flex flex-wrap align-items-center gap-2 p-2 mb-2" role="search">
+    <div class="input-group w-auto">
+        <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+        <input aria-label="Cari" class="form-control" type="search" name="search" value="@Model" placeholder="Cari SPMP, pekerjaan, nomor, PIC..." />
+    </div>
+    <button type="submit" class="btn btn-outline-primary">Cari</button>
+    @foreach (var (key, value) in filters)
+    {
+        <input type="hidden" name="f.@key" value="@value" />
+    }
+    @if (!string.IsNullOrEmpty(sort))
+    {
+        <input type="hidden" name="sort" value="@sort" />
+        <input type="hidden" name="dir" value="@dir" />
+    }
+    @if (!string.IsNullOrEmpty(pageSize))
+    {
+        <input type="hidden" name="pageSize" value="@pageSize" />
+    }
+    @if (filters.Count > 0 || !string.IsNullOrEmpty(Model))
+    {
+        <a class="btn btn-link" href="@Context.Request.Path">Hapus pencarian dan filter</a>
+    }
+</form>

@@ -6,6 +6,13 @@
     var isMoving = jobTypeName == "Moving";
 }
 
+@* Nilai Accrual and Nilai Realisasi are typed by AP-PO in its table now. Hidden fields keep
+   what an older P&L held when it is edited. *@
+<input type="hidden" asp-for="AccrualAmount" asp-format="{0:0}" />
+<input type="hidden" asp-for="RealizationAmount" asp-format="{0:0}" />
+
+@if (isSewaUnit || isMoving)
+{
 <section class="col-12" aria-labelledby="financial-section-title">
     <div class="card shadow-sm p-2">
         <fieldset class="card-body">
@@ -14,21 +21,6 @@
             </legend>
             <hr />
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label asp-for="AccrualAmount" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text">Rp</span>
-                        <input asp-for="AccrualAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="RealizationAmount" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text">Rp</span>
-                        <input asp-for="RealizationAmount" asp-format="{0:0}" class="form-control text-end" data-format-currency inputmode="numeric" />
-                    </div>
-                </div>
-
                 @if (isSewaUnit)
                 {
                     <div class="col-md-4">
@@ -51,3 +43,4 @@
         </fieldset>
     </div>
 </section>
+}

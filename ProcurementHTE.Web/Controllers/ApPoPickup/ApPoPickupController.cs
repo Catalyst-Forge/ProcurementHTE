@@ -2,13 +2,19 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Web.Authorization;
+using ProcurementHTE.Web.Controllers.Finance;
 
 namespace ProcurementHTE.Web.Controllers.ApPoPickup
 {
+    /// <summary>
+    /// The AP-PO table: every published job in one list, filled by clicking a cell. Nobody picks a
+    /// job up first, so every AP-PO user works on every row.
+    /// </summary>
     [Authorize]
     [Route("ApPoPickup")]
     public class ApPoPickupController : Controller
@@ -47,102 +53,51 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
 
         [HttpGet("")]
         public async Task<IActionResult> Index(
-            string tab = "waiting",
             int page = 1,
-            int pageSize = 10,
+            int pageSize = 25,
             string? search = null,
-            string? fields = null,
             CancellationToken ct = default
         )
         {
-            var allowed = new[] { 10, 25, 50, 100 };
-            if (!allowed.Contains(pageSize))
-                pageSize = 10;
-
-            var selectedFields = (fields ?? "ProcNum, JobName")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var userId = _userManager.GetUserId(User);
-
-            // Determine which data to fetch based on tab
-            Core.Common.PagedResult<Procurement> procurements;
-            if (tab == "mypickups" && !string.IsNullOrEmpty(userId))
-            {
-                procurements = await _queryService.GetMyAppoPickupsAsync(
-                    userId,
-                    page,
-                    pageSize,
-                    search,
-                    selectedFields,
-                    ct
-                );
-            }
-            else
-            {
-                procurements = await _queryService.GetProcurementsForAppoApprovalAsync(
-                    page,
-                    pageSize,
-                    search,
-                    selectedFields,
-                    ct
-                );
-            }
-
-            if (tab == "mypickups")
-                ViewData["PrStates"] = await LoadPrStatesAsync(procurements.Items, ct);
-
-            ViewBag.CurrentTab = tab;
-            ViewBag.CurrentPage = page;
-            ViewBag.PageSize = pageSize;
             ViewBag.Search = search;
-            ViewBag.Fields = fields;
-
-            return View(procurements);
+            return View(await FinanceTableEndpoints.LoadAsync(_queryService, Request, search, page, pageSize, ct));
         }
 
         [Authorize(Roles = ActionRoles.ApPo)]
-        [HttpPost("Pickup/{id}")]
+        [HttpPost("Field/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Pickup(string id)
+        public Task<IActionResult> SaveField(string id, FinanceField field, string? value, CancellationToken ct) =>
+            FinanceTableEndpoints.SaveFieldAsync(
+                _trackingService,
+                _queryService,
+                FinanceTableKind.ApPo,
+                id,
+                field,
+                value,
+                _userManager.GetUserId(User),
+                ct
+            );
+
+        [Authorize(Roles = ActionRoles.ApPo)]
+        [HttpPost("SendApproval/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendApproval(string id, string? returnUrl, CancellationToken ct)
         {
-            try
-            {
-                var userId = _userManager.GetUserId(User);
-                if (string.IsNullOrEmpty(userId))
-                {
-                    TempData["ErrorMessage"] = "User tidak ditemukan";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                await _workflowService.PickupAsync(id, userId);
-                TempData["SuccessMessage"] = "Procurement berhasil di-pickup";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Gagal pickup procurement: {ex.Message}";
-                return RedirectToAction(nameof(Index));
-            }
-
-            return RedirectToAction(nameof(Index), new { tab = "mypickups" });
+            var result = await _trackingService.SendApprovalStepAsync(id, _userManager.GetUserId(User) ?? string.Empty, ct);
+            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+            return BackToTable(returnUrl);
         }
 
         [Authorize(Roles = ActionRoles.ApPo)]
         [HttpPost("RaNumber/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SaveRaNumber(string id, string raNumber, CancellationToken ct)
+        public async Task<IActionResult> SaveRaNumber(string id, string raNumber, string? returnUrl, CancellationToken ct)
         {
             try
             {
                 var procurement = await _queryService.GetProcurementByIdAsync(id);
                 if (procurement == null)
                     return NotFound();
-
-                if (!User.IsInRole("Admin") && procurement.AppoUserId != _userManager.GetUserId(User))
-                {
-                    TempData["ErrorMessage"] = "Nomor RA hanya bisa diisi oleh AP-PO yang pick up pekerjaan ini";
-                    return RedirectToAction(nameof(Index), new { tab = "mypickups" });
-                }
 
                 await _workflowService.UpdateRaNumberAsync(id, raNumber);
                 TempData["SuccessMessage"] = await RefreshRiskAssessmentAsync(id, ct)
@@ -154,116 +109,36 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
                 TempData["ErrorMessage"] = ex.Message;
             }
 
-            return RedirectToAction(nameof(Index), new { tab = "mypickups" });
+            return BackToTable(returnUrl);
         }
 
-        [Authorize(Roles = ActionRoles.ApPo)]
-        [HttpPost("SubmitInpro")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitInpro(
-            string prId,
-            string inproNumber,
-            DateTime inproDate,
-            DateTime inproSubmitDate,
-            IFormFile? inproFile,
-            CancellationToken ct
-        )
+        [HttpGet("Details/{id}")]
+        public async Task<IActionResult> Details(string id)
         {
-            var error = ValidatePdf(inproFile, "INPRO", maxMegabytes: 50);
-            if (error == null && string.IsNullOrWhiteSpace(inproNumber))
-                error = "Nomor INPRO wajib diisi.";
-            if (error != null)
-                return BackToMyPickups(false, error);
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
 
-            var result = await _trackingService.SubmitInproAsync(
-                prId,
-                CurrentActor(),
-                inproNumber.Trim(),
-                inproDate,
-                inproSubmitDate,
-                ToUpload(inproFile!),
-                ct
-            );
-            return BackToMyPickups(result.Success, result.Message);
-        }
-
-        [Authorize(Roles = ActionRoles.ApPo)]
-        [HttpPost("SubmitHardcopy")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitHardcopy(
-            string prId,
-            IFormFile? hardcopyFile,
-            CancellationToken ct
-        )
-        {
-            var error = ValidatePdf(hardcopyFile, "hardcopy evidence", maxMegabytes: 10);
-            if (error != null)
-                return BackToMyPickups(false, error);
-
-            var result = await _trackingService.SubmitHardcopyAsync(
-                prId,
-                CurrentActor(),
-                ToUpload(hardcopyFile!),
-                ct
-            );
-            return BackToMyPickups(result.Success, result.Message);
-        }
-
-        [Authorize(Roles = ActionRoles.ApPo)]
-        [HttpPost("SubmitPo")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitPo(string prId, string poNumber, CancellationToken ct)
-        {
-            if (string.IsNullOrWhiteSpace(poNumber))
-                return BackToMyPickups(false, "Nomor PO wajib diisi.");
-
-            var result = await _trackingService.SubmitPoAsync(prId, CurrentActor(), poNumber.Trim(), ct);
-            return BackToMyPickups(result.Success, result.Message);
-        }
-
-        private async Task<Dictionary<string, PrSubmitState>> LoadPrStatesAsync(
-            IEnumerable<Procurement> procurements,
-            CancellationToken ct
-        )
-        {
-            var states = new Dictionary<string, PrSubmitState>();
-            foreach (var prId in procurements.Select(p => p.PrId).OfType<string>().Distinct())
+            try
             {
-                var state = await _trackingService.GetPrSubmitStateAsync(prId, ct);
-                if (state != null)
-                    states[prId] = state;
+                var procurement = await _queryService.GetProcurementByIdAsync(id);
+                if (procurement == null)
+                    return NotFound();
+
+                await PopulateUserFullNamesAsync(procurement);
+                return View(procurement);
             }
-
-            return states;
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Gagal memuat detail procurement: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        private PrSubmitActor CurrentActor() =>
-            new(_userManager.GetUserId(User) ?? string.Empty, User.IsInRole("Admin"));
-
-        private static PrFileUpload ToUpload(IFormFile file) =>
-            new(file.FileName, file.ContentType, file.Length, file.OpenReadStream());
-
-        private static string? ValidatePdf(IFormFile? file, string label, int maxMegabytes)
-        {
-            if (file == null || file.Length == 0)
-                return $"File {label} wajib diupload.";
-
-            var isPdf =
-                Path.GetExtension(file.FileName).Equals(".pdf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
-            if (!isPdf)
-                return $"Format file {label} harus PDF.";
-
-            return file.Length > maxMegabytes * 1024L * 1024L
-                ? $"Ukuran file {label} maksimal {maxMegabytes}MB."
-                : null;
-        }
-
-        private RedirectToActionResult BackToMyPickups(bool success, string? message)
-        {
-            TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
-            return RedirectToAction(nameof(Index), new { tab = "mypickups" });
-        }
+        // Back to the same page, filter, and sort the user acted from.
+        private IActionResult BackToTable(string? returnUrl) =>
+            !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? LocalRedirect(returnUrl)
+                : RedirectToAction(nameof(Index));
 
         /// <summary>
         /// The Risk Assessment PDF is stored when it is generated, so a number
@@ -312,30 +187,6 @@ namespace ProcurementHTE.Web.Controllers.ApPoPickup
                 ct
             );
             return true;
-        }
-
-        [HttpGet("Details/{id}")]
-        public async Task<IActionResult> Details(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
-
-            try
-            {
-                var procurement = await _queryService.GetProcurementByIdAsync(id);
-                if (procurement == null)
-                    return NotFound();
-
-                // Populate user full names for approvers
-                await PopulateUserFullNamesAsync(procurement);
-
-                return View(procurement);
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Gagal memuat detail procurement: {ex.Message}";
-                return RedirectToAction(nameof(Index));
-            }
         }
 
         private async Task PopulateUserFullNamesAsync(Procurement procurement)

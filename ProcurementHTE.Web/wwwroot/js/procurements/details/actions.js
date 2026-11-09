@@ -40,7 +40,7 @@
             event.preventDefault();
             confirmSubmit({
                 title: 'Publish procurement ini?',
-                html: `Apakah Anda yakin ingin mempublish procurement <strong>${button.dataset.procnum}</strong>?<br><small class="text-muted">Status akan berubah menjadi "Waiting Pickup"</small>`,
+                html: `Apakah Anda yakin ingin mempublish procurement <strong>${button.dataset.procnum}</strong>?<br><small class="text-muted">Procurement langsung masuk tabel AP-PO</small>`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: 'var(--dx-success)',

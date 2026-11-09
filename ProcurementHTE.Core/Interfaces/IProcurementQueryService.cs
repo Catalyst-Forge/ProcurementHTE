@@ -20,6 +20,16 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct
         );
         Task<int> CountAllProcurementsAsync(CancellationToken ct);
+        /// <summary>A page of the AP-PO, AP-Invoice, or AR table: search, column filters, sort.</summary>
+        Task<PagedResult<ProcurementHTE.Core.Finance.FinanceTableRow>> GetFinanceTableAsync(
+            string? search,
+            IReadOnlyDictionary<string, string> filters,
+            ListSort? sort,
+            int page,
+            int pageSize,
+            CancellationToken ct = default
+        );
+
         Task<PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(
             int page,
             int pageSize,

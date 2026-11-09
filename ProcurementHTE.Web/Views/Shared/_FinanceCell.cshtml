@@ -1,0 +1,20 @@
+@model ProcurementHTE.Web.Models.ViewModels.FinanceCellViewModel
+@if (Model.CanEdit)
+{
+    <button type="button"
+            class="finance-cell-edit"
+            data-finance-field="@Model.Field"
+            data-finance-input="@Model.InputKind"
+            data-finance-label="@Model.Spec.Label"
+            data-finance-value="@Model.InputValue"
+            data-finance-max="@Model.Spec.MaxLength"
+            data-finance-url="@Model.SaveUrl"
+            aria-label="Ubah @Model.Spec.Label">
+        <span class="finance-cell-value @(Model.IsEmpty ? "finance-cell-empty" : null)">@Model.Display</span>
+        <i class="bi bi-pencil" aria-hidden="true"></i>
+    </button>
+}
+else
+{
+    <span class="@(Model.IsEmpty ? "finance-cell-empty" : null)">@Model.Display</span>
+}

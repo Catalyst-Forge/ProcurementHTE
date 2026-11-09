@@ -52,7 +52,7 @@ public partial class ProcurementsController
             await NotifyProcurementPublishedAsync(id, procurement);
 
             TempData["SuccessMessage"] =
-                "Procurement berhasil dipublish dan status berubah menjadi 'Waiting Pickup'.";
+                "Procurement berhasil dipublish dan langsung masuk tabel AP-PO.";
         }
         catch (KeyNotFoundException ex)
         {

@@ -167,10 +167,6 @@ public partial class ListSortTests
     [InlineData("JobType/Index.cshtml", "JobTypes")]
     [InlineData("PurchaseRequisitions/Index.cshtml", "PurchaseRequisitions")]
     [InlineData("Procurements/Partials/_List.cshtml", "Procurements")]
-    [InlineData("ApPoPickup/Partials/_Table.cshtml", "Procurements")]
-    [InlineData("ApInvoicePickup/Partials/_Table.cshtml", "Procurements")]
-    [InlineData("ArPickup/Index.cshtml", "Procurements")]
-    [InlineData("Accrual/Partials/_AccrualTable.cshtml", "Procurements")]
     [InlineData("ProcurementTracking/_PendingApprovalsTable.cshtml", "PendingApprovals")]
     [InlineData("UserManagement/Partials/_UserTable.cshtml", "Users")]
     public void Every_header_key_has_a_column(string view, string list)
@@ -185,6 +181,26 @@ public partial class ListSortTests
         Assert.NotEmpty(used);
         Assert.All(used, key => Assert.Contains(key, keys));
     }
+
+    [Theory]
+    [InlineData("ApPoPickup/Index.cshtml")]
+    [InlineData("ApInvoicePickup/Index.cshtml")]
+    [InlineData("ArPickup/Index.cshtml")]
+    [InlineData("Accrual/Index.cshtml")]
+    public void Every_finance_table_header_key_has_a_column(string view)
+    {
+        var keys = ProcurementHTE.Core.Finance.FinanceTable.ColumnKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var text = File.ReadAllText(ViewPath(view));
+        var used = SortKey().Matches(text).Select(m => m.Groups[1].Value)
+            .Concat(FilterKey().Matches(text).Select(m => m.Groups[1].Value))
+            .ToList();
+
+        Assert.NotEmpty(used);
+        Assert.All(used, key => Assert.Contains(key, keys));
+    }
+
+    [GeneratedRegex("filter-key=\"([A-Za-z0-9]+)\"")]
+    private static partial Regex FilterKey();
 
     [Fact]
     public void Every_ldp_header_key_is_a_sortable_property()

@@ -106,78 +106,19 @@
                         <i class="bi bi-exclamation-triangle"></i> <strong>Accrual data has not been filled yet</strong>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(Model.ArUserId))
-                    {
-                        <p class="text-muted mb-3">This procurement has been picked up by AR. Please fill in the accrual data using the Data Accrual menu.</p>
-                        <div class="d-grid">
-                            <a asp-controller="Accrual" asp-action="Index" class="btn btn-primary">
-                                <i class="bi bi-calculator"></i> Go to Data Accrual
-                            </a>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted">Pickup this procurement first to fill accrual data.</p>
-                    }
+                    <p class="text-muted mb-3">Isi data accrual lewat menu Data Accrual.</p>
+                    <div class="d-grid">
+                        <a asp-controller="Accrual" asp-action="Index" asp-route-search="@Model.ProcNum" class="btn btn-primary">
+                            <i class="bi bi-calculator"></i> Buka Data Accrual
+                        </a>
+                    </div>
                 }
             </div>
         </div>
     </div>
 
     <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="card-title mb-0"><i class="bi bi-clock-history"></i> Pickup History</h5>
-            </div>
-            <div class="card-body">
-                @if (Model.AppoUser != null)
-                {
-                    <div class="mb-3">
-                        <h6 class="text-muted mb-1">AP-PO Pickup</h6>
-                        <div><i class="bi bi-person"></i> @Model.AppoUser.FullName</div>
-                        @if (Model.PickedUpAt.HasValue)
-                        {
-                            <small class="text-muted">
-                                <i class="bi bi-calendar"></i> @Model.PickedUpAt.Value.ToString("dd MMM yyyy HH:mm")
-                            </small>
-                        }
-                    </div>
-                }
-
-                @if (Model.ApInvoiceUser != null)
-                {
-                    <div class="mb-3">
-                        <h6 class="text-muted mb-1">AP-Invoice Pickup</h6>
-                        <div><i class="bi bi-person"></i> @Model.ApInvoiceUser.FullName</div>
-                        @if (Model.ApInvoicePickedUpAt.HasValue)
-                        {
-                            <small class="text-muted">
-                                <i class="bi bi-calendar"></i> @Model.ApInvoicePickedUpAt.Value.ToString("dd MMM yyyy HH:mm")
-                            </small>
-                        }
-                    </div>
-                }
-
-                @if (Model.ArUser != null)
-                {
-                    <div class="mb-3">
-                        <h6 class="text-muted mb-1">AR Pickup</h6>
-                        <div><i class="bi bi-person"></i> @Model.ArUser.FullName</div>
-                        @if (Model.ArPickedUpAt.HasValue)
-                        {
-                            <small class="text-muted">
-                                <i class="bi bi-calendar"></i> @Model.ArPickedUpAt.Value.ToString("dd MMM yyyy HH:mm")
-                            </small>
-                        }
-                    </div>
-                }
-
-                @if (Model.AppoUser == null && Model.ApInvoiceUser == null && Model.ArUser == null)
-                {
-                    <p class="text-muted">Belum ada riwayat pickup</p>
-                }
-            </div>
-        </div>
+        @await Html.PartialAsync("~/Views/ApInvoicePickup/_InvoicePickupHistory.cshtml", Model)
 
         @if (Model.SANo != null || Model.SP3No != null)
         {

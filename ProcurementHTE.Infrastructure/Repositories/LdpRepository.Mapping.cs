@@ -89,8 +89,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
                 // Financial
                 NilaiPnl = profitLoss?.Profit,
-                NilaiAccrual = profitLoss?.AccrualAmount,
-                NilaiRealisasi = profitLoss?.RealizationAmount,
+                NilaiAccrual = p.NilaiAccrual ?? profitLoss?.AccrualAmount,
+                NilaiRealisasi = p.NilaiRealisasi ?? profitLoss?.RealizationAmount,
 
                 // Document Numbers
                 NoSpmp = p.SpmpNumber,
@@ -102,7 +102,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 // Invoice Data
                 SANo = p.SANo,
                 SP3No = p.SP3No,
-                PicApPo = p.AppoUser?.FullName,
+                PicApPo = p.PicAppo ?? p.AppoUser?.FullName,
 
                 // Items
                 UnitItemPenawaran = unitItems,
@@ -123,7 +123,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 RaTglSelesai = approvalManagerDate,
 
                 // Purchase Requisition
-                NoPr = pr?.PrNumber,
+                NoPr = p.PrNumber ?? pr?.PrNumber,
                 TanggalBuatPr = pr?.CreatedAt,
                 TanggalRilisPr = pr?.CreatedAt, // Tanggal rilis PR = tanggal buat PR
 

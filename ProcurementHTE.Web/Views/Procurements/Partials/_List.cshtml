@@ -13,42 +13,18 @@
     var canManage = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Procurement);
     var canCancel = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Cancel);
     
-    Func<string, string> BadgeClass = s => (s ?? "").ToLower() switch {
-        "draft" => "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle",
-        "created" => "bg-info-subtle text-info-emphasis border border-info-subtle",
-        "completed" => "bg-success-subtle text-success-emphasis border border-success-subtle",
-        "closed" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
-        "cancelled" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle",
-        _ => "bg-light text-body border"
-    };
-
-    Func<decimal?, string> formatMoney = value => value.HasValue ? value.Value.ToString("N0") : "-";
-    var userNames = ViewBag.UserNames as IDictionary<string, string> ?? new Dictionary<string, string>();
-    Func<string?, string> resolveUserName = id => {
-        if (string.IsNullOrWhiteSpace(id))
-            return "-";
-        return userNames.TryGetValue(id, out var name) ? name : id;
-    };
 }
 
 <div class="table-responsive border rounded-3">
     <table class="table table-hover align-middle mobile-table">
         <thead class="table-light text-center">
             <tr class="align-middle">
-                <th scope="col" sort-key="jobName" class="border-end" style="min-width: 220px">Job Name</th>
-                <th scope="col" sort-key="spmp" class="border-end" style="min-width: 120px">SPMP</th>
-                <th scope="col" sort-key="wonum" class="border-end">WO Number</th>
+                <th scope="col" sort-key="spmp" filter-key="spmp" class="border-end" style="min-width: 120px">SPMP</th>
+                <th scope="col" sort-key="jobName" filter-key="jobName" class="border-end" style="min-width: 220px">Job Name</th>
+                <th scope="col" sort-key="jobType" filter-key="jobType" class="border-end" style="min-width: 100px">Job Type</th>
+                <th scope="col" sort-key="region" filter-key="region" class="border-end" style="min-width: 130px">Project Region</th>
                 <th scope="col" sort-key="startDate" sort-kind="date" class="border-end" style="min-width: 110px">Start Date</th>
-                <th scope="col" sort-key="jobType" class="border-end" style="min-width: 100px">Job Type</th>
-                <th scope="col" sort-key="revenue" sort-kind="number" class="border-end" style="min-width: 130px">Revenue</th>
-                <th scope="col" sort-key="cost" sort-kind="number" class="border-end" style="min-width: 130px">Cost</th>
-                <th scope="col" sort-key="profitPercent" sort-kind="number" class="border-end" style="min-width: 70px">Profit %</th>
-                <th scope="col" sort-key="vendor" class="border-end" style="min-width: 150px">Vendor</th>
-                <th scope="col" sort-key="region" class="border-end" style="min-width: 130px">Project Region</th>
-                <th scope="col" sort-key="analyst" class="border-end text-center" style="min-width: 150px">Analyst</th>
-                <th scope="col" sort-key="asstManager" class="border-end text-center" style="min-width: 150px">Asst. Manager</th>
-                <th scope="col" sort-key="manager" class="border-end text-center" style="min-width: 150px">Manager</th>
-                <th scope="col" sort-key="status" class="border-end text-center">Status</th>
+                <th scope="col" sort-key="vendor" filter-key="vendor" class="border-end" style="min-width: 150px">Vendor</th>
                 <th scope="col" class="text-center position-sticky end-0 width-10-rem">Aksi</th>
             </tr>
         </thead>
@@ -56,26 +32,17 @@
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="15" class="text-center text-muted">Data procurement tidak ditemukan</td>
+                    <td colspan="7" class="text-center text-muted">Data procurement tidak ditemukan</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
                     var latestPnl = item.ProfitLosses?
                     .OrderByDescending(p => p.CreatedAt)
                     .FirstOrDefault();
-                    var revenue = latestPnl?.AccrualAmount;
-                    var cost = latestPnl?.SelectedVendorFinalOffer;
-                    var profitPercent = latestPnl != null
-                    ? latestPnl.ProfitPercent.ToString("0.##")
-                    : "-";
                     var vendorName = latestPnl?.SelectedVendor?.VendorName
                     ?? (!string.IsNullOrWhiteSpace(latestPnl?.SelectedVendorId) ? latestPnl!.SelectedVendorId : null)
                     ?? "-";
                     var region = item.ProjectRegion.ToString();
-                    var wonum = string.IsNullOrWhiteSpace(item.Wonum) ? "-" : item.Wonum;
-                    var analyst = resolveUserName(item.AnalystHteUserId);
-                    var assistant = resolveUserName(item.AssistantManagerUserId);
-                    var manager = resolveUserName(item.ManagerUserId);
                     var statusName = item.Status?.StatusName ?? "-";
                     
                     var isPublished = statusName.Equals("Waiting Pickup", StringComparison.OrdinalIgnoreCase) 
@@ -90,47 +57,23 @@
                     var canEditThisItem = canManage && canEdit.Succeeded && !isPublished;
                     var canDeleteThisItem = User.IsInRole("Admin") || (canManage && canDelete.Succeeded && !isPublished);
                     <tr>
-                        <td class="d-flex d-sm-table-cell" data-label="Job Name">
-                            @item.JobName
-                        </td>
                         <td class="d-flex d-sm-table-cell" data-label="SPMP">
                             @(string.IsNullOrWhiteSpace(item.SpmpNumber) ? "-" : item.SpmpNumber)
                         </td>
-                        <td class="d-flex d-sm-table-cell" data-label="WO Number">
-                            @wonum
-                        </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Start Date">
-                            @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
+                        <td class="d-flex d-sm-table-cell" data-label="Job Name">
+                            @item.JobName
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Job Type">
                             @(item.JobType?.TypeName ?? "-")
                         </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Revenue">
-                            @formatMoney(revenue)
-                        </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Cost">
-                            @formatMoney(cost)
-                        </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Profit %">
-                            @profitPercent
-                        </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Vendor">
-                            @vendorName
-                        </td>
                         <td class="d-flex d-sm-table-cell" data-label="Project Region">
                             @(!string.IsNullOrWhiteSpace(region) ? region : "-")
                         </td>
-                        <td class="text-center d-flex d-sm-table-cell" data-label="Analyst">
-                            @analyst
+                        <td class="d-flex d-sm-table-cell" data-label="Start Date">
+                            @(item.StartDate == default ? "-" : item.StartDate.ToString("dd MMM yyyy"))
                         </td>
-                        <td class="text-center d-flex d-sm-table-cell" data-label="Asst. Manager">
-                            @assistant
-                        </td>
-                        <td class="text-center d-flex d-sm-table-cell" data-label="Manager">
-                            @manager
-                        </td>
-                        <td class="text-center d-flex d-sm-table-cell" data-label="Status">
-                            <span class="badge rounded-pill @BadgeClass(statusName)">@statusName</span>
+                        <td class="d-flex d-sm-table-cell" data-label="Vendor">
+                            @vendorName
                         </td>
                         <td class="text-md-center d-flex d-sm-table-cell position-sticky end-0 width-10-rem" data-label="Action">
                             @if (canEditThisItem) {

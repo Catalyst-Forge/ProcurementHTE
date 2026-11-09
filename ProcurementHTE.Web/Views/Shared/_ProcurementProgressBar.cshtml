@@ -47,7 +47,7 @@
     }
 
     // Post-approval steps (always present)
-    steps.Add((stepOrder++, "OnSubmitISPA", "On Submit INPRO", Model.IspaSubmittedAt, Model.IspaSubmittedByUserName, false));
+    steps.Add((stepOrder++, "OnSubmitISPA", "On Submit INPRO", Model.IspaSubmittedAt ?? Model.IspaSubmitDate, Model.IspaSubmittedByUserName, false));
     steps.Add((stepOrder++, "OnSubmitHardcopy", "On Submit Hardcopy", Model.HardcopySubmittedAt, Model.HardcopySubmittedByUserName, false));
     steps.Add((stepOrder++, "OnSubmitPO", "On Submit PO", Model.PoSubmittedAt, Model.PoSubmittedByUserName, false));
     steps.Add((stepOrder++, "DonePO", "Done PO", null, null, false));

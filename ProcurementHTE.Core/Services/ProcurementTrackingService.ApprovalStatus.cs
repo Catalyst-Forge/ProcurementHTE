@@ -1,5 +1,6 @@
 using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Enums;
+using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Models;
 
 namespace ProcurementHTE.Core.Services;
@@ -36,6 +37,10 @@ public partial class ProcurementTrackingService
         CancellationToken ct
     )
     {
+        // The approver only gets the job once AP-PO has sent it to their level.
+        if (procurement.ApprovalAwaitingSend && FinanceTable.IsApprovalStage(currentStatus))
+            return false;
+
         var ctValue = await GetCtAsync(procurement.ProcurementId);
         var requiredLevel = ApprovalConstants.GetRequiredApprovalLevel(ctValue);
         var newStatus = GetNextApprovalStatus(currentStatus, requiredLevel);
@@ -44,6 +49,8 @@ public partial class ProcurementTrackingService
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         SetApprovalTimelineOnStatusChange(procurement, currentStatus, newStatus, now);
+        var nextApprover = FinanceTable.ApproverFor(newStatus);
+        procurement.ApprovalAwaitingSend = nextApprover != null;
         await _procurementRepo.UpdateProcurementAsync(procurement);
         await UpdateProcurementStatusAsync(
             procurement.ProcurementId,
@@ -62,9 +69,23 @@ public partial class ProcurementTrackingService
         );
 
         if (newStatus == ProcurementStatus.OnSubmitISPA)
+        {
+            procurement.ProcurementStatus = newStatus;
+            await AdvanceFinanceStageAsync(procurement, approverUserId, ct);
             await SendReadyForIspaNotification(procurement, ct);
-        else
-            await SendApprovalNotification(procurement, ct);
+        }
+        else if (nextApprover != null)
+        {
+            await NotifyApPoUsersAsync(
+                title: $"Procurement {procurement.ProcNum} sudah di-approve {FinanceTable.ApproverFor(currentStatus)}",
+                message: $"WO: {procurement.Wonum} - Kirim approval ke {nextApprover} dari tabel AP-PO",
+                notificationType: "ReadyToSendApproval",
+                actionUrl: "/ApPoPickup",
+                referenceId: procurement.ProcurementId,
+                createdByUserId: approverUserId,
+                ct: ct
+            );
+        }
 
         return true;
     }
@@ -77,6 +98,7 @@ public partial class ProcurementTrackingService
         CancellationToken ct
     )
     {
+        procurement.ApprovalAwaitingSend = false;
         procurement.RejectionNote = note ?? "Rejected by approver";
         procurement.RejectedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.RejectedByUserId = approverUserId;

@@ -16,7 +16,7 @@
         <label class="upload-dropzone mb-1" data-row="@Model.RowIndex" tabindex="0">
             <div class="d-flex flex-column">
                 <span class="fw-semibold">
-                    <i class="bi bi-cloud-arrow-up me-1"></i> Tarik atau pilih file (PDF)
+                    <i class="bi bi-cloud-arrow-up me-1"></i> @(ViewData["UploadTitle"] as string ?? "Tarik atau pilih file (PDF)")
                 </span>
                 <small class="text-muted">Maksimal 10MB</small>
             </div>

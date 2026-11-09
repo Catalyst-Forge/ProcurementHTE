@@ -77,11 +77,12 @@ public partial class ProcurementService
                 "Hanya procurement dengan status 'Created' yang dapat dipublish"
             );
 
-        var waitingPickupStatus =
-            await _procurementRepository.GetStatusByNameAsync("Waiting Pickup")
-            ?? throw new InvalidOperationException("Status 'Waiting Pickup' tidak ditemukan");
+        // Nobody picks a published job up any more: it goes straight to the finance tables.
+        var inProgressStatus =
+            await _procurementRepository.GetStatusByNameAsync("In Progress")
+            ?? throw new InvalidOperationException("Status 'In Progress' tidak ditemukan");
 
-        procurement.StatusId = waitingPickupStatus.StatusId;
+        procurement.StatusId = inProgressStatus.StatusId;
         procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         await _procurementRepository.UpdateProcurementAsync(procurement);
     }
@@ -93,9 +94,9 @@ public partial class ProcurementService
 
         var procurement = await GetProcurementForWorkflowAsync(procurementId);
 
-        if (procurement.Status?.StatusName != "Waiting Pickup")
+        if (!CanUnpublish(procurement))
             throw new InvalidOperationException(
-                "Hanya procurement dengan status 'Waiting Pickup' yang dapat dibatalkan publish-nya"
+                "Publish hanya bisa dibatalkan sebelum procurement dikirim untuk approval"
             );
 
         var createdStatus =
@@ -155,4 +156,9 @@ public partial class ProcurementService
                 $"Procurement dengan ID {procurementId} tidak ditemukan"
             );
     }
+
+    /// <summary>A published job can go back to Created until AP-PO sends it for approval.</summary>
+    public static bool CanUnpublish(Procurement procurement) =>
+        procurement.ProcurementStatus == Enums.ProcurementStatus.OnCreateDP3
+        && procurement.Status?.StatusName is "In Progress" or "Waiting Pickup";
 }

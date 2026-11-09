@@ -14,8 +14,8 @@ namespace ProcurementHTE.Core.Services
         {
             var title = "Procurement Baru Dipublish";
             var message =
-                $"Procurement {procNum} telah dipublish oleh {publishedByUserName}. Silakan review dan pickup.";
-            var actionUrl = $"/ProcurementOrder";
+                $"Procurement {procNum} telah dipublish oleh {publishedByUserName}. Silakan lengkapi di tabel AP-PO.";
+            var actionUrl = "/ApPoPickup";
 
             await SendNotificationToRoleAsync(
                 "AP-PO",

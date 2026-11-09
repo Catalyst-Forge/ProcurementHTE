@@ -19,7 +19,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var isAsstManager = userRoles.Contains(RoleNames.AsstManager);
             var isManager = userRoles.Contains("Manager Transport & Logistic");
             var isVicePresident = userRoles.Contains("Vice President");
-            var query = _context.Procurements.AsQueryable();
+            // A job waiting for AP-PO to send it on is not with the next approver yet.
+            var query = _context.Procurements.Where(p => !p.ApprovalAwaitingSend);
 
             if (isAdmin)
             {
@@ -76,7 +77,8 @@ namespace ProcurementHTE.Infrastructure.Repositories
             var isManager = userRoles.Contains("Manager Transport & Logistic");
             var isVicePresident = userRoles.Contains("Vice President");
             var seesEveryApproval = isAdmin || !(isAnalyst || isAsstManager || isManager || isVicePresident);
-            var query = _context.Procurements.AsQueryable();
+            // A job waiting for AP-PO to send it on is not with the next approver yet.
+            var query = _context.Procurements.Where(p => !p.ApprovalAwaitingSend);
 
             if (seesEveryApproval)
             {

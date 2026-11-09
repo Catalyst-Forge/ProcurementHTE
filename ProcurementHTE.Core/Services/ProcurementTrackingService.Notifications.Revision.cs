@@ -43,23 +43,12 @@ public partial class ProcurementTrackingService
         CancellationToken ct
     )
     {
-        var appoUserId = procurement.AppoUserId;
-        if (string.IsNullOrEmpty(appoUserId))
-        {
-            _logger.LogWarning(
-                "Cannot send revision notification: AppoUserId is empty for procurement {ProcurementId}",
-                procurement.ProcurementId
-            );
-            return;
-        }
-
         var symptomNames = string.Join(", ", symptoms.GetPRIssues().GetSelectedDisplayNames());
         var message = symptoms.HasPRCannotBeCombined()
             ? $"WO: {procurement.Wonum}\nâš ï¸ PERLU DILEPAS DARI PR\nIssue: {symptomNames}\nCatatan: {rejectionNote}"
             : $"WO: {procurement.Wonum}\nIssue: {symptomNames}\nCatatan: {rejectionNote}";
 
-        await _notificationService.SendNotificationAsync(
-            userId: appoUserId,
+        await NotifyApPoUsersAsync(
             title: $"Procurement {procurement.ProcNum} perlu revisi PR/Dokumen",
             message: message,
             notificationType: "NeedsRevisionPR",

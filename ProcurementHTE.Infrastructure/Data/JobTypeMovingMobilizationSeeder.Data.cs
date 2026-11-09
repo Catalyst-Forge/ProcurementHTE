@@ -39,10 +39,10 @@ namespace ProcurementHTE.Infrastructure.Data
                 "Profit & Loss",
                 2,
                 true,
-                true,
                 false,
                 true,
-                "Di-generate sistem; approval Analyst HTE & LTS -> AM HTE -> Manager",
+                true,
+                "Di-upload user; approval Analyst HTE & LTS -> AM HTE -> Manager",
                 null
             ),
             (

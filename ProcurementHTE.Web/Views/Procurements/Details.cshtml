@@ -38,7 +38,7 @@
         ManagerName = ViewBag.ManagerName as string ?? Model?.ManagerUserId,
         CanManage = canManage,
         CanPublish = canManage && pnl != null && statusName == "Created",
-        CanUnpublish = canManage && statusName == "Waiting Pickup",
+        CanUnpublish = canManage && Model != null && ProcurementHTE.Core.Services.ProcurementService.CanUnpublish(Model),
         CanEditDelete = (statusName == "Created" || statusName == "Draft")
             && canManage
             && canEdit.Succeeded

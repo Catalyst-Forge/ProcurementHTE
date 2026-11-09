@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProcurementHTE.Core.Authorization;
+using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Web.Authorization;
+using ProcurementHTE.Web.Controllers.Finance;
 using ProcurementHTE.Web.Models.ViewModels;
 
 namespace ProcurementHTE.Web.Controllers.ArPickup;
@@ -17,59 +19,51 @@ public class AccrualController : Controller
     private readonly IProcurementWorkflowService _workflowService;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<AccrualController> _logger;
+    private readonly IProcurementTrackingService _trackingService;
 
     public AccrualController(
         IProcurementQueryService queryService,
         IProcurementWorkflowService workflowService,
         UserManager<User> userManager,
-        ILogger<AccrualController> logger)
+        ILogger<AccrualController> logger,
+        IProcurementTrackingService trackingService)
     {
         _queryService = queryService;
         _workflowService = workflowService;
         _userManager = userManager;
         _logger = logger;
+        _trackingService = trackingService;
     }
 
     /// <summary>
-    /// List procurements for AR to fill accrual data
+    /// The Data Accrual table: every published job, No Accrual filled by clicking the cell.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> Index(
         int page = 1,
-        int pageSize = 20,
+        int pageSize = 25,
         string? search = null,
-        string? filter = "all",
         CancellationToken ct = default)
     {
-        try
-        {
-            var result = await _queryService.GetProcurementsForAccrualAsync(
-                page, pageSize, search, filter, ct);
-
-            var viewModel = new AccrualIndexViewModel
-            {
-                Procurements = result.Items,
-                CurrentPage = page,
-                PageSize = pageSize,
-                TotalItems = result.Total,
-                TotalPages = result.TotalPages,
-                Search = search,
-                Filter = filter
-            };
-
-            return View(viewModel);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error loading accrual list");
-            TempData["ErrorMessage"] = "Gagal memuat data accrual.";
-            return View(new AccrualIndexViewModel());
-        }
+        ViewBag.Search = search;
+        return View(await FinanceTableEndpoints.LoadAsync(_queryService, Request, search, page, pageSize, ct));
     }
 
-    /// <summary>
-    /// Get procurement details for accrual modal
-    /// </summary>
+    [HttpPost("Field/{id}")]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = ActionRoles.Accrual)]
+    public Task<IActionResult> SaveField(string id, FinanceField field, string? value, CancellationToken ct) =>
+        FinanceTableEndpoints.SaveFieldAsync(
+            _trackingService,
+            _queryService,
+            FinanceTableKind.Accrual,
+            id,
+            field,
+            value,
+            _userManager.GetUserId(User),
+            ct
+        );
+
     [HttpGet("GetDetails/{id}")]
     public async Task<IActionResult> GetDetails(string id)
     {
@@ -116,14 +110,13 @@ public class AccrualController : Controller
             if (user == null)
                 return Unauthorized(new { success = false, message = "User tidak ditemukan" });
 
-            // Validate that procurement has been picked up by AR
             var procurement = await _queryService.GetProcurementByIdAsync(request.ProcurementId);
             if (procurement == null)
                 return NotFound(new { success = false, message = "Procurement tidak ditemukan" });
 
-            if (!ActionRoles.CanFillAccrual(User, !string.IsNullOrEmpty(procurement.ArUserId)))
+            if (!ActionRoles.CanFillAccrual(User))
             {
-                return BadRequest(new { success = false, message = "Anda harus pickup procurement ini terlebih dahulu dari menu AR Pickup" });
+                return BadRequest(new { success = false, message = "Anda tidak punya akses untuk mengisi data accrual" });
             }
 
             await _workflowService.UpdateAccrualDataAsync(

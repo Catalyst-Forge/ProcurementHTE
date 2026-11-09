@@ -1,3 +1,4 @@
+using ProcurementHTE.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Models;
@@ -23,6 +24,9 @@ namespace ProcurementHTE.Infrastructure.Repositories
 
             if (!string.IsNullOrEmpty(userId))
                 query = query.Where(proc => proc.UserId == userId);
+
+            if (_listFilter != null)
+                query = ApplyColumnFilters(query, _listFilter.Filters);
 
             return await query.ToPagedResultAsync(
                 page,
@@ -96,6 +100,25 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 .AsNoTracking()
                 .OrderByDescending(procurement => procurement.CreatedAt)
                 .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<Procurement>> GetPublishedForFinanceAsync(
+            CancellationToken ct = default
+        ) => await PublishedForFinance(_context).ToListAsync(ct);
+
+        /// <summary>The finance tables' query, public so a test can print its SQL Server form.</summary>
+        public static IQueryable<Procurement> PublishedForFinance(AppDbContext context)
+        {
+            var published = Core.Finance.FinanceTable.PublishedStatuses.ToList();
+            return context
+                .Procurements.Include(p => p.JobType)
+                .Include(p => p.Status)
+                .Include(p => p.ProfitLosses)
+                .ThenInclude(pl => pl.SelectedVendor)
+                .Where(p => p.Status != null && published.Contains(p.Status.StatusName))
+                .OrderByDescending(p => p.CreatedAt)
+                .AsSplitQuery()
+                .AsNoTracking();
         }
 
         public async Task<Core.Common.PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(

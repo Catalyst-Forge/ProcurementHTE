@@ -13,16 +13,19 @@ public partial class ProcurementsController
             ?? throw new KeyNotFoundException("Procurement tidak ditemukan");
 
         var docTypes = await GetProcDocumentTypesByNameAsync();
-        var pnlDocTypeId = FindRequiredDocumentTypeId(docTypes, "Profit & Loss");
-        var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(procurement);
+        if (procurement.GeneratesProfitLossDocument)
+        {
+            var pnlDocTypeId = FindRequiredDocumentTypeId(docTypes, "Profit & Loss");
+            var pdfBytes = await _documentGenerator.GenerateProfitLossAsync(procurement);
 
-        await SaveGeneratedDocumentAsync(
-            dto.ProcurementId,
-            pnlDocTypeId,
-            pdfBytes,
-            $"Profit_Loss_{procurement.ProcNum}.pdf",
-            "Profit & Loss auto-generated"
-        );
+            await SaveGeneratedDocumentAsync(
+                dto.ProcurementId,
+                pnlDocTypeId,
+                pdfBytes,
+                $"Profit_Loss_{procurement.ProcNum}.pdf",
+                "Profit & Loss auto-generated"
+            );
+        }
 
         await GenerateSpmpDocumentAsync(
             procurement,

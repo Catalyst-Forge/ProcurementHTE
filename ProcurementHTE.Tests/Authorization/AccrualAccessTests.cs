@@ -13,14 +13,14 @@ public class AccrualAccessTests
         new(new ClaimsIdentity([new Claim(ClaimTypes.Role, role)], "Test"));
 
     [Theory]
-    [InlineData("Admin", false, true)]
-    [InlineData("Accrual", false, true)]
-    [InlineData("AR", true, true)]
-    [InlineData("AR", false, false)]
-    [InlineData("AP-PO", true, false)]
-    public void CanFillAccrual_only_holds_ar_to_the_pickup(string role, bool pickedUp, bool allowed)
+    [InlineData("Admin", true)]
+    [InlineData("Accrual", true)]
+    [InlineData("AR", true)]
+    [InlineData("AP-PO", false)]
+    [InlineData("AP-Invoice", false)]
+    public void CanFillAccrual_needs_only_the_role_now_that_pickup_is_gone(string role, bool allowed)
     {
-        Assert.Equal(allowed, ActionRoles.CanFillAccrual(UserWithRole(role), pickedUp));
+        Assert.Equal(allowed, ActionRoles.CanFillAccrual(UserWithRole(role)));
     }
 
     [Fact]

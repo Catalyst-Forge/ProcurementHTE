@@ -1,62 +1,96 @@
-@using ProcurementHTE.Core.Common
-@using ProcurementHTE.Core.Models
-@model PagedResult<Procurement>
+@using ProcurementHTE.Core.Finance
+@using ProcurementHTE.Web.Authorization
+@using ProcurementHTE.Web.Models.ViewModels
+@model ProcurementHTE.Core.Common.PagedResult<FinanceTableRow>
 @{
     ViewData["Title"] = "Account Payable Invoice";
+    var canEdit = ActionRoles.Allows(User, ActionRoles.ApInvoice);
+    string SaveUrl(FinanceTableRow row) => Url.Action("SaveField", "ApInvoicePickup", new { id = row.ProcurementId })!;
+    FinanceCellViewModel Cell(FinanceTableRow row, FinanceField field, string? text, DateTime? date = null) =>
+        new(SaveUrl(row), field, text, date, canEdit && !row.IsCancelled);
+    string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value;
 }
 
-@await Html.PartialAsync("Partials/_Tabs")
-@await Html.PartialAsync("Partials/_Filter", Model)
-@await Html.PartialAsync("Partials/_Table", Model)
-@await Html.PartialAsync("Partials/_Pagination", Model)
+<header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-1">Account Payable Invoice</h1>
+        <p class="text-muted mb-0">
+            Klik sel untuk mengisi. Status jadi Done setelah No Invoice, No SA, No SP3 beserta tanggalnya, dan Submit Loket terisi.
+        </p>
+    </div>
+</header>
+
+@await Html.PartialAsync("_FinanceSearch", (string?)ViewBag.Search)
+@Html.AntiForgeryToken()
+
+<div class="table-responsive border rounded-3">
+    <table class="table table-hover align-middle mb-0 mobile-table finance-table">
+        <thead class="table-light">
+            <tr class="align-middle">
+                <th scope="col" sort-key="spmp" filter-key="spmp" class="border-end">SPMP</th>
+                <th scope="col" sort-key="jobName" filter-key="jobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="prNumber" filter-key="prNumber" class="border-end">No PR</th>
+                <th scope="col" sort-key="nilaiPnl" sort-kind="number" class="border-end text-end">Nilai P&amp;L</th>
+                <th scope="col" sort-key="nilaiAccrual" sort-kind="number" class="border-end text-end">Nilai Accrual</th>
+                <th scope="col" sort-key="nilaiRealisasi" sort-kind="number" class="border-end text-end">Nilai Realisasi</th>
+                <th scope="col" sort-key="poNumber" filter-key="poNumber" class="border-end">No PO</th>
+                <th scope="col" sort-key="invoiceNumber" filter-key="invoiceNumber" class="border-end">No Invoice &amp; Tgl</th>
+                <th scope="col" sort-key="saNo" filter-key="saNo" class="border-end">No SA &amp; Tgl</th>
+                <th scope="col" sort-key="sp3No" filter-key="sp3No" class="border-end">No SP3 &amp; Tgl</th>
+                <th scope="col" sort-key="loket" sort-kind="date" class="border-end">Submit Loket</th>
+                <th scope="col" sort-key="apInvoiceStatus" filter-key="apInvoiceStatus">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="12" class="text-center text-muted py-4">Belum ada pekerjaan yang di-publish Operation</td>
+                </tr>
+            }
+            @foreach (var row in Model.Items)
+            {
+                <tr data-finance-job="@row.JobName">
+                    <td data-label="SPMP">@Text(row.Spmp)</td>
+                    <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
+                    <td data-label="No PR">@Text(row.PrNumber)</td>
+                    <td data-label="Nilai P&amp;L" class="text-end">@FinanceTable.FormatMoney(row.NilaiPnl)</td>
+                    <td data-label="Nilai Accrual" class="text-end">@FinanceTable.FormatMoney(row.NilaiAccrual)</td>
+                    <td data-label="Nilai Realisasi" class="text-end">@FinanceTable.FormatMoney(row.NilaiRealisasi)</td>
+                    <td data-label="No PO">@Text(row.PoNumber)</td>
+                    <td data-label="No Invoice &amp; Tgl">
+                        <div class="finance-pair">
+                            @await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.InvoiceNumber, row.InvoiceNumber))
+                            @await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.InvoiceDate, null, row.InvoiceDate))
+                        </div>
+                    </td>
+                    <td data-label="No SA &amp; Tgl">
+                        <div class="finance-pair">
+                            @await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.SaNo, row.SaNo))
+                            @await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.SaDate, null, row.SaDate))
+                        </div>
+                    </td>
+                    <td data-label="No SP3 &amp; Tgl">
+                        <div class="finance-pair">
+                            @await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.Sp3No, row.Sp3No))
+                            @await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.Sp3Date, null, row.Sp3Date))
+                        </div>
+                    </td>
+                    <td data-label="Submit Loket">@await Html.PartialAsync("_FinanceCell", Cell(row, FinanceField.LoketDate, null, row.LoketDate))</td>
+                    <td data-label="Aksi">
+                        <div class="finance-actions">
+                            @await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ApInvoiceDone))
+                            <a asp-action="Details" asp-route-id="@row.ProcurementId" class="btn btn-outline-info btn-sm"><i class="bi bi-eye" aria-hidden="true"></i> Detail</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@await Html.PartialAsync("_Pager", Model)
 
 @section Scripts {
-    <script>
-        (function() {
-            var btnRefresh = document.getElementById('btnRefresh');
-            if (btnRefresh) {
-                btnRefresh.addEventListener('click', function() {
-                    location.reload();
-                });
-            }
-
-            var searchBox = document.getElementById('searchBox');
-            if (searchBox) {
-                var timeout;
-                searchBox.addEventListener('input', function() {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(function() {
-                        document.getElementById('pageHidden').value = '1';
-                        document.getElementById('filterForm').submit();
-                    }, 500);
-                });
-            }
-
-            // SweetAlert2 for Pickup buttons
-            var pickupButtons = document.querySelectorAll('.btn-pickup');
-            pickupButtons.forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var form = this.closest('form');
-                    var procNum = this.dataset.procnum;
-
-                    Swal.fire({
-                        title: 'Pickup procurement ini?',
-                        html: 'Apakah Anda yakin ingin pickup procurement <strong>' + procNum + '</strong> untuk invoice processing?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: 'var(--dx-success)',
-                        cancelButtonColor: 'var(--dx-ink-muted)',
-                        confirmButtonText: '<i class="bi bi-box-arrow-in-down"></i> Ya, Pickup',
-                        cancelButtonText: '<i class="bi bi-x"></i> Batal',
-                        reverseButtons: true
-                    }).then(function(result) {
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-                    });
-                });
-            });
-        })();
-    </script>
+    <script src="~/js/finance-table.js" asp-append-version="true"></script>
 }

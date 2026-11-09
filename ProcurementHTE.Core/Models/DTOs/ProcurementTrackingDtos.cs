@@ -127,8 +127,17 @@ namespace ProcurementHTE.Core.Models.DTOs
         public bool AllMandatoryDocsReady => TotalMandatoryDocs > 0 && MissingMandatoryDocs == 0;
 
         // Can Send Approval - All conditions must be met
-        public bool CanSendApproval => CurrentStatus == ProcurementStatus.OnCreateDP3
-                                       && AllMandatoryDocsReady;
+        // Approval may go out before the documents or the P&L are complete.
+        public bool CanSendApproval => CurrentStatus == ProcurementStatus.OnCreateDP3;
+
+        /// <summary>An approver signed and the job waits for AP-PO to send it to the next level.</summary>
+        public bool ApprovalAwaitingSend { get; set; }
+
+        /// <summary>Who AP-PO's next "Sending Approval" goes to, or null when nothing waits.</summary>
+        public string? NextApprovalTarget =>
+            CurrentStatus == ProcurementStatus.OnCreateDP3 ? Finance.FinanceTable.ApproverFor(ProcurementStatus.WaitingApprovalAnalyst)
+            : ApprovalAwaitingSend ? Finance.FinanceTable.ApproverFor(CurrentStatus)
+            : null;
 
         // Approval QR Code - URL for approval via QR scan
         public string? ApprovalQrUrl { get; set; }
@@ -138,12 +147,12 @@ namespace ProcurementHTE.Core.Models.DTOs
         public string? NextApproverName { get; set; }
 
         // Approval Status Info - includes all approval levels
-        public bool IsWaitingApproval => CurrentStatus == ProcurementStatus.WaitingApprovalAnalyst
+        public bool IsWaitingApproval => !ApprovalAwaitingSend && (CurrentStatus == ProcurementStatus.WaitingApprovalAnalyst
                                          || CurrentStatus == ProcurementStatus.WaitingApprovalAsstManager
                                          || CurrentStatus == ProcurementStatus.WaitingApprovalManager
                                          || CurrentStatus == ProcurementStatus.WaitingApprovalVP
                                          || CurrentStatus == ProcurementStatus.WaitingApprovalOpDir
-                                         || CurrentStatus == ProcurementStatus.WaitingApprovalPresDir;
+                                         || CurrentStatus == ProcurementStatus.WaitingApprovalPresDir);
 
         // Total documents count (for this procurement)
         public int TotalDocuments { get; set; }

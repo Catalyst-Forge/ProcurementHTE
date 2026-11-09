@@ -9,11 +9,8 @@ public partial class ProcurementTrackingController
 {
     private bool CanUserModifyProcurement(ProcurementTrackingDto tracking)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.IsInRole("Admin"))
-            return true;
-
-        return !string.IsNullOrEmpty(tracking.AppoUserId) && tracking.AppoUserId == userId;
+        // Nobody picks a job up any more, so every AP-PO user may act on it.
+        return User.IsInRole("Admin") || User.IsInRole("AP-PO");
     }
 
     private bool CanUserApprove(ProcurementTrackingDto tracking)

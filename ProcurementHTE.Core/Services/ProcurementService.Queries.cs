@@ -1,3 +1,4 @@
+using ProcurementHTE.Core.Finance;
 using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Models;
 
@@ -43,6 +44,19 @@ public partial class ProcurementService
     public Task<int> CountAllProcurementsAsync(CancellationToken ct)
     {
         return _procurementRepository.CountAsync(ct);
+    }
+
+    public async Task<PagedResult<FinanceTableRow>> GetFinanceTableAsync(
+        string? search,
+        IReadOnlyDictionary<string, string> filters,
+        ListSort? sort,
+        int page,
+        int pageSize,
+        CancellationToken ct = default
+    )
+    {
+        var jobs = await _procurementRepository.GetPublishedForFinanceAsync(ct);
+        return FinanceTable.Query(jobs.Select(FinanceTable.ToRow), search, filters, sort, page, pageSize);
     }
 
     public Task<PagedResult<Procurement>> GetProcurementsForAppoApprovalAsync(

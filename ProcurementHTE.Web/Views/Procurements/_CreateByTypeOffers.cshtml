@@ -32,14 +32,14 @@
                         <div class="col-md-10">
                             <div class="row g-1">
                                 <div class="col-md-5">
-                                    <label class="form-label">Item <span class="text-danger">*</span></label>
+                                    <label class="form-label">Item</label>
                                     <input class="form-control" 
                                            name="Offers[@(idx)].ItemPenawaran" aria-label="Item" 
                                            value="@offer.ItemPenawaran" />
                                     @Html.ValidationMessage($"Offers[{idx}].ItemPenawaran", new { @class = "text-danger" })
                                 </div>
                                 <div class="col-md-2">
-                                    <label class="form-label">Qty Items <span class="text-danger">*</span></label>
+                                    <label class="form-label">Qty Items</label>
                                     <input type="number" min="1" step="1"
                                            class="form-control text-end"
                                            name="Offers[@(idx)].Qty" aria-label="Qty Items" 
@@ -47,7 +47,7 @@
                                     @Html.ValidationMessage($"Offers[{idx}].Qty", new { @class = "text-danger" })
                                 </div>
                                 <div class="col-md-2">
-                                    <label class="form-label">Unit Items <span class="text-danger">*</span></label>
+                                    <label class="form-label">Unit Items</label>
                                     <input type="text" class="form-control" 
                                            name="Offers[@(idx)].Unit" aria-label="Unit Items" 
                                            value="@offer.Unit"

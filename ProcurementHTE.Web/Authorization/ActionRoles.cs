@@ -21,10 +21,7 @@ public static class ActionRoles
     public static bool Allows(ClaimsPrincipal user, string roles) =>
         roles.Split(',', StringSplitOptions.TrimEntries).Any(user.IsInRole);
 
-    // Only AR has to pick a job up first. The Accrual role has no pickup action,
-    // so that condition would leave it with nothing to do.
-    public static bool CanFillAccrual(ClaimsPrincipal user, bool pickedUpByAr) =>
-        user.IsInRole("Admin")
-        || user.IsInRole(RoleNames.Accrual)
-        || (user.IsInRole("AR") && pickedUpByAr);
+    // Nobody picks a job up any more: AR fills accrual like the Accrual role does.
+    public static bool CanFillAccrual(ClaimsPrincipal user) =>
+        user.IsInRole("Admin") || user.IsInRole(RoleNames.Accrual) || user.IsInRole("AR");
 }

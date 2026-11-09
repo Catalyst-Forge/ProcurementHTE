@@ -792,6 +792,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("ApprovalAwaitingSend")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ApprovalSentByUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -865,6 +868,13 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("InvoiceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -929,6 +939,9 @@ namespace ProcurementHTE.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("LoketSubmitDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LtcName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -949,6 +962,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("MemoNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("NilaiAccrual")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal?>("NilaiRealisasi")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("NoAccrual")
                         .HasMaxLength(100)
@@ -986,6 +1005,18 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<int?>("PendingRevisionSymptoms")
                         .HasColumnType("int");
 
+                    b.Property<string>("PicApInvoice")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("PicAppo")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("PicAr")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<string>("PicOpsUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -1012,6 +1043,10 @@ namespace ProcurementHTE.Infrastructure.Migrations
 
                     b.Property<string>("PrId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PrNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("PresDirApprovalEndAt")
                         .HasColumnType("datetime2");
@@ -1085,6 +1120,12 @@ namespace ProcurementHTE.Infrastructure.Migrations
                     b.Property<string>("SP3No")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("SaDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("Sp3Date")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SpkNumber")
                         .HasMaxLength(100)

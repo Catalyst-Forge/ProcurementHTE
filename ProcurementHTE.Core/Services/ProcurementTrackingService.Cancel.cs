@@ -42,19 +42,15 @@ public partial class ProcurementTrackingService
             ct
         );
 
-        if (!string.IsNullOrEmpty(procurement.AppoUserId))
-        {
-            await _notificationService.SendNotificationAsync(
-                userId: procurement.AppoUserId,
-                title: $"Procurement {procurement.ProcNum} di-cancel",
-                message: $"WO: {procurement.Wonum}",
-                notificationType: "ProcurementCancelled",
-                actionUrl: $"/Procurements/Details/{procurementId}",
-                referenceId: procurementId,
-                createdByUserId: cancelledByUserId,
-                ct: ct
-            );
-        }
+        await NotifyApPoUsersAsync(
+            title: $"Procurement {procurement.ProcNum} di-cancel",
+            message: $"WO: {procurement.Wonum}",
+            notificationType: "ProcurementCancelled",
+            actionUrl: $"/Procurements/Details/{procurementId}",
+            referenceId: procurementId,
+            createdByUserId: cancelledByUserId,
+            ct: ct
+        );
 
         return Succeeded("Procurement berhasil di-cancel.");
     }

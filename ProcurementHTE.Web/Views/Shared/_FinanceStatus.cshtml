@@ -1,0 +1,14 @@
+@* Done, On Progress, or Cancel for a row of a finance table. finance-table.js updates it after a save. *@
+@model (bool Cancelled, bool Done)
+@if (Model.Cancelled)
+{
+    <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">Cancel</span>
+}
+else if (Model.Done)
+{
+    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle" data-finance-status>Done</span>
+}
+else
+{
+    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" data-finance-status>On Progress</span>
+}

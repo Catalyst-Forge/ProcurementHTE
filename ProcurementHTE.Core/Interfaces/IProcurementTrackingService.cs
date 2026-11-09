@@ -78,6 +78,22 @@ namespace ProcurementHTE.Core.Interfaces
             CancellationToken ct = default
         );
 
+        /// <summary>AP-PO sends the job to the Analyst first, then to each next level after a sign-off.</summary>
+        Task<ProcurementTrackingResponse> SendApprovalStepAsync(
+            string procurementId,
+            string sentByUserId,
+            CancellationToken ct = default
+        );
+
+        /// <summary>Saves one cell of the AP-PO, AP-Invoice, or AR table.</summary>
+        Task<ProcurementHTE.Core.Finance.FinanceFieldChange> UpdateFinanceFieldAsync(
+            string procurementId,
+            ProcurementHTE.Core.Finance.FinanceField field,
+            string? value,
+            string changedByUserId,
+            CancellationToken ct = default
+        );
+
         /// <summary>
         /// Send Procurement for approval - generates QR token and updates status
         /// </summary>

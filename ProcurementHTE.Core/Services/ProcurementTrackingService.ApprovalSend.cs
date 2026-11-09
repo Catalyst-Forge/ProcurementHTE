@@ -26,15 +26,11 @@ public partial class ProcurementTrackingService
             );
         }
 
-        var procIds = new List<string> { procurementId };
-        var needsJustifikasiMap = await _prRepo.GetNeedsJustifikasiMapAsync(procIds, ct);
-        var (totalDocs, uploadedDocs) = CountMandatoryDocs(procurement, needsJustifikasiMap);
-        if (totalDocs > 0 && uploadedDocs < totalDocs)
-            return Failed($"Dokumen wajib belum lengkap. {uploadedDocs}/{totalDocs} dokumen telah diupload.");
 
         procurement.ApprovalToken = GenerateApprovalToken();
         procurement.ApprovalTokenGeneratedAt = _timeProvider.GetUtcNow().UtcDateTime;
         procurement.ApprovalSentByUserId = sentByUserId;
+        procurement.ApprovalAwaitingSend = false;
         procurement.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
         await AssignHigherLevelApproversAsync(procurement, ct);

@@ -10,7 +10,6 @@ public class SidebarMenuTests
     [
         "Dashboard",
         "Procurements",
-        "PR (Purchase Requisition)",
         "Laporan Data Procurement",
         "Arsip LDP",
         "Pending Approvals",

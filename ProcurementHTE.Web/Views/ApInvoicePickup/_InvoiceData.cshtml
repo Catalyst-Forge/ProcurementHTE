@@ -1,8 +1,7 @@
 @model ProcurementHTE.Core.Models.Procurement
-@inject Microsoft.AspNetCore.Identity.UserManager<ProcurementHTE.Core.Models.User> UserManager
 @{
-    var currentUserId = UserManager.GetUserId(User);
-    var isPickedByCurrentUser = Model.ApInvoiceUserId == currentUserId;
+    // Every AP-Invoice user fills invoice data; nobody picks the job up first.
+    var isPickedByCurrentUser = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.ApInvoice);
     var hasInvoiceData = !string.IsNullOrEmpty(Model.SANo) || !string.IsNullOrEmpty(Model.SP3No);
 }
 
@@ -85,7 +84,7 @@
         }
         else
         {
-            <!-- Read-only untuk user yang belum pickup -->
+            <!-- Read-only untuk role selain AP-Invoice -->
             <div class="row mb-0">
                 <dl class="col-12 col-sm-6 mb-2">
                     <dt class="fw-semibold text-uppercase text-secondary">SA No</dt>
@@ -116,7 +115,7 @@
             </div>
             <div class="alert alert-info mb-0">
                 <i class="bi bi-info-circle me-1"></i>
-                Silakan pickup procurement ini terlebih dahulu untuk mengisi data invoice.
+                Data invoice diisi oleh AP-Invoice.
             </div>
         }
     </div>

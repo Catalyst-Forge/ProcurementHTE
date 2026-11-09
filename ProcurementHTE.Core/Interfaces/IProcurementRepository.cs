@@ -30,6 +30,9 @@ namespace ProcurementHTE.Core.Interfaces
         /// </summary>
         Task<IReadOnlyList<Procurement>> GetAllForSelectionAsync();
 
+        /// <summary>Every job Operation has published, with what the finance tables show.</summary>
+        Task<IReadOnlyList<Procurement>> GetPublishedForFinanceAsync(CancellationToken ct = default);
+
         /// <summary>
         /// Get all procurements with status "Waiting Pickup" for AP-PO pickup
         /// </summary>

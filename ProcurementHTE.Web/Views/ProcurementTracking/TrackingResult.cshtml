@@ -16,7 +16,7 @@
 
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var isAdmin = User.IsInRole("Admin");
-    var canModify = isAdmin || (!string.IsNullOrEmpty(Model.AppoUserId) && Model.AppoUserId == currentUserId);
+    var canModify = isAdmin || User.IsInRole("AP-PO");
 
     var isAnalyst = User.IsInRole("Analyst HTE & LTS");
     var isAsstManager = User.IsInRole(RoleNames.AsstManager);
@@ -50,7 +50,6 @@
     <div class="row g-4">
         <div class="col-lg-4">
             @await Html.PartialAsync("_TrackingProcurementInfoCard", Model)
-            @await Html.PartialAsync("_TrackingQrCodeCard", Model)
             @await Html.PartialAsync("_TrackingResponsibleUsersCard", Model)
         </div>
 
