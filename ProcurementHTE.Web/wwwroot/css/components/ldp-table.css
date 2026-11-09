@@ -74,6 +74,29 @@
   }
 }
 
+/* --- LDP and Arsip LDP lists: 13 columns ---
+   Job Name and Vendor show two lines at most, so every row keeps one height; the full text is
+   in the cell's tooltip and on the detail page. A long word may break inside those two lines,
+   and the cells and row buttons are a little tighter, so the table fits a 1280px screen. */
+.ldp-table.finance-table th,
+.ldp-table.finance-table td {
+  padding: 0.375rem 0.1875rem;
+}
+
+.ldp-table.finance-table td.finance-col-wrap {
+  min-width: 5.5rem;
+}
+
+.ldp-table .ldp-clamp {
+  overflow-wrap: anywhere;
+}
+
+.ldp-table .btn.btn-row {
+  width: 1.625rem;
+  height: 1.625rem;
+  font-size: 0.875rem;
+}
+
 /* --- LDP detail page (Views/Ldp/Details.cshtml) ---
    Every LDP column of one job, in groups that pack into newspaper columns on a wide screen,
    so a long group (Pekerjaan) leaves no gap beside a short one. */

@@ -276,6 +276,32 @@ summary:focus-visible {
   justify-content: center;
 }
 
+/* A thin line between the columns of every table, lighter than the line between rows.
+   The phone card layout has no columns, so it drops them. */
+.table > :is(thead, tbody) > tr > :is(th, td):not(:last-child) {
+  border-right: 1px solid color-mix(in srgb, var(--bs-border-color) 70%, transparent);
+}
+
+@media screen and (max-width: 991.98px) {
+  .table.mobile-table > tbody > tr > td:not(:last-child) {
+    border-right: 0;
+  }
+}
+
+/* Job tables (Procurements, LDP, Arsip LDP, the finance tables, Pending Approvals): a value
+   sits in the middle of its column, as the client asked, except Job Name and PIC names,
+   which start at the left (.text-start), and amounts, which end at the right (.text-end).
+   Phones keep the card layout's own alignment. */
+@media screen and (min-width: 992px) {
+  .table.table-aligned > tbody > tr > td {
+    text-align: center;
+  }
+
+  .table.table-aligned > tbody > tr > td:not(.text-start, .text-end) :is(.finance-pair, .finance-actions) {
+    justify-content: center;
+  }
+}
+
 /* A visually-hidden header label is absolutely positioned. Without a positioned scroll
    container it escaped the table's own scrolling and widened the whole page. */
 .table-responsive {

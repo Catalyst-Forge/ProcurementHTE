@@ -11,7 +11,7 @@
 <div data-total-count="@totalCount" hx-boost="false">
     <div class="card border-0 shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover mb-0 mobile-table">
+            <table class="table table-aligned table-hover mb-0 mobile-table">
                 <thead class="table-light">
                     <tr>
                         <th scope="col" sort-key="spmp" filter-key="spmp" class="px-3">SPMP</th>
@@ -60,7 +60,7 @@
                                 <td>
                                     <span class="text-muted">@item.Wonum</span>
                                 </td>
-                                <td>
+                                <td class="text-start">
                                     <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@item.JobName">
                                         @item.JobName
                                     </span>

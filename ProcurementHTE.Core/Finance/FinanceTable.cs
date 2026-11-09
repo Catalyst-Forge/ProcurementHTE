@@ -65,6 +65,7 @@ public sealed record FinanceTableRow
     public string? Wonum { get; init; }
     public string? Vendor { get; init; }
     public string? JobType { get; init; }
+    public string? ProjectRegion { get; init; }
     public string? StatusName { get; init; }
     public ProcurementStatus Stage { get; init; }
     public bool IsCancelled { get; init; }
@@ -191,6 +192,7 @@ public static class FinanceTable
             Wonum = p.Wonum,
             Vendor = pnl?.SelectedVendor?.VendorName,
             JobType = p.JobType?.TypeName,
+            ProjectRegion = p.ProjectRegion.ToString(),
             StatusName = p.Status?.StatusName,
             Stage = p.ProcurementStatus,
             IsCancelled = IsCancelled(p),
@@ -394,6 +396,7 @@ public static class FinanceTable
             ["procNum"] = r => r.ProcNum,
             ["spmp"] = r => r.Spmp,
             ["jobName"] = r => r.JobName,
+            ["region"] = r => r.ProjectRegion,
             ["wonum"] = r => r.Wonum,
             ["vendor"] = r => r.Vendor,
             ["prNumber"] = r => r.PrNumber,

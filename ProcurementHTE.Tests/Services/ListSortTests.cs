@@ -209,9 +209,9 @@ public partial class ListSortTests
     {
         var used = SortKey().Matches(File.ReadAllText(ViewPath("Ldp/_LdpTable.cshtml"))).Select(m => m.Groups[1].Value).ToList();
 
-        // SPMP, Job Name, Vendor, No PR, No PO, No SA, No SP3, Submit Loket, and Aksi (the status);
-        // the rest is on the detail page.
-        Assert.Equal(9, used.Count);
+        // SPMP, Job Name, Job Type, Contract Type, Project Region, Start Date, Vendor, No PR, No PO,
+        // No SA, No SP3, Submit Loket, and Aksi (the status); the rest is on the detail page.
+        Assert.Equal(13, used.Count);
         Assert.All(used, key => Assert.NotNull(LdpRepository.FindColumn(key)));
     }
 
@@ -223,8 +223,9 @@ public partial class ListSortTests
             .Concat(FilterKey().Matches(text).Select(m => m.Groups[1].Value))
             .ToList();
 
-        // The LDP columns without Submit Loket, which the old spreadsheet does not have.
-        Assert.Equal(16, used.Count);
+        // The LDP columns, sorted and searched, without Submit Loket (the old spreadsheet has none)
+        // and Project Region (read from the full values for the page shown only).
+        Assert.Equal(22, used.Count);
         Assert.All(used, key => Assert.NotNull(LdpArchiveRepository.FindColumn(key)));
     }
 

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
+using ProcurementHTE.Core.Services;
 using ProcurementHTE.Infrastructure.Data;
 
 namespace ProcurementHTE.Infrastructure.Repositories;
@@ -63,13 +64,32 @@ public sealed class LdpArchiveRepository(AppDbContext db) : ILdpArchiveRepositor
         var totalPages = Math.Max(1, (int)Math.Ceiling(all.Count / (double)pageSize));
         var page = Math.Clamp(query.Page, 1, totalPages);
 
+        var shown = all.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        await FillProjectRegionAsync(shown, ct);
+
         return new Core.Common.PagedResult<LdpArchiveListItem>
         {
-            Items = all.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+            Items = shown,
             Page = page,
             PageSize = pageSize,
             Total = all.Count,
         };
+    }
+
+    // Reads "Project" from the full values of the rows on the page only.
+    private async Task FillProjectRegionAsync(List<LdpArchiveListItem> items, CancellationToken ct)
+    {
+        var ids = items.Select(item => item.Id).ToList();
+        var values = await db.LdpArchiveRows.AsNoTracking()
+            .Where(row => ids.Contains(row.LdpArchiveRowId))
+            .Select(row => new { row.LdpArchiveRowId, row.ValuesJson })
+            .ToDictionaryAsync(row => row.LdpArchiveRowId, row => row.ValuesJson, ct);
+
+        foreach (var item in items)
+        {
+            item.ProjectRegion = LdpArchiveEditor.Read(values.GetValueOrDefault(item.Id))
+                .FirstOrDefault(cell => cell.Label == "Project")?.Value?.ToString();
+        }
     }
 
     public async Task<IReadOnlyList<LdpArchiveRow>> ExportAsync(LdpArchiveQuery query, CancellationToken ct = default)

@@ -13,16 +13,21 @@
     var canManage = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Procurement);
     var canCancel = ProcurementHTE.Web.Authorization.ActionRoles.Allows(User, ProcurementHTE.Web.Authorization.ActionRoles.Cancel);
     var isAdmin = User.IsInRole("Admin");
+    // Every action the user can take on some job keeps its place in every row, dimmed with the
+    // reason where it does not apply, so the icons line up from row to row.
+    var showEdit = canManage && canEdit.Succeeded;
+    var showDelete = isAdmin || (canManage && canDelete.Succeeded);
     
 }
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover align-middle mobile-table">
+    <table class="table table-aligned table-hover align-middle mobile-table">
         <thead class="table-light text-center">
             <tr class="align-middle">
                 <th scope="col" sort-key="spmp" filter-key="spmp" class="border-end">SPMP</th>
                 <th scope="col" sort-key="jobName" filter-key="jobName" class="border-end">Job Name</th>
                 <th scope="col" sort-key="jobType" filter-key="jobType" class="border-end">Job Type</th>
+                <th scope="col" sort-key="contractType" filter-key="contractType" class="border-end">Contract Type</th>
                 <th scope="col" sort-key="region" filter-key="region" class="border-end">Project Region</th>
                 <th scope="col" sort-key="startDate" filter-key="startDate" sort-kind="date" class="border-end">Start Date</th>
                 <th scope="col" sort-key="vendor" filter-key="vendor" class="border-end">Vendor</th>
@@ -33,7 +38,7 @@
         <tbody>
             @if (Model == null || !Model.Items.Any()) {
                 <tr>
-                    <td colspan="7" class="text-center text-muted">Data procurement tidak ditemukan</td>
+                    <td colspan="8" class="text-center text-muted">Data procurement tidak ditemukan</td>
                 </tr>
             } else {
                 foreach (var item in Model.Items) {
@@ -61,11 +66,14 @@
                         <td class="d-flex d-sm-table-cell" data-label="SPMP">
                             @(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.SpmpNumber) ?? "-")
                         </td>
-                        <td class="d-flex d-sm-table-cell" data-label="Job Name">
+                        <td class="d-flex d-sm-table-cell text-start" data-label="Job Name">
                             <a asp-action="Details" asp-route-id="@item.ProcurementId" class="fw-semibold text-decoration-none">@item.JobName</a>
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Job Type">
                             @(item.JobType?.TypeName ?? "-")
+                        </td>
+                        <td class="d-flex d-sm-table-cell" data-label="Contract Type">
+                            @(item.ContractType == ProcurementHTE.Core.Enums.ContractType.None ? "-" : item.ContractType.ToString())
                         </td>
                         <td class="d-flex d-sm-table-cell" data-label="Project Region">
                             @(!string.IsNullOrWhiteSpace(region) ? region : "-")
@@ -77,6 +85,13 @@
                             @vendorName
                         </td>
                         <td class="text-center d-flex d-sm-table-cell" data-label="Aksi">
+                            @{
+                                var isCancelled = statusName.Equals("Cancelled", StringComparison.OrdinalIgnoreCase)
+                                    || item.ProcurementStatus == ProcurementHTE.Core.Enums.ProcurementStatus.Cancelled;
+                                var editBlocked = isCancelled ? "Pekerjaan yang dibatalkan tidak bisa diedit" : "Pekerjaan yang sudah di-publish hanya bisa diedit Admin";
+                                var cancelBlocked = "Pekerjaan sudah selesai atau dibatalkan";
+                                var deleteBlocked = "Pekerjaan yang sudah di-publish hanya bisa dihapus Admin";
+                            }
                             <div class="row-actions">
                                 <a class="btn btn-row" asp-action="Details" asp-route-id="@item.ProcurementId" aria-label="Detail" title="Detail">
                                     <i class="bi bi-eye" aria-hidden="true"></i>
@@ -85,6 +100,12 @@
                                     <a class="btn btn-row" asp-action="Edit" asp-route-id="@item.ProcurementId" aria-label="Edit" title="Edit">
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
                                     </a>
+                                } else if (showEdit) {
+                                    <span class="d-inline-flex" title="@editBlocked">
+                                        <button type="button" class="btn btn-row" disabled aria-label="@($"Edit tidak tersedia: {editBlocked}")">
+                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        </button>
+                                    </span>
                                 }
                                 @if (canCancelThisItem) {
                                     <form asp-action="Cancel"
@@ -103,6 +124,12 @@
                                             <i class="bi bi-x-circle" aria-hidden="true"></i>
                                         </button>
                                     </form>
+                                } else if (canCancel) {
+                                    <span class="d-inline-flex" title="@cancelBlocked">
+                                        <button type="button" class="btn btn-row" disabled aria-label="@($"Batalkan tidak tersedia: {cancelBlocked}")">
+                                            <i class="bi bi-x-circle" aria-hidden="true"></i>
+                                        </button>
+                                    </span>
                                 }
                                 @if (canDeleteThisItem) {
                                     <form asp-action="Delete"
@@ -120,6 +147,12 @@
                                             <i class="bi bi-trash" aria-hidden="true"></i>
                                         </button>
                                     </form>
+                                } else if (showDelete) {
+                                    <span class="d-inline-flex" title="@deleteBlocked">
+                                        <button type="button" class="btn btn-row" disabled aria-label="@($"Hapus tidak tersedia: {deleteBlocked}")">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </span>
                                 }
                             </div>
                         </td>

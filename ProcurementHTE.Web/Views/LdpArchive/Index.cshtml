@@ -50,11 +50,15 @@
 @* The same columns as the LDP. A job's name, or its eye icon, opens every column of the row.
    The old spreadsheet has no Submit Loket, so that column stays "-" here. *@
 <div class="table-responsive border rounded-3 mb-2">
-    <table class="table table-hover align-middle mb-0 mobile-table finance-table ldp-table">
+    <table class="table table-aligned table-hover align-middle mb-0 mobile-table finance-table ldp-table">
         <thead class="table-light">
             <tr class="align-middle">
                 <th scope="col" sort-key="NoSpmp" filter-key="NoSpmp" class="border-end">SPMP</th>
                 <th scope="col" sort-key="JobName" filter-key="JobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="JobType" filter-key="JobType" class="border-end">Job Type</th>
+                <th scope="col" sort-key="ContractType" filter-key="ContractType" class="border-end">Contract Type</th>
+                <th scope="col" class="border-end">Project Region</th>
+                <th scope="col" sort-key="StartDate" sort-kind="date" filter-key="StartDate" class="border-end">Start Date</th>
                 <th scope="col" sort-key="VendorName" filter-key="VendorName" class="border-end">Vendor Terpilih</th>
                 <th scope="col" sort-key="NoPr" filter-key="NoPr" class="border-end">No PR</th>
                 <th scope="col" sort-key="NoPo" filter-key="NoPo" class="border-end">No PO</th>
@@ -68,7 +72,7 @@
             @if (Model.Items.Count == 0)
             {
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-4">
+                    <td colspan="13" class="text-center text-muted py-4">
                         @(filtered ? "Tidak ada arsip yang cocok." : "Arsip LDP belum diisi.")
                     </td>
                 </tr>
@@ -77,10 +81,14 @@
             {
                 <tr>
                     <td data-label="SPMP" title="@item.NoSpmp">@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.NoSpmp) ?? "-")</td>
-                    <td data-label="Job Name" class="finance-col-wrap">
-                        <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold text-decoration-none">@Text(item.JobName)</a>
+                    <td data-label="Job Name" class="finance-col-wrap text-start">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold text-decoration-none ldp-clamp" title="@item.JobName">@Text(item.JobName)</a>
                     </td>
-                    <td data-label="Vendor Terpilih" class="finance-col-wrap">@Text(item.VendorName)</td>
+                    <td data-label="Job Type">@Text(item.JobType)</td>
+                    <td data-label="Contract Type">@Text(item.ContractType)</td>
+                    <td data-label="Project Region">@Text(item.ProjectRegion)</td>
+                    <td data-label="Start Date">@ProcurementHTE.Core.Finance.FinanceTable.FormatDate(item.StartDate)</td>
+                    <td data-label="Vendor Terpilih" class="finance-col-wrap"><span class="ldp-clamp" title="@item.VendorName">@Text(item.VendorName)</span></td>
                     <td data-label="No PR">@Text(item.NoPr)</td>
                     <td data-label="No PO">@Text(item.NoPo)</td>
                     <td data-label="No SA">@Text(item.NoSa)</td>

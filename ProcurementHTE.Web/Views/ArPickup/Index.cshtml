@@ -20,7 +20,7 @@
 @Html.AntiForgeryToken()
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover align-middle mb-0 mobile-table finance-table">
+    <table class="table table-aligned table-hover align-middle mb-0 mobile-table finance-table">
         <thead class="table-light">
             <tr class="align-middle">
                 <th scope="col" sort-key="spmp" filter-key="spmp" class="border-end">SPMP</th>
@@ -46,13 +46,13 @@
                 var hasAccrual = !string.IsNullOrWhiteSpace(row.NoAccrual);
                 <tr>
                     <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
-                    <td data-label="Job Name" class="finance-col-wrap">@row.JobName</td>
+                    <td data-label="Job Name" class="finance-col-wrap text-start">@row.JobName</td>
                     <td data-label="WO Number">@(string.IsNullOrWhiteSpace(row.Wonum) ? "-" : row.Wonum)</td>
                     <td data-label="Vendor" class="finance-col-wrap">@(row.Vendor ?? "-")</td>
                     <td data-label="No Accrual">@(hasAccrual ? row.NoAccrual : "-")</td>
                     <td data-label="Potensi Accrual" class="text-end">@FinanceTable.FormatMoney(row.PotensiAccrual)</td>
                     <td data-label="Status Accrual">@(string.IsNullOrWhiteSpace(row.StatusAccrual) ? "-" : row.StatusAccrual)</td>
-                    <td data-label="PIC AR" class="finance-col-name">@await Html.PartialAsync("_FinanceCell", new FinanceCellViewModel(SaveUrl(row), FinanceField.PicAr, row.PicAr, null, canEdit && !row.IsCancelled))</td>
+                    <td data-label="PIC AR" class="finance-col-name text-start">@await Html.PartialAsync("_FinanceCell", new FinanceCellViewModel(SaveUrl(row), FinanceField.PicAr, row.PicAr, null, canEdit && !row.IsCancelled))</td>
                     <td data-label="Aksi">
                         <div class="finance-actions">
                             @await Html.PartialAsync("_FinanceStatus", (row.IsCancelled, row.ArDone))

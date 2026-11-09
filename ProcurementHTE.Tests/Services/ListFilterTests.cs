@@ -96,7 +96,8 @@ public class ListFilterSqlServerTests
                 var t when t == typeof(DateTime) => "Nov 2026",
                 var t when t == typeof(bool) => "Aktif",
                 var t when t == typeof(decimal) || t == typeof(int) => "13.000.000",
-                var t when t.IsEnum => "a",
+                // A name the enum has, so the column narrows the rows instead of matching none.
+                var t when t.IsEnum => Enum.GetNames(t)[^1],
                 _ => "abc",
             });
         return query.FilterBy(filters, columns).ToQueryString();

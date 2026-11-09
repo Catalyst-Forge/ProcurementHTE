@@ -24,11 +24,12 @@
 @Html.AntiForgeryToken()
 
 <div class="table-responsive border rounded-3">
-    <table class="table table-hover align-middle mb-0 mobile-table finance-table">
+    <table class="table table-aligned table-hover align-middle mb-0 mobile-table finance-table">
         <thead class="table-light">
             <tr class="align-middle">
                 <th scope="col" sort-key="spmp" filter-key="spmp" class="border-end">SPMP</th>
                 <th scope="col" sort-key="jobName" filter-key="jobName" class="border-end">Job Name</th>
+                <th scope="col" sort-key="region" filter-key="region" class="border-end">Project Region</th>
                 <th scope="col" sort-key="prNumber" filter-key="prNumber" class="border-end">No PR</th>
                 <th scope="col" sort-key="nilaiPnl" filter-key="nilaiPnl" sort-kind="number" class="border-end text-end">Nilai P&amp;L</th>
                 <th scope="col" sort-key="nilaiAccrual" filter-key="nilaiAccrual" sort-kind="number" class="border-end text-end">Nilai Accrual</th>
@@ -45,16 +46,17 @@
             @if (Model.Items.Count == 0)
             {
                 <tr>
-                    <td colspan="12" class="text-center text-muted py-4">Belum ada pekerjaan yang di-publish Operation</td>
+                    <td colspan="13" class="text-center text-muted py-4">Belum ada pekerjaan yang di-publish Operation</td>
                 </tr>
             }
             @foreach (var row in Model.Items)
             {
                 <tr>
                     <td data-label="SPMP" title="@row.Spmp">@(FinanceTable.ShortSpmp(row.Spmp) ?? "-")</td>
-                    <td data-label="Job Name" class="finance-col-wrap">
+                    <td data-label="Job Name" class="finance-col-wrap text-start">
                         <a asp-action="Details" asp-route-id="@row.ProcurementId" class="fw-semibold text-decoration-none">@row.JobName</a>
                     </td>
+                    <td data-label="Project Region">@(row.ProjectRegion ?? "-")</td>
                     <td data-label="No PR">@Text(row.PrNumber)</td>
                     <td data-label="Nilai P&amp;L" class="text-end">@FinanceTable.FormatMoney(row.NilaiPnl)</td>
                     <td data-label="Nilai Accrual" class="text-end">@FinanceTable.FormatMoney(row.NilaiAccrual)</td>

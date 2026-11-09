@@ -37,6 +37,7 @@ public static class ListSortColumns
             ("spmp", p => p.SpmpNumber),
             ("startDate", p => p.StartDate),
             ("jobType", p => p.JobType!.TypeName),
+            ("contractType", p => p.ContractType),
             ("region", p => p.ProjectRegion),
             ("status", p => p.Status!.StatusName),
             ("raNumber", p => p.RaNumber),

@@ -29,6 +29,12 @@ public sealed class LdpArchiveListItem
     public string? PicOps { get; init; }
     public string? Status { get; init; }
 
+    /// <summary>
+    /// The spreadsheet's "Project" value. It lives in the row's full values, which are too large
+    /// to load for every row, so it is filled for the page shown only and is not sorted or searched.
+    /// </summary>
+    public string? ProjectRegion { get; set; }
+
     /// <summary>Done or On Progress, as in the LDP; see <see cref="LdpProgress"/>. Sorts and filters as a column.</summary>
     public string Progress => LdpProgress.Of(NoSpmp, JobName, VendorName, NoPr, NoPo, NoSa, NoSp3, null, archived: true);
 }
