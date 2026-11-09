@@ -16,7 +16,6 @@ public class SidebarMenuTests
         "Procurement Tracking",
         "Account Payable Purchase Order",
         "Account Payable Invoice",
-        "Account Receivable",
         "Data Accrual",
     ];
 
@@ -59,7 +58,8 @@ public class SidebarMenuTests
         var labels = VisibleLabels("AP-Invoice", "AR");
 
         Assert.Contains("Account Payable Invoice", labels);
-        Assert.Contains("Account Receivable", labels);
+        Assert.Contains("Data Accrual", labels);
+        Assert.DoesNotContain("Account Receivable", labels);
         Assert.Equal(labels.Length, labels.Distinct().Count());
     }
 

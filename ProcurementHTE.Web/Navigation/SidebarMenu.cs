@@ -94,7 +94,6 @@ public static class SidebarMenu
             [
                 new("Account Payable Purchase Order", "bi-clipboard-check", "ApPoPickup", "AP-PO Pickup"),
                 new("Account Payable Invoice", "bi-receipt", "ApInvoicePickup", "AP-Invoice Pickup"),
-                new("Account Receivable", "bi-box-arrow-in-down", "ArPickup", "AR Pickup"),
                 new("Data Accrual", "bi-calculator", "Accrual", "Data Accrual"),
             ]
         ),
