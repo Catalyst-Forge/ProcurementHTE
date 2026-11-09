@@ -42,12 +42,11 @@ public sealed partial class ProcDocumentService
         if (documents == null || documents.Count == 0)
             return 0;
 
+        // The files stay in storage: a deleted job can be restored from Data Terhapus with its
+        // documents. Hapus Permanen (RecordPurgeService) removes the files.
         var deletedCount = 0;
         foreach (var doc in documents)
         {
-            if (!string.IsNullOrWhiteSpace(doc.ObjectKey))
-                await SafeDeleteAsync(doc.ObjectKey);
-
             await _procDocumentRepository.DeleteAsync(doc.ProcDocumentId, deletedByUserId);
             deletedCount++;
         }

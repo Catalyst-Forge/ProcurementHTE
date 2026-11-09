@@ -170,6 +170,50 @@ public class SoftDeleteTests : IDisposable
     }
 
     [Fact]
+    public async Task RestoreProcurement_BringsBackItsProfitLossAndDocuments_DeletedWithIt()
+    {
+        // Procurements/Delete deletes the documents, then the P&L, then the job, seconds apart.
+        var jobDeletedAt = new DateTime(2026, 11, 9, 12, 38, 41, DateTimeKind.Utc);
+        var job = new Procurement { ProcNum = "PROC-9", IsDeleted = true, DeletedAt = jobDeletedAt, DeletedBy = AdminId };
+        ProcDocuments Document(string key, DateTime deletedAt, string deletedBy) => new()
+        {
+            ProcurementId = job.ProcurementId, DocumentTypeId = "doc-type", ObjectKey = key, FileName = key,
+            ContentType = "application/pdf", IsDeleted = true, DeletedAt = deletedAt, DeletedBy = deletedBy,
+        };
+        var withJob = Document("with-job.pdf", jobDeletedAt.AddSeconds(-2), AdminId);
+        var earlier = Document("earlier.pdf", jobDeletedAt.AddDays(-1), AdminId);
+        var byOther = Document("by-other.pdf", jobDeletedAt.AddSeconds(-2), "someone-else");
+        _db.AddRange(job, withJob, earlier, byOther, new ProfitLoss
+        {
+            ProcurementId = job.ProcurementId, SelectedVendorId = "vendor-1", NoLetterSelectedVendor = "L-1",
+            Profit = 60_000_000, IsDeleted = true, DeletedAt = jobDeletedAt.AddSeconds(-1), DeletedBy = AdminId,
+        });
+        await _db.SaveChangesAsync();
+
+        var result = await new DeletedRecordsService(_db).RestoreAsync(DeletedRecordKind.Procurement, job.ProcurementId);
+
+        Assert.True(result.Succeeded, result.Message);
+        Assert.Equal(60_000_000, (await _db.ProfitLosses.SingleAsync()).Profit);
+        Assert.Equal(["with-job.pdf"], await _db.ProcDocuments.Select(d => d.ObjectKey).ToListAsync());
+    }
+
+    [Fact]
+    public void Rows_deleted_with_a_job_translate_for_sql_server()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlServer("Server=localhost;Database=translate-only;Trusted_Connection=True;TrustServerCertificate=True")
+            .Options;
+        using var db = new AppDbContext(options);
+        var at = new DateTime(2026, 11, 9, 12, 38, 41, DateTimeKind.Utc);
+
+        var pnl = DeletedRecordsService.DeletedWithJob(db.ProfitLosses.IgnoreQueryFilters(), "job-1", at, AdminId).ToQueryString();
+        var documents = DeletedRecordsService.DeletedWithJob(db.ProcDocuments.IgnoreQueryFilters(), "job-1", at, AdminId).ToQueryString();
+
+        Assert.Contains("[DeletedAt] >=", pnl);
+        Assert.Contains("[DeletedBy]", documents);
+    }
+
+    [Fact]
     public async Task RestoreVendor_UndoesLegacyRename_AndRefusesATakenCode()
     {
         Vendor NewVendor(string code, bool deleted) => new()

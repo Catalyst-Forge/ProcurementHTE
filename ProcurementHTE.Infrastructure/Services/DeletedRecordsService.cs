@@ -156,10 +156,48 @@ public sealed partial class DeletedRecordsService(AppDbContext db) : IDeletedRec
                 .AnyAsync(ct))
             return RestoreResult.Fail($"{item.SpmpLabel} tahun {item.StartDate.Year} sudah dipakai pekerjaan lain yang aktif.");
 
+        var deletedAt = item.DeletedAt;
+        var deletedBy = item.DeletedBy;
         item.ProcNum = number;
         item.IsDeleted = false;
-        return RestoreResult.Ok($"{item.DisplayId} dipulihkan.");
+
+        // Procurements/Delete removes the job's P&L and documents a moment before the job.
+        // Without them a restored job shows empty P&L values in the finance tables.
+        foreach (var pnl in await DeletedWithJob(Deleted<ProfitLoss>(), id, deletedAt, deletedBy).ToListAsync(ct))
+            pnl.IsDeleted = false;
+        foreach (var document in await DeletedWithJob(Deleted<ProcDocuments>(), id, deletedAt, deletedBy).ToListAsync(ct))
+            document.IsDeleted = false;
+
+        return RestoreResult.Ok($"{item.DisplayId} dipulihkan beserta P&L dan dokumennya.");
     }
+
+    /// <summary>How long before the job its P&L and documents may have been deleted in the same delete.</summary>
+    internal static readonly TimeSpan DeletedWithJobWindow = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    /// The job's P&L deleted together with it: same person, at most <see cref="DeletedWithJobWindow"/>
+    /// before the job. A P&L deleted earlier on its own stays deleted.
+    /// </summary>
+    internal static IQueryable<ProfitLoss> DeletedWithJob(
+        IQueryable<ProfitLoss> deleted, string procurementId, DateTime? jobDeletedAt, string? deletedBy)
+    {
+        var (from, to) = Window(jobDeletedAt);
+        return deleted.Where(x =>
+            x.ProcurementId == procurementId && x.DeletedBy == deletedBy && x.DeletedAt >= from && x.DeletedAt <= to);
+    }
+
+    /// <summary>The job's documents deleted together with it, by the same rule as its P&L.</summary>
+    internal static IQueryable<ProcDocuments> DeletedWithJob(
+        IQueryable<ProcDocuments> deleted, string procurementId, DateTime? jobDeletedAt, string? deletedBy)
+    {
+        var (from, to) = Window(jobDeletedAt);
+        return deleted.Where(x =>
+            x.ProcurementId == procurementId && x.DeletedBy == deletedBy && x.DeletedAt >= from && x.DeletedAt <= to);
+    }
+
+    // A job without a deletion time matches nothing: the window is empty.
+    private static (DateTime from, DateTime to) Window(DateTime? jobDeletedAt) =>
+        jobDeletedAt is { } at ? (at - DeletedWithJobWindow, at) : (DateTime.MaxValue, DateTime.MinValue);
 
     private async Task<RestoreResult> RestorePurchaseRequisitionAsync(string id, CancellationToken ct)
     {
