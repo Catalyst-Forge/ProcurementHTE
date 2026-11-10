@@ -46,10 +46,10 @@ public class LdpArchiveImportTests : IDisposable
         (7, null, "Tgl. Selesai"), (8, null, "Nama Pekerjaan"), (9, null, "Job Type"), (10, null, "Cntract Type"),
         (11, null, "LTC Name"), (15, null, "Year Job"), (17, null, "Nilai P&L"), (18, null, "Nilai Accrual"),
         (19, null, "Nilai Realisasi"), (20, null, "No. SPMP"),
-        (33, "PR", "Create"), (34, null, "No. PR"), (35, "Aprvl MGR", "Selesai"), (36, "PO/RO", "Tgl"), (37, null, "No.PO"),
-        (38, "Pic PR", ""), (39, "Pic Ops", ""), (40, "Keterangan", ""),
-        (41, "Tgl Process Inv Mitra", "No. Inv"), (42, null, "Nilai (IDR)"), (43, null, "No. SA"), (44, null, "No. SP3"),
-        (45, "Aprvl MGR", "Selesai"),
+        (33, "PR", "Create"), (34, null, "No. PR"), (35, "Aprvl MGR", "Mulai"), (36, null, "Selesai"),
+        (37, "PO/RO", "Tgl"), (38, null, "No.PO"), (39, "Pic PR", ""), (40, "Pic Ops", ""), (41, "Keterangan", ""),
+        (42, "Tgl Process Inv Mitra", "No. Inv"), (43, null, "Nilai (IDR)"), (44, null, "No. SA"), (45, null, "No. SP3"),
+        (46, "Aprvl MGR", "Selesai"),
     ];
 
     private static readonly Dictionary<string, object?> Done = new()
@@ -111,11 +111,12 @@ public class LdpArchiveImportTests : IDisposable
     private static Dictionary<string, object?>[] Sample() =>
     [
         Done,
-        With(Done, ("No.PO", null), ("No. SA", null), ("No. SP3", null), ("Tgl. Mulai", new DateTime(2026, 8, 15)), ("Nama Pekerjaan", "Standby Agustus")),
+        With(Done, ("No. SA", null), ("No. SP3", null), ("Tgl. Mulai", new DateTime(2026, 8, 15)), ("Nama Pekerjaan", "Standby Agustus")),
         With(Done, ("No. SA", null), ("Tgl. Mulai", new DateTime(2025, 8, 15)), ("Nama Pekerjaan", "Belum selesai 2025")),
         With(Done, ("No. SA", "SA-2"), ("Nilai Realisasi", 50_000)),
         new() { ["WO"] = "x", ["Nama Vendor"] = "y" },
         With(Done, ("No. SP3", 0), ("Nama Pekerjaan", "SP3 masih nol")),
+        With(Done, ("No.PO", null), ("No. SA", null), ("No. SP3", null), ("Tgl. Mulai", new DateTime(2026, 8, 20)), ("Nama Pekerjaan", "Belum PO Agustus")),
     ];
 
     [Fact]
@@ -124,7 +125,7 @@ public class LdpArchiveImportTests : IDisposable
         var file = Read(Sample());
 
         Assert.Equal(["Angkut rig", "Standby Agustus", "Angkut rig"], file.Rows.Select(row => row.JobName));
-        Assert.Equal(2, file.Excluded);
+        Assert.Equal(3, file.Excluded);
         Assert.Equal([8, 9, 11], file.Rows.Select(row => row.SourceRow));
         Assert.All(file.Rows, row => Assert.Equal("Completed", row.Status));
     }
@@ -143,6 +144,71 @@ public class LdpArchiveImportTests : IDisposable
         Assert.Empty(standard.Rows);
         Assert.Equal(1, standard.Excluded);
         Assert.Equal(LdpArchiveRange.Default, standard.Range);
+    }
+
+    [Fact]
+    public void A_job_started_within_the_range_is_read_only_with_a_po_number()
+    {
+        var withPo = With(Done, ("No. SA", null), ("No. SP3", null), ("Tgl. Mulai", new DateTime(2026, 7, 10)), ("Nama Pekerjaan", "Sudah PO"));
+
+        var file = Read(
+            withPo,
+            With(withPo, ("No.PO", null), ("Nama Pekerjaan", "Belum PO")),
+            With(withPo, ("No.PO", "-"), ("Nama Pekerjaan", "PO strip")),
+            With(withPo, ("No.PO", 0), ("Nama Pekerjaan", "PO nol"))
+        );
+
+        Assert.Equal(["Sudah PO"], file.Rows.Select(row => row.JobName));
+        Assert.Equal(3, file.Excluded);
+    }
+
+    [Fact]
+    public async Task A_job_in_the_ldp_has_its_manager_approval_at_most_three_days_after_it_started()
+    {
+        var august = With(Done, ("No. SA", null), ("No. SP3", null), ("Tgl. Mulai", new DateTime(2026, 8, 15)));
+        Dictionary<string, object?>[] rows =
+        [
+            With(august, ("Nama Pekerjaan", "Terlambat"), ("Mulai", new DateTime(2026, 9, 1)), ("Selesai", new DateTime(2026, 9, 10))),
+            With(august, ("Nama Pekerjaan", "Kosong"), ("Selesai", null)),
+            With(august, ("Nama Pekerjaan", "Tepat waktu"), ("Mulai", new DateTime(2026, 8, 16)), ("Selesai", new DateTime(2026, 8, 18))),
+            With(Done, ("Nama Pekerjaan", "Arsip lama"), ("Selesai", new DateTime(2025, 4, 20))),
+        ];
+
+        var file = Read(rows);
+        var cells = file.Rows.ToDictionary(
+            row => row.JobName!,
+            row => LdpArchiveEditor.Read(row.ValuesJson).ToDictionary(cell => cell.Label, cell => cell.Value?.ToString())
+        );
+        var emptyLabels = cells["Kosong"].Keys.ToList();
+
+        Assert.Equal("2026-08-18T00:00:00", cells["Terlambat"]["Aprvl MGR · Selesai"]);
+        Assert.Equal("2026-08-18T00:00:00", cells["Terlambat"]["Aprvl MGR · Mulai"]);
+        Assert.Equal("2026-09-10T00:00:00", cells["Terlambat"]["Aprvl MGR · Selesai (Invoice)"]);
+        Assert.Equal("2026-08-18T00:00:00", cells["Kosong"]["Aprvl MGR · Selesai"]);
+        Assert.False(cells["Kosong"].ContainsKey("Aprvl MGR · Mulai"));
+        Assert.False(cells["Kosong"].ContainsKey("Aprvl MGR · Selesai (Invoice)"));
+        Assert.InRange(emptyLabels.IndexOf("Aprvl MGR · Selesai"), emptyLabels.IndexOf("PR · No. PR") + 1, emptyLabels.IndexOf("PO/RO · No.PO") - 1);
+        Assert.Equal("2026-08-16T00:00:00", cells["Tepat waktu"]["Aprvl MGR · Mulai"]);
+        Assert.Equal("2026-08-18T00:00:00", cells["Tepat waktu"]["Aprvl MGR · Selesai"]);
+        Assert.Equal("2025-04-20T00:00:00", cells["Arsip lama"]["Aprvl MGR · Selesai"]);
+
+        await _importer.ApplyAsync(file, "admin-1");
+        var again = await _importer.PreviewAsync(Read(rows));
+        Assert.Equal((0, 0, 4), (again.New, again.Updated, again.Unchanged));
+    }
+
+    [Theory]
+    [InlineData("2026-08-20", "2026-08-18")]
+    [InlineData("2026-08-18", "2026-08-18")]
+    [InlineData("2026-08-10", "2026-08-10")]
+    [InlineData(null, "2026-08-18")]
+    public void The_manager_approval_finishes_by_the_third_day(string? recorded, string expected)
+    {
+        var finished = LdpManagerApproval.Finished(new DateTime(2026, 8, 15), recorded is null ? null : DateTime.Parse(recorded));
+
+        Assert.Equal(DateTime.Parse(expected), finished);
+        Assert.Equal(finished, LdpManagerApproval.Started(new DateTime(2026, 9, 1), finished));
+        Assert.Null(LdpManagerApproval.Started(null, finished));
     }
 
     [Fact]

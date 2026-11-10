@@ -9,8 +9,9 @@
     <h1 class="h4 mt-2 mb-1">Impor Excel ke Arsip LDP</h1>
     <p class="text-muted small mb-0">
         Dibaca dari sheet LDP(new). Yang masuk hanya pekerjaan selesai (No PO, No SA, dan No SP3 terisi) dan pekerjaan
-        yang mulai @Model.Range.Text, semuanya berstatus Completed. Yang mulai di rentang itu tampil di LDP, sisanya di
-        Arsip LDP. Baris yang sudah pernah diimpor diganti dengan versi Excel terbaru, jadi tidak ada data ganda.
+        yang mulai @Model.Range.Text dengan No PO terisi, semuanya berstatus Completed. Yang mulai di rentang itu tampil
+        di LDP, dengan tanggal Approval Manager paling lambat @ProcurementHTE.Core.Services.LdpManagerApproval.MaxDaysAfterStart hari setelah Tgl. Mulai.
+        Sisanya di Arsip LDP. Baris yang sudah pernah diimpor diganti dengan versi Excel terbaru, jadi tidak ada data ganda.
     </p>
 </header>
 
@@ -38,7 +39,7 @@ else
                 <dt class="col-sm-4">Diperbarui dari Excel</dt><dd class="col-sm-8">@summary.Updated</dd>
                 <dt class="col-sm-4">Dipulihkan dari Data Terhapus</dt><dd class="col-sm-8">@summary.Restored</dd>
                 <dt class="col-sm-4">Tidak berubah</dt><dd class="col-sm-8">@summary.Unchanged</dd>
-                <dt class="col-sm-4">Tidak dimasukkan (belum selesai)</dt><dd class="col-sm-8">@summary.Excluded</dd>
+                <dt class="col-sm-4">Tidak dimasukkan (belum ada No PO atau belum selesai)</dt><dd class="col-sm-8">@summary.Excluded</dd>
             </dl>
             <form method="post" asp-action="ImportApply" class="d-flex gap-2" data-loading-overlay="true">
                 <input type="hidden" name="token" value="@Model.Token" />

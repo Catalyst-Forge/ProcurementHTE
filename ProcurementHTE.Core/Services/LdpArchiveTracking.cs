@@ -1,4 +1,5 @@
 using System.Globalization;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 
@@ -26,7 +27,7 @@ public static class LdpArchiveTracking
         [
             new("PR dibuat", row.PrCreatedAt),
             new("PR rilis", Date("PR · Release")),
-            new("Approval Manager", Date("Aprvl MGR · Selesai")),
+            new("Approval Manager", Date(LdpArchiveColumns.ManagerApprovalEnd)),
             new("Approval VP", Date("Aprvl VP · Selesai")),
             new("Submit INPRO", Date("Submit INPRO")),
             new("Submit Hard Copy", Date("Submit Hardcopy SCM")),

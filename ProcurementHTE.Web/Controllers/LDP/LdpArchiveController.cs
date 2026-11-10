@@ -225,7 +225,7 @@ public class LdpArchiveController(
 
             case LdpArchiveRangeResult.Changed changed:
                 TempData["SuccessMessage"] = $"Rentang LDP diubah menjadi {changed.Range.Text}."
-                    + (changed.Widened ? " Impor ulang Excel LDP untuk memasukkan pekerjaan yang belum selesai di bulan yang baru." : "");
+                    + (changed.Widened ? " Impor ulang Excel LDP supaya pekerjaan bulan baru yang sudah ada No PO ikut masuk." : "");
                 return RedirectToAction(nameof(Index));
 
             default:

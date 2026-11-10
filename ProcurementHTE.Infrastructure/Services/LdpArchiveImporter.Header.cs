@@ -6,6 +6,7 @@ using ProcurementHTE.Core.Common;
 using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
+using ProcurementHTE.Core.Services;
 
 namespace ProcurementHTE.Infrastructure.Services;
 
@@ -25,6 +26,8 @@ public sealed partial class LdpArchiveImporter
     {
         private readonly SortedDictionary<int, (string? Group, string? Name, string Label)> _columns = [];
         private readonly Dictionary<string, int> _typed = [];
+        private int? _managerStart;
+        private int? _managerEnd;
 
         public static Header From(object?[]? groupRow, object?[] nameRow)
         {
@@ -70,22 +73,36 @@ public sealed partial class LdpArchiveImporter
 
             if (missing.Count > 0)
                 throw new LdpImportException($"Kolom tidak ditemukan: {string.Join(", ", missing)}.");
+
+            header._managerStart = header.ColumnOf(LdpArchiveColumns.ManagerApprovalStart);
+            header._managerEnd = header.ColumnOf(LdpArchiveColumns.ManagerApprovalEnd);
             return header;
         }
+
+        private int? ColumnOf(string label) =>
+            _columns.Where(pair => pair.Value.Label == label).Select(pair => (int?)pair.Key).FirstOrDefault();
 
         /// <summary>The row of "Column1, Column2…" names an Excel table leaves under the header.</summary>
         public bool IsPlaceholder(object?[] cells) =>
             Text(cells[_typed["VendorName"]]).StartsWith("Column", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>A finished job (No PO, No SA, and No SP3 filled), or any job started within the LDP range.</summary>
+        /// <summary>
+        /// A job with a PO number that either finished (No SA and No SP3 filled too) or started within
+        /// the LDP range. A job without a PO number stays out: it is run in Docutrax instead.
+        /// </summary>
         public bool BelongsInArchive(object?[] cells, LdpArchiveRange range)
         {
-            var done = new[] { "NoPo", "NoSa", "NoSp3" }.All(column => LdpArchiveColumns.IsFilled(Text(cells[_typed[column]])));
-            return done || range.Contains(cells[_typed["StartDate"]] as DateTime?);
+            bool Filled(string column) => LdpArchiveColumns.IsFilled(Text(cells[_typed[column]]));
+            return Filled("NoPo") && ((Filled("NoSa") && Filled("NoSp3")) || InRange(cells, range));
         }
 
-        public LdpArchiveRow ToRow(object?[] cells, int rowNumber)
+        private bool InRange(object?[] cells, LdpArchiveRange range) => range.Contains(cells[_typed["StartDate"]] as DateTime?);
+
+        public LdpArchiveRow ToRow(object?[] cells, int rowNumber, LdpArchiveRange range)
         {
+            if (InRange(cells, range))
+                cells = WithManagerApprovalOnTime(cells);
+
             var row = new LdpArchiveRow { SourceRow = rowNumber, Status = LdpArchiveColumns.CompletedStatus, ImportBatch = string.Empty };
             foreach (var column in LdpArchiveColumns.Typed)
                 SetTyped(row, column, cells[_typed[column.Property]]);
@@ -97,6 +114,25 @@ public sealed partial class LdpArchiveImporter
             row.ValuesJson = JsonSerializer.Serialize(values, JsonOptions);
             return row;
         }
+
+        /// <summary>
+        /// A job in the LDP passed the manager's approval within <see cref="LdpManagerApproval.MaxDaysAfterStart"/>
+        /// days of its start. The rule sets the cell before it is stored, so importing again keeps the same value.
+        /// </summary>
+        private object?[] WithManagerApprovalOnTime(object?[] cells)
+        {
+            if (_managerEnd is not { } end || cells[_typed["StartDate"]] is not DateTime start)
+                return cells;
+
+            var copy = (object?[])cells.Clone();
+            var finished = LdpManagerApproval.Finished(start, AsDate(copy[end]));
+            copy[end] = finished;
+            if (_managerStart is { } begin && LdpManagerApproval.Started(AsDate(copy[begin]), finished) is { } started)
+                copy[begin] = started;
+            return copy;
+        }
+
+        private static DateTime? AsDate(object? value) => value is DateTime { Year: > 1900 } date ? date : null;
     }
 
     private static void SetTyped(LdpArchiveRow row, LdpArchiveColumns.Column column, object? value)

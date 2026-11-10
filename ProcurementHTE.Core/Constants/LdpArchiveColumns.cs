@@ -27,6 +27,11 @@ public static class LdpArchiveColumns
             ? $"{group} · {name}"
             : (name ?? group ?? string.Empty);
 
+    /// <summary>The manager's approval of the PR. The invoice stage's copies carry a " (Invoice)" suffix.</summary>
+    public static readonly string ManagerApprovalStart = LabelFor("Aprvl MGR", "Mulai");
+
+    public static readonly string ManagerApprovalEnd = LabelFor("Aprvl MGR", "Selesai");
+
     public static readonly IReadOnlyList<Column> Typed =
     [
         new("Wo", null, "WO", "text"),

@@ -67,7 +67,7 @@ public sealed partial class LdpArchiveImporter(AppDbContext db) : ILdpArchiveImp
                 continue;
             }
 
-            var row = header.ToRow(cells, rowNumber);
+            var row = header.ToRow(cells, rowNumber, range);
             var baseKey = $"{Normalize(row.NoPr)}|{Normalize(row.JobName)}|{row.StartDate:yyyy-MM-dd}";
             occurrences[baseKey] = occurrences.GetValueOrDefault(baseKey) + 1;
             row.SourceKey = $"{Hash(baseKey)}-{occurrences[baseKey]}";

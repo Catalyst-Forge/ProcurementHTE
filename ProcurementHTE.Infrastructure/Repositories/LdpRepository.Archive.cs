@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using ProcurementHTE.Core.Constants;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
 using ProcurementHTE.Core.Services;
@@ -81,7 +82,7 @@ namespace ProcurementHTE.Infrastructure.Repositories
                 NoPr = row.NoPr,
                 TanggalBuatPr = row.PrCreatedAt,
                 TanggalRilisPr = Date("PR · Release"),
-                ManagerApprovalSelesai = Date("Aprvl MGR · Selesai"),
+                ManagerApprovalSelesai = Date(LdpArchiveColumns.ManagerApprovalEnd),
                 VpApprovalSelesai = Date("Aprvl VP · Selesai"),
                 TanggalSubmitIspa = Date("Submit INPRO"),
                 SANo = row.NoSa,
