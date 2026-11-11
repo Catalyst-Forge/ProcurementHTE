@@ -47,6 +47,50 @@ public class JobDetailTests
     }
 
     [Fact]
+    public void The_analyst_and_assistant_manager_stages_show_once_they_have_a_date()
+    {
+        var row = ArchiveRow();
+        LdpArchiveEditor.Apply(row, "Completed", TypedOf(row), new Dictionary<string, string?>(), new Dictionary<string, string?>
+        {
+            ["Aprvl Analyst · Selesai"] = "2026-07-04",
+            ["Aprvl Asst. MGR · Selesai"] = "2026-07-05",
+        });
+
+        var steps = LdpArchiveTracking.Steps(row);
+
+        Assert.Equal(
+            ["PR dibuat", "PR rilis", "Approval Analyst", "Approval Asst. Manager", "Approval Manager"],
+            steps.Take(5).Select(step => step.Label)
+        );
+        Assert.Equal(new DateTime(2026, 7, 4), steps[2].Date);
+        Assert.Equal(new DateTime(2026, 7, 5), steps[3].Date);
+    }
+
+    [Fact]
+    public void An_admin_edits_the_tracking_dates_apart_from_the_other_columns()
+    {
+        var row = ArchiveRow();
+        var form = LdpArchiveFormModel.From(row);
+
+        Assert.Equal("2026-07-03", form.TrackingDate("PR · Release"));
+        Assert.Equal("2026-07-10", form.TrackingDate("Aprvl MGR · Selesai"));
+        Assert.Equal(["Project"], form.Others.Select(other => other.Label));
+
+        LdpArchiveEditor.Apply(row, "Completed", TypedOf(row), new Dictionary<string, string?>(), new Dictionary<string, string?>
+        {
+            ["PR · Release"] = "",
+            ["Submit INPRO"] = "2026-07-12",
+        });
+
+        var cells = LdpArchiveEditor.Read(row.ValuesJson).ToDictionary(cell => cell.Label);
+        Assert.False(cells.ContainsKey("PR · Release"));
+        Assert.Equal(("date", "2026-07-12T00:00:00"), (cells["Submit INPRO"].Type, cells["Submit INPRO"].Value!.ToString()));
+        Assert.Equal("JWKT", cells["Project"].Value!.ToString());
+    }
+
+    private static Dictionary<string, string?> TypedOf(LdpArchiveRow row) => LdpArchiveFormModel.From(row).Typed;
+
+    [Fact]
     public void An_archive_row_without_dates_has_every_stage_open() =>
         Assert.All(LdpArchiveTracking.Steps(new LdpArchiveRow { ImportBatch = "x" }), step => Assert.False(step.Done));
 

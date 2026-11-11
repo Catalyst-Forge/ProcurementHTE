@@ -28,6 +28,9 @@ public sealed partial class LdpArchiveImporter
         private readonly Dictionary<string, int> _typed = [];
         private int? _managerStart;
         private int? _managerEnd;
+        private int? _prRelease;
+        private int? _inpro;
+        private int? _hardCopy;
 
         public static Header From(object?[]? groupRow, object?[] nameRow)
         {
@@ -76,6 +79,9 @@ public sealed partial class LdpArchiveImporter
 
             header._managerStart = header.ColumnOf(LdpArchiveColumns.ManagerApprovalStart);
             header._managerEnd = header.ColumnOf(LdpArchiveColumns.ManagerApprovalEnd);
+            header._prRelease = header.ColumnOf(LdpArchiveColumns.PrRelease);
+            header._inpro = header.ColumnOf(LdpArchiveColumns.SubmitInpro);
+            header._hardCopy = header.ColumnOf(LdpArchiveColumns.SubmitHardCopy);
             return header;
         }
 
@@ -100,8 +106,12 @@ public sealed partial class LdpArchiveImporter
 
         public LdpArchiveRow ToRow(object?[] cells, int rowNumber, LdpArchiveRange range)
         {
-            if (InRange(cells, range))
-                cells = WithManagerApprovalOnTime(cells);
+            LdpProcessDates? schedule = null;
+            if (InRange(cells, range) && cells[_typed["StartDate"]] is DateTime start)
+            {
+                schedule = LdpProcessSchedule.For(start, _hardCopy is { } hardCopy ? AsDate(cells[hardCopy]) : null);
+                cells = WithSchedule(cells, schedule);
+            }
 
             var row = new LdpArchiveRow { SourceRow = rowNumber, Status = LdpArchiveColumns.CompletedStatus, ImportBatch = string.Empty };
             foreach (var column in LdpArchiveColumns.Typed)
@@ -111,25 +121,50 @@ public sealed partial class LdpArchiveImporter
                 .Where(pair => cells[pair.Key] is not null && Text(cells[pair.Key]) is { Length: > 0 } text && text != "-")
                 .Select(pair => ToCell(pair.Value.Label, cells[pair.Key]!))
                 .ToList();
+            if (schedule is not null)
+                AddApprovals(values, schedule);
             row.ValuesJson = JsonSerializer.Serialize(values, JsonOptions);
             return row;
         }
 
         /// <summary>
-        /// A job in the LDP passed the manager's approval within <see cref="LdpManagerApproval.MaxDaysAfterStart"/>
-        /// days of its start. The rule sets the cell before it is stored, so importing again keeps the same value.
+        /// A job in the LDP went from its start to Submit INPRO within
+        /// <see cref="LdpProcessSchedule.MaxDaysToInpro"/> days (<see cref="LdpProcessSchedule"/>). The rule
+        /// sets the cells before they are stored, so importing again keeps the same values. The invoice
+        /// stage's approval columns are left as recorded.
         /// </summary>
-        private object?[] WithManagerApprovalOnTime(object?[] cells)
+        private object?[] WithSchedule(object?[] cells, LdpProcessDates schedule)
         {
-            if (_managerEnd is not { } end || cells[_typed["StartDate"]] is not DateTime start)
-                return cells;
-
             var copy = (object?[])cells.Clone();
-            var finished = LdpManagerApproval.Finished(start, AsDate(copy[end]));
-            copy[end] = finished;
-            if (_managerStart is { } begin && LdpManagerApproval.Started(AsDate(copy[begin]), finished) is { } started)
-                copy[begin] = started;
+            void Set(int? column, DateTime date)
+            {
+                if (column is { } index)
+                    copy[index] = date;
+            }
+
+            Set(_typed["PrCreatedAt"], schedule.PrCreated);
+            Set(_prRelease, schedule.PrReleased);
+            Set(_managerStart, schedule.ManagerApproved);
+            Set(_managerEnd, schedule.ManagerApproved);
+            Set(_inpro, schedule.InproSubmitted);
+            Set(_hardCopy, schedule.HardCopySubmitted);
             return copy;
+        }
+
+        // The spreadsheet has no analyst or assistant manager approval: their cells go just before
+        // the manager's, where the approvals read in order.
+        private static void AddApprovals(List<Cell> values, LdpProcessDates schedule)
+        {
+            var at = values.FindIndex(cell => cell.Label == LdpArchiveColumns.ManagerApprovalStart);
+            if (at < 0)
+                at = values.FindIndex(cell => cell.Label == LdpArchiveColumns.ManagerApprovalEnd);
+            if (at < 0)
+                at = values.Count;
+            values.InsertRange(at,
+            [
+                ToCell(LdpArchiveColumns.AnalystApprovalEnd, schedule.AnalystApproved),
+                ToCell(LdpArchiveColumns.AsstManagerApprovalEnd, schedule.AsstManagerApproved),
+            ]);
         }
 
         private static DateTime? AsDate(object? value) => value is DateTime { Year: > 1900 } date ? date : null;

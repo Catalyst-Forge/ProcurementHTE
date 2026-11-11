@@ -32,6 +32,22 @@ public static class LdpArchiveColumns
 
     public static readonly string ManagerApprovalEnd = LabelFor("Aprvl MGR", "Selesai");
 
+    public static readonly string PrRelease = LabelFor("PR", "Release");
+
+    public static readonly string VpApprovalEnd = LabelFor("Aprvl VP", "Selesai");
+
+    public const string SubmitInpro = "Submit INPRO";
+
+    public const string SubmitHardCopy = "Submit Hardcopy SCM";
+
+    /// <summary>
+    /// The analyst's and the assistant manager's approvals. The spreadsheet has no column for
+    /// them: the import adds these cells to a job in the LDP, and an Admin may fill them on any row.
+    /// </summary>
+    public static readonly string AnalystApprovalEnd = LabelFor("Aprvl Analyst", "Selesai");
+
+    public static readonly string AsstManagerApprovalEnd = LabelFor("Aprvl Asst. MGR", "Selesai");
+
     public static readonly IReadOnlyList<Column> Typed =
     [
         new("Wo", null, "WO", "text"),

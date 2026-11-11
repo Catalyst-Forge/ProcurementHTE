@@ -19,7 +19,8 @@ public static class LdpArchiveEditor
         LdpArchiveRow row,
         string status,
         IReadOnlyDictionary<string, string?> typed,
-        IReadOnlyDictionary<string, string?> others
+        IReadOnlyDictionary<string, string?> others,
+        IReadOnlyDictionary<string, string?>? dates = null
     )
     {
         row.Status = string.IsNullOrWhiteSpace(status) ? LdpArchiveColumns.CompletedStatus : status.Trim();
@@ -40,6 +41,11 @@ public static class LdpArchiveEditor
             var value = Parse(kind, text?.Trim()) ?? (string.IsNullOrWhiteSpace(text) ? null : text.Trim());
             Put(cells, label, value is string ? "text" : kind, value);
         }
+
+        // The tracking dates (LdpArchiveTracking.Fields): always dates, even for a cell the row
+        // did not have yet, such as the analyst's approval.
+        foreach (var (label, text) in dates ?? new Dictionary<string, string?>())
+            Put(cells, label, "date", Parse("date", text?.Trim()));
 
         row.ValuesJson = JsonSerializer.Serialize(cells.Select(cell => new { cell.Label, cell.Type, cell.Value }), JsonOptions);
     }

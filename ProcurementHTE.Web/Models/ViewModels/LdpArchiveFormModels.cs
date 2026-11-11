@@ -22,9 +22,27 @@ public class LdpArchiveFormModel
     /// <summary>Every other spreadsheet column, shown for an edit.</summary>
     public List<LdpArchiveOtherField> Others { get; set; } = [];
 
+    /// <summary>
+    /// The tracking dates kept in spreadsheet cells, by label (LdpArchiveTracking.Fields). The two
+    /// kept in typed columns, PR dibuat and PO, are posted with <see cref="Typed"/>.
+    /// </summary>
+    public List<LdpArchiveOtherField> TrackingDates { get; set; } = [];
+
+    public string? TrackingDate(string label) => TrackingDates.FirstOrDefault(field => field.Label == label)?.Value;
+
     public static LdpArchiveFormModel From(LdpArchiveRow row)
     {
         var typedLabels = LdpArchiveColumns.Typed.Select(column => column.Label).ToHashSet();
+        var trackingLabels = LdpArchiveTracking.Fields.Where(field => field.Label is not null).Select(field => field.Label!).ToHashSet();
+        var cells = LdpArchiveEditor.Read(row.ValuesJson)
+            .Select(cell => new LdpArchiveOtherField
+            {
+                Label = cell.Label,
+                Value = cell.Type == "date" && DateTime.TryParse(cell.Value?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                    ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                    : cell.Value?.ToString(),
+            })
+            .ToList();
         return new LdpArchiveFormModel
         {
             Id = row.LdpArchiveRowId,
@@ -33,16 +51,8 @@ public class LdpArchiveFormModel
                 column => column.Property,
                 column => Format(typeof(LdpArchiveRow).GetProperty(column.Property)!.GetValue(row))
             ),
-            Others = LdpArchiveEditor.Read(row.ValuesJson)
-                .Where(cell => !typedLabels.Contains(cell.Label))
-                .Select(cell => new LdpArchiveOtherField
-                {
-                    Label = cell.Label,
-                    Value = cell.Type == "date" && DateTime.TryParse(cell.Value?.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
-                        ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                        : cell.Value?.ToString(),
-                })
-                .ToList(),
+            Others = cells.Where(cell => !typedLabels.Contains(cell.Label) && !trackingLabels.Contains(cell.Label)).ToList(),
+            TrackingDates = cells.Where(cell => trackingLabels.Contains(cell.Label)).ToList(),
         };
     }
 

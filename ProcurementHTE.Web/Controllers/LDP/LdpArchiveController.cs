@@ -284,6 +284,12 @@ public class LdpArchiveController(
                 ModelState.AddModelError($"Typed[{column.Property}]", $"{column.Label} tidak valid.");
         }
 
+        foreach (var (label, value) in TrackingDates(form))
+        {
+            if (!LdpArchiveEditor.IsValid("date", value))
+                ModelState.AddModelError(string.Empty, $"Tanggal {label} tidak valid.");
+        }
+
         if (string.IsNullOrWhiteSpace(form.Typed.GetValueOrDefault("JobName")))
             ModelState.AddModelError("Typed[JobName]", "Nama Pekerjaan wajib diisi.");
 
@@ -296,10 +302,21 @@ public class LdpArchiveController(
             row,
             form.Status,
             form.Typed,
-            form.Others.Where(other => other.Label.Length > 0).GroupBy(other => other.Label).ToDictionary(group => group.Key, group => group.First().Value)
+            form.Others.Where(other => other.Label.Length > 0).GroupBy(other => other.Label).ToDictionary(group => group.Key, group => group.First().Value),
+            TrackingDates(form)
         );
         row.UpdatedAt = DateTime.UtcNow;
         row.UpdatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    // Only the tracking stages' own cells, whatever else the form sent.
+    private static Dictionary<string, string?> TrackingDates(LdpArchiveFormModel form)
+    {
+        var labels = LdpArchiveTracking.Fields.Where(field => field.Label is not null).Select(field => field.Label!).ToHashSet();
+        return form.TrackingDates
+            .Where(field => labels.Contains(field.Label))
+            .GroupBy(field => field.Label)
+            .ToDictionary(group => group.Key, group => group.First().Value);
     }
 
     private static object? ExcelValue(LdpArchiveEditor.Cell cell) =>

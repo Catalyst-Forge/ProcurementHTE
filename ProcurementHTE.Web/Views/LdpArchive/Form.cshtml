@@ -4,6 +4,9 @@
     var isEdit = Model.Id is not null;
     ViewData["Title"] = isEdit ? "Edit Arsip LDP" : "Tambah Pekerjaan ke Arsip LDP";
     string InputType(string kind) => kind switch { "date" => "date", "number" => "number", _ => "text" };
+    var trackingFields = ProcurementHTE.Core.Services.LdpArchiveTracking.Fields;
+    var trackingProperties = trackingFields.Where(field => field.Property is not null).Select(field => field.Property!).ToHashSet();
+    var trackingIndex = 0;
 }
 
 <header class="mb-3">
@@ -18,6 +21,36 @@
 <form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id">
     <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
+    @* The same stages, in the same order, as the tracking on the detail page. A stage with a
+       date shows as done there; an empty one stays open. *@
+    <section class="card shadow-sm rounded-4 mb-3">
+        <div class="card-body">
+            <h2 class="h6 mb-1">Tanggal tracking</h2>
+            <p class="text-muted small mb-3">Tahap yang diberi tanggal tampil selesai di tracking. Kosongkan untuk membukanya lagi.</p>
+            <div class="row g-3">
+                @foreach (var field in trackingFields)
+                {
+                    var id = $"tracking-{field.Step.Replace(' ', '-').Replace(".", "")}";
+                    <div class="col-sm-6 col-md-4 col-xl-3">
+                        <label for="@id" class="form-label">@field.Step</label>
+                        @if (field.Property is { } property)
+                        {
+                            var name = $"Typed[{property}]";
+                            <input id="@id" name="@name" type="date" class="form-control" value="@Model.Typed.GetValueOrDefault(property)" />
+                            @Html.ValidationMessage(name, new { @class = "text-danger small" })
+                        }
+                        else
+                        {
+                            <input type="hidden" name="TrackingDates[@trackingIndex].Label" value="@field.Label" />
+                            <input id="@id" name="TrackingDates[@trackingIndex].Value" type="date" class="form-control" value="@Model.TrackingDate(field.Label!)" />
+                            trackingIndex++;
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
     <section class="card shadow-sm rounded-4 mb-3">
         <div class="card-body">
             <h2 class="h6 mb-3">Kolom utama</h2>
@@ -26,7 +59,7 @@
                     <label asp-for="Status" class="form-label">Status</label>
                     <input asp-for="Status" class="form-control" />
                 </div>
-                @foreach (var column in LdpArchiveColumns.Typed)
+                @foreach (var column in LdpArchiveColumns.Typed.Where(column => !trackingProperties.Contains(column.Property)))
                 {
                     var name = $"Typed[{column.Property}]";
                     var id = $"typed-{column.Property}";

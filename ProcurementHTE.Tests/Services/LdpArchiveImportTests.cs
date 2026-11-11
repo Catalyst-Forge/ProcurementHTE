@@ -49,7 +49,7 @@ public class LdpArchiveImportTests : IDisposable
         (33, "PR", "Create"), (34, null, "No. PR"), (35, "Aprvl MGR", "Mulai"), (36, null, "Selesai"),
         (37, "PO/RO", "Tgl"), (38, null, "No.PO"), (39, "Pic PR", ""), (40, "Pic Ops", ""), (41, "Keterangan", ""),
         (42, "Tgl Process Inv Mitra", "No. Inv"), (43, null, "Nilai (IDR)"), (44, null, "No. SA"), (45, null, "No. SP3"),
-        (46, "Aprvl MGR", "Selesai"),
+        (46, "Aprvl MGR", "Selesai"), (47, "PR", "Release"), (48, "Submit INPRO", ""), (49, "Submit Hardcopy SCM", ""),
     ];
 
     private static readonly Dictionary<string, object?> Done = new()
@@ -163,14 +163,15 @@ public class LdpArchiveImportTests : IDisposable
     }
 
     [Fact]
-    public async Task A_job_in_the_ldp_has_its_manager_approval_at_most_three_days_after_it_started()
+    public async Task A_job_in_the_ldp_reaches_submit_inpro_by_the_third_day_after_it_started()
     {
         var august = With(Done, ("No. SA", null), ("No. SP3", null), ("Tgl. Mulai", new DateTime(2026, 8, 15)));
         Dictionary<string, object?>[] rows =
         [
-            With(august, ("Nama Pekerjaan", "Terlambat"), ("Mulai", new DateTime(2026, 9, 1)), ("Selesai", new DateTime(2026, 9, 10))),
-            With(august, ("Nama Pekerjaan", "Kosong"), ("Selesai", null)),
-            With(august, ("Nama Pekerjaan", "Tepat waktu"), ("Mulai", new DateTime(2026, 8, 16)), ("Selesai", new DateTime(2026, 8, 18))),
+            With(august, ("Nama Pekerjaan", "Terlambat"), ("Mulai", new DateTime(2026, 9, 1)), ("Selesai", new DateTime(2026, 9, 10)),
+                ("Submit Hardcopy SCM", new DateTime(2026, 9, 20))),
+            With(august, ("Nama Pekerjaan", "Kosong"), ("Create", null), ("Selesai", null)),
+            With(august, ("Nama Pekerjaan", "Hard copy awal"), ("Submit INPRO", new DateTime(2026, 8, 1)), ("Submit Hardcopy SCM", new DateTime(2026, 8, 2))),
             With(Done, ("Nama Pekerjaan", "Arsip lama"), ("Selesai", new DateTime(2025, 4, 20))),
         ];
 
@@ -179,18 +180,31 @@ public class LdpArchiveImportTests : IDisposable
             row => row.JobName!,
             row => LdpArchiveEditor.Read(row.ValuesJson).ToDictionary(cell => cell.Label, cell => cell.Value?.ToString())
         );
-        var emptyLabels = cells["Kosong"].Keys.ToList();
 
-        Assert.Equal("2026-08-18T00:00:00", cells["Terlambat"]["Aprvl MGR · Selesai"]);
-        Assert.Equal("2026-08-18T00:00:00", cells["Terlambat"]["Aprvl MGR · Mulai"]);
+        foreach (var job in new[] { "Terlambat", "Kosong", "Hard copy awal" })
+        {
+            Assert.Equal("2026-08-15T00:00:00", cells[job]["PR · Create"]);
+            Assert.Equal("2026-08-16T00:00:00", cells[job]["PR · Release"]);
+            Assert.Equal("2026-08-16T00:00:00", cells[job]["Aprvl Analyst · Selesai"]);
+            Assert.Equal("2026-08-17T00:00:00", cells[job]["Aprvl Asst. MGR · Selesai"]);
+            Assert.Equal("2026-08-17T00:00:00", cells[job]["Aprvl MGR · Mulai"]);
+            Assert.Equal("2026-08-17T00:00:00", cells[job]["Aprvl MGR · Selesai"]);
+            Assert.Equal("2026-08-18T00:00:00", cells[job]["Submit INPRO"]);
+            var labels = cells[job].Keys.ToList();
+            Assert.True(labels.IndexOf("Aprvl Analyst · Selesai") < labels.IndexOf("Aprvl Asst. MGR · Selesai"));
+            Assert.Equal(labels.IndexOf("Aprvl Asst. MGR · Selesai") + 1, labels.IndexOf("Aprvl MGR · Mulai"));
+        }
+        Assert.All(file.Rows.Where(row => row.JobName != "Arsip lama"), row => Assert.Equal(new DateTime(2026, 8, 15), row.PrCreatedAt));
+
+        Assert.Equal("2026-09-20T00:00:00", cells["Terlambat"]["Submit Hardcopy SCM"]);
+        Assert.Equal("2026-08-18T00:00:00", cells["Kosong"]["Submit Hardcopy SCM"]);
+        Assert.Equal("2026-08-18T00:00:00", cells["Hard copy awal"]["Submit Hardcopy SCM"]);
         Assert.Equal("2026-09-10T00:00:00", cells["Terlambat"]["Aprvl MGR · Selesai (Invoice)"]);
-        Assert.Equal("2026-08-18T00:00:00", cells["Kosong"]["Aprvl MGR · Selesai"]);
-        Assert.False(cells["Kosong"].ContainsKey("Aprvl MGR · Mulai"));
-        Assert.False(cells["Kosong"].ContainsKey("Aprvl MGR · Selesai (Invoice)"));
-        Assert.InRange(emptyLabels.IndexOf("Aprvl MGR · Selesai"), emptyLabels.IndexOf("PR · No. PR") + 1, emptyLabels.IndexOf("PO/RO · No.PO") - 1);
-        Assert.Equal("2026-08-16T00:00:00", cells["Tepat waktu"]["Aprvl MGR · Mulai"]);
-        Assert.Equal("2026-08-18T00:00:00", cells["Tepat waktu"]["Aprvl MGR · Selesai"]);
+
         Assert.Equal("2025-04-20T00:00:00", cells["Arsip lama"]["Aprvl MGR · Selesai"]);
+        Assert.Equal("2025-02-01T00:00:00", cells["Arsip lama"]["PR · Create"]);
+        Assert.False(cells["Arsip lama"].ContainsKey("Aprvl Analyst · Selesai"));
+        Assert.False(cells["Arsip lama"].ContainsKey("Submit INPRO"));
 
         await _importer.ApplyAsync(file, "admin-1");
         var again = await _importer.PreviewAsync(Read(rows));
@@ -198,17 +212,20 @@ public class LdpArchiveImportTests : IDisposable
     }
 
     [Theory]
-    [InlineData("2026-08-20", "2026-08-18")]
+    [InlineData("2026-09-20", "2026-09-20")]
     [InlineData("2026-08-18", "2026-08-18")]
-    [InlineData("2026-08-10", "2026-08-10")]
+    [InlineData("2026-08-17", "2026-08-18")]
     [InlineData(null, "2026-08-18")]
-    public void The_manager_approval_finishes_by_the_third_day(string? recorded, string expected)
+    public void Every_step_up_to_inpro_falls_within_three_days_and_the_hard_copy_follows(string? hardCopy, string expectedHardCopy)
     {
-        var finished = LdpManagerApproval.Finished(new DateTime(2026, 8, 15), recorded is null ? null : DateTime.Parse(recorded));
+        var start = new DateTime(2026, 8, 15, 9, 30, 0);
+        var dates = LdpProcessSchedule.For(start, hardCopy is null ? null : DateTime.Parse(hardCopy));
 
-        Assert.Equal(DateTime.Parse(expected), finished);
-        Assert.Equal(finished, LdpManagerApproval.Started(new DateTime(2026, 9, 1), finished));
-        Assert.Null(LdpManagerApproval.Started(null, finished));
+        DateTime[] steps = [dates.PrCreated, dates.PrReleased, dates.AnalystApproved, dates.AsstManagerApproved, dates.ManagerApproved, dates.InproSubmitted];
+        Assert.Equal(start.Date, dates.PrCreated);
+        Assert.Equal(start.Date.AddDays(LdpProcessSchedule.MaxDaysToInpro), dates.InproSubmitted);
+        Assert.Equal(steps.Order(), steps);
+        Assert.Equal(DateTime.Parse(expectedHardCopy), dates.HardCopySubmitted);
     }
 
     [Fact]

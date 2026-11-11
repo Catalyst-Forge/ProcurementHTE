@@ -10,7 +10,9 @@
     <p class="text-muted small mb-0">
         Dibaca dari sheet LDP(new). Yang masuk hanya pekerjaan selesai (No PO, No SA, dan No SP3 terisi) dan pekerjaan
         yang mulai @Model.Range.Text dengan No PO terisi, semuanya berstatus Completed. Yang mulai di rentang itu tampil
-        di LDP, dengan tanggal Approval Manager paling lambat @ProcurementHTE.Core.Services.LdpManagerApproval.MaxDaysAfterStart hari setelah Tgl. Mulai.
+        di LDP dengan semua tahap sampai Submit INPRO selesai paling lambat @ProcurementHTE.Core.Services.LdpProcessSchedule.MaxDaysToInpro hari
+        setelah Tgl. Mulai: PR dibuat hari itu, PR rilis dan Approval Analyst sehari sesudahnya, Approval Asst. Manager dan
+        Manager hari kedua, Submit INPRO hari ketiga. Submit Hard Copy memakai tanggal Excel kalau tidak lebih awal dari INPRO.
         Sisanya di Arsip LDP. Baris yang sudah pernah diimpor diganti dengan versi Excel terbaru, jadi tidak ada data ganda.
     </p>
 </header>
