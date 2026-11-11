@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcurementHTE.Core.Authorization;
+using ProcurementHTE.Core.Interfaces;
 
 namespace ProcurementHTE.Web.Controllers.ProcurementModule;
 
@@ -32,7 +33,7 @@ public partial class ProcurementsController
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = Permissions.Procurement.Delete)]
-    public async Task<IActionResult> DeleteConfirmed(string id)
+    public async Task<IActionResult> DeleteConfirmed(string id, [FromServices] IProcurementDeletionService deletion)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -42,25 +43,12 @@ public partial class ProcurementsController
 
         try
         {
-            var procurement = await _queryService.GetProcurementByIdAsync(id);
-            if (procurement == null)
+            var deletedDocsCount = await deletion.DeleteAsync(id, User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (deletedDocsCount is null)
             {
                 TempData["ErrorMessage"] = "Procurement tidak ditemukan";
                 return NotFound();
             }
-
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            var prId = procurement.PrId;
-            var deletedDocsCount = await _procDocService.DeleteAllByProcurementAsync(id, currentUserId);
-
-            await _pnlCommandService.DeleteByProcurementAsync(id, currentUserId);
-            await _commandService.DeleteProcurementAsync(procurement, currentUserId);
-
-            if (
-                !string.IsNullOrEmpty(prId)
-                && !await _prCommandService.DeleteIfEmptyAsync(prId, currentUserId)
-            )
-                await _trackingService.RecalculatePrStatusAsync(prId);
 
             TempData["SuccessMessage"] = deletedDocsCount > 0
                 ? $"Procurement beserta {deletedDocsCount} dokumen terkait berhasil dihapus!"

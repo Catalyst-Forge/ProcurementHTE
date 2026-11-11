@@ -135,6 +135,9 @@ public sealed class LdpArchiveRepository(AppDbContext db) : ILdpArchiveRepositor
     public Task<LdpArchiveRow?> FindForEditAsync(string id, CancellationToken ct = default) =>
         db.LdpArchiveRows.FirstOrDefaultAsync(row => row.LdpArchiveRowId == id, ct);
 
+    public async Task<IReadOnlyList<LdpArchiveRow>> FindManyForEditAsync(IReadOnlyCollection<string> ids, CancellationToken ct = default) =>
+        ids.Count == 0 ? [] : await db.LdpArchiveRows.Where(row => ids.Contains(row.LdpArchiveRowId)).ToListAsync(ct);
+
     public void Add(LdpArchiveRow row) => db.LdpArchiveRows.Add(row);
 
     public void Remove(LdpArchiveRow row) => db.LdpArchiveRows.Remove(row);

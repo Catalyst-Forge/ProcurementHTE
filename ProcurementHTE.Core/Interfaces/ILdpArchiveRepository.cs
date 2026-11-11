@@ -16,6 +16,9 @@ public interface ILdpArchiveRepository
     /// <summary>A tracked row for an edit, saved with <see cref="SaveAsync"/>.</summary>
     Task<LdpArchiveRow?> FindForEditAsync(string id, CancellationToken ct = default);
 
+    /// <summary>The tracked rows among <paramref name="ids"/> that are not deleted yet.</summary>
+    Task<IReadOnlyList<LdpArchiveRow>> FindManyForEditAsync(IReadOnlyCollection<string> ids, CancellationToken ct = default);
+
     void Add(LdpArchiveRow row);
 
     /// <summary>A soft delete: the row goes to Deleted Records.</summary>

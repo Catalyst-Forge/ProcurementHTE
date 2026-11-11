@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using ProcurementHTE.Core.Constants;
+using BulkSelection = ProcurementHTE.Core.Common.BulkSelection;
 using ProcurementHTE.Core.Interfaces;
 using ProcurementHTE.Core.Models;
 using ProcurementHTE.Core.Models.DTOs;
@@ -136,6 +137,32 @@ public class LdpArchiveController(
         await archive.SaveAsync(ct);
 
         TempData["SuccessMessage"] = "Baris dipindahkan ke Data Terhapus.";
+        return Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : RedirectToAction(nameof(Index));
+    }
+
+    // The rows ticked on the list, each a soft delete like Delete above.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteSelected(string[]? ids, string? returnUrl = null, CancellationToken ct = default)
+    {
+        var selected = BulkSelection.Ids(ids);
+        if (selected is null || selected.Count == 0)
+        {
+            TempData["ErrorMessage"] = selected is null
+                ? $"Pilih paling banyak {BulkSelection.Max} baris sekali hapus."
+                : "Pilih dulu baris yang mau dihapus.";
+        }
+        else
+        {
+            var rows = await archive.FindManyForEditAsync(selected, ct);
+            foreach (var row in rows)
+                archive.Remove(row);
+            await archive.SaveAsync(ct);
+
+            TempData["SuccessMessage"] = $"{rows.Count} baris dipindahkan ke Data Terhapus.";
+        }
+
         return Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : RedirectToAction(nameof(Index));
     }
 

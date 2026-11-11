@@ -1,0 +1,16 @@
+@model ProcurementHTE.Web.Models.ViewModels.BulkDeleteBar
+@* Shown by js/bulk-select.js once a row is ticked. The confirm dialog comes from
+   .delete-form (js/site-forms.js); bulk-select.js keeps its title on the ticked count. *@
+<form id="@Model.FormId" action="@Model.Action" method="post" hx-boost="false"
+      class="bulk-bar delete-form" data-bulk-bar hidden
+      data-confirm-title="Hapus baris terpilih?"
+      data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
+      data-confirm-confirm="Hapus" data-confirm-cancel="Batal">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    <span class="bulk-bar__count" role="status"><strong data-bulk-count>0</strong> baris dipilih</span>
+    <button type="button" class="btn btn-link btn-sm" data-bulk-clear>Batal pilih</button>
+    <button type="submit" class="btn btn-danger btn-sm ms-auto">
+        <i class="bi bi-trash" aria-hidden="true"></i> Hapus terpilih
+    </button>
+</form>

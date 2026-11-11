@@ -2,14 +2,25 @@
 @{
     Func<DateTime?, string> formatDate = value => ProcurementHTE.Core.Finance.FinanceTable.FormatDate(value);
     Func<string?, string> formatText = value => !string.IsNullOrWhiteSpace(value) ? value : "-";
+    var isAdmin = User.IsInRole("Admin");
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    const string bulkForm = "ldp-bulk-delete";
 }
 @* The LDP shows the main columns only. A job's name, or its eye icon, opens every column:
    Ldp/Details for a job run in Docutrax, LdpArchive/Details for an archived one.
-   Aksi starts with the row's status: Done once every column here is filled (LdpProgress). *@
+   Aksi starts with the row's status: Done once every column here is filled (LdpProgress).
+   Admin also gets a checkbox per row and Hapus terpilih (js/bulk-select.js). *@
+<div data-bulk-scope>
 <div class="table-responsive border rounded-3 mb-2">
     <table id="ldpTable" class="table table-aligned table-hover align-middle mb-0 mobile-table finance-table ldp-table">
         <thead class="table-light">
             <tr class="align-middle">
+                @if (isAdmin)
+                {
+                    <th scope="col" class="bulk-col border-end">
+                        <input type="checkbox" class="form-check-input" data-bulk-all aria-label="Pilih semua baris di halaman ini" title="Pilih semua baris di halaman ini" />
+                    </th>
+                }
                 <th scope="col" sort-key="NoSpmp" filter-key="NoSpmp" class="border-end">SPMP</th>
                 <th scope="col" sort-key="TextPekerjaan" filter-key="TextPekerjaan" class="border-end">Job Name</th>
                 <th scope="col" sort-key="JobType" filter-key="JobType" class="border-end">Job Type</th>
@@ -30,7 +41,7 @@
             @if (Model == null || !Model.Items.Any())
             {
                 <tr>
-                    <td colspan="13" class="text-center text-muted py-5">
+                    <td colspan="@(isAdmin ? 14 : 13)" class="text-center text-muted py-5">
                         <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
                         @if (!string.IsNullOrWhiteSpace(Model?.Search))
                         {
@@ -53,8 +64,6 @@
             }
             else
             {
-                var isAdmin = User.IsInRole("Admin");
-                var returnUrl = Context.Request.Path + Context.Request.QueryString;
                 foreach (var item in Model.Items)
                 {
                     var archived = item.ArchiveRowId is not null;
@@ -62,6 +71,14 @@
                         ? Url.Action("Details", "LdpArchive", new { id = item.ArchiveRowId, from = "ldp" })
                         : Url.Action("Details", "Ldp", new { id = item.ProcurementId, from = "ldp" });
                     <tr>
+                        @if (isAdmin)
+                        {
+                            <td data-label="Pilih" class="bulk-col">
+                                <input type="checkbox" class="form-check-input" form="@bulkForm" data-bulk-item
+                                       name="@(archived ? "archiveIds" : "procurementIds")" value="@(archived ? item.ArchiveRowId : item.ProcurementId)"
+                                       aria-label="Pilih @formatText(item.TextPekerjaan)" />
+                            </td>
+                        }
                         <td data-label="SPMP" title="@item.NoSpmp">@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.NoSpmp) ?? "-")</td>
                         <td data-label="Job Name" class="finance-col-wrap text-start">
                             <a href="@detailUrl" class="fw-semibold text-decoration-none ldp-clamp" title="@item.TextPekerjaan">@formatText(item.TextPekerjaan)</a>
@@ -115,6 +132,11 @@
             }
         </tbody>
     </table>
+</div>
+@if (isAdmin)
+{
+    @await Html.PartialAsync("_BulkDeleteBar", new ProcurementHTE.Web.Models.ViewModels.BulkDeleteBar(bulkForm, Url.Action("DeleteSelected", "Ldp")!, returnUrl))
+}
 </div>
 
 @await Html.PartialAsync("_Pager", Model)

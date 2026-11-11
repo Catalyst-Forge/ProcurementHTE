@@ -7,6 +7,8 @@
     var isAdmin = User.IsInRole("Admin");
     var range = ViewData["LdpArchiveRange"] as ProcurementHTE.Core.Common.LdpArchiveRange ?? ProcurementHTE.Core.Common.LdpArchiveRange.Default;
     string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    const string bulkForm = "arsip-bulk-delete";
 }
 
 <header class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
@@ -49,11 +51,19 @@
 <div class="column-filter-chips" data-column-filter-chips hidden></div>
 
 @* The same columns as the LDP. A job's name, or its eye icon, opens every column of the row.
-   The old spreadsheet has no Submit Loket, so that column stays "-" here. *@
+   The old spreadsheet has no Submit Loket, so that column stays "-" here.
+   Admin also gets a checkbox per row and Hapus terpilih (js/bulk-select.js). *@
+<div data-bulk-scope>
 <div class="table-responsive border rounded-3 mb-2">
     <table class="table table-aligned table-hover align-middle mb-0 mobile-table finance-table ldp-table">
         <thead class="table-light">
             <tr class="align-middle">
+                @if (isAdmin)
+                {
+                    <th scope="col" class="bulk-col border-end">
+                        <input type="checkbox" class="form-check-input" data-bulk-all aria-label="Pilih semua baris di halaman ini" title="Pilih semua baris di halaman ini" />
+                    </th>
+                }
                 <th scope="col" sort-key="NoSpmp" filter-key="NoSpmp" class="border-end">SPMP</th>
                 <th scope="col" sort-key="JobName" filter-key="JobName" class="border-end">Job Name</th>
                 <th scope="col" sort-key="JobType" filter-key="JobType" class="border-end">Job Type</th>
@@ -73,7 +83,7 @@
             @if (Model.Items.Count == 0)
             {
                 <tr>
-                    <td colspan="13" class="text-center text-muted py-4">
+                    <td colspan="@(isAdmin ? 14 : 13)" class="text-center text-muted py-4">
                         @(filtered ? "Tidak ada arsip yang cocok." : "Arsip LDP belum diisi.")
                     </td>
                 </tr>
@@ -81,6 +91,13 @@
             @foreach (var item in Model.Items)
             {
                 <tr>
+                    @if (isAdmin)
+                    {
+                        <td data-label="Pilih" class="bulk-col">
+                            <input type="checkbox" class="form-check-input" form="@bulkForm" data-bulk-item
+                                   name="ids" value="@item.Id" aria-label="Pilih @Text(item.JobName)" />
+                        </td>
+                    }
                     <td data-label="SPMP" title="@item.NoSpmp">@(ProcurementHTE.Core.Finance.FinanceTable.ShortSpmp(item.NoSpmp) ?? "-")</td>
                     <td data-label="Job Name" class="finance-col-wrap text-start">
                         <a asp-action="Details" asp-route-id="@item.Id" asp-route-from="arsip" class="fw-semibold text-decoration-none ldp-clamp" title="@item.JobName">@Text(item.JobName)</a>
@@ -107,7 +124,7 @@
                                     <a class="btn btn-row" asp-action="Edit" asp-route-id="@item.Id" aria-label="Edit" title="Edit">
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
                                     </a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
+                                    <form asp-action="Delete" asp-route-id="@item.Id" asp-route-returnUrl="@returnUrl"
                                           method="post" class="delete-form"
                                           data-confirm-title="Hapus baris arsip ini?"
                                           data-confirm-message="Baris pindah ke Data Terhapus dan bisa dipulihkan dari sana."
@@ -124,6 +141,11 @@
             }
         </tbody>
     </table>
+</div>
+@if (isAdmin)
+{
+    @await Html.PartialAsync("_BulkDeleteBar", new ProcurementHTE.Web.Models.ViewModels.BulkDeleteBar(bulkForm, Url.Action("DeleteSelected")!, returnUrl))
+}
 </div>
 
 @await Html.PartialAsync("_Pager", Model)
